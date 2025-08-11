@@ -1,33 +1,29 @@
-# 10,000 Foot Altitude: Specialization
+<\!-- generated from modules/altitude-10000/page-10000.md -->
+# Page 3 – 10,000 ft (Specialization)
+Unique ID Prefix: 01.04.01.00.10
+process_id: Detail Outreach Specialization
 
-## Barton Doctrine: Marketing > Outreach
+Branch 1 – Lead Intake & Validation (vertical flow):
+Pull Company List by State from Apollo
+  ↓ Assign company_unique_id
+  ↓ Insert into marketing_company_intake (Neon)
+Scrape Executives via Apify
+  ↓ Assign contact_unique_id
+  ↓ Store in staging
+Validate Emails via MillionVerifier
+  ↓ Drop Invalid
+  ↓ Insert Validated Contacts into people (Neon)
+  ↓ Link to Company
 
-**Database:** 01 (Marketing)  
-**Subhive:** 04 (Marketing Subhive)  
-**Microprocess:** 01 (Outreach)
+Branch 2 – Message Generation (Agent) (vertical flow):
+Retrieve validated contacts from Neon
+  ↓ Personalize per role
+  ↓ Apply message rules
+  ↓ Store in outreach_message_registry
 
----
-
-## Specialization Framework
-
-[Specialization-level content placeholder - 10k altitude pure specialization without execution details]
-
-### Specialized Approaches
-
-[Specialized approaches placeholder - specific methodologies]
-
-### Specialization Criteria
-
-[Specialization criteria placeholder - what determines specialization]
-
-### Specialized Resources
-
-[Specialized resources placeholder - required capabilities]
-
-### Specialization Integration
-
-[Specialization integration placeholder - how specializations work together]
-
----
-
-*This document contains only 10,000 foot altitude specialization content. Refer to 5k documents for execution details.*
+Branch 3 – Campaign Execution & Telemetry (vertical flow):
+Push messages to Instantly / HeyReach API
+  ↓ Record delivery status
+  ↓ Update campaign_run_log
+  ↓ Send metrics to dashboard
+EOF < /dev/null

@@ -1,36 +1,41 @@
-# 5,000 Foot Altitude: Execution
+<\!-- generated from modules/altitude-05000/page-05000.md -->
+# Page 4 – 5,000 & 1,000 ft (Execution)
+Unique ID Prefix: 01.04.01.00.05
 
-## Barton Doctrine: Marketing > Outreach
+Barton Doctrine Numbering: [database].[subhive].[microprocess].[tool].[altitude].[step]
+Tables: marketing_company_intake, people, outreach_message_registry, campaign_run_log
+Tools: Apollo, Apify, MillionVerifier, Instantly, HeyReach
 
-**Database:** 01 (Marketing)  
-**Subhive:** 04 (Marketing Subhive)  
-**Microprocess:** 01 (Outreach)
+# NOTE: Fill unique_id in sortable format; keep process_id as Verb + Object (capitalized).
+# Do not mix lower-altitude details upward. Gate data at each step.
 
-**unique_id:** [____]  
-**process_id:** [Verb + Object]
+Branch 1 – Lead Intake & Validation (exact order):
+01.04.01.01.05.01 | Acquire Companies | Tool: Apollo | Table: marketing_company_intake | unique_id: [____] | process_id: Acquire Companies
+01.04.01.01.05.02 | Insert Companies  | Tool: Neon   | Table: marketing_company_intake | unique_id: [____] | process_id: Insert Companies
+01.04.01.01.05.03 | Scrape Executives | Tool: Apify  | Table: staging_executives       | unique_id: [____] | process_id: Scrape Executives
+01.04.01.01.05.04 | Validate Contacts  | Tool: MillionVerifier | Table: people | unique_id: [____] | process_id: Validate Contacts
+01.04.01.01.05.05 | Insert Validated Contacts | Tool: Neon | Table: people | unique_id: [____] | process_id: Insert Contacts
+01.04.01.01.05.06 | Link People to Company    | Tool: Neon | Tables: people ↔ marketing_company_intake | unique_id: [____] | process_id: Link People
 
----
+Branch 2 – Message Generation (Agent):
+01.04.01.02.05.01 | Compose Outreach Message | Tool: Agent | Table: outreach_message_registry | unique_id: [____] | process_id: Compose Message
+01.04.01.02.05.02 | Apply Generic Template   | Tool: Agent | Table: outreach_message_registry | unique_id: [____] | process_id: Apply Template
+01.04.01.02.05.03 | Record Message Variant   | Tool: Neon  | Table: outreach_message_registry | unique_id: [____] | process_id: Record Variant
+01.04.01.02.05.04 | Store Message Payload    | Tool: Neon  | Table: outreach_message_registry | unique_id: [____] | process_id: Store Payload
 
-## Execution Framework
+Branch 3 – Campaign Execution & Telemetry:
+01.04.01.03.05.01 | Publish Messages | Tools: Instantly/HeyReach | Table: campaign_run_log | unique_id: [____] | process_id: Publish Messages
+01.04.01.03.05.02 | Track Events     | Tools: Instantly/HeyReach | Table: campaign_run_log | unique_id: [____] | process_id: Track Events
+01.04.01.03.05.03 | Update Lead Status | Tool: Neon | Tables: marketing_company_intake / people | unique_id: [____] | process_id: Update Status
+01.04.01.03.05.04 | Surface Live Metrics | Tool: Dashboard | Table: command_center_metrics | unique_id: [____] | process_id: Surface Metrics
 
-[Execution-level content placeholder - 5k altitude pure execution without mixing higher altitude concepts]
-
-### Execution Steps
-
-[Execution steps placeholder - specific actionable processes]
-
-### Execution Tools
-
-[Execution tools placeholder - specific tools and resources]
-
-### Execution Metrics
-
-[Execution metrics placeholder - measurable outcomes]
-
-### Execution Controls
-
-[Execution controls placeholder - quality and compliance measures]
-
----
-
-*This document contains only 5,000 foot altitude execution content. This is the operational level of the doctrine.*
+Execution Diagram (plain text):
+Lead Intake & Validation:
+Acquire Companies → Insert Companies → Scrape Executives → Validate Contacts → Insert Contacts → Link People
+  ↓ (gate: validated contacts only)
+Message Generation (Agent):
+Compose Message → Apply Template (fallback) → Record Variant → Store Payload
+  ↓ (gate: stored payload only)
+Campaign Execution & Telemetry:
+Publish Messages → Record Status → Update Tables → Send Metrics
+MDEOF < /dev/null

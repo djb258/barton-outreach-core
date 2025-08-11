@@ -1,76 +1,23 @@
 {
-  "barton_doctrine": {
-    "version": "1.0.0",
-    "project_metadata": {
-      "database": {
-        "id": "01",
-        "name": "Marketing",
-        "description": "Marketing database for all marketing-related processes"
-      },
-      "subhive": {
-        "id": "04", 
-        "name": "Marketing Subhive",
-        "description": "Specialized marketing operational subhive"
-      },
-      "microprocess": {
-        "id": "01",
-        "name": "Outreach",
-        "description": "Outreach microprocess within marketing operations"
-      }
+  "project_name": "Marketing Outreach Doctrine",
+  "project_description": "Barton Doctrine repo for Marketing > Outreach across altitudes.",
+  "project_type": "complex",
+  "agents_needed": {
+    "ceo_orchestrator": { "use_this_agent": true, "why": "Master coordinator" },
+    "backend_manager": { "use_this_agent": true, "why": "Neon schema + tables", "what_to_build": "Refs only (managed elsewhere)" },
+    "integration_manager": { "use_this_agent": true, "why": "Apollo, Apify, MillionVerifier, Instantly, HeyReach", "what_to_integrate": "API contracts + payload schemas" },
+    "deployment_manager": { "use_this_agent": false, "why": "N/A" }
+  },
+  "technical_specs": {
+    "integration_details": {
+      "external_apis": ["Apollo","Apify","MillionVerifier","Instantly","HeyReach"],
+      "data_flows": "Apollo->Neon->Apify->MillionVerifier->Neon->Agent->Instantly/HeyReach->Neon->Dashboard",
+      "rate_limits": "Configure per vendor in env"
     },
-    "altitude_configuration": {
-      "30000": {
-        "name": "Vision",
-        "purpose": "Strategic vision and long-term outcomes",
-        "content_type": "vision_statements",
-        "altitude_purity": true
-      },
-      "20000": {
-        "name": "Categories", 
-        "purpose": "High-level categorization framework",
-        "content_type": "category_frameworks",
-        "altitude_purity": true
-      },
-      "10000": {
-        "name": "Specialization",
-        "purpose": "Specialized approaches and methodologies", 
-        "content_type": "specialization_methods",
-        "altitude_purity": true
-      },
-      "05000": {
-        "name": "Execution",
-        "purpose": "Operational execution and implementation",
-        "content_type": "execution_procedures",
-        "altitude_purity": true,
-        "requires_unique_id": true,
-        "requires_process_id": true
-      }
-    },
-    "structure_validation": {
-      "required_folders": [
-        "docs/pages",
-        "docs/diagrams", 
-        "modules/altitude-30000",
-        "modules/altitude-20000",
-        "modules/altitude-10000", 
-        "modules/altitude-05000",
-        "doctrine/config",
-        "ops/orbt",
-        "placeholders"
-      ],
-      "required_files": [
-        "docs/pages/30000-vision.md",
-        "docs/pages/20000-categories.md", 
-        "docs/pages/10000-specialization.md",
-        "docs/pages/05000-execution.md",
-        "docs/pages/_index.yaml"
-      ]
-    },
-    "repository_settings": {
-      "name": "doctrine-marketing-outreach",
-      "initial_commit_message": "chore: scaffold Barton Doctrine Marketing>Outreach shell",
-      "branch_strategy": "main",
-      "documentation_standard": "markdown"
+    "database_details": {
+      "tables_needed": ["marketing_company_intake","people","outreach_message_registry","campaign_run_log"],
+      "relationships": "people.company_unique_id -> marketing_company_intake.company_unique_id"
     }
-  }
+  },
+  "system": { "entry_point": "ceo-orchestrator", "auto_repair": true, "session_tracking": true, "created_timestamp": "", "last_updated": "" }
 }

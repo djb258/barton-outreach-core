@@ -1,4 +1,20 @@
-# Welcome to your Lovable project
+# Barton Outreach Core
+
+## Marketing > Outreach Doctrine (Barton)
+
+Modular, altitude-based pages for Doctrine Tracker interactive drill-down:
+- **30k**: docs/pages/30000-vision.md
+- **20k**: docs/pages/20000-categories.md
+- **10k**: docs/pages/10000-specialization.md
+- **5k/1k**: docs/pages/05000-execution.md
+
+### HEIR Agent System Integration
+
+This project includes a complete HEIR (Hierarchical Execution Intelligence & Repair) agent system:
+- Access the system at `/heir` route
+- 12 specialized agents (orchestrators, managers, specialists)
+- Real-time task management and system monitoring
+- Integration with Apollo, Apify, MillionVerifier, Instantly, and HeyReach APIs
 
 ## Project info
 

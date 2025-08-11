@@ -1,29 +1,24 @@
-# 30,000 Foot Altitude: Vision
+<\!-- generated from modules/altitude-30000/page-30000.md -->
+# Page 1 – 30,000 ft (Vision)
+Unique ID Prefix: 01.04.01.00.30
+process_id: Drive Outreach
 
-## Barton Doctrine: Marketing > Outreach
+Scope: Marketing → Outreach (Vision only; no lower-altitude details)
 
-**Database:** 01 (Marketing)  
-**Subhive:** 04 (Marketing Subhive)  
-**Microprocess:** 01 (Outreach)
+Top-Down Diagram:
+Marketing (01)
+  ↓
+Outreach (01.04.01)
+  ↓
++ Lead Intake & Validation
++ Message Generation (Agent)
++ Campaign Execution & Telemetry
 
----
-
-## Vision Statement
-
-[Vision-level content placeholder - 30k altitude pure vision without lower altitude details]
-
-### Strategic Intent
-
-[Strategic intent placeholder - vision-only perspective]
-
-### Long-term Outcomes
-
-[Long-term outcomes placeholder - vision-level goals]
-
-### Organizational Impact
-
-[Organizational impact placeholder - highest level view]
-
----
-
-*This document contains only 30,000 foot altitude vision content. Refer to lower altitude documents for categories, specialization, and execution details.*
+Lovable.dev Text Illustration:
+┌─ Marketing (01) ─────────────────────────────────────────────┐
+│   Outreach (01.04.01)                                       │
+│     ├─ Lead Intake & Validation                             │
+│     ├─ Message Generation (Agent)                           │
+│     └─ Campaign Execution & Telemetry                       │
+└──────────────────────────────────────────────────────────────┘
+EOF < /dev/null

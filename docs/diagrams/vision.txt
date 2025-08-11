@@ -1,25 +1,23 @@
-┌─────────────────────────────────────────────────────────────┐
-│                    VISION DIAGRAM (30K)                    │
-│                 Marketing > Outreach                       │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    │
-│  │             │    │             │    │             │    │
-│  │ [VISION     │    │ [STRATEGIC  │    │ [LONG-TERM  │    │
-│  │ COMPONENT   │───▶│ INTENT      │───▶│ OUTCOMES    │    │
-│  │ PLACEHOLDER]│    │ PLACEHOLDER]│    │ PLACEHOLDER]│    │
-│  │             │    │             │    │             │    │
-│  └─────────────┘    └─────────────┘    └─────────────┘    │
-│                                                             │
-│                           │                                 │
-│                           ▼                                 │
-│                  ┌─────────────┐                           │
-│                  │             │                           │
-│                  │[IMPACT      │                           │
-│                  │PLACEHOLDER] │                           │
-│                  │             │                           │
-│                  └─────────────┘                           │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+# Page 1 – 30,000 ft (Vision)
+Unique ID Prefix: 01.04.01.00.30
+process_id: Drive Outreach
 
-[ASCII diagram placeholder for vision-level flow - ready for Lovable.dev ASCII editor]
+Scope: Marketing → Outreach (Vision only; no lower-altitude details)
+
+Top-Down Diagram:
+Marketing (01)
+  ↓
+Outreach (01.04.01)
+  ↓
++ Lead Intake & Validation
++ Message Generation (Agent)
++ Campaign Execution & Telemetry
+
+Lovable.dev Text Illustration:
+┌─ Marketing (01) ─────────────────────────────────────────────┐
+│   Outreach (01.04.01)                                       │
+│     ├─ Lead Intake & Validation                             │
+│     ├─ Message Generation (Agent)                           │
+│     └─ Campaign Execution & Telemetry                       │
+└──────────────────────────────────────────────────────────────┘
+EOF < /dev/null
