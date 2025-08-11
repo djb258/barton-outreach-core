@@ -14,6 +14,8 @@ export interface ApplicationBranch {
   tools: string[];
   processes: ProcessStep[];
   route: string;
+  subagents?: string[];
+  doctrines?: string[];
 }
 
 export interface ApplicationConfig {
@@ -67,6 +69,8 @@ export const outreachConfig: ApplicationConfig = {
       description: "Complete lead acquisition, scraping, and validation workflow",
       route: "/doctrine/lead-intake",
       tools: ["Apollo", "Apify", "MillionVerifier", "Neon"],
+      subagents: ["Data Acquisition Agent", "Validation Agent", "Database Agent"],
+      doctrines: ["Lead Qualification", "Data Quality", "GDPR Compliance", "Rate Limiting"],
       processes: [
         {
           id: "01",
@@ -124,6 +128,8 @@ export const outreachConfig: ApplicationConfig = {
       description: "AI-powered message composition and personalization",
       route: "/doctrine/message-generation",
       tools: ["AI Agent", "Templates", "Personalization", "Neon"],
+      subagents: ["Content Creation Agent", "Personalization Agent", "Template Manager", "Quality Assurance Agent"],
+      doctrines: ["Message Personalization", "Brand Voice", "CAN-SPAM Compliance", "A/B Testing"],
       processes: [
         {
           id: "01",
@@ -165,6 +171,8 @@ export const outreachConfig: ApplicationConfig = {
       description: "Deploy campaigns and track performance metrics",
       route: "/doctrine/campaign-execution", 
       tools: ["Instantly", "HeyReach", "Tracking", "Dashboard"],
+      subagents: ["Campaign Manager Agent", "Delivery Agent", "Analytics Agent", "Performance Monitor"],
+      doctrines: ["Campaign Optimization", "Deliverability", "Performance Tracking", "ROI Analysis"],
       processes: [
         {
           id: "01",

@@ -1,6 +1,6 @@
-import { ProcessTriangle } from '@/components/template/ProcessTriangle';
+import { ProcessFlowDiagram } from '@/components/template/ProcessFlowDiagram';
 import { outreachConfig } from '@/lib/template/application-config';
 
 export default function DoctrineMapPage() {
-  return <ProcessTriangle config={outreachConfig} />;
+  return <ProcessFlowDiagram config={outreachConfig} />;
 }
