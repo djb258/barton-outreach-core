@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useHEIRContext } from './HEIRContext';
+import { TaskPriority } from '@/lib/heir/types';
 import { AgentCard } from './AgentCard';
 import { TaskList } from './TaskList';
 import { SystemMonitor } from './SystemMonitor';
@@ -66,7 +67,7 @@ const HEIRDashboard: React.FC = () => {
 
   const handleCreateTask = async () => {
     if (taskTitle && taskDescription) {
-      await createTask(taskTitle, taskDescription, taskPriority);
+      await createTask(taskTitle, taskDescription, taskPriority as TaskPriority);
       setTaskTitle('');
       setTaskDescription('');
       setTaskPriority('medium');

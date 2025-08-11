@@ -14,10 +14,6 @@ export function useHEIR() {
   
   const [communications, setCommunications] = useState<AgentCommunication[]>([]);
 
-  useEffect(() => {
-    initializeSystem();
-  }, [initializeSystem]);
-
   const initializeSystem = useCallback(() => {
     agentRegistry.forEach(agent => {
       orchestrationEngine.registerAgent(agent);
@@ -29,6 +25,10 @@ export function useHEIR() {
       systemStatus: 'ready'
     });
   }, []);
+
+  useEffect(() => {
+    initializeSystem();
+  }, [initializeSystem]);
 
   const createTask = useCallback(async (
     title: string,
