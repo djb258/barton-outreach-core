@@ -1,0 +1,49 @@
+{
+  "name": "@barton/doctrine-template",
+  "version": "1.0.0",
+  "description": "Rapid deployment template for structured business process applications using the Barton Doctrine methodology",
+  "main": "generate-app.js",
+  "bin": {
+    "create-barton-app": "./generate-app.js"
+  },
+  "scripts": {
+    "generate": "node generate-app.js"
+  },
+  "keywords": [
+    "barton",
+    "doctrine", 
+    "template",
+    "business-processes",
+    "rapid-deployment",
+    "react",
+    "typescript"
+  ],
+  "author": "Barton Systems",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "react-router-dom": "^6.0.0",
+    "lucide-react": "^0.400.0",
+    "@radix-ui/react-dialog": "^1.0.0",
+    "@radix-ui/react-select": "^2.0.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.0.0",
+    "tailwind-merge": "^2.0.0"
+  },
+  "files": [
+    "src/",
+    "generate-app.js",
+    "README.md",
+    "INSTALLATION.md", 
+    "EXAMPLES.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/barton-doctrine-template"
+  },
+  "homepage": "https://github.com/your-org/barton-doctrine-template#readme",
+  "bugs": {
+    "url": "https://github.com/your-org/barton-doctrine-template/issues"
+  }
+}
