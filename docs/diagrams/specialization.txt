@@ -1,0 +1,24 @@
+┌─────────────────────────────────────────────────────────────┐
+│               SPECIALIZATION DIAGRAM (10K)                 │
+│                 Marketing > Outreach                       │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    │
+│  │             │    │             │    │             │    │
+│  │[SPEC TYPE A │    │[SPEC TYPE B │    │[SPEC TYPE C │    │
+│  │PLACEHOLDER] │    │PLACEHOLDER] │    │PLACEHOLDER] │    │
+│  │             │    │             │    │             │    │
+│  └─────────────┘    └─────────────┘    └─────────────┘    │
+│         │                   │                   │          │
+│         │                   │                   │          │
+│         ▼                   ▼                   ▼          │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    │
+│  │             │    │             │    │             │    │
+│  │[APPROACH A  │    │[APPROACH B  │    │[APPROACH C  │    │
+│  │PLACEHOLDER] │    │PLACEHOLDER] │    │PLACEHOLDER] │    │
+│  │             │    │             │    │             │    │
+│  └─────────────┘    └─────────────┘    └─────────────┘    │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+
+[ASCII diagram placeholder for specialization methodologies - ready for Lovable.dev ASCII editor]

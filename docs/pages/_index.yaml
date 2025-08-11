@@ -1,0 +1,42 @@
+---
+# Barton Doctrine Altitude Mapping
+# Database: 01 (Marketing)
+# Subhive: 04 (Marketing Subhive) 
+# Microprocess: 01 (Outreach)
+
+doctrine_mapping:
+  altitudes:
+    30000:
+      name: "Vision"
+      page: "30000-vision.md"
+      description: "Strategic vision and long-term outcomes"
+    20000:
+      name: "Categories" 
+      page: "20000-categories.md"
+      description: "High-level categorization framework"
+    10000:
+      name: "Specialization"
+      page: "10000-specialization.md" 
+      description: "Specialized approaches and methodologies"
+    05000:
+      name: "Execution"
+      page: "05000-execution.md"
+      description: "Operational execution and implementation"
+
+process_metadata:
+  database: "01"
+  database_name: "Marketing"
+  subhive: "04" 
+  subhive_name: "Marketing Subhive"
+  microprocess: "01"
+  microprocess_name: "Outreach"
+  
+hierarchy:
+  - altitude: 30000
+    flows_to: 20000
+  - altitude: 20000
+    flows_to: 10000  
+  - altitude: 10000
+    flows_to: 05000
+  - altitude: 05000
+    flows_to: null

@@ -1,0 +1,25 @@
+┌─────────────────────────────────────────────────────────────┐
+│                    VISION DIAGRAM (30K)                    │
+│                 Marketing > Outreach                       │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    │
+│  │             │    │             │    │             │    │
+│  │ [VISION     │    │ [STRATEGIC  │    │ [LONG-TERM  │    │
+│  │ COMPONENT   │───▶│ INTENT      │───▶│ OUTCOMES    │    │
+│  │ PLACEHOLDER]│    │ PLACEHOLDER]│    │ PLACEHOLDER]│    │
+│  │             │    │             │    │             │    │
+│  └─────────────┘    └─────────────┘    └─────────────┘    │
+│                                                             │
+│                           │                                 │
+│                           ▼                                 │
+│                  ┌─────────────┐                           │
+│                  │             │                           │
+│                  │[IMPACT      │                           │
+│                  │PLACEHOLDER] │                           │
+│                  │             │                           │
+│                  └─────────────┘                           │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+
+[ASCII diagram placeholder for vision-level flow - ready for Lovable.dev ASCII editor]
