@@ -1,0 +1,372 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Apollo Scraper API",
+    "version": "1.0.0",
+    "description": "API for scraping Apollo.io data and storing in Render marketing database",
+    "contact": {
+      "name": "API Support",
+      "email": "dbarton@svg.agency"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api/v1",
+      "description": "Local development server"
+    },
+    {
+      "url": "https://your-api-url.com/api/v1",
+      "description": "Production server"
+    }
+  ],
+  "paths": {
+    "/integrated/scrape-and-store": {
+      "post": {
+        "summary": "Start scraping and store results",
+        "description": "Initiates Apollo scraping for a company and stores results in Render marketing DB",
+        "tags": ["Integrated"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["companyName", "apolloUrl"],
+                "properties": {
+                  "companyName": {
+                    "type": "string",
+                    "description": "Name of the company to scrape"
+                  },
+                  "apolloUrl": {
+                    "type": "string",
+                    "description": "Apollo.io URL with search parameters"
+                  },
+                  "maxResults": {
+                    "type": "integer",
+                    "default": 1000,
+                    "description": "Maximum number of contacts to scrape"
+                  },
+                  "filterByTitle": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Filter contacts by executive titles"
+                  },
+                  "industry": {
+                    "type": "string",
+                    "description": "Company industry"
+                  },
+                  "location": {
+                    "type": "string",
+                    "description": "Company location"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Scraping job started successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean"},
+                    "message": {"type": "string"},
+                    "job": {
+                      "type": "object",
+                      "properties": {
+                        "id": {"type": "string"},
+                        "companyName": {"type": "string"},
+                        "status": {"type": "string"},
+                        "datasetId": {"type": "string"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/integrated/batch-scrape": {
+      "post": {
+        "summary": "Batch scrape multiple companies",
+        "description": "Start scraping jobs for multiple companies at once",
+        "tags": ["Integrated"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["companies"],
+                "properties": {
+                  "companies": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["name", "url"],
+                      "properties": {
+                        "name": {"type": "string"},
+                        "url": {"type": "string"},
+                        "maxResults": {"type": "integer"},
+                        "industry": {"type": "string"},
+                        "location": {"type": "string"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Batch jobs started"
+          }
+        }
+      }
+    },
+    "/integrated/company-status/{companyName}": {
+      "get": {
+        "summary": "Get company scraping status",
+        "description": "Retrieve company information and scraping results from Render DB",
+        "tags": ["Integrated"],
+        "parameters": [
+          {
+            "name": "companyName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Company status retrieved"
+          },
+          "404": {
+            "description": "Company not found"
+          }
+        }
+      }
+    },
+    "/integrated/test-connection": {
+      "get": {
+        "summary": "Test Render DB connection",
+        "description": "Verify connection to Render marketing database",
+        "tags": ["Integrated"],
+        "responses": {
+          "200": {
+            "description": "Connection test result"
+          }
+        }
+      }
+    },
+    "/scraper/start": {
+      "post": {
+        "summary": "Start a scraping job",
+        "description": "Initiate Apollo scraping for a single company",
+        "tags": ["Scraper"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["url", "companyId", "companyName"],
+                "properties": {
+                  "url": {"type": "string"},
+                  "companyId": {"type": "string"},
+                  "companyName": {"type": "string"},
+                  "maxResults": {"type": "integer"},
+                  "cleanOutput": {"type": "boolean"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Job started"
+          }
+        }
+      }
+    },
+    "/scraper/status/{jobId}": {
+      "get": {
+        "summary": "Check job status",
+        "description": "Get the current status of a scraping job",
+        "tags": ["Scraper"],
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Job status"
+          },
+          "404": {
+            "description": "Job not found"
+          }
+        }
+      }
+    },
+    "/scraper/results/{jobId}": {
+      "get": {
+        "summary": "Get job results",
+        "description": "Retrieve scraped contacts from a completed job",
+        "tags": ["Scraper"],
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          },
+          {
+            "name": "filterByTitle",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scraping results"
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "description": "Check API and service health",
+        "tags": ["Health"],
+        "responses": {
+          "200": {
+            "description": "Service is healthy"
+          }
+        }
+      }
+    },
+    "/companies": {
+      "get": {
+        "summary": "List companies",
+        "description": "Get all companies from Render marketing DB",
+        "tags": ["Companies"],
+        "responses": {
+          "200": {
+            "description": "List of companies"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create company",
+        "description": "Add a new company to Render marketing DB",
+        "tags": ["Companies"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "company_name": {"type": "string"},
+                  "apollo_url": {"type": "string"},
+                  "industry": {"type": "string"},
+                  "location": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Company created"
+          }
+        }
+      }
+    },
+    "/results/apollo": {
+      "get": {
+        "summary": "Get Apollo data",
+        "description": "Retrieve Apollo scraping results from Render DB",
+        "tags": ["Results"],
+        "responses": {
+          "200": {
+            "description": "Apollo data"
+          }
+        }
+      },
+      "post": {
+        "summary": "Submit Apollo data",
+        "description": "Store Apollo scraping results in Render DB",
+        "tags": ["Results"],
+        "responses": {
+          "201": {
+            "description": "Data submitted"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Integrated",
+      "description": "Combined scraping and storage operations"
+    },
+    {
+      "name": "Scraper",
+      "description": "Apollo scraping operations"
+    },
+    {
+      "name": "Companies",
+      "description": "Company management"
+    },
+    {
+      "name": "Results",
+      "description": "Scraping results management"
+    },
+    {
+      "name": "Health",
+      "description": "Service health checks"
+    }
+  ]
+}
