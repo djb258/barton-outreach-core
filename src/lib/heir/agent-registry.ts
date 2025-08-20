@@ -1,9 +1,101 @@
 import { Agent, AgentRole } from './types';
 
-export const agentRegistry: Agent[] = [
+// ============================================
+// BARTON OUTREACH CORE - PROJECT-SPECIFIC AGENTS
+// ============================================
+
+export const projectAgentRegistry: Agent[] = [
+  // ============================================
+  // ORCHESTRATORS (Project-Specific)
+  // ============================================
   {
-    id: 'master-orchestrator',
-    name: 'Master Orchestrator',
+    id: 'barton-master-orchestrator',
+    name: 'Barton Master Orchestrator',
+    role: 'orchestrator',
+    category: 'project',
+    description: 'Overall coordination for Barton Outreach Core project across all branches',
+    capabilities: [
+      'Cross-branch workflow coordination',
+      'Resource allocation and prioritization',
+      'Global error handling and recovery',
+      'Project-level metrics and reporting'
+    ],
+    status: 'idle'
+  },
+  {
+    id: 'barton-overall-orchestrator',
+    name: 'Barton Overall Orchestrator',
+    role: 'orchestrator',
+    category: 'project',
+    description: 'Cross-branch flow coordination, guardrails enforcement, retry/DLQ management',
+    capabilities: [
+      'Webhook event processing',
+      'Queue state transitions',
+      'Registry enforcement (shq_process_key_reference)',
+      'Heartbeat emission',
+      'Error logging to shq.master_error_log'
+    ],
+    status: 'idle'
+  },
+  {
+    id: 'barton-lead-orchestrator',
+    name: 'Barton Lead Branch Orchestrator',
+    role: 'orchestrator',
+    category: 'project',
+    description: 'Orchestrates Company → Roles → People workflow for lead acquisition and validation',
+    capabilities: [
+      'CSV ingestion coordination',
+      'Company canonicalization',
+      'Role slot management (CEO/CFO/HR)',
+      'Contact scraping via Apify',
+      'Email validation coordination',
+      'Lead pipeline status management'
+    ],
+    status: 'idle'
+  },
+  {
+    id: 'barton-messaging-orchestrator',
+    name: 'Barton Messaging Branch Orchestrator',
+    role: 'orchestrator',
+    category: 'project',
+    description: 'Orchestrates Draft → Personalize → Approvals workflow for message generation',
+    capabilities: [
+      'Persona and tone resolution',
+      'Message drafting with templates',
+      'LI/website snippet personalization',
+      'Policy gates and approval workflow',
+      'Template performance tracking'
+    ],
+    status: 'idle'
+  },
+  {
+    id: 'barton-delivery-orchestrator',
+    name: 'Barton Delivery Branch Orchestrator',
+    role: 'orchestrator',
+    category: 'project',
+    description: 'Orchestrates Send → Track → Reply Handling workflow for campaign execution',
+    capabilities: [
+      'Channel mapping (email, LinkedIn)',
+      'Rate limiting and QPS guardrails',
+      'Send operations via Instantly/HeyReach',
+      'Event tracking (opens, clicks, replies)',
+      'Reply routing and triage'
+    ],
+    status: 'idle'
+  }
+];
+
+// ============================================
+// GLOBAL AGENTS (Shared across all projects)
+// ============================================
+
+export const globalAgentRegistry: Agent[] = [
+  // ============================================
+  // GLOBAL ORCHESTRATORS
+  // ============================================
+  {
+    id: 'global-master-orchestrator',
+    name: 'Global Master Orchestrator',
     role: 'orchestrator',
     category: 'global',
     description: 'Central command and control for all HEIR system operations',
@@ -168,7 +260,34 @@ export const agentRegistry: Agent[] = [
       'Rate limit handling'
     ],
     status: 'idle'
+  },
+  // ============================================
+  // GLOBAL DATABASE AGENT
+  // ============================================
+  {
+    id: 'global-database-agent',
+    name: 'Global Database Agent',
+    role: 'specialist',
+    category: 'global',
+    description: 'Universal database operations across Neon, Firebase, BigQuery, and other platforms',
+    capabilities: [
+      'Multi-database connectivity (Neon, Firebase, BigQuery)',
+      'Schema-aware operations',
+      'Batch processing and bulk operations',
+      'Connection pooling and error recovery',
+      'Barton Doctrine compliance',
+      'Cross-database data synchronization'
+    ],
+    status: 'idle'
   }
+];
+
+// ============================================
+// LEGACY EXPORT (for backward compatibility)
+// ============================================
+export const agentRegistry: Agent[] = [
+  ...projectAgentRegistry,
+  ...globalAgentRegistry
 ];
 
 export function getAgentById(id: string): Agent | undefined {
