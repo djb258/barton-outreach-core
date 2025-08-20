@@ -64,6 +64,57 @@ export const outreachConfig: ApplicationConfig = {
   },
   branches: [
     {
+      id: "00",
+      name: "Company & People Ingestion",
+      description: "Initial data ingestion from CSV/Excel files into Neon database",
+      route: "/doctrine/data-ingestion",
+      tools: ["CSV Parser", "Excel Parser", "Neon", "Render API"],
+      subagents: ["File Processing Agent", "Data Validation Agent", "Database Ingestion Agent"],
+      doctrines: ["Data Format Validation", "Batch Processing", "Error Handling", "Schema Compliance"],
+      processes: [
+        {
+          id: "01",
+          name: "Upload Data Files",
+          description: "Upload CSV or Excel files containing company/people data",
+          tool: "File Upload",
+          table: "staging_upload",
+          unique_id_template: "01.04.01.00.05.01"
+        },
+        {
+          id: "02",
+          name: "Parse & Validate",
+          description: "Parse files and validate data structure",
+          tool: "CSV/Excel Parser",
+          table: "staging_validation",
+          unique_id_template: "01.04.01.00.05.02"
+        },
+        {
+          id: "03",
+          name: "Preview Data",
+          description: "Preview parsed data before ingestion",
+          tool: "Data Preview",
+          table: "staging_preview",
+          unique_id_template: "01.04.01.00.05.03"
+        },
+        {
+          id: "04",
+          name: "Ingest to Database",
+          description: "Send validated data to Neon database via Render API",
+          tool: "Render API",
+          table: "company.marketing_company / people.marketing_people",
+          unique_id_template: "01.04.01.00.05.04"
+        },
+        {
+          id: "05",
+          name: "Track Results",
+          description: "Monitor ingestion success/failure rates",
+          tool: "Monitoring",
+          table: "ingestion_logs",
+          unique_id_template: "01.04.01.00.05.05"
+        }
+      ]
+    },
+    {
       id: "01",
       name: "Lead Intake & Validation",
       description: "Complete lead acquisition, scraping, and validation workflow",
