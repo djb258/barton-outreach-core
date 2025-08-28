@@ -3,10 +3,9 @@
 ## Summary
 <!-- Provide a brief summary of the changes -->
 
-## Node & Altitude
-- **Node**: <!-- e.g., node-1-company-db -->
-- **Altitude**: <!-- e.g., 30k -->
-- **Type**: <!-- feature/bugfix/refactor -->
+## Node / Altitude
+- Node: ☐1 ☐2 ☐3 ☐4
+- Altitude: ☐30k ☐20k ☐10k ☐5k
 
 ## Changes
 <!-- List the key changes made -->
@@ -50,7 +49,15 @@
 - [ ] Manual testing completed
 - [ ] Edge cases considered
 
-## Acceptance Criteria
+## 30k Acceptance (Node 1)
+- [ ] Input declared (Apollo, CSV)
+- [ ] Orchestrator + sub-agents declared  
+- [ ] Tools declared (no SQL)
+- [ ] PLE & History stubs present
+- [ ] Seed CSV & schema placeholders present
+- [ ] README updated with IDs + acceptance
+
+## Acceptance Criteria (General)
 <!-- From the node's README -->
 - [ ] Each new company gets a unique company_uid
 - [ ] Each company has exactly 3 slots with distinct slot_uids
