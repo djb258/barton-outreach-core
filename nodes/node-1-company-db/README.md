@@ -1,65 +1,127 @@
-# Node 1: Company + DB (PLE + Enrich)
+# Node 1: Company + DB (30k Altitude - Input Only)
 
-## Scope
-This node handles the foundation layer of the outreach system:
-- Company data ingestion and storage
-- People, Lead, and Entity (PLE) management
-- Data enrichment pipeline
-- Database schema and operations
+## IMO (Input-Middle-Output)
 
-## Acceptance Checklist
+### Input
+- **Feeds**: Apollo exports, CSV uploads
+- **UI**: Ingestor Control Panel, Company Upload Form
 
-### Schema
-- [ ] Company table with normalized fields
-- [ ] People table with contact information
-- [ ] Lead tracking and scoring tables
-- [ ] Entity relationships defined
-- [ ] Indexes for performance optimization
+### Middle (Current Scope)
+- Insert brand-new companies
+- Assign company_uid (CO-YYYYMMDD-######)
+- Create exactly 3 slots per company (CEO/CFO/HR)
+- Each slot gets slot_uid (SL-<company_uid>-ROLE)
+- NO people enrichment, email validation, or movement signals at this altitude
 
-### Ingestor
-- [ ] CSV file parser with delimiter detection
-- [ ] Excel file support (.xlsx, .xls)
-- [ ] Google Sheets integration
-- [ ] Apollo.io sync capability
-- [ ] Web form intake endpoint
-- [ ] Batch processing with error handling
-- [ ] Duplicate detection and merging logic
+### Output
+- Company records with company_uid
+- Three slot records per company with distinct slot_uids
+- Basic logs
 
-### PLE (People, Lead, Entity)
-- [ ] Person profile management
-- [ ] Lead scoring algorithm
-- [ ] Entity classification system
-- [ ] Relationship mapping between entities
-- [ ] BIT tag assignment logic
-- [ ] Lead prioritization engine
+## ORBT Framework
 
-### Enrich
-- [ ] Email validation service integration
-- [ ] Phone number normalization (E.164)
-- [ ] Domain apex extraction
-- [ ] EIN validation and formatting
-- [ ] Company data enrichment (industry, size, revenue)
-- [ ] Social profile discovery (LinkedIn, X)
-- [ ] Data quality scoring
+### Operate
+- Log ingestor runs with timestamp and record count
+- Track company creations with UIDs
+- Monitor slot generation (3 per company)
+- Basic health checks on insert operations
+
+### Repair
+- Dead-letter pattern for bad CSV rows
+- Idempotent re-run capability (check existing UIDs)
+- Error recovery with transaction rollback
+- Manual intervention queue for complex failures
+
+### Build
+- Versioned SQL migrations (001_init.sql)
+- CI checks for DDL validation
+- Automated testing for UID generators
+- Schema documentation maintained
+
+### Train
+- How to run the ingestor locally
+- Understanding UID patterns (CO- and SL- prefixes)
+- Role slot allocation (CEO/CFO/HR)
+- Troubleshooting common import errors
+
+## Acceptance Criteria (30k Altitude)
+
+- [ ] Each new company gets a unique company_uid
+- [ ] Each company has exactly 3 slots with distinct slot_uids
+- [ ] Re-runs do not create duplicate slots (idempotent)
+- [ ] CI: ddl-validate passes
+- [ ] CI: orbt-check passes
+- [ ] CI: lint passes
+- [ ] No credentials in repository
+- [ ] Dead-letter handling for bad rows
+
+## UID Generation Patterns
+
+### Company UID
+Format: `CO-YYYYMMDD-######`
+- CO: Company prefix
+- YYYYMMDD: Date of creation
+- ######: Sequential number (padded to 6 digits)
+
+### Slot UID
+Format: `SL-<company_uid>-<ROLE>`
+- SL: Slot prefix
+- company_uid: Parent company's UID
+- ROLE: One of CEO, CFO, HR
+
+## Local Development
+
+### Prerequisites
+- PostgreSQL 14+
+- Node.js 18+
+- CSV sample data
+
+### Running the Ingestor
+```bash
+# Set up database
+psql -f schema/001_init.sql
+
+# Run ingestor with sample data
+node ingestor/run.js --file ingestor/seed.sample.csv --dry-run
+
+# Production run
+node ingestor/run.js --file data/companies.csv --commit
+```
+
+### Testing UID Generation
+```sql
+-- Test company UID generation
+SELECT gen_company_uid();
+
+-- Test slot UID generation
+SELECT gen_slot_uid('CO-20240101-000001', 'CEO');
+
+-- Test full company insertion with slots
+SELECT insert_company_with_slots(
+  'Acme Corp',
+  'acme.com',
+  'apollo_123',
+  '12-3456789'
+);
+```
 
 ## Folder Structure
 ```
 node-1-company-db/
-├── schema/          # Database schemas and migrations
-├── ingestor/        # Data intake and parsing
-├── ple/             # People, Lead, Entity management
-└── enrich/          # Data enrichment services
+├── README.md              # This file
+├── orchestration.yaml     # Garage-MCP + sub-agents
+├── tools.yaml            # Neon functions + CI checks
+├── schema/               # Database DDL
+│   └── 001_init.sql     # Initial schema + functions
+├── ingestor/            # Data intake
+│   └── seed.sample.csv  # Sample data
+├── ple/                 # (Future: People, Lead, Entity)
+└── enrich/              # (Future: Data enrichment)
 ```
 
-## Dependencies
-- PostgreSQL for data storage
-- libphonenumber-js for phone validation
-- psl for domain validation
-- papaparse for CSV handling
-- xlsx for Excel file processing
-
-## API Contracts
-- POST /api/intake/companies
-- POST /api/intake/people
-- GET /api/ple/leads
-- POST /api/enrich/validate
+## Constraints
+- No people enrichment at 30k altitude
+- No email validation at this level
+- No movement signal detection
+- Keep credentials in environment variables
+- All operations must be idempotent
