@@ -1,0 +1,201 @@
+# Service Catalog (30k Declaration)
+# External service registry and dependency management
+
+version: "1.0"
+altitude: "30k"
+status: "catalog_only"
+
+# Primary External Dependencies
+services:
+  render_api:
+    name: "Company & People Processing API"
+    type: "external_api"
+    criticality: "high"
+    
+    deployment:
+      platform: "render.com"
+      repository: "<render-api-repo-url>"  # placeholder
+      environment: "production"
+      region: "us-east-1"
+      
+    connectivity:
+      protocol: "https"
+      base_url: "${RENDER_API_BASE_URL}"
+      port: 443
+      timeout_ms: 30000
+      
+    authentication:
+      method: "api_key"
+      header: "X-API-Key"
+      secret_ref: "RENDER_API_KEY"
+      
+    capabilities:
+      - "company_insertion"
+      - "people_processing" 
+      - "slot_management"
+      - "health_monitoring"
+      
+    sla:
+      availability: "99.9%"
+      response_time_p95: "500ms"
+      throughput_rps: "100"
+      
+    contact:
+      team: "data-platform"
+      slack: "#data-ops"
+      email: "data-platform@company.com"
+      
+  apollo_api:
+    name: "Apollo.io Data Source"
+    type: "third_party_api"
+    criticality: "medium"
+    
+    deployment:
+      platform: "apollo.io"
+      environment: "production"
+      
+    connectivity:
+      protocol: "https"
+      base_url: "https://api.apollo.io/v1"
+      port: 443
+      
+    authentication:
+      method: "api_key"
+      header: "X-Api-Key"
+      secret_ref: "APOLLO_API_KEY"
+      
+    capabilities:
+      - "company_search"
+      - "people_search"
+      - "contact_enrichment"
+      
+    rate_limits:
+      requests_per_minute: 60
+      daily_limit: 10000
+      
+  neon_database:
+    name: "Neon Serverless Database"
+    type: "database"
+    criticality: "high"
+    
+    deployment:
+      platform: "neon.tech"
+      environment: "production"
+      region: "us-east-1"
+      
+    connectivity:
+      protocol: "postgresql"
+      host: "${NEON_DATABASE_HOST}"
+      port: 5432
+      database: "${NEON_DATABASE_NAME}"
+      ssl_mode: "require"
+      
+    authentication:
+      method: "connection_string"
+      secret_ref: "NEON_DATABASE_URL"
+      
+    capabilities:
+      - "company_storage"
+      - "slot_management"
+      - "ple_tracking"
+      - "history_logging"
+
+# Service Dependencies (30k Declarations)
+dependency_graph:
+  node_1_ple:
+    depends_on:
+      - service: "render_api"
+        relationship: "primary_processor"
+        failure_mode: "circuit_breaker"
+        
+      - service: "neon_database"
+        relationship: "data_store"
+        failure_mode: "retry_with_backoff"
+        
+      - service: "apollo_api"
+        relationship: "data_source"
+        failure_mode: "graceful_degradation"
+
+# Environment Configuration
+environments:
+  development:
+    render_api:
+      base_url: "https://dev-api.render.com"
+    apollo_api:
+      rate_limits:
+        requests_per_minute: 30
+        
+  staging:
+    render_api:
+      base_url: "https://staging-api.render.com"
+    apollo_api:
+      rate_limits:
+        requests_per_minute: 60
+        
+  production:
+    render_api:
+      base_url: "https://api.render.com"
+    apollo_api:
+      rate_limits:
+        requests_per_minute: 60
+
+# Monitoring & Observability
+monitoring:
+  health_checks:
+    - service: "render_api"
+      endpoint: "/health"
+      interval_seconds: 30
+      timeout_ms: 5000
+      
+    - service: "neon_database"
+      query: "SELECT 1"
+      interval_seconds: 60
+      timeout_ms: 3000
+      
+  alerts:
+    - name: "render_api_down"
+      condition: "health_check_failed"
+      service: "render_api"
+      threshold: 3
+      action: "page_on_call"
+      
+    - name: "api_high_latency"
+      condition: "response_time_p95 > 1000ms"
+      service: "render_api"
+      duration: "5m"
+      action: "slack_alert"
+
+# Security Configuration
+security:
+  secrets_management:
+    provider: "environment_variables"
+    rotation_policy: "90_days"
+    
+  network_security:
+    - service: "render_api"
+      requirements: ["https_only", "api_key_auth"]
+      
+    - service: "neon_database" 
+      requirements: ["ssl_required", "connection_string_auth"]
+      
+  compliance:
+    data_classification: "internal"
+    retention_policy: "7_years"
+    audit_logging: "enabled"
+
+# 30k Implementation Notes
+implementation_status: |
+  CATALOG ONLY - NO ACTUAL INTEGRATIONS
+  
+  30k Altitude Constraints:
+  - Service definitions are declarations only
+  - No actual HTTP clients implemented
+  - No authentication logic created
+  - No monitoring setup configured
+  - No health checks implemented
+  - No alert rules deployed
+  
+  Implementation Timeline:
+  - 20k: Basic service integration & authentication
+  - 10k: Advanced monitoring & error handling  
+  - 5k: Production deployment & operations
