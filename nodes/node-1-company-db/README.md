@@ -119,6 +119,18 @@ node-1-company-db/
 └── enrich/              # (Future: Data enrichment)
 ```
 
+## Progress
+
+📋 **Detailed Status**: [TODO.md](./TODO.md)
+
+This node progresses through 4 altitudes:
+- **30k**: Scaffolding & Contracts ⏳ *in progress*
+- **20k**: People Linking & Validation ⏸️ *planned*
+- **10k**: Scraper & PLE Mechanics ⏸️ *planned*  
+- **5k**: Runtime & Operations ⏸️ *planned*
+
+Current progress tracked in the TODO checklist. Node completion feeds into the [40k Star](../../docs/40k_star.md) tracking.
+
 ## Constraints
 - No people enrichment at 30k altitude
 - No email validation at this level
