@@ -1,0 +1,197 @@
+# API Contracts (30k Declaration)
+# Contract specifications for external Render API dependency
+
+version: "1.0"
+altitude: "30k"
+status: "declaration_only"
+
+# External Service Contracts
+external_services:
+  render_api:
+    base_url: "${RENDER_API_BASE_URL}"
+    authentication:
+      type: "api_key" 
+      header: "X-API-Key"
+      value: "${RENDER_API_KEY}"
+    
+    endpoints:
+      - name: "insert_company"
+        method: "POST"
+        path: "/api/companies"
+        description: "Insert company and create role slots"
+        
+        request:
+          content_type: "application/json"
+          schema:
+            type: "object"
+            required: ["name"]
+            properties:
+              name:
+                type: "string"
+                description: "Company name"
+                example: "Acme Corporation"
+              website:
+                type: "string"
+                format: "uri"
+                description: "Company website URL"
+                example: "https://acme.com"
+              apollo_company_id:
+                type: "string"
+                description: "Apollo.io company identifier"
+                example: "apollo_acme_123"
+              ein_raw:
+                type: "string"
+                description: "Raw EIN number"
+                example: "12-3456789"
+        
+        response:
+          success:
+            status_code: 201
+            content_type: "application/json"
+            schema:
+              type: "object"
+              properties:
+                company_uid:
+                  type: "string"
+                  pattern: "^CO-\\d{8}-\\d{6}$"
+                  example: "CO-20240828-000001"
+                status:
+                  type: "string"
+                  enum: ["created", "exists"]
+                slots_created:
+                  type: "integer"
+                  minimum: 3
+                  maximum: 3
+                  example: 3
+                message:
+                  type: "string"
+                  example: "Company created successfully"
+          
+          error:
+            status_code: 400
+            schema:
+              type: "object"
+              properties:
+                error:
+                  type: "string"
+                details:
+                  type: "string"
+
+      - name: "process_people"
+        method: "POST" 
+        path: "/api/people"
+        description: "Process people data for company slots"
+        
+        request:
+          content_type: "application/json"
+          schema:
+            type: "object"
+            required: ["company_uid", "contacts"]
+            properties:
+              company_uid:
+                type: "string"
+                pattern: "^CO-\\d{8}-\\d{6}$"
+                example: "CO-20240828-000001"
+              contacts:
+                type: "array"
+                items:
+                  type: "object"
+                  properties:
+                    name:
+                      type: "string"
+                      example: "John Smith"
+                    email:
+                      type: "string"
+                      format: "email"
+                      example: "john@acme.com"
+                    role:
+                      type: "string"
+                      enum: ["CEO", "CFO", "HR"]
+                      example: "CEO"
+                    linkedin_url:
+                      type: "string"
+                      format: "uri"
+                      example: "https://linkedin.com/in/johnsmith"
+        
+        response:
+          success:
+            status_code: 200
+            content_type: "application/json"
+            schema:
+              type: "object"
+              properties:
+                processed:
+                  type: "integer"
+                  example: 3
+                linked_slots:
+                  type: "integer" 
+                  example: 2
+                status:
+                  type: "string"
+                  example: "processed"
+
+      - name: "health_check"
+        method: "GET"
+        path: "/health"
+        description: "Service health check endpoint"
+        
+        response:
+          success:
+            status_code: 200
+            content_type: "application/json"
+            schema:
+              type: "object"
+              properties:
+                status:
+                  type: "string"
+                  enum: ["healthy"]
+                timestamp:
+                  type: "string"
+                  format: "date-time"
+                version:
+                  type: "string"
+
+# Error Handling Contracts
+error_handling:
+  retry_policy:
+    max_attempts: 3
+    backoff_strategy: "exponential"
+    base_delay_ms: 1000
+    max_delay_ms: 10000
+    
+  timeout:
+    connect_timeout_ms: 5000
+    read_timeout_ms: 30000
+    
+  circuit_breaker:
+    failure_threshold: 5
+    timeout_duration_ms: 60000
+    
+# Rate Limiting
+rate_limits:
+  requests_per_minute: 100
+  burst_limit: 10
+  
+# Monitoring Contracts
+monitoring:
+  metrics:
+    - name: "api_request_duration"
+      type: "histogram"
+      description: "API request duration in milliseconds"
+    - name: "api_request_total"
+      type: "counter"
+      description: "Total API requests made"
+      labels: ["method", "endpoint", "status"]
+    - name: "api_error_total"
+      type: "counter"
+      description: "Total API errors encountered"
+      labels: ["error_type"]
+      
+# 30k Constraints
+implementation_notes: |
+  - All contracts are declarations only at 30k altitude
+  - No actual HTTP client implementation
+  - No authentication logic implemented
+  - Error handling patterns declared but not coded
+  - Monitoring metrics defined but not collected
+  - Full implementation deferred to 20k+ altitudes
