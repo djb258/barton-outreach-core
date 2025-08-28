@@ -6,8 +6,8 @@
 
 ### Input
 - **External Ingester**: [ingest-companies-people repo](https://github.com/djb258/ingest-companies-people)
-- **Feeds**: Apollo exports, CSV uploads (processed by external Ingester)
-- **Interface**: Function contract `insert_company_with_slots(...)`
+- **Feeds**: Apollo.io data + CSV uploads (processed by external Ingester)
+- **Interface**: Calls Render-for-DB endpoints for Neon database operations
 
 ### Middle (Current Scope - 30k)
 - Assign company_uid (CO-YYYYMMDD-######) - **declared only**
@@ -49,10 +49,11 @@
 
 ## External Dependencies (30k)
 
-### Primary Dependency
-- **Repository**: https://github.com/djb258/ingest-companies-people
-- **Purpose**: CSV/Apollo data ingestion and preprocessing
-- **Integration**: Contract-based function interface
+### Primary Dependencies
+- **Ingester Repository**: https://github.com/djb258/ingest-companies-people
+  - **Purpose**: Apollo.io + CSV data ingestion and preprocessing
+- **Render-for-DB Repository**: https://github.com/djb258/Render-for-DB.git
+  - **Purpose**: Database interface layer for Neon database operations
 
 ### Integration Options (Declared)
 1. Git submodule at `/external/ingestor` (future)

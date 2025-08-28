@@ -7,9 +7,9 @@ status: "catalog_only"
 
 # Primary External Dependencies
 services:
-  render_api:
-    name: "Company & People Processing API"
-    type: "external_api"
+  render_for_db:
+    name: "Render Database Interface API"
+    type: "database_interface"
     criticality: "high"
     
     deployment:
@@ -30,10 +30,10 @@ services:
       secret_ref: "RENDER_API_KEY"
       
     capabilities:
-      - "company_insertion"
-      - "people_processing" 
+      - "database_operations"
+      - "company_insertion" 
       - "slot_management"
-      - "health_monitoring"
+      - "neon_database_interface"
       
     sla:
       availability: "99.9%"
@@ -45,33 +45,26 @@ services:
       slack: "#data-ops"
       email: "data-platform@company.com"
       
-  apollo_api:
-    name: "Apollo.io Data Source"
-    type: "third_party_api"
-    criticality: "medium"
+  ingest_companies_people:
+    name: "Companies & People Ingester"
+    type: "external_processor"
+    criticality: "high"
     
     deployment:
-      platform: "apollo.io"
-      environment: "production"
-      
-    connectivity:
-      protocol: "https"
-      base_url: "https://api.apollo.io/v1"
-      port: 443
-      
-    authentication:
-      method: "api_key"
-      header: "X-Api-Key"
-      secret_ref: "APOLLO_API_KEY"
+      platform: "github_repo"
+      repository: "https://github.com/djb258/ingest-companies-people"
+      integration: "calls_render_for_db"
       
     capabilities:
-      - "company_search"
-      - "people_search"
-      - "contact_enrichment"
+      - "apollo_data_processing"
+      - "csv_file_processing"
+      - "data_normalization"
+      - "render_api_integration"
       
-    rate_limits:
-      requests_per_minute: 60
-      daily_limit: 10000
+    data_sources:
+      - "apollo.io"
+      - "csv_uploads"
+      - "manual_inputs"
       
   neon_database:
     name: "Neon Serverless Database"
@@ -104,45 +97,42 @@ services:
 dependency_graph:
   node_1_ple:
     depends_on:
-      - service: "render_api"
-        relationship: "primary_processor"
+      - service: "ingest_companies_people"
+        relationship: "data_processor"
+        failure_mode: "retry_with_backoff"
+        
+      - service: "render_for_db"
+        relationship: "database_interface"
         failure_mode: "circuit_breaker"
         
       - service: "neon_database"
         relationship: "data_store"
         failure_mode: "retry_with_backoff"
-        
-      - service: "apollo_api"
-        relationship: "data_source"
-        failure_mode: "graceful_degradation"
 
 # Environment Configuration
 environments:
   development:
-    render_api:
-      base_url: "https://dev-api.render.com"
-    apollo_api:
-      rate_limits:
-        requests_per_minute: 30
+    render_for_db:
+      base_url: "https://dev-db-api.render.com"
+    ingest_companies_people:
+      branch: "develop"
         
   staging:
-    render_api:
-      base_url: "https://staging-api.render.com"
-    apollo_api:
-      rate_limits:
-        requests_per_minute: 60
+    render_for_db:
+      base_url: "https://staging-db-api.render.com"
+    ingest_companies_people:
+      branch: "staging"
         
   production:
-    render_api:
-      base_url: "https://api.render.com"
-    apollo_api:
-      rate_limits:
-        requests_per_minute: 60
+    render_for_db:
+      base_url: "https://db-api.render.com"
+    ingest_companies_people:
+      branch: "main"
 
 # Monitoring & Observability
 monitoring:
   health_checks:
-    - service: "render_api"
+    - service: "render_for_db"
       endpoint: "/health"
       interval_seconds: 30
       timeout_ms: 5000
@@ -153,15 +143,15 @@ monitoring:
       timeout_ms: 3000
       
   alerts:
-    - name: "render_api_down"
+    - name: "render_db_api_down"
       condition: "health_check_failed"
-      service: "render_api"
+      service: "render_for_db"
       threshold: 3
       action: "page_on_call"
       
-    - name: "api_high_latency"
+    - name: "db_api_high_latency"
       condition: "response_time_p95 > 1000ms"
-      service: "render_api"
+      service: "render_for_db"
       duration: "5m"
       action: "slack_alert"
 
@@ -172,7 +162,7 @@ security:
     rotation_policy: "90_days"
     
   network_security:
-    - service: "render_api"
+    - service: "render_for_db"
       requirements: ["https_only", "api_key_auth"]
       
     - service: "neon_database" 

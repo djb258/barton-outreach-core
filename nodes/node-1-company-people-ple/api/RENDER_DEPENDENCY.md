@@ -4,15 +4,15 @@
 
 ## Overview
 
-This node depends on an external Render-hosted API service for company and people data processing. At 30k altitude, we declare the dependency and contract interfaces only.
+This node depends on the Render-for-DB service which provides the database interface layer to Neon. The ingest-companies-people repo processes Apollo.io data and calls Render-for-DB endpoints. At 30k altitude, we declare the dependency and contract interfaces only.
 
 ## External Service Details
 
 ### Repository
 - **URL**: `https://github.com/djb258/Render-for-DB.git`
-- **Purpose**: Company and people data ingestion API
+- **Purpose**: Database interface layer for Neon database operations
 - **Hosting**: Render.com platform
-- **Integration**: RESTful API contract
+- **Integration**: RESTful API contract for database operations
 
 ### Service Endpoints (Declared)
 
