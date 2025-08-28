@@ -9,7 +9,7 @@ This node depends on an external Render-hosted API service for company and peopl
 ## External Service Details
 
 ### Repository
-- **URL**: `<render-api-repo-url>` (placeholder - to be filled)
+- **URL**: `https://github.com/djb258/Render-for-DB.git`
 - **Purpose**: Company and people data ingestion API
 - **Hosting**: Render.com platform
 - **Integration**: RESTful API contract
@@ -72,7 +72,7 @@ Response: {
 ## Dependencies
 
 ### External
-- **Render API Service**: `<render-api-repo-url>`
+- **Render API Service**: `https://github.com/djb258/Render-for-DB.git`
 - **Authentication**: API keys via environment variables
 - **Network**: HTTPS connectivity required
 

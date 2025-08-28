@@ -68,7 +68,7 @@
 ## Dependencies
 
 ### External (Primary)
-- **Render API Service**: <render-api-repo-url> (placeholder)
+- **Render API Service**: https://github.com/djb258/Render-for-DB.git
 - **Ingester Repository**: https://github.com/djb258/ingest-companies-people
 - **Apollo.io API**: Company and people data source  
 - **Neon.tech**: Serverless database functions (contract only at 30k)

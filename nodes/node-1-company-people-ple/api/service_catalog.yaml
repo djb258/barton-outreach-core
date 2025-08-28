@@ -14,7 +14,7 @@ services:
     
     deployment:
       platform: "render.com"
-      repository: "<render-api-repo-url>"  # placeholder
+      repository: "https://github.com/djb258/Render-for-DB.git"
       environment: "production"
       region: "us-east-1"
       
