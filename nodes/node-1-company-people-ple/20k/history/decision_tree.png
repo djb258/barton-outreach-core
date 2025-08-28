@@ -1,0 +1,44 @@
+# Decision Tree Placeholder (20k)
+
+This is a placeholder file for the history policy decision tree diagram.
+
+At implementation time (higher altitudes), this file should contain a visual decision tree diagram showing:
+
+1. Contact value assessment (CEO/CFO/HR/Other)
+2. Data freshness evaluation (Fresh/Stale/Expired/Ancient)
+3. Engagement level analysis (Active/Dormant/Inactive/Cold)
+4. Budget availability check
+5. Final decision (SKIP/REFRESH/CONDITIONAL/ARCHIVE)
+
+## Decision Tree Flow:
+```
+Contact Processing Request
+├── High Value? (CEO/CFO)
+│   ├── Fresh Data? (<7 days)
+│   │   ├── YES → SKIP
+│   │   └── NO → Engaged? (<30 days)
+│   │       ├── YES → REFRESH  
+│   │       └── NO → Expired? (>30 days)
+│   │           ├── YES → REFRESH
+│   │           └── NO → CONDITIONAL
+│   └── Medium/Low Value
+│       ├── Fresh Data? (<7 days)
+│       │   ├── YES → SKIP
+│       │   └── NO → Engaged? (<30 days)
+│       │       ├── YES → Budget Available?
+│       │       │   ├── YES → REFRESH
+│       │       │   └── NO → QUEUE
+│       │       └── NO → Ancient? (>180 days)
+│       │           ├── YES → ARCHIVE
+│       │           └── NO → SKIP
+```
+
+## Implementation Notes:
+- Replace this placeholder with actual diagram at 10k+ altitudes
+- Use tools like Mermaid, Lucidchart, or similar for visualization
+- Include decision criteria and thresholds
+- Show cost/budget considerations
+- Integrate with Apify scraper repo: https://github.com/djb258/scraping-tool.git
+
+## 20k Constraint: 
+This is a design placeholder only - no actual image file or implementation.
