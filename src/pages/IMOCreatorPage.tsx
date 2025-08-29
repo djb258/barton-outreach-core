@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { IMOOverview } from '@/components/imo/IMOOverview';
 import { IMOBucketEditor } from '@/components/imo/IMOBucketEditor';
 import { IMOHEIRStatus } from '@/components/imo/IMOHEIRStatus';
+import BlueprintManager from '@/components/imo/BlueprintManager';
 import { IMOService } from '@/lib/imo/imo-service';
 import { IMOManifest, IMOBucket } from '@/lib/imo/types';
-import { Save, RefreshCw, FileText, Shield } from 'lucide-react';
+import { Save, RefreshCw, FileText, Shield, Blueprint } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function IMOCreatorPage() {
@@ -144,8 +145,9 @@ export default function IMOCreatorPage() {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="blueprint">Blueprint</TabsTrigger>
           <TabsTrigger value="input">Input</TabsTrigger>
           <TabsTrigger value="middle">Middle</TabsTrigger>
           <TabsTrigger value="output">Output</TabsTrigger>
@@ -154,6 +156,10 @@ export default function IMOCreatorPage() {
 
         <TabsContent value="overview">
           <IMOOverview manifest={manifest} />
+        </TabsContent>
+
+        <TabsContent value="blueprint">
+          <BlueprintManager />
         </TabsContent>
 
         <TabsContent value="input">
