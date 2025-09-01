@@ -14,7 +14,17 @@
     "blueprint:visual": "cd tools && python blueprint_visual.py example",
     "compliance:check": "cd tools && python repo_compliance_check.py",
     "compliance:fix": "cd tools && python repo_compliance_fixer.py",
-    "heir:audit": "cd garage-mcp && make check"
+    "heir:audit": "cd garage-mcp && make check",
+    "factory:dev": "node factory/ui/dev.js",
+    "factory:build": "node factory/ui/build.js",
+    "factory:init": "bash factory/ui/init.sh",
+    "mechanic:recall": "bash mechanic/recall/recall.sh",
+    "garage-bay:audit": "python garage_bay.py --target .",
+    "garage-bay:simple": "python simple_garage_bay.py --target .",
+    "garage-bay:fix": "python garage_bay.py --target . --apply-fixes",
+    "docs:generate": "bash tools/deep_wiki_generator.sh",
+    "docs": "node scripts/gen-wiki.mjs",
+    "docs:watch": "nodemon --exec node scripts/gen-wiki.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -84,6 +94,7 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
     "lovable-tagger": "^1.1.9",
+    "nodemon": "^3.0.1",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",

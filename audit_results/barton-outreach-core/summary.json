@@ -1,0 +1,25 @@
+{
+  "timestamp": "C:\\Users\\CUSTOMER PC\\Cursor Repo\\barton-outreach-core\\barton-outreach-core",
+  "target": "C:\\Users\\CUSTOMER PC\\Cursor Repo\\barton-outreach-core\\barton-outreach-core",
+  "imo_creator": {
+    "compliance_score": 62.5,
+    "checks": {
+      "git_repo": true,
+      "python_project": true,
+      "documentation": true,
+      "ci_cd": true,
+      "testing": false,
+      "deployment_config": false,
+      "code_quality": false,
+      "fastapi_compliance": true
+    },
+    "heartbeat_installed": false,
+    "config_present": false
+  },
+  "summary": {
+    "total_issues": 3,
+    "recommendations_available": true,
+    "fully_compliant": false,
+    "monitoring_enabled": false
+  }
+}
