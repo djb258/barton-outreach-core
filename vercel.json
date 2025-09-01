@@ -1,0 +1,45 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ],
+  "functions": {
+    "api/ssot/save.js": {
+      "maxDuration": 10
+    },
+    "api/subagents.js": {
+      "maxDuration": 10
+    },
+    "api/llm.js": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "DOCTRINE_DB": "@doctrine_db",
+    "DOCTRINE_SUBHIVE": "@doctrine_subhive",
+    "DOCTRINE_APP": "@doctrine_app",
+    "DOCTRINE_VER": "@doctrine_ver",
+    "GARAGE_MCP_URL": "@garage_mcp_url",
+    "GARAGE_MCP_TOKEN": "@garage_mcp_token"
+  },
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
+  "framework": "vite"
+}
