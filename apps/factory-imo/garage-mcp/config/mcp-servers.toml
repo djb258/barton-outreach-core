@@ -1,0 +1,139 @@
+# MCP Servers Configuration
+# Enhanced configuration for multiple MCP server integrations
+
+[servers]
+
+# Core IMO Creator MCP Server
+[servers.imo_creator]
+name = "IMO Creator MCP"
+type = "internal"
+port = 7001
+endpoint = "/heir/check"
+description = "HEIR validation and compliance checking"
+enabled = true
+
+# Sidecar Event Logger
+[servers.sidecar]
+name = "Sidecar Logger"
+type = "internal"
+port = 8000
+endpoint = "/events"
+description = "Event logging and telemetry"
+enabled = true
+
+# RefTools API Reference Server
+[servers.reftools]
+name = "RefTools API"
+type = "external"
+base_url = "https://api.ref.tools/v1"
+driver = "reference.reftools.RefToolsDriver"
+description = "API documentation and reference management"
+capabilities = [
+    "search_references",
+    "get_documentation",
+    "get_code_examples",
+    "validate_api_spec",
+    "generate_client"
+]
+config = {
+    timeout = 30,
+    cache_enabled = true,
+    cache_ttl = 3600
+}
+
+# Composio AI Agent Tools
+[servers.composio]
+name = "Composio Platform"
+type = "external"
+base_url = "https://api.composio.dev/v1"
+driver = "reference.composio.ComposioDriver"
+description = "AI agent tools and integrations platform"
+capabilities = [
+    "list_tools",
+    "execute_action",
+    "create_workflow",
+    "get_agent_tools",
+    "create_connection"
+]
+config = {
+    timeout = 30,
+    workspace_enabled = true,
+    agent_types = ["claude", "gpt4", "gemini"]
+}
+
+# Existing MCP Servers
+[servers.garage_mcp]
+name = "Garage MCP"
+type = "internal"
+port = 7001
+description = "Main garage MCP orchestration"
+enabled = true
+
+[servers.github]
+name = "GitHub Integration"
+type = "external"
+driver = "integrations.github"
+description = "GitHub API integration"
+enabled = true
+
+[servers.slack]
+name = "Slack Integration"
+type = "external"
+driver = "integrations.slack"
+description = "Slack messaging integration"
+enabled = false
+
+[servers.database]
+name = "Database MCP"
+type = "internal"
+driver = "db.postgres_local"
+description = "Local database operations"
+enabled = true
+
+# Server Groups for Orchestration
+[groups]
+
+[groups.core]
+name = "Core Services"
+servers = ["imo_creator", "sidecar", "garage_mcp"]
+priority = 1
+
+[groups.references]
+name = "Reference Tools"
+servers = ["reftools", "composio"]
+priority = 2
+
+[groups.integrations]
+name = "External Integrations"
+servers = ["github", "slack"]
+priority = 3
+
+# Environment Variable Mappings
+[env_mappings]
+REFTOOLS_API_KEY = "reftools.api_key"
+COMPOSIO_API_KEY = "composio.api_key"
+COMPOSIO_WORKSPACE_ID = "composio.workspace_id"
+GITHUB_TOKEN = "github.token"
+SLACK_BOT_TOKEN = "slack.bot_token"
+
+# Health Check Configuration
+[health_checks]
+enabled = true
+interval = 60  # seconds
+timeout = 10   # seconds
+retry_count = 3
+
+[health_checks.endpoints]
+imo_creator = "/health"
+sidecar = "/"
+reftools = "/status"
+composio = "/health"
+
+# Logging Configuration
+[logging]
+level = "INFO"
+format = "json"
+output = "logs/mcp-servers.log"
+rotate = true
+max_size = "10MB"
+max_files = 5
