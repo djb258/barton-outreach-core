@@ -1,0 +1,353 @@
+{
+  "folders": [
+    {
+      "name": "🏠 Root",
+      "path": "."
+    },
+    {
+      "name": "⚛️ Amplify Client (React)",
+      "path": "./apps/amplify-client"
+    },
+    {
+      "name": "🛠️ API Server (Express)",
+      "path": "./apps/api"
+    },
+    {
+      "name": "🏭 Factory IMO (FastAPI)",
+      "path": "./apps/factory-imo"
+    },
+    {
+      "name": "📊 Data Router (Package)",
+      "path": "./packages/data-router"
+    },
+    {
+      "name": "🔗 MCP Clients (Package)", 
+      "path": "./packages/mcp-clients"
+    }
+  ],
+  "settings": {
+    // Python Configuration (for FastAPI)
+    "python.defaultInterpreterPath": "./apps/factory-imo/.venv/Scripts/python.exe",
+    "python.terminal.activateEnvironment": true,
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": false,
+    "python.linting.flake8Enabled": true,
+    "python.linting.ruffEnabled": true,
+    "python.testing.pytestEnabled": true,
+    "python.testing.pytestArgs": ["apps/factory-imo/tests"],
+    "python.formatting.provider": "black",
+
+    // Node.js & TypeScript Configuration
+    "typescript.preferences.includePackageJsonAutoImports": "on",
+    "typescript.suggest.autoImports": true,
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    "typescript.workspaceSymbols.scope": "currentProject",
+
+    // UI Builder Configuration
+    "builderio.apiKey": "${env:VITE_BUILDER_IO_KEY}",
+    "builderio.spaceId": "${env:BUILDER_IO_SPACE_ID}",
+    "figma.accessToken": "${env:FIGMA_ACCESS_TOKEN}",
+
+    // Tailwind CSS
+    "tailwindCSS.includeLanguages": {
+      "typescript": "javascript",
+      "typescriptreact": "javascript"
+    },
+    "tailwindCSS.experimental.classRegex": [
+      ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+      ["cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+    ],
+
+    // Auto-formatting & Code Quality
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit",
+      "source.organizeImports": "explicit"
+    },
+
+    // File Management
+    "files.exclude": {
+      "**/__pycache__": true,
+      "**/.pytest_cache": true,
+      "**/node_modules": true,
+      "**/.git": false,
+      "**/logs/*.ndjson": true,
+      "**/dist": true,
+      "**/build": true,
+      "**/.next": true,
+      "**/.vercel": true,
+      "**/coverage": true
+    },
+
+    // Search Exclusions
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/build": true,
+      "**/.git": true,
+      "**/.vercel": true,
+      "**/coverage": true,
+      "**/__pycache__": true
+    },
+
+    // Terminal Configuration
+    "terminal.integrated.defaultProfile.windows": "Command Prompt",
+    "terminal.integrated.cwd": "${workspaceFolder}",
+
+    // Git Configuration
+    "git.autofetch": true,
+    "git.enableSmartCommit": true,
+    "git.confirmSync": false,
+
+    // Workspace-specific
+    "npm.packageManager": "npm",
+    "eslint.workingDirectories": [
+      "apps/amplify-client", 
+      "apps/api", 
+      "apps/factory-imo", 
+      "packages/data-router", 
+      "packages/mcp-clients"
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "🚀 Start All Development Servers",
+        "type": "shell",
+        "command": "npm",
+        "args": ["run", "dev"],
+        "group": "build",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared"
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "🐍 Start FastAPI Server (Factory IMO)",
+        "type": "shell",
+        "command": "uvicorn",
+        "args": ["src.main:app", "--port", "7002", "--reload"],
+        "options": {
+          "cwd": "${workspaceFolder}/apps/factory-imo"
+        },
+        "group": "build",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "dedicated"
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "🌐 Start Express API Server",
+        "type": "shell",
+        "command": "npm",
+        "args": ["run", "dev"],
+        "options": {
+          "cwd": "${workspaceFolder}/apps/api"
+        },
+        "group": "build",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "dedicated"
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "⚛️ Start React Client",
+        "type": "shell",
+        "command": "npm",
+        "args": ["run", "dev"],
+        "options": {
+          "cwd": "${workspaceFolder}/apps/amplify-client"
+        },
+        "group": "build",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "dedicated"
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "🔧 Install All Dependencies",
+        "type": "shell",
+        "command": "npm",
+        "args": ["install"],
+        "group": "build",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared"
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "🧪 Run All Tests",
+        "type": "shell",
+        "command": "npm",
+        "args": ["run", "test"],
+        "group": "test",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared"
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "🐍 Run Python Tests",
+        "type": "shell",
+        "command": "pytest",
+        "args": ["-v", "tests/"],
+        "options": {
+          "cwd": "${workspaceFolder}/apps/factory-imo"
+        },
+        "group": "test",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared"
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "🎨 Build UI Components",
+        "type": "shell",
+        "command": "npm",
+        "args": ["run", "build"],
+        "options": {
+          "cwd": "${workspaceFolder}/apps/amplify-client"
+        },
+        "group": "build",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared"
+        },
+        "problemMatcher": ["$tsc"]
+      },
+      {
+        "label": "🔄 Sync Design System (Figma → UI Builders)",
+        "type": "shell",
+        "command": "node",
+        "args": ["-e", "console.log('🎨 Design system sync available via uiBuilderService.syncDesignSystem(). Configure Figma file key in VERCEL_ENVS.md')"],
+        "group": "build",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared"
+        }
+      },
+      {
+        "label": "🏗️ Generate UI Components with Loveable.dev",
+        "type": "shell",
+        "command": "node",
+        "args": ["-e", "console.log('🤖 AI component generation available via uiBuilderService.generateLoveableComponent(). See UI_BUILDER_SETUP.md')"],
+        "group": "build",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared"
+        }
+      }
+    ]
+  },
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "🐍 Debug FastAPI Server",
+        "type": "python",
+        "request": "launch",
+        "module": "uvicorn",
+        "args": ["src.main:app", "--port", "7002", "--reload"],
+        "console": "integratedTerminal",
+        "cwd": "${workspaceFolder}/apps/factory-imo"
+      },
+      {
+        "name": "🌐 Debug Express API",
+        "type": "node",
+        "request": "launch",
+        "program": "${workspaceFolder}/apps/api/server.js",
+        "console": "integratedTerminal",
+        "env": {
+          "NODE_ENV": "development"
+        }
+      },
+      {
+        "name": "🧪 Debug Python Tests",
+        "type": "python",
+        "request": "launch",
+        "module": "pytest",
+        "args": ["-v", "tests/"],
+        "console": "integratedTerminal",
+        "cwd": "${workspaceFolder}/apps/factory-imo"
+      },
+      {
+        "name": "🔍 Debug Node Tests",
+        "type": "node",
+        "request": "launch",
+        "program": "${workspaceFolder}/node_modules/.bin/vitest",
+        "args": ["run"],
+        "console": "integratedTerminal"
+      }
+    ]
+  },
+  "extensions": {
+    "recommendations": [
+      // UI Builder Extensions (You have these!)
+      "builder.io.vs-code",
+      "figma.figma-vscode-extension",
+
+      // Essential Development
+      "ms-python.python",
+      "ms-python.flake8", 
+      "ms-python.black-formatter",
+      "charliermarsh.ruff",
+      "bradlc.vscode-tailwindcss",
+      "ms-vscode.vscode-typescript-next",
+      "esbenp.prettier-vscode",
+      "dbaeumer.vscode-eslint",
+
+      // React & Component Development
+      "ms-vscode.vscode-react-javascript-snippets",
+      "burkeholland.simple-react-snippets",
+      "formulahendry.auto-rename-tag",
+      "steoates.autoimport-es6-ts",
+      "chromatic.vscode-storybook",
+
+      // Design & UI Tools
+      "phoenisx.cssvar",
+      "pranaygp.vscode-css-peek",
+      "naumovs.color-highlight",
+      "johnpapa.vscode-peacock",
+
+      // Productivity
+      "christian-kohler.path-intellisense",
+      "eamodio.gitlens",
+      "gruntfuggly.todo-tree",
+      "yzhang.markdown-all-in-one",
+      "redhat.vscode-yaml",
+      "ms-vscode.makefile-tools",
+
+      // API Development
+      "humao.rest-client",
+      "ms-vscode.vscode-json"
+    ]
+  }
+}

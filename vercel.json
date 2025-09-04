@@ -2,7 +2,11 @@
   "version": 2,
   "builds": [
     {
-      "src": "package.json",
+      "src": "apps/api/server.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "apps/amplify-client/package.json",
       "use": "@vercel/static-build",
       "config": {
         "distDir": "dist"
@@ -12,14 +16,29 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/$1"
+      "dest": "apps/api/server.js"
+    },
+    {
+      "src": "/factory-imo/(.*)",
+      "dest": "apps/factory-imo/src/main.py"
+    },
+    {
+      "src": "/",
+      "dest": "apps/amplify-client/dist/index.html"
     },
     {
       "src": "/(.*)",
-      "dest": "/$1"
+      "dest": "apps/amplify-client/dist/$1"
     }
   ],
   "functions": {
+    "apps/api/server.js": {
+      "maxDuration": 30
+    },
+    "apps/factory-imo/src/main.py": {
+      "runtime": "python3.11",
+      "maxDuration": 30
+    },
     "api/ssot/save.js": {
       "maxDuration": 10
     },
@@ -31,15 +50,28 @@
     }
   },
   "env": {
+    "DATABASE_URL": "@database_url",
+    "NEON_DATABASE_URL": "@neon_database_url",
+    "COMPOSIO_API_KEY": "@composio_api_key",
+    "APIFY_TOKEN": "@apify_token",
+    "MILLIONVERIFIER_API_KEY": "@millionverifier_api_key",
+    "ANTHROPIC_API_KEY": "@anthropic_api_key",
+    "OPENAI_API_KEY": "@openai_api_key",
     "DOCTRINE_DB": "@doctrine_db",
     "DOCTRINE_SUBHIVE": "@doctrine_subhive",
     "DOCTRINE_APP": "@doctrine_app",
     "DOCTRINE_VER": "@doctrine_ver",
     "GARAGE_MCP_URL": "@garage_mcp_url",
-    "GARAGE_MCP_TOKEN": "@garage_mcp_token"
+    "GARAGE_MCP_TOKEN": "@garage_mcp_token",
+    "VITE_BUILDER_IO_KEY": "@builder_io_api_key",
+    "VITE_PLASMIC_PROJECT_ID": "@plasmic_project_id",
+    "VITE_PLASMIC_PROJECT_TOKEN": "@plasmic_project_token",
+    "FIGMA_ACCESS_TOKEN": "@figma_access_token",
+    "LOVEABLE_API_KEY": "@loveable_api_key",
+    "NODE_ENV": "production"
   },
   "buildCommand": "npm run build",
-  "outputDirectory": "dist",
+  "outputDirectory": "apps/amplify-client/dist",
   "installCommand": "npm install",
-  "framework": "vite"
+  "framework": null
 }

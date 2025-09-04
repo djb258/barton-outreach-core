@@ -26,7 +26,14 @@
     "lucide-react": "^0.462.0",
     "recharts": "^2.15.4",
     "clsx": "^2.1.1",
-    "tailwind-merge": "^2.6.0"
+    "tailwind-merge": "^2.6.0",
+    "@builder.io/react": "^3.2.7",
+    "@builder.io/sdk": "^2.2.9",
+    "@plasmicapp/react-web": "^0.2.334",
+    "@plasmicapp/loader-nextjs": "^1.0.64",
+    "figma-api": "^1.11.0",
+    "@figma/plugin-typings": "^1.88.0",
+    "loveable-ui": "^1.2.1"
   },
   "devDependencies": {
     "@types/react": "^18.3.23",

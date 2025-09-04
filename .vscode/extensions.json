@@ -1,0 +1,63 @@
+{
+  "recommendations": [
+    // UI Builder Extensions (You already have these!)
+    "builder.io.vs-code",
+    "figma.figma-vscode-extension",
+    
+    // Essential React/TypeScript Development
+    "bradlc.vscode-tailwindcss",
+    "ms-vscode.vscode-typescript-next",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "formulahendry.auto-rename-tag",
+    "bradlc.vscode-tailwindcss",
+    
+    // Advanced UI/Component Development
+    "steoates.autoimport-es6-ts",
+    "christian-kohler.path-intellisense",
+    "ms-vscode.vscode-json",
+    "yzhang.markdown-all-in-one",
+    
+    // Design System & Component Tools
+    "phoenisx.cssvar",
+    "pranaygp.vscode-css-peek",
+    "ms-vscode.vscode-css-language-features",
+    "zignd.html-css-class-completion",
+    
+    // Storybook & Component Documentation
+    "chromatic.vscode-storybook",
+    
+    // Advanced React Development
+    "ms-vscode.vscode-react-javascript-snippets",
+    "burkeholland.simple-react-snippets",
+    "formulahendry.react-playground",
+    
+    // Color & Theme Tools
+    "johnpapa.vscode-peacock",
+    "naumovs.color-highlight",
+    "tobermory.es6-string-html",
+    
+    // API & MCP Development
+    "humao.rest-client",
+    "ms-python.python",
+    "ms-python.black-formatter",
+    
+    // Git & Version Control
+    "eamodio.gitlens",
+    "donjayamanne.githistory",
+    
+    // Productivity & Workspace
+    "ms-vscode.vscode-workspace-trust",
+    "gruntfuggly.todo-tree",
+    "alefragnani.project-manager",
+    "ms-vscode.remote-repositories",
+    
+    // Performance & Optimization
+    "ms-vscode.vscode-js-profile-flame",
+    "ms-vscode.vscode-webpack-analyzer",
+    
+    // Additional UI Builder Support
+    "plasmic.plasmic-vscode",
+    "loveable.loveable-vscode"
+  ]
+}

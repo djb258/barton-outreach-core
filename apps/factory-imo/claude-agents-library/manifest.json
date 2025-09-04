@@ -1,0 +1,168 @@
+{
+  "name": "claude-agents-library",
+  "version": "1.0.0",
+  "description": "Portable Claude Code agents library for specialized development tasks",
+  "author": "Claude Code Agents Library",
+  "repository": "https://github.com/djb258/barton-outreach-core/tree/apps/factory-imo/claude-agents-library",
+  "license": "MIT",
+  "created": "2025-09-04",
+  "updated": "2025-09-04",
+  "format_version": "1.0",
+  "compatibility": {
+    "claude_code": ">=1.0.0",
+    "node": ">=16.0.0",
+    "python": ">=3.8"
+  },
+  "agents": [
+    {
+      "id": "database-specialist",
+      "name": "Database Specialist",
+      "version": "1.0.0",
+      "category": "backend",
+      "description": "Expert in database design, optimization, and migration with Neon focus",
+      "file": "agents/database-specialist.md",
+      "tags": ["database", "sql", "migration", "optimization", "neon", "postgresql"],
+      "capabilities": [
+        "Neon database schema design with RLS",
+        "SECURITY DEFINER function creation",
+        "Query optimization and performance tuning",
+        "Database migration planning and execution",
+        "Composio MCP database integration",
+        "Email verification dot color updates",
+        "Contact vault optimization"
+      ],
+      "mcp_integration": {
+        "neon_client": true,
+        "composio_workflows": ["neon-ingest", "neon-promote"],
+        "security_functions": ["intake.f_ingest_json", "vault.f_promote_contacts"]
+      }
+    },
+    {
+      "id": "mcp-orchestrator",
+      "name": "MCP Orchestrator",
+      "version": "1.0.0",
+      "category": "integration",
+      "description": "Expert in MCP server orchestration with Composio focus",
+      "file": "agents/mcp-orchestrator.md",
+      "tags": ["mcp", "composio", "orchestration", "apify", "millionverifier", "automation"],
+      "capabilities": [
+        "Composio Hub orchestration with guardrails",
+        "Apify LinkedIn/website scraping workflows",
+        "MillionVerifier email verification with TTL",
+        "Neon database dot color updates",
+        "Freshness Policy implementation (30d TTL)",
+        "Multi-MCP server health monitoring"
+      ],
+      "mcp_integration": {
+        "primary_hub": "composio",
+        "managed_servers": ["apify", "millionverifier", "neon"],
+        "guardrails": ["approval_required", "audit_logging", "rate_limiting"],
+        "workflows": ["scrape-verify-ingest", "promote-contacts"]
+      }
+    },
+    {
+      "id": "frontend-architect",
+      "name": "Frontend Architect",
+      "version": "1.0.0",
+      "category": "frontend",
+      "description": "Expert in React architecture with Amplify and Plasmic integration",
+      "file": "agents/frontend-architect.md",
+      "tags": ["react", "amplify", "plasmic", "typescript", "performance", "architecture"],
+      "capabilities": [
+        "AWS Amplify deployment architecture",
+        "Plasmic visual page building",
+        "Contact vault UI optimization",
+        "Real-time status updates (dot colors)",
+        "Performance optimization and Core Web Vitals",
+        "TypeScript integration with MCP clients"
+      ],
+      "amplify_integration": {
+        "deployment": "aws-amplify",
+        "auth": "cognito",
+        "data_sources": ["@barton/data-router", "@barton/mcp-clients"],
+        "plasmic_pages": true
+      }
+    },
+    {
+      "id": "security-auditor",
+      "name": "Security Auditor",
+      "version": "1.0.0",
+      "category": "security",
+      "description": "Expert in RLS security and MCP server security hardening",
+      "file": "agents/security-auditor.md",
+      "tags": ["security", "rls", "neon", "audit", "compliance", "mcp-security"],
+      "capabilities": [
+        "Row Level Security (RLS) policy design",
+        "SECURITY DEFINER function auditing",
+        "MCP server security hardening",
+        "API key rotation and management",
+        "Rate limiting and abuse prevention",
+        "Audit trail implementation",
+        "Composio guardrails configuration"
+      ],
+      "security_focus": {
+        "rls_policies": true,
+        "secure_functions": true,
+        "mcp_hardening": true,
+        "audit_logging": true
+      }
+    }
+  ],
+  "categories": [
+    {
+      "id": "backend",
+      "name": "Backend Development",
+      "description": "Server-side development, databases, and APIs"
+    },
+    {
+      "id": "integration",
+      "name": "MCP & Integration",
+      "description": "MCP server orchestration and external tool integration"
+    },
+    {
+      "id": "frontend",
+      "name": "Frontend Development",
+      "description": "User interface, client-side applications, and user experience"
+    },
+    {
+      "id": "security",
+      "name": "Security & Compliance",
+      "description": "Application security, RLS, and compliance"
+    }
+  ],
+  "monorepo_integration": {
+    "apps": {
+      "api": "Express server with Neon integration",
+      "amplify-client": "React app with AWS Amplify",
+      "factory-imo": "IMO Creator with HEIR orchestration"
+    },
+    "packages": {
+      "data-router": "Shared data operations library",
+      "mcp-clients": "Composio-focused MCP orchestration"
+    }
+  },
+  "installation": {
+    "script": "install.sh",
+    "default_path": "apps/factory-imo/claude-agents-library",
+    "requirements": {
+      "node": ">=18.0.0",
+      "python": ">=3.8",
+      "composio": "API key required"
+    }
+  },
+  "usage": {
+    "format": "@{agent-id} {your request}",
+    "examples": [
+      "@database-specialist optimize the marketing_company table schema",
+      "@mcp-orchestrator set up LinkedIn scraping workflow",
+      "@frontend-architect integrate dot colors in contact list",
+      "@security-auditor audit our RLS policies"
+    ]
+  },
+  "mcp_integration": {
+    "enabled": true,
+    "primary_hub": "composio",
+    "registry_endpoint": "/api/agents",
+    "orchestration_config": "../../../mcp.config.json"
+  }
+}

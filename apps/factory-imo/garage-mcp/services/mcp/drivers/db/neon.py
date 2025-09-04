@@ -181,3 +181,156 @@ class NeonDriver(BaseDriver):
             "target_database": target_database or "main",
             "project_id": project_id
         }
+    
+    async def ingest_json_secure(self, rows: List[Dict[str, Any]], source: str, batch_id: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Securely ingest JSON data using SECURITY DEFINER function
+        Uses intake.f_ingest_json($1::jsonb[], $2::text, $3::text)
+        """
+        try:
+            import json
+            import asyncpg
+            from datetime import datetime
+            
+            # Generate batch ID if not provided
+            if not batch_id:
+                batch_id = f"batch-{int(datetime.now().timestamp())}"
+            
+            # Get connection string from environment
+            conn_str = os.getenv("DATABASE_URL") or os.getenv("NEON_DATABASE_URL")
+            if not conn_str:
+                return {
+                    "success": False,
+                    "error": "No database connection string configured"
+                }
+            
+            # Connect to database
+            conn = await asyncpg.connect(conn_str)
+            
+            try:
+                # Convert rows to PostgreSQL array format
+                jsonb_array = json.dumps(rows)
+                
+                # Execute secure function
+                query = "SELECT * FROM intake.f_ingest_json($1::jsonb[], $2::text, $3::text);"
+                result = await conn.fetch(query, jsonb_array, source, batch_id)
+                
+                # Parse result
+                if result:
+                    row = dict(result[0])
+                    return {
+                        "success": row.get('status') == 'success',
+                        "message": row.get('message', ''),
+                        "batch_id": batch_id,
+                        "source": source,
+                        "load_id": row.get('load_id')
+                    }
+                
+                return {
+                    "success": False,
+                    "error": "No result from ingestion function"
+                }
+                
+            finally:
+                await conn.close()
+                
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Secure ingestion failed: {str(e)}"
+            }
+    
+    async def promote_contacts_secure(self, load_ids: Optional[List[int]] = None) -> Dict[str, Any]:
+        """
+        Securely promote contacts using SECURITY DEFINER function
+        Uses vault.f_promote_contacts($1::bigint[])
+        """
+        try:
+            import asyncpg
+            
+            # Get connection string from environment
+            conn_str = os.getenv("DATABASE_URL") or os.getenv("NEON_DATABASE_URL")
+            if not conn_str:
+                return {
+                    "success": False,
+                    "error": "No database connection string configured"
+                }
+            
+            # Connect to database
+            conn = await asyncpg.connect(conn_str)
+            
+            try:
+                # Execute secure function
+                if load_ids:
+                    query = "SELECT * FROM vault.f_promote_contacts($1::bigint[]);"
+                    result = await conn.fetch(query, load_ids)
+                else:
+                    # Promote all pending if no IDs specified
+                    query = "SELECT * FROM vault.f_promote_contacts(NULL);"
+                    result = await conn.fetch(query)
+                
+                # Parse result
+                if result:
+                    row = dict(result[0])
+                    return {
+                        "success": True,
+                        "promoted_count": row.get('promoted_count', 0),
+                        "updated_count": row.get('updated_count', 0),
+                        "failed_count": row.get('failed_count', 0),
+                        "message": row.get('message', '')
+                    }
+                
+                return {
+                    "success": False,
+                    "error": "No result from promotion function"
+                }
+                
+            finally:
+                await conn.close()
+                
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Secure promotion failed: {str(e)}"
+            }
+    
+    async def get_latest_loads(self, limit: int = 100) -> Dict[str, Any]:
+        """
+        Get latest loads from the intake.latest_100 view
+        """
+        try:
+            import asyncpg
+            
+            # Get connection string from environment
+            conn_str = os.getenv("DATABASE_URL") or os.getenv("NEON_DATABASE_URL")
+            if not conn_str:
+                return {
+                    "success": False,
+                    "error": "No database connection string configured"
+                }
+            
+            # Connect to database
+            conn = await asyncpg.connect(conn_str)
+            
+            try:
+                # Query the view
+                query = "SELECT * FROM intake.latest_100 LIMIT $1;"
+                result = await conn.fetch(query, limit)
+                
+                # Convert to list of dicts
+                loads = [dict(row) for row in result]
+                
+                return {
+                    "success": True,
+                    "loads": loads,
+                    "count": len(loads)
+                }
+                
+            finally:
+                await conn.close()
+                
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Failed to get latest loads: {str(e)}"
+            }

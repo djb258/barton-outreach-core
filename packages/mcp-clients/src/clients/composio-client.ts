@@ -380,6 +380,450 @@ export class ComposioMCPClient {
     }
   }
 
+  /**
+   * Create Neon Ingest Contacts workflow
+   */
+  async createNeonIngestWorkflow(): Promise<MCPResponse<ComposioWorkflow>> {
+    const workflowName = 'Neon Secure Ingest Contacts';
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    
+    const steps: ComposioWorkflowStep[] = [
+      {
+        id: 'validate-data',
+        name: 'Validate Input Data',
+        action: 'data_validation',
+        parameters: {
+          schema: 'contact_schema',
+          required_fields: ['email']
+        },
+        retry_config: {
+          max_retries: 2,
+          backoff_strategy: 'linear'
+        }
+      },
+      {
+        id: 'ingest-to-neon',
+        name: 'Ingest to Neon Database',
+        action: 'neon_ingest_secure',
+        parameters: {
+          function: 'intake.f_ingest_json',
+          source: `composio.${this.apiKey ? 'authenticated' : 'anonymous'}`,
+          batch_id: `batch-${timestamp}`
+        },
+        retry_config: {
+          max_retries: 3,
+          backoff_strategy: 'exponential'
+        }
+      },
+      {
+        id: 'log-results',
+        name: 'Log Ingestion Results',
+        action: 'audit_log',
+        parameters: {
+          operation: 'ingest_contacts',
+          timestamp: timestamp
+        }
+      }
+    ];
+
+    return this.createWorkflow(
+      workflowName,
+      'Securely ingest contacts using Neon SECURITY DEFINER function',
+      steps
+    );
+  }
+
+  /**
+   * Create Neon Promote Contacts workflow
+   */
+  async createNeonPromoteWorkflow(): Promise<MCPResponse<ComposioWorkflow>> {
+    const workflowName = 'Neon Secure Promote Contacts';
+    
+    const steps: ComposioWorkflowStep[] = [
+      {
+        id: 'fetch-pending',
+        name: 'Fetch Pending Loads',
+        action: 'neon_query',
+        parameters: {
+          query: 'SELECT load_id FROM intake.raw_loads WHERE status = \'pending\' LIMIT 100'
+        },
+        retry_config: {
+          max_retries: 2,
+          backoff_strategy: 'linear'
+        }
+      },
+      {
+        id: 'promote-to-vault',
+        name: 'Promote to Contacts Vault',
+        action: 'neon_promote_secure',
+        parameters: {
+          function: 'vault.f_promote_contacts',
+          load_ids_from: 'fetch-pending.result'
+        },
+        retry_config: {
+          max_retries: 3,
+          backoff_strategy: 'exponential'
+        }
+      },
+      {
+        id: 'send-notification',
+        name: 'Send Promotion Notification',
+        action: 'notification',
+        parameters: {
+          type: 'promotion_complete',
+          include_stats: true
+        }
+      }
+    ];
+
+    return this.createWorkflow(
+      workflowName,
+      'Securely promote contacts from intake to vault using Neon SECURITY DEFINER function',
+      steps
+    );
+  }
+
+  /**
+   * Execute Neon secure ingestion directly
+   */
+  async executeNeonIngest(
+    rows: Array<Record<string, any>>,
+    source?: string,
+    batchId?: string
+  ): Promise<MCPResponse<any>> {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    
+    return this.executeAction(
+      'neon_ingest_secure',
+      {
+        rows,
+        source: source || `composio.${this.apiKey ? 'authenticated' : 'anonymous'}`,
+        batch_id: batchId || `batch-${timestamp}`,
+        query: 'SELECT * FROM intake.f_ingest_json($1::jsonb[], $2::text, $3::text)'
+      }
+    );
+  }
+
+  /**
+   * Execute Neon secure promotion directly
+   */
+  async executeNeonPromote(
+    loadIds?: number[]
+  ): Promise<MCPResponse<any>> {
+    return this.executeAction(
+      'neon_promote_secure',
+      {
+        load_ids: loadIds,
+        query: loadIds 
+          ? 'SELECT * FROM vault.f_promote_contacts($1::bigint[])' 
+          : 'SELECT * FROM vault.f_promote_contacts(NULL)'
+      }
+    );
+  }
+
+  /**
+   * UI Builder Integrations via Composio
+   */
+
+  /**
+   * Builder.io Integration - Create/Update components
+   */
+  async builderIOCreateComponent(
+    modelName: string,
+    componentData: Record<string, any>
+  ): Promise<MCPResponse<any>> {
+    return this.executeAction(
+      'builder_io_create_component',
+      {
+        model: modelName,
+        data: componentData,
+        publish: false // Draft by default
+      }
+    );
+  }
+
+  async builderIOPublishComponent(
+    modelName: string,
+    entryId: string
+  ): Promise<MCPResponse<any>> {
+    return this.executeAction(
+      'builder_io_publish',
+      {
+        model: modelName,
+        entry_id: entryId
+      }
+    );
+  }
+
+  async builderIOGetContent(
+    modelName: string,
+    url?: string
+  ): Promise<MCPResponse<any>> {
+    return this.executeAction(
+      'builder_io_get_content',
+      {
+        model: modelName,
+        url: url || window?.location?.pathname || '/'
+      }
+    );
+  }
+
+  /**
+   * Plasmic Integration - Manage designs and components
+   */
+  async plasmicGetProject(projectId: string): Promise<MCPResponse<any>> {
+    return this.executeAction(
+      'plasmic_get_project',
+      {
+        project_id: projectId
+      }
+    );
+  }
+
+  async plasmicCreateComponent(
+    projectId: string,
+    componentName: string,
+    componentData: Record<string, any>
+  ): Promise<MCPResponse<any>> {
+    return this.executeAction(
+      'plasmic_create_component',
+      {
+        project_id: projectId,
+        name: componentName,
+        data: componentData
+      }
+    );
+  }
+
+  async plasmicUpdateComponent(
+    projectId: string,
+    componentId: string,
+    componentData: Record<string, any>
+  ): Promise<MCPResponse<any>> {
+    return this.executeAction(
+      'plasmic_update_component',
+      {
+        project_id: projectId,
+        component_id: componentId,
+        data: componentData
+      }
+    );
+  }
+
+  async plasmicGenerateCode(
+    projectId: string,
+    componentIds: string[],
+    platform: 'react' | 'vue' | 'angular' = 'react'
+  ): Promise<MCPResponse<any>> {
+    return this.executeAction(
+      'plasmic_generate_code',
+      {
+        project_id: projectId,
+        component_ids: componentIds,
+        platform
+      }
+    );
+  }
+
+  /**
+   * Figma Integration - Design system sync
+   */
+  async figmaGetFile(fileKey: string): Promise<MCPResponse<any>> {
+    return this.executeAction(
+      'figma_get_file',
+      {
+        file_key: fileKey
+      }
+    );
+  }
+
+  async figmaGetComponents(fileKey: string): Promise<MCPResponse<any>> {
+    return this.executeAction(
+      'figma_get_components',
+      {
+        file_key: fileKey
+      }
+    );
+  }
+
+  async figmaGetStyles(fileKey: string): Promise<MCPResponse<any>> {
+    return this.executeAction(
+      'figma_get_styles',
+      {
+        file_key: fileKey,
+        style_type: 'all' // or 'FILL', 'TEXT', 'EFFECT', 'GRID'
+      }
+    );
+  }
+
+  async figmaExportNodes(
+    fileKey: string,
+    nodeIds: string[],
+    format: 'png' | 'svg' | 'pdf' = 'png'
+  ): Promise<MCPResponse<any>> {
+    return this.executeAction(
+      'figma_export_nodes',
+      {
+        file_key: fileKey,
+        ids: nodeIds,
+        format
+      }
+    );
+  }
+
+  async figmaGenerateTokens(fileKey: string): Promise<MCPResponse<any>> {
+    return this.executeAction(
+      'figma_generate_design_tokens',
+      {
+        file_key: fileKey,
+        include_colors: true,
+        include_typography: true,
+        include_spacing: true,
+        include_borders: true,
+        include_shadows: true
+      }
+    );
+  }
+
+  /**
+   * Loveable.dev Integration - AI-generated components
+   */
+  async loveableGenerateComponent(
+    prompt: string,
+    framework: 'react' | 'vue' | 'svelte' = 'react'
+  ): Promise<MCPResponse<any>> {
+    return this.executeAction(
+      'loveable_generate_component',
+      {
+        prompt,
+        framework,
+        style_system: 'tailwindcss'
+      }
+    );
+  }
+
+  async loveableOptimizeComponent(
+    componentCode: string,
+    optimizationGoals: string[]
+  ): Promise<MCPResponse<any>> {
+    return this.executeAction(
+      'loveable_optimize_component',
+      {
+        code: componentCode,
+        goals: optimizationGoals // ['performance', 'accessibility', 'mobile-responsive']
+      }
+    );
+  }
+
+  async loveableGenerateVariants(
+    componentCode: string,
+    variantTypes: string[]
+  ): Promise<MCPResponse<any>> {
+    return this.executeAction(
+      'loveable_generate_variants',
+      {
+        code: componentCode,
+        variants: variantTypes // ['size', 'color', 'state']
+      }
+    );
+  }
+
+  /**
+   * UI Builder Orchestration Workflows
+   */
+  async createDesignSystemSyncWorkflow(
+    figmaFileKey: string,
+    plasmicProjectId: string,
+    builderIOApiKey: string
+  ): Promise<MCPResponse<ComposioWorkflow>> {
+    const workflowName = 'Design System Sync - Figma to UI Builders';
+    
+    const steps: ComposioWorkflowStep[] = [
+      {
+        id: 'extract-figma-tokens',
+        name: 'Extract Design Tokens from Figma',
+        action: 'figma_generate_design_tokens',
+        parameters: {
+          file_key: figmaFileKey,
+          include_colors: true,
+          include_typography: true,
+          include_spacing: true
+        }
+      },
+      {
+        id: 'sync-to-plasmic',
+        name: 'Sync Tokens to Plasmic',
+        action: 'plasmic_update_design_tokens',
+        parameters: {
+          project_id: plasmicProjectId,
+          tokens_from: 'extract-figma-tokens.result'
+        }
+      },
+      {
+        id: 'sync-to-builder',
+        name: 'Sync Tokens to Builder.io',
+        action: 'builder_io_update_design_system',
+        parameters: {
+          api_key: builderIOApiKey,
+          tokens_from: 'extract-figma-tokens.result'
+        }
+      },
+      {
+        id: 'generate-loveable-components',
+        name: 'Generate Components with Loveable',
+        action: 'loveable_generate_component_library',
+        parameters: {
+          design_tokens_from: 'extract-figma-tokens.result',
+          framework: 'react'
+        }
+      },
+      {
+        id: 'audit-sync',
+        name: 'Audit Design System Sync',
+        action: 'audit_log',
+        parameters: {
+          operation: 'design_system_sync',
+          figma_file: figmaFileKey,
+          plasmic_project: plasmicProjectId
+        }
+      }
+    ];
+
+    return this.createWorkflow(
+      workflowName,
+      'Sync design tokens from Figma to all UI builders and generate component library',
+      steps
+    );
+  }
+
+  async executeDesignSystemSync(
+    figmaFileKey: string,
+    plasmicProjectId: string,
+    builderIOApiKey: string
+  ): Promise<MCPResponse<ComposioExecutionResult>> {
+    // Create workflow if it doesn't exist
+    const workflowResult = await this.createDesignSystemSyncWorkflow(
+      figmaFileKey,
+      plasmicProjectId,
+      builderIOApiKey
+    );
+
+    if (!workflowResult.success || !workflowResult.data?.id) {
+      return {
+        success: false,
+        error: 'Failed to create design system sync workflow',
+        data: workflowResult.data
+      };
+    }
+
+    // Execute the workflow
+    return this.executeWorkflow(workflowResult.data.id, {
+      figma_file_key: figmaFileKey,
+      plasmic_project_id: plasmicProjectId,
+      builder_io_api_key: builderIOApiKey
+    });
+  }
+
   private handleError(error: any, context: string): MCPResponse {
     const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
     
