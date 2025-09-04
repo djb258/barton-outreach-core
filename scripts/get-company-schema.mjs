@@ -40,7 +40,7 @@ async function getCompleteSchema() {
     const schemasQuery = `
       SELECT schema_name 
       FROM information_schema.schemata 
-      WHERE schema_name IN ('company', 'people', 'intake', 'vault')
+      WHERE schema_name IN ('company', 'people', 'intake', 'vault', 'marketing')
       ORDER BY schema_name;
     `;
     
@@ -139,7 +139,7 @@ async function getCompleteSchema() {
       JOIN information_schema.constraint_column_usage AS ccu
         ON ccu.constraint_name = tc.constraint_name
       WHERE tc.constraint_type = 'FOREIGN KEY' 
-        AND tc.table_schema IN ('company', 'people', 'intake', 'vault')
+        AND tc.table_schema IN ('company', 'people', 'intake', 'vault', 'marketing')
       ORDER BY tc.table_schema, tc.table_name;
     `;
     

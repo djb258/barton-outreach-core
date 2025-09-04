@@ -392,6 +392,10 @@ app.get('/contacts', async (req, res) => {
   }
 });
 
+// Import and setup outreach endpoints
+import { setupOutreachEndpoints } from './outreach-endpoints.js';
+setupOutreachEndpoints(app, executeSecureQuery);
+
 // Default route
 app.get('/', (req, res) => {
   res.json({
@@ -403,7 +407,12 @@ app.get('/', (req, res) => {
       ingest_json: 'POST /ingest/json',
       ingest_csv: 'POST /ingest/csv',
       promote_contacts: 'POST /promote/contacts',
-      get_contacts: 'GET /contacts'
+      get_contacts: 'GET /contacts',
+      // Outreach endpoints
+      outreach_companies: 'GET /api/outreach/companies',
+      outreach_contacts: 'GET /api/outreach/contacts',
+      outreach_queues: 'GET /api/outreach/queues/{type}',
+      process_queue: 'POST /api/outreach/queues/{type}/process'
     }
   });
 });
