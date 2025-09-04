@@ -32,8 +32,7 @@
     "@plasmicapp/react-web": "^0.2.334",
     "@plasmicapp/loader-nextjs": "^1.0.64",
     "figma-api": "^1.11.0",
-    "@figma/plugin-typings": "^1.88.0",
-    "loveable-ui": "^1.2.1"
+    "@figma/plugin-typings": "^1.88.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.23",

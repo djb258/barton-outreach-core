@@ -60,11 +60,11 @@ const PromoteContactsSchema = z.object({
 });
 
 const ContactsQuerySchema = z.object({
-  limit: z.coerce.number().default(50).max(1000),
+  limit: z.coerce.number().default(50),
   offset: z.coerce.number().default(0),
   search: z.string().optional(),
   source: z.string().optional()
-});
+}).refine(data => data.limit <= 1000, { message: "Limit cannot exceed 1000" });
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
