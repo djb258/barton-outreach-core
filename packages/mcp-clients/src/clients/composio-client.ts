@@ -812,7 +812,7 @@ export class ComposioMCPClient {
       return {
         success: false,
         error: 'Failed to create design system sync workflow',
-        data: workflowResult.data
+        data: undefined
       };
     }
 

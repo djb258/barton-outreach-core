@@ -148,14 +148,15 @@ export class MillionVerifierMCPClient {
         // Parse CSV results
         const results = this.parseBulkResults(data.download_url);
         
+        const resolvedResults = await results;
         return {
           success: true,
           data: {
             job_id: jobId,
             status: 'completed',
-            total_emails: results.length,
-            processed_emails: results.length,
-            results: results
+            total_emails: resolvedResults.length,
+            processed_emails: resolvedResults.length,
+            results: resolvedResults
           }
         };
       }

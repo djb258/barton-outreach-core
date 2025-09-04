@@ -2,6 +2,7 @@
 
 /**
  * Test Neon Secure Integration with Composio MCP
+ * Default connection setup for Neon database through Composio MCP server
  * Demonstrates RLS-protected database operations through SECURITY DEFINER functions
  */
 
@@ -11,56 +12,123 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
+// Check for required environment variables
+const requiredEnvVars = {
+  'COMPOSIO_API_KEY': process.env.COMPOSIO_API_KEY,
+  'DATABASE_URL or NEON_DATABASE_URL': process.env.DATABASE_URL || process.env.NEON_DATABASE_URL
+};
+
+const missingVars = Object.entries(requiredEnvVars)
+  .filter(([_, value]) => !value || value === 'your_composio_api_key')
+  .map(([key, _]) => key);
+
+if (missingVars.length > 0) {
+  console.log('❌ Missing required environment variables:');
+  missingVars.forEach(varName => console.log(`   • ${varName}`));
+  console.log('\n💡 Set these in your .env file:');
+  console.log('   COMPOSIO_API_KEY=your_composio_api_key');
+  console.log('   DATABASE_URL=postgresql://username:password@host.neon.tech/dbname?sslmode=require');
+  console.log('\n🎯 This test demonstrates Composio MCP as the DEFAULT connection layer');
+  console.log('   • All database operations go through Composio MCP server');
+  console.log('   • All UI builder integrations use Composio');
+  console.log('   • All external service connections use Composio');
+  console.log('\n📡 Connection Architecture:');
+  console.log('   Your App → Composio MCP → Neon Database');
+  console.log('   Your App → Composio MCP → UI Builders (Builder.io, Plasmic, Figma)');
+  console.log('   Your App → Composio MCP → Email Verification Services');
+  process.exit(1);
+}
+
 async function testNeonSecureIntegration() {
   console.log('🔐 Testing Neon Secure Integration with Composio MCP\n');
   console.log('=' . repeat(60));
   
-  // Create Composio client
-  const composio = createComposioClient();
+  // Create Composio client with database configuration
+  const composio = createComposioClient({
+    apiKey: process.env.COMPOSIO_API_KEY,
+    timeout: 30000,
+    retries: 3
+  });
   
-  // Test data
+  // Set up database connection for Composio
+  console.log('🔧 Configuring Composio with Neon database connection...');
+  const databaseUrl = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL;
+  console.log(`📡 Database: ${databaseUrl.replace(/\/\/.*@/, '//***:***@')}`); // Hide credentials in logs
+  
+  try {
+    // Step 0: Configure Neon database connection in Composio
+    console.log('\n0️⃣ Setting up Neon database connection...');
+    
+    try {
+      const configResult = await composio.executeAction('neon_configure', {
+        connection_string: databaseUrl,
+        schema_mode: 'company', // Use company schema mode
+        enable_rls: true,
+        enable_security_definer: true
+      });
+      
+      if (configResult.success) {
+        console.log('   ✅ Neon database configured in Composio');
+        console.log(`   🔧 Configuration: ${configResult.data?.message || 'Ready for secure operations'}`);
+      } else {
+        console.log(`   ⚠️  Configuration warning: ${configResult.error || 'Using default settings'}`);
+      }
+      
+    } catch (configError) {
+      console.log(`   ℹ️  Configuration step skipped: ${configError.message}`);
+      console.log('   💡 Proceeding with default Composio-Neon integration');
+    }
+  
+  // Test data for company schema
   const testContacts = [
     {
-      email: 'john.doe@example.com',
-      name: 'John Doe',
-      company: 'Acme Corp',
+      email: 'john.doe@acmecorp.com',
+      first_name: 'John',
+      last_name: 'Doe',
+      company_name: 'Acme Corp',
       title: 'CEO',
       phone: '+1-555-0101',
+      linkedin_url: 'https://linkedin.com/in/johndoe',
       source: 'composio.test',
-      tags: ['executive', 'decision-maker'],
-      custom_fields: { industry: 'Technology', employees: '100-500' }
+      tags: ['executive', 'ceo-slot'],
+      custom_fields: { industry: 'Technology', employees: '100-500', role_type: 'CEO' }
     },
     {
-      email: 'jane.smith@example.com',
-      name: 'Jane Smith',
-      company: 'TechStart Inc',
-      title: 'CTO',
+      email: 'jane.smith@acmecorp.com',
+      first_name: 'Jane',
+      last_name: 'Smith',
+      company_name: 'Acme Corp',
+      title: 'CFO',
       phone: '+1-555-0102',
+      linkedin_url: 'https://linkedin.com/in/janesmith',
       source: 'composio.test',
-      tags: ['technical', 'decision-maker'],
-      custom_fields: { industry: 'SaaS', funding: 'Series B' }
+      tags: ['executive', 'cfo-slot'],
+      custom_fields: { industry: 'Technology', role_type: 'CFO' }
     },
     {
-      email: 'bob.wilson@example.com',
-      name: 'Bob Wilson',
-      company: 'GlobalCo',
-      title: 'VP Sales',
+      email: 'bob.wilson@acmecorp.com',
+      first_name: 'Bob',
+      last_name: 'Wilson',
+      company_name: 'Acme Corp',
+      title: 'VP Human Resources',
       phone: '+1-555-0103',
       source: 'composio.test',
-      tags: ['sales', 'influencer'],
-      custom_fields: { region: 'North America', team_size: 50 }
+      tags: ['hr', 'hr-slot'],
+      custom_fields: { role_type: 'HR', team_size: 50 }
     },
-    // Duplicate for testing
+    // Second company
     {
-      email: 'john.doe@example.com',
-      name: 'John Doe Updated',
-      company: 'Acme Corp International',
-      title: 'Chairman',
-      source: 'composio.test'
+      email: 'sarah.tech@techstart.com',
+      first_name: 'Sarah',
+      last_name: 'Tech',
+      company_name: 'TechStart Inc',
+      title: 'CEO',
+      source: 'composio.test',
+      tags: ['ceo-slot'],
+      custom_fields: { industry: 'SaaS', funding: 'Series B', role_type: 'CEO' }
     }
   ];
   
-  try {
     // Step 1: Create Neon Ingest Workflow
     console.log('\n1️⃣ Creating Neon Ingest Workflow...');
     const ingestWorkflow = await composio.createNeonIngestWorkflow();

@@ -3,17 +3,44 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
-import { neon } from '@neondatabase/serverless';
 import dotenv from 'dotenv';
 import { z } from 'zod';
+import { createDefaultConnection } from '../../packages/mcp-clients/dist/factory/client-factory.js';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Database connection
-const sql = neon(process.env.DATABASE_URL || process.env.NEON_DATABASE_URL);
+// Default connection through Composio MCP - replaces direct database connection
+console.log('🎯 API Server: Using Composio MCP as default connection layer');
+console.log('   • Database operations: Composio MCP → Neon');
+console.log('   • All external services: Composio MCP');
+
+const composio = createDefaultConnection({
+  timeout: 30000,
+  retries: 3
+});
+
+// Database connection function using Composio MCP
+async function executeSecureQuery(query, params = []) {
+  try {
+    const result = await composio.executeAction('neon_query_secure', {
+      query,
+      params,
+      schema_mode: 'company'
+    });
+    
+    if (result.success) {
+      return result.data;
+    } else {
+      throw new Error(result.error || 'Database query failed');
+    }
+  } catch (error) {
+    console.error('Secure query error:', error);
+    throw error;
+  }
+}
 
 // Security middleware
 app.use(helmet());
@@ -66,28 +93,38 @@ const ContactsQuerySchema = z.object({
   source: z.string().optional()
 }).refine(data => data.limit <= 1000, { message: "Limit cannot exceed 1000" });
 
-// Health check endpoint
+// Health check endpoint - using Composio MCP
 app.get('/health', async (req, res) => {
   try {
-    // Check database connection
-    await sql`SELECT 1`;
-    
-    res.json({
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      version: process.env.npm_package_version || '1.0.0',
-      database: 'connected'
+    // Check Composio MCP connection and database through MCP
+    const healthResult = await composio.executeAction('neon_health_check', {
+      schema_mode: 'company'
     });
+    
+    if (healthResult.success) {
+      res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        version: process.env.npm_package_version || '1.0.0',
+        database: 'connected via Composio MCP',
+        connection_layer: 'Composio MCP',
+        schema_mode: 'company'
+      });
+    } else {
+      throw new Error(healthResult.error);
+    }
   } catch (error) {
     res.status(503).json({
       status: 'unhealthy',
       timestamp: new Date().toISOString(),
-      error: 'Database connection failed'
+      error: 'Composio MCP connection failed',
+      connection_layer: 'Composio MCP',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
 
-// POST /ingest/json - Ingest JSON data rows
+// POST /ingest/json - Secure ingestion through Composio MCP
 app.post('/ingest/json', async (req, res) => {
   try {
     const { rows, metadata } = IngestJsonSchema.parse(req.body);
@@ -100,36 +137,26 @@ app.post('/ingest/json', async (req, res) => {
     }
 
     // Generate batch ID
-    const batch_id = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const batch_id = `api_batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    // Insert rows into staged_data table
-    const insertPromises = rows.map(async (row, index) => {
-      const keys = Object.keys(row);
-      const values = Object.values(row);
-      
-      return sql`
-        INSERT INTO staged_data (
-          batch_id,
-          source,
-          raw_data,
-          created_at
-        ) VALUES (
-          ${batch_id},
-          ${metadata?.source || 'api'},
-          ${JSON.stringify(row)},
-          NOW()
-        )
-      `;
-    });
+    // Use Composio MCP secure ingestion
+    const ingestResult = await composio.executeNeonIngest(
+      rows,
+      metadata?.source || 'api',
+      batch_id
+    );
 
-    await Promise.all(insertPromises);
-
-    res.json({
-      success: true,
-      count: rows.length,
-      batch_id,
-      message: `Successfully ingested ${rows.length} rows`
-    });
+    if (ingestResult.success) {
+      res.json({
+        success: true,
+        count: rows.length,
+        batch_id,
+        message: `Successfully ingested ${rows.length} rows via Composio MCP`,
+        connection_layer: 'Composio MCP'
+      });
+    } else {
+      throw new Error(ingestResult.error);
+    }
 
   } catch (error) {
     console.error('Ingest JSON error:', error);
@@ -144,7 +171,8 @@ app.post('/ingest/json', async (req, res) => {
 
     res.status(500).json({
       success: false,
-      error: 'Internal server error',
+      error: 'Secure ingestion failed',
+      connection_layer: 'Composio MCP',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
@@ -240,91 +268,29 @@ app.post('/ingest/csv', async (req, res) => {
   }
 });
 
-// POST /promote/contacts - Promote staged data to contacts vault
+// POST /promote/contacts - Secure promotion through Composio MCP
 app.post('/promote/contacts', async (req, res) => {
   try {
     const { filter } = PromoteContactsSchema.parse(req.body);
     
-    let whereClause = 'WHERE promoted = false';
-    let params = [];
-    
-    if (filter) {
-      // Add filter conditions
-      const filterConditions = [];
-      Object.entries(filter).forEach(([key, value]) => {
-        filterConditions.push(`raw_data->>'${key}' = $${params.length + 1}`);
-        params.push(value);
-      });
-      
-      if (filterConditions.length > 0) {
-        whereClause += ` AND ${filterConditions.join(' AND ')}`;
-      }
-    }
+    // Use Composio MCP secure promotion
+    const promoteResult = await composio.executeNeonPromote(
+      filter ? filter.load_ids : null // Promote specific IDs or all pending
+    );
 
-    // Get staged data to promote
-    const stagedData = await sql`
-      SELECT id, raw_data FROM staged_data 
-      WHERE promoted = false
-      ${filter ? sql.raw(whereClause.replace('WHERE promoted = false', '').replace(' AND ', 'AND '), params) : sql``}
-    `;
-
-    if (stagedData.length === 0) {
-      return res.json({
+    if (promoteResult.success) {
+      res.json({
         success: true,
-        promoted_count: 0,
-        message: 'No data found matching criteria'
+        promoted_count: promoteResult.data?.promoted_count || 0,
+        updated_count: promoteResult.data?.updated_count || 0,
+        failed_count: promoteResult.data?.failed_count || 0,
+        message: promoteResult.data?.message || 'Promotion completed via Composio MCP',
+        connection_layer: 'Composio MCP',
+        schema_mode: 'company'
       });
+    } else {
+      throw new Error(promoteResult.error);
     }
-
-    // Promote to contacts
-    const promotionPromises = stagedData.map(async (record) => {
-      const data = record.raw_data;
-      
-      // Insert into contacts table
-      await sql`
-        INSERT INTO contacts (
-          email,
-          name,
-          phone,
-          company,
-          title,
-          source,
-          tags,
-          custom_fields,
-          created_at,
-          updated_at
-        ) VALUES (
-          ${data.email || null},
-          ${data.name || null},
-          ${data.phone || null},
-          ${data.company || null},
-          ${data.title || null},
-          ${data.source || 'promoted'},
-          ${data.tags ? JSON.stringify(data.tags) : null},
-          ${JSON.stringify(data)},
-          NOW(),
-          NOW()
-        )
-        ON CONFLICT (email) DO UPDATE SET
-          name = COALESCE(EXCLUDED.name, contacts.name),
-          phone = COALESCE(EXCLUDED.phone, contacts.phone),
-          company = COALESCE(EXCLUDED.company, contacts.company),
-          title = COALESCE(EXCLUDED.title, contacts.title),
-          custom_fields = EXCLUDED.custom_fields,
-          updated_at = NOW()
-      `;
-      
-      // Mark as promoted
-      await sql`UPDATE staged_data SET promoted = true WHERE id = ${record.id}`;
-    });
-
-    await Promise.all(promotionPromises);
-
-    res.json({
-      success: true,
-      promoted_count: stagedData.length,
-      message: `Successfully promoted ${stagedData.length} records to contacts`
-    });
 
   } catch (error) {
     console.error('Promote contacts error:', error);
@@ -339,7 +305,8 @@ app.post('/promote/contacts', async (req, res) => {
 
     res.status(500).json({
       success: false,
-      error: 'Internal server error',
+      error: 'Secure promotion failed',
+      connection_layer: 'Composio MCP',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
