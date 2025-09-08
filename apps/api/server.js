@@ -178,6 +178,74 @@ app.post('/ingest/json', async (req, res) => {
   }
 });
 
+// POST /insert - Compatible with ingest-companies-people app
+app.post('/insert', async (req, res) => {
+  try {
+    const { records, target_table } = req.body;
+    
+    if (!records || !Array.isArray(records) || records.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'No records provided or invalid format'
+      });
+    }
+
+    // Map the target table to your schema
+    let actualTable = target_table;
+    if (target_table === 'marketing.company_raw_intake') {
+      // This is your correct table - use marketing schema function
+      try {
+        const result = await executeSecureQuery(`
+          SELECT * FROM marketing.f_ingest_company_csv($1::jsonb[], $2)
+        `, [JSON.stringify(records), `batch_${Date.now()}`]);
+        
+        const insertResult = result[0];
+        
+        return res.json({
+          success: true,
+          inserted: insertResult.inserted_count,
+          batch_id: insertResult.batch_id,
+          message: insertResult.message
+        });
+      } catch (error) {
+        console.error('Marketing ingestion error:', error);
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to ingest company data',
+          details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+      }
+    }
+    
+    // Fallback to original ingestion method for other tables
+    const batch_id = `api_batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const ingestResult = await composio.executeNeonIngest(
+      records,
+      'ingest_app',
+      batch_id
+    );
+
+    if (ingestResult.success) {
+      res.json({
+        success: true,
+        inserted: records.length,
+        batch_id,
+        message: `Successfully ingested ${records.length} records`
+      });
+    } else {
+      throw new Error(ingestResult.error);
+    }
+
+  } catch (error) {
+    console.error('Insert error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Insert operation failed',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
 // POST /ingest/csv - Ingest CSV data
 app.post('/ingest/csv', async (req, res) => {
   try {
