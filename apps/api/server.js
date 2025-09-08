@@ -193,10 +193,10 @@ app.post('/insert', async (req, res) => {
     // Map the target table to your schema
     let actualTable = target_table;
     if (target_table === 'marketing.company_raw_intake') {
-      // This is your correct table - use marketing schema function
+      // This is your correct table - use intake schema function
       try {
         const result = await executeSecureQuery(`
-          SELECT * FROM marketing.f_ingest_company_csv($1::jsonb[], $2)
+          SELECT * FROM intake.f_ingest_company_csv($1::jsonb[], $2)
         `, [JSON.stringify(records), `batch_${Date.now()}`]);
         
         const insertResult = result[0];
