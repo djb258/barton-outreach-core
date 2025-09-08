@@ -464,6 +464,10 @@ app.get('/contacts', async (req, res) => {
 import { setupOutreachEndpoints } from './outreach-endpoints.js';
 setupOutreachEndpoints(app, executeSecureQuery);
 
+// Import and setup MCP render endpoints (bypasses CORS)
+import { setupRenderMCPEndpoints } from './mcp-render-endpoint.js';
+setupRenderMCPEndpoints(app);
+
 // Default route
 app.get('/', (req, res) => {
   res.json({
