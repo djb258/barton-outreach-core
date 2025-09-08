@@ -190,28 +190,38 @@ app.post('/insert', async (req, res) => {
       });
     }
 
-    // Map the target table to your schema
-    let actualTable = target_table;
+    // Use MCP direct connection for marketing.company_raw_intake
     if (target_table === 'marketing.company_raw_intake') {
-      // This is your correct table - use intake schema function
       try {
-        const result = await executeSecureQuery(`
-          SELECT * FROM intake.f_ingest_company_csv($1::jsonb[], $2)
-        `, [JSON.stringify(records), `batch_${Date.now()}`]);
+        console.log('🔌 Using MCP Direct Insert for intake.company_raw_intake');
         
-        const insertResult = result[0];
-        
-        return res.json({
-          success: true,
-          inserted: insertResult.inserted_count,
-          batch_id: insertResult.batch_id,
-          message: insertResult.message
+        // Use Composio MCP to call the database function we created
+        const mcpResult = await composio.executeAction('neon_function_call', {
+          function_name: 'intake.f_ingest_company_csv',
+          parameters: [
+            JSON.stringify(records),
+            `api_batch_${Date.now()}`
+          ]
         });
+        
+        if (mcpResult.success) {
+          return res.json({
+            success: true,
+            inserted: mcpResult.data.inserted_count || records.length,
+            batch_id: mcpResult.data.batch_id,
+            message: mcpResult.data.message || 'Successfully inserted via MCP',
+            connection_type: 'MCP_DIRECT'
+          });
+        } else {
+          throw new Error(mcpResult.error || 'MCP insertion failed');
+        }
+        
       } catch (error) {
-        console.error('Marketing ingestion error:', error);
+        console.error('❌ MCP Direct Insert Error:', error);
         return res.status(500).json({
           success: false,
-          error: 'Failed to ingest company data',
+          error: 'Failed to ingest company data via MCP',
+          connection_type: 'MCP_DIRECT',
           details: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
       }

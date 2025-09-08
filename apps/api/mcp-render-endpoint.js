@@ -31,13 +31,13 @@ export function setupRenderMCPEndpoints(app) {
         batchId: batch_id
       });
 
-      // Use MCP server to directly insert into intake.company_raw_intake
-      const mcpResult = await renderMCP.executeAction('neon_direct_insert', {
-        schema: 'intake',
-        table: 'company_raw_intake',
-        records: records,
-        batch_id: batch_id || `mcp_batch_${Date.now()}`,
-        source: 'mcp_render'
+      // Use Composio MCP to insert into intake.company_raw_intake using the function we created
+      const mcpResult = await renderMCP.executeAction('neon_function_call', {
+        function_name: 'intake.f_ingest_company_csv',
+        parameters: [
+          JSON.stringify(records),
+          batch_id || `mcp_batch_${Date.now()}`
+        ]
       });
 
       if (mcpResult.success) {
