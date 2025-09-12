@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { z } from 'zod';
+import { Client } from 'pg';
 import { createDefaultConnection } from '../../packages/mcp-clients/dist/factory/client-factory.js';
 
 dotenv.config();
@@ -22,7 +23,17 @@ const composio = createDefaultConnection({
   retries: 3
 });
 
-// Database connection function using Composio MCP
+// Direct PostgreSQL client fallback
+const DATABASE_URL = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
+const pgClient = new Client({
+  connectionString: DATABASE_URL,
+  ssl: DATABASE_URL?.includes('neon.tech') ? { rejectUnauthorized: false } : false
+});
+
+// Connect to PostgreSQL directly
+pgClient.connect().catch(console.error);
+
+// Database connection function using Composio MCP with PostgreSQL fallback
 async function executeSecureQuery(query, params = []) {
   try {
     const result = await composio.executeAction('neon_query_secure', {
@@ -39,6 +50,41 @@ async function executeSecureQuery(query, params = []) {
   } catch (error) {
     console.error('Secure query error:', error);
     throw error;
+  }
+}
+
+// Direct database function call with fallback
+async function callDatabaseFunction(functionName, parameters) {
+  try {
+    // Try MCP first
+    console.log('🔌 Attempting MCP function call...');
+    const mcpResult = await composio.executeAction('neon_function_call', {
+      function_name: functionName,
+      parameters: parameters
+    });
+    
+    if (mcpResult.success) {
+      console.log('✅ MCP function call succeeded');
+      return mcpResult;
+    } else {
+      throw new Error(mcpResult.error || 'MCP function call failed');
+    }
+  } catch (mcpError) {
+    console.log('❌ MCP failed, falling back to direct PostgreSQL:', mcpError.message);
+    
+    // Fallback to direct PostgreSQL connection
+    try {
+      const result = await pgClient.query(`SELECT * FROM ${functionName}($1, $2)`, parameters);
+      console.log('✅ Direct PostgreSQL function call succeeded');
+      
+      return {
+        success: true,
+        data: result.rows[0] || { inserted_count: 0, batch_id: parameters[1], message: 'Direct insert completed' }
+      };
+    } catch (pgError) {
+      console.error('❌ Direct PostgreSQL also failed:', pgError.message);
+      throw pgError;
+    }
   }
 }
 
@@ -190,38 +236,59 @@ app.post('/insert', async (req, res) => {
       });
     }
 
-    // Use MCP direct connection for marketing.company_raw_intake
+    // Use database function for marketing.company_raw_intake with MCP/PostgreSQL fallback
     if (target_table === 'marketing.company_raw_intake') {
       try {
-        console.log('🔌 Using MCP Direct Insert for intake.company_raw_intake');
+        console.log('🔌 Using Database Function Insert for intake.company_raw_intake');
+        console.log(`📊 Records to insert: ${records.length}`);
         
-        // Use Composio MCP to call the database function we created
-        const mcpResult = await composio.executeAction('neon_function_call', {
-          function_name: 'intake.f_ingest_company_csv',
-          parameters: [
+        const batch_id = `api_batch_${Date.now()}`;
+        // Try standard Composio PostgreSQL actions first
+        let result;
+        try {
+          console.log('🔌 Attempting standard Composio PostgreSQL action...');
+          const composioResult = await composio.executeAction('postgresql_execute_query', {
+            query: 'SELECT * FROM intake.f_ingest_company_csv($1, $2)',
+            parameters: [JSON.stringify(records), batch_id],
+            connection_id: process.env.COMPOSIO_POSTGRES_CONNECTION_ID || 'default'
+          });
+          
+          if (composioResult.success) {
+            console.log('✅ Composio PostgreSQL action succeeded');
+            result = {
+              success: true,
+              data: composioResult.data.rows?.[0] || { inserted_count: records.length, batch_id, message: 'Inserted via Composio' },
+              via_mcp: true
+            };
+          } else {
+            throw new Error(composioResult.error || 'Composio PostgreSQL action failed');
+          }
+        } catch (composioError) {
+          console.log('❌ Composio failed, using direct function call:', composioError.message);
+          result = await callDatabaseFunction('intake.f_ingest_company_csv', [
             JSON.stringify(records),
-            `api_batch_${Date.now()}`
-          ]
-        });
+            batch_id
+          ]);
+        }
         
-        if (mcpResult.success) {
+        if (result.success) {
           return res.json({
             success: true,
-            inserted: mcpResult.data.inserted_count || records.length,
-            batch_id: mcpResult.data.batch_id,
-            message: mcpResult.data.message || 'Successfully inserted via MCP',
-            connection_type: 'MCP_DIRECT'
+            inserted: result.data.inserted_count || records.length,
+            batch_id: result.data.batch_id || batch_id,
+            message: result.data.message || 'Successfully inserted company records',
+            connection_type: result.via_mcp ? 'MCP_DIRECT' : 'POSTGRES_DIRECT'
           });
         } else {
-          throw new Error(mcpResult.error || 'MCP insertion failed');
+          throw new Error(result.error || 'Database function call failed');
         }
         
       } catch (error) {
-        console.error('❌ MCP Direct Insert Error:', error);
+        console.error('❌ Database Insert Error:', error);
         return res.status(500).json({
           success: false,
-          error: 'Failed to ingest company data via MCP',
-          connection_type: 'MCP_DIRECT',
+          error: 'Failed to ingest company data',
+          connection_type: 'DATABASE_FUNCTION',
           details: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
       }

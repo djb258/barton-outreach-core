@@ -2,6 +2,10 @@
 // This bypasses CORS issues by using Composio MCP directly
 
 import { createDefaultConnection } from '../../packages/mcp-clients/dist/factory/client-factory.js';
+import { Client } from 'pg';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 // Create MCP connection specifically for render operations
 const renderMCP = createDefaultConnection({
@@ -9,6 +13,16 @@ const renderMCP = createDefaultConnection({
   retries: 3,
   service: 'render_deployment'
 });
+
+// Direct PostgreSQL client fallback for MCP endpoints
+const DATABASE_URL = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
+const mcpPgClient = new Client({
+  connectionString: DATABASE_URL,
+  ssl: DATABASE_URL?.includes('neon.tech') ? { rejectUnauthorized: false } : false
+});
+
+// Connect to PostgreSQL directly
+mcpPgClient.connect().catch(console.error);
 
 // MCP-based render endpoints that bypass CORS
 export function setupRenderMCPEndpoints(app) {
@@ -31,25 +45,53 @@ export function setupRenderMCPEndpoints(app) {
         batchId: batch_id
       });
 
-      // Use Composio MCP to insert into intake.company_raw_intake using the function we created
-      const mcpResult = await renderMCP.executeAction('neon_function_call', {
-        function_name: 'intake.f_ingest_company_csv',
-        parameters: [
-          JSON.stringify(records),
-          batch_id || `mcp_batch_${Date.now()}`
-        ]
-      });
-
-      if (mcpResult.success) {
-        res.json({
-          success: true,
-          inserted: mcpResult.data.inserted_count || records.length,
-          batch_id: mcpResult.data.batch_id,
-          message: mcpResult.data.message || 'Successfully inserted via MCP',
-          connection_type: 'MCP_DIRECT'
+      // Try MCP first, fallback to direct PostgreSQL
+      let mcpResult;
+      try {
+        console.log('🔌 Attempting MCP insertion...');
+        mcpResult = await renderMCP.executeAction('neon_function_call', {
+          function_name: 'intake.f_ingest_company_csv',
+          parameters: [
+            JSON.stringify(records),
+            batch_id || `mcp_batch_${Date.now()}`
+          ]
         });
-      } else {
-        throw new Error(mcpResult.error || 'MCP insertion failed');
+        
+        if (mcpResult.success) {
+          console.log('✅ MCP insertion succeeded');
+          return res.json({
+            success: true,
+            inserted: mcpResult.data.inserted_count || records.length,
+            batch_id: mcpResult.data.batch_id,
+            message: mcpResult.data.message || 'Successfully inserted via MCP',
+            connection_type: 'MCP_DIRECT'
+          });
+        } else {
+          throw new Error(mcpResult.error || 'MCP insertion failed');
+        }
+      } catch (mcpError) {
+        console.log('❌ MCP failed, falling back to direct PostgreSQL:', mcpError.message);
+        
+        // Fallback to direct PostgreSQL
+        try {
+          const finalBatchId = batch_id || `mcp_batch_${Date.now()}`;
+          const result = await mcpPgClient.query(`SELECT * FROM intake.f_ingest_company_csv($1, $2)`, [
+            JSON.stringify(records),
+            finalBatchId
+          ]);
+          
+          console.log('✅ Direct PostgreSQL insertion succeeded');
+          res.json({
+            success: true,
+            inserted: result.rows[0].inserted_count || records.length,
+            batch_id: result.rows[0].batch_id || finalBatchId,
+            message: result.rows[0].message || 'Successfully inserted via direct PostgreSQL',
+            connection_type: 'POSTGRES_DIRECT'
+          });
+        } catch (pgError) {
+          console.error('❌ Direct PostgreSQL also failed:', pgError.message);
+          throw pgError;
+        }
       }
 
     } catch (error) {
