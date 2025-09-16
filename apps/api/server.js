@@ -7,6 +7,7 @@ import dotenv from 'dotenv';
 import { z } from 'zod';
 import { Client } from 'pg';
 import { createDefaultConnection } from '../../packages/mcp-clients/dist/factory/client-factory.js';
+import { PLEOrchestrator } from '../../packages/mcp-clients/dist/clients/ple-orchestrator.js';
 
 dotenv.config();
 
@@ -32,6 +33,13 @@ const pgClient = new Client({
 
 // Connect to PostgreSQL directly
 pgClient.connect().catch(console.error);
+
+// Initialize PLE Orchestrator for complete pipeline
+const pleOrchestrator = new PLEOrchestrator({
+  batchSize: parseInt(process.env.PLE_BATCH_SIZE) || 50,
+  maxRetries: parseInt(process.env.PLE_MAX_RETRIES) || 3,
+  timeout: 300000
+});
 
 // Database connection function using Composio MCP with PostgreSQL fallback
 async function executeSecureQuery(query, params = []) {
@@ -572,6 +580,154 @@ app.use('*', (req, res) => {
     success: false,
     error: 'Endpoint not found'
   });
+});
+
+// ===========================================
+// Complete Pipeline Endpoints (Ingestor → Neon → Apify → PLE → Bit)
+// ===========================================
+
+// Execute complete pipeline
+app.post('/pipeline/execute', async (req, res) => {
+  console.log('🚀 Pipeline execution requested');
+  
+  try {
+    const pipelineConfigSchema = z.object({
+      data: z.array(z.object({
+        email: z.string().email().optional(),
+        name: z.string().optional(),
+        company: z.string().optional(),
+        website: z.string().url().optional()
+      })),
+      jobConfig: z.object({
+        jobId: z.string().default(() => `pipeline_${Date.now()}`),
+        source: z.enum(['csv', 'api', 'manual']).default('api'),
+        enableScraping: z.boolean().default(true),
+        enablePromotion: z.boolean().default(true),
+        enableBitSync: z.boolean().default(false),
+        notificationWebhook: z.string().url().optional()
+      })
+    });
+
+    const { data, jobConfig } = pipelineConfigSchema.parse(req.body);
+
+    console.log(`📊 Pipeline Job: ${jobConfig.jobId}`);
+    console.log(`📥 Input Records: ${data.length}`);
+    console.log(`🔧 Config: Scraping=${jobConfig.enableScraping}, Promotion=${jobConfig.enablePromotion}, BitSync=${jobConfig.enableBitSync}`);
+
+    // Execute the complete pipeline
+    const result = await pleOrchestrator.executePipeline(data, jobConfig);
+
+    if (result.success) {
+      console.log('✅ Pipeline execution completed successfully');
+      res.json({
+        success: true,
+        message: 'Pipeline executed successfully',
+        result: result.data,
+        jobId: jobConfig.jobId
+      });
+    } else {
+      console.error('❌ Pipeline execution failed:', result.error);
+      res.status(500).json({
+        success: false,
+        error: result.error,
+        result: result.data,
+        jobId: jobConfig.jobId
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ Pipeline endpoint error:', error);
+    
+    if (error.name === 'ZodError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid request format',
+        details: error.errors
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Pipeline execution failed',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// Pipeline health check
+app.get('/pipeline/health', async (req, res) => {
+  try {
+    const healthResult = await pleOrchestrator.healthCheck();
+    
+    res.json({
+      success: true,
+      health: healthResult.data,
+      metadata: healthResult.metadata,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Pipeline health check failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Health check failed',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// Get pipeline status
+app.get('/pipeline/status/:jobId', async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    
+    // Query job status from database
+    const statusQuery = `
+      SELECT 
+        batch_id,
+        COUNT(*) as total_records,
+        COUNT(*) FILTER (WHERE status = 'promoted') as promoted_count,
+        COUNT(*) FILTER (WHERE status = 'pending') as pending_count,
+        COUNT(*) FILTER (WHERE status = 'failed') as failed_count,
+        MIN(created_at) as started_at,
+        MAX(promoted_at) as completed_at
+      FROM intake.raw_loads 
+      WHERE batch_id = $1
+      GROUP BY batch_id
+    `;
+    
+    const result = await executeSecureQuery(statusQuery, [jobId]);
+    
+    if (result.rows && result.rows.length > 0) {
+      const status = result.rows[0];
+      res.json({
+        success: true,
+        jobId,
+        status: {
+          total: parseInt(status.total_records),
+          promoted: parseInt(status.promoted_count),
+          pending: parseInt(status.pending_count),
+          failed: parseInt(status.failed_count),
+          startedAt: status.started_at,
+          completedAt: status.completed_at,
+          isComplete: parseInt(status.pending_count) === 0
+        }
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        error: 'Job not found',
+        jobId
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ Pipeline status check failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Status check failed',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
 });
 
 // Global error handler
