@@ -5,34 +5,25 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { z } from 'zod';
-import { Client } from 'pg';
 import { createDefaultConnection } from '../../packages/mcp-clients/dist/factory/client-factory.js';
 import { PLEOrchestrator } from '../../packages/mcp-clients/dist/clients/ple-orchestrator.js';
+import { ApolloIngestClient } from '../../packages/mcp-clients/dist/clients/apollo-ingest-client.js';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Default connection through Composio MCP - replaces direct database connection
-console.log('🎯 API Server: Using Composio MCP as default connection layer');
+// Default connection through Composio MCP - ONLY connection layer
+console.log('🎯 API Server: Using Composio MCP as ONLY connection layer');
 console.log('   • Database operations: Composio MCP → Neon');
 console.log('   • All external services: Composio MCP');
+console.log('   • No direct PostgreSQL fallbacks');
 
 const composio = createDefaultConnection({
   timeout: 30000,
   retries: 3
 });
-
-// Direct PostgreSQL client fallback
-const DATABASE_URL = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
-const pgClient = new Client({
-  connectionString: DATABASE_URL,
-  ssl: DATABASE_URL?.includes('neon.tech') ? { rejectUnauthorized: false } : false
-});
-
-// Connect to PostgreSQL directly
-pgClient.connect().catch(console.error);
 
 // Initialize PLE Orchestrator for complete pipeline
 const pleOrchestrator = new PLEOrchestrator({
@@ -41,7 +32,13 @@ const pleOrchestrator = new PLEOrchestrator({
   timeout: 300000
 });
 
-// Database connection function using Composio MCP with PostgreSQL fallback
+// Initialize Apollo Ingest Client for CSV processing (MCP only)
+const apolloIngest = new ApolloIngestClient({
+  timeout: 30000,
+  retries: 3
+});
+
+// Database query function using Composio MCP ONLY
 async function executeSecureQuery(query, params = []) {
   try {
     const result = await composio.executeAction('neon_query_secure', {
@@ -61,11 +58,10 @@ async function executeSecureQuery(query, params = []) {
   }
 }
 
-// Direct database function call with fallback
+// Database function call using Composio MCP ONLY
 async function callDatabaseFunction(functionName, parameters) {
   try {
-    // Try MCP first
-    console.log('🔌 Attempting MCP function call...');
+    console.log('🔌 Executing MCP function call...');
     const mcpResult = await composio.executeAction('neon_function_call', {
       function_name: functionName,
       parameters: parameters
@@ -77,22 +73,9 @@ async function callDatabaseFunction(functionName, parameters) {
     } else {
       throw new Error(mcpResult.error || 'MCP function call failed');
     }
-  } catch (mcpError) {
-    console.log('❌ MCP failed, falling back to direct PostgreSQL:', mcpError.message);
-    
-    // Fallback to direct PostgreSQL connection
-    try {
-      const result = await pgClient.query(`SELECT * FROM ${functionName}($1, $2)`, parameters);
-      console.log('✅ Direct PostgreSQL function call succeeded');
-      
-      return {
-        success: true,
-        data: result.rows[0] || { inserted_count: 0, batch_id: parameters[1], message: 'Direct insert completed' }
-      };
-    } catch (pgError) {
-      console.error('❌ Direct PostgreSQL also failed:', pgError.message);
-      throw pgError;
-    }
+  } catch (error) {
+    console.error('❌ MCP function call failed:', error.message);
+    throw error;
   }
 }
 
@@ -133,6 +116,16 @@ const IngestCsvSchema = z.object({
   metadata: z.object({
     source: z.string(),
     timestamp: z.string()
+  }).optional()
+});
+
+const ApolloCsvSchema = z.object({
+  csv: z.string().min(1, "CSV content cannot be empty"),
+  config: z.object({
+    source: z.string().default('api_upload'),
+    blueprintId: z.string().default('apollo_csv_import'),
+    createdBy: z.string().default('api_user'),
+    dataQualityThreshold: z.number().min(0).max(100).default(50)
   }).optional()
 });
 
@@ -580,6 +573,162 @@ app.use('*', (req, res) => {
     success: false,
     error: 'Endpoint not found'
   });
+});
+
+// ===========================================
+// Apollo CSV Ingestion Endpoints (Routes to marketing_apollo_raw)
+// ===========================================
+
+// POST /apollo/csv/validate - Validate CSV format before ingestion
+app.post('/apollo/csv/validate', async (req, res) => {
+  try {
+    const { csv } = ApolloCsvSchema.parse(req.body);
+    
+    console.log('🔍 Validating Apollo CSV format...');
+    const validation = await apolloIngest.validateCsvFormat(csv);
+    
+    if (validation.success) {
+      res.json({
+        success: true,
+        message: 'CSV validation completed',
+        validation: validation.data
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: 'CSV validation failed',
+        details: validation.error
+      });
+    }
+  } catch (error) {
+    console.error('❌ CSV validation error:', error);
+    
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid request format',
+        details: error.errors
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'CSV validation failed',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// POST /apollo/csv/ingest - Ingest CSV directly to marketing_apollo_raw
+app.post('/apollo/csv/ingest', async (req, res) => {
+  try {
+    const { csv, config = {} } = ApolloCsvSchema.parse(req.body);
+    
+    console.log('🚀 Starting Apollo CSV ingestion to marketing_apollo_raw...');
+    const result = await apolloIngest.ingestCsvToApollo(csv, {
+      batchId: `apollo_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
+      source: config.source || 'api_upload',
+      blueprintId: config.blueprintId || 'apollo_csv_import',
+      createdBy: config.createdBy || 'api_user',
+      dataQualityThreshold: config.dataQualityThreshold || 50
+    });
+    
+    if (result.success) {
+      console.log(`✅ Apollo CSV ingestion completed: ${result.data.inserted_count} records`);
+      res.json({
+        success: true,
+        message: 'Apollo CSV ingested successfully',
+        result: result.data,
+        metadata: result.metadata,
+        target_table: 'marketing.marketing_apollo_raw'
+      });
+    } else {
+      console.error('❌ Apollo CSV ingestion failed:', result.error);
+      res.status(500).json({
+        success: false,
+        error: result.error,
+        result: result.data,
+        target_table: 'marketing.marketing_apollo_raw'
+      });
+    }
+  } catch (error) {
+    console.error('❌ Apollo CSV endpoint error:', error);
+    
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid request format',
+        details: error.errors
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Apollo CSV ingestion failed',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// GET /apollo/batch/:batchId/status - Get ingestion batch status
+app.get('/apollo/batch/:batchId/status', async (req, res) => {
+  try {
+    const { batchId } = req.params;
+    
+    console.log(`📊 Getting Apollo batch status: ${batchId}`);
+    const result = await apolloIngest.getIngestionStatus(batchId);
+    
+    if (result.success) {
+      res.json({
+        success: true,
+        batch_id: batchId,
+        status: result.data
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        error: 'Batch not found or query failed',
+        batch_id: batchId
+      });
+    }
+  } catch (error) {
+    console.error('❌ Batch status error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get batch status',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// GET /apollo/batches - List recent ingestion batches
+app.get('/apollo/batches', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    
+    console.log(`📋 Listing Apollo batches (limit: ${limit})`);
+    const result = await apolloIngest.listRecentBatches(limit);
+    
+    if (result.success) {
+      res.json({
+        success: true,
+        batches: result.data,
+        limit
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to list batches'
+      });
+    }
+  } catch (error) {
+    console.error('❌ List batches error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to list batches',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
 });
 
 // ===========================================

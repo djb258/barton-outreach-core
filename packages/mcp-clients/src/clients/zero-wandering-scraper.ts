@@ -16,7 +16,7 @@ export interface ScraperStats {
 }
 
 export class ZeroWanderingScraper {
-  private sql: any;
+  private sql: ReturnType<typeof neon>;
   private scraper: ApifyMCPClient;
 
   constructor(config: MCPClientConfig = {}) {
@@ -53,7 +53,7 @@ export class ZeroWanderingScraper {
         errors: []
       };
 
-      for (const item of queue) {
+      for (const item of queue as any[]) {
         try {
           // Scrape based on URL kind
           if (item.kind === 'website') {
@@ -85,7 +85,7 @@ export class ZeroWanderingScraper {
         success: true,
         data: stats,
         metadata: {
-          queue_size: queue.length,
+          queue_size: (queue as any[]).length,
           timestamp: new Date().toISOString()
         }
       };
@@ -119,12 +119,12 @@ export class ZeroWanderingScraper {
       };
 
       // Batch scrape all LinkedIn URLs
-      const urls = queue.map(item => item.url);
+      const urls = (queue as any[]).map((item: any) => item.url);
       if (urls.length > 0) {
         await this.scraper.scrapeLinkedIn(urls, true);
       }
 
-      for (const item of queue) {
+      for (const item of queue as any[]) {
         try {
           // Simple timestamp update - removes from queue automatically
           await this.sql`
@@ -146,7 +146,7 @@ export class ZeroWanderingScraper {
         success: true,
         data: stats,
         metadata: {
-          queue_size: queue.length,
+          queue_size: (queue as any[]).length,
           timestamp: new Date().toISOString()
         }
       };
@@ -179,7 +179,7 @@ export class ZeroWanderingScraper {
         errors: []
       };
 
-      for (const item of queue) {
+      for (const item of queue as any[]) {
         try {
           // TODO: Integrate with MillionVerifier here
           // For now, just mark as checked
@@ -204,7 +204,7 @@ export class ZeroWanderingScraper {
         success: true,
         data: stats,
         metadata: {
-          queue_size: queue.length,
+          queue_size: (queue as any[]).length,
           timestamp: new Date().toISOString(),
           note: 'Placeholder - integrate with MillionVerifier'
         }
@@ -271,9 +271,9 @@ export class ZeroWanderingScraper {
     total_pending: number;
   }>> {
     try {
-      const [companyCount] = await this.sql`SELECT COUNT(*) as count FROM company.next_company_urls_30d`;
-      const [profileCount] = await this.sql`SELECT COUNT(*) as count FROM people.next_profile_urls_30d`;
-      const [emailCount] = await this.sql`SELECT COUNT(*) as count FROM people.due_email_recheck_30d`;
+      const [companyCount] = (await this.sql`SELECT COUNT(*) as count FROM company.next_company_urls_30d`) as any[];
+      const [profileCount] = (await this.sql`SELECT COUNT(*) as count FROM people.next_profile_urls_30d`) as any[];
+      const [emailCount] = (await this.sql`SELECT COUNT(*) as count FROM people.due_email_recheck_30d`) as any[];
 
       const status = {
         company_queue: parseInt(companyCount.count),

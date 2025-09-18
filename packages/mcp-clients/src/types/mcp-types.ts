@@ -7,6 +7,7 @@ export interface MCPClientConfig {
   baseUrl?: string;
   timeout?: number;
   retries?: number;
+  scope?: string;
 }
 
 export interface MCPResponse<T = any> {

@@ -200,6 +200,8 @@ SELECT 'emails', COUNT(*) FROM people.due_email_recheck_30d;
 - `SCHEMA_DIAGRAM.md` - Visual relationship diagram  
 - `PIPELINE_INTEGRATION.md` - Full pipeline details
 - `AGENT_GUIDE.md` - This quick reference
+- `PRODUCTION_IMPROVEMENTS.md` - Production-grade enhancements applied
+- `SCHEMA_VERIFICATION_REPORT.md` - Current deployment status
 
 ## 💡 **Pro Tips for Agents**
 
@@ -209,5 +211,26 @@ SELECT 'emails', COUNT(*) FROM people.due_email_recheck_30d;
 4. **Maintain the 3-slot rule** for all companies
 5. **Log all communications** in message_log
 6. **Check renewal windows** before starting campaigns
+7. **Monitor system health** using new monitoring views
+8. **Respect data quality** - duplicate emails are automatically prevented
+
+## 📊 **New Monitoring Capabilities**
+
+### **System Health Checks**
+```sql
+-- Monitor scraping freshness
+SELECT * FROM marketing.vw_health_crawl_staleness;
+
+-- Check profile update status  
+SELECT * FROM marketing.vw_health_profile_staleness;
+
+-- View current queue sizes
+SELECT * FROM marketing.vw_queue_sizes;
+```
+
+### **Data Quality Features**
+- ✅ **Email duplicate prevention** - Case-insensitive uniqueness enforced
+- ✅ **Format validation** - Email and URL format checking active
+- ✅ **Performance indexes** - Fast queries on common patterns
 
 This schema is designed for **zero-wandering automation** - the views tell you exactly what needs to be done, and updating timestamps automatically manages the queues.

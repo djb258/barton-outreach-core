@@ -275,7 +275,11 @@ export class PLEOrchestrator {
       const componentGenResult = await this.generateComponents(batchId);
       
       if (!componentGenResult.success) {
-        return componentGenResult;
+        return {
+          success: false,
+          error: componentGenResult.error,
+          data: { sharedCount: 0 }
+        };
       }
 
       // Use Composio to sync with Bit.dev
