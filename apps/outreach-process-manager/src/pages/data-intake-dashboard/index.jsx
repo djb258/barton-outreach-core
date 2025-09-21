@@ -8,7 +8,24 @@ import WorkflowSidebar from './components/WorkflowSidebar';
 import ProcessingStatusPanel from './components/ProcessingStatusPanel';
 import IntegrationStatusIndicator from './components/IntegrationStatusIndicator';
 import Button from '../../components/ui/Button';
+import { MASTER_SCHEMA, getAutoMappingSuggestions } from '../../constants/masterSchema';
+import Icon from '../../components/AppIcon';
 
+// Add SCHEMA_CATEGORIES constant
+const SCHEMA_CATEGORIES = {
+  company: { label: 'Company', icon: 'Building', color: 'blue' },
+  contact: { label: 'Contact', icon: 'User', color: 'green' },
+  financial: { label: 'Financial', icon: 'DollarSign', color: 'yellow' },
+  location: { label: 'Location', icon: 'MapPin', color: 'red' },
+  social: { label: 'Social', icon: 'Share', color: 'purple' },
+  technology: { label: 'Technology', icon: 'Code', color: 'indigo' },
+  industry: { label: 'Industry', icon: 'Briefcase', color: 'orange' },
+  metrics: { label: 'Metrics', icon: 'BarChart', color: 'teal' },
+  dates: { label: 'Dates', icon: 'Calendar', color: 'pink' },
+  sources: { label: 'Sources', icon: 'Database', color: 'gray' },
+  custom: { label: 'Custom', icon: 'Settings', color: 'cyan' },
+  validation: { label: 'Validation', icon: 'CheckCircle', color: 'emerald' }
+};
 
 const DataIntakeDashboard = () => {
   const navigate = useNavigate();
@@ -18,6 +35,7 @@ const DataIntakeDashboard = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingResults, setProcessingResults] = useState(null);
   const [validationErrors, setValidationErrors] = useState([]);
+  const [schemaValidation, setSchemaValidation] = useState({});
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -51,6 +69,7 @@ const DataIntakeDashboard = () => {
     setSelectedFile(file);
     setProcessingResults(null);
     setValidationErrors([]);
+    setSchemaValidation({});
     
     // Parse CSV file
     const reader = new FileReader();
@@ -70,23 +89,95 @@ const DataIntakeDashboard = () => {
       
       setFileData(data);
       
-      // Auto-detect column mappings
+      // Enhanced auto-detect column mappings using master schema
       const autoMapping = {};
       headers?.forEach(header => {
-        const lowerHeader = header?.toLowerCase();
-        if (lowerHeader?.includes('company') || lowerHeader?.includes('name')) {
-          autoMapping[header] = 'company_name';
-        } else if (lowerHeader?.includes('email') || lowerHeader?.includes('mail')) {
-          autoMapping[header] = 'email';
-        } else if (lowerHeader?.includes('phone') || lowerHeader?.includes('tel')) {
-          autoMapping[header] = 'phone';
-        } else if (lowerHeader?.includes('website') || lowerHeader?.includes('url')) {
-          autoMapping[header] = 'website';
+        const suggestion = getAutoMappingSuggestions(header);
+        if (suggestion && !Object.values(autoMapping)?.includes(suggestion)) {
+          autoMapping[header] = suggestion;
         }
       });
       setColumnMapping(autoMapping);
+
+      // Validate against master schema
+      validateAgainstMasterSchema(data, autoMapping);
     };
     reader?.readAsText(file);
+  }, []);
+
+  // New validation function for master schema
+  const validateAgainstMasterSchema = useCallback((data, mapping) => {
+    const errors = [];
+    const requiredFields = MASTER_SCHEMA?.filter(field => field?.required);
+    
+    // Check for missing required fields
+    requiredFields?.forEach(field => {
+      const isMapped = Object.values(mapping)?.includes(field?.value);
+      if (!isMapped) {
+        errors?.push({
+          type: 'missing_required_field',
+          field: field?.value,
+          label: field?.label,
+          message: `Required field "${field?.label}" is not mapped`,
+          severity: 'error'
+        });
+      }
+    });
+    
+    // Validate data types and formats
+    data?.slice(0, 100)?.forEach((row, rowIndex) => {
+      Object.entries(mapping)?.forEach(([csvColumn, schemaField]) => {
+        const field = MASTER_SCHEMA?.find(f => f?.value === schemaField);
+        const value = row?.[csvColumn];
+        
+        if (field && value) {
+          let isValid = true;
+          let errorMessage = '';
+          
+          switch (field?.type) {
+            case 'url':
+              isValid = /^https?:\/\//?.test(value);
+              errorMessage = 'Invalid URL format';
+              break;
+            case 'phone':
+              isValid = /^[\+]?[\d\s\-\(\)]+$/?.test(value);
+              errorMessage = 'Invalid phone format';
+              break;
+            case 'number':
+              isValid = /^\d+$/?.test(value);
+              errorMessage = 'Must be a number';
+              break;
+            case 'currency':
+              isValid = /^[\$]?[\d,]+\.?\d*$/?.test(value);
+              errorMessage = 'Invalid currency format';
+              break;
+            case 'date':
+              isValid = /^\d{4}-\d{2}-\d{2}/?.test(value);
+              errorMessage = 'Invalid date format (use YYYY-MM-DD)';
+              break;
+          }
+          
+          if (!isValid) {
+            errors?.push({
+              type: 'invalid_format',
+              row: rowIndex + 1,
+              column: csvColumn,
+              field: schemaField,
+              value: value,
+              message: errorMessage,
+              severity: field?.required ? 'error' : 'warning'
+            });
+          }
+        }
+      });
+    });
+    
+    setSchemaValidation({
+      isValid: !errors?.some(e => e?.severity === 'error'),
+      errors: errors,
+      totalErrors: errors?.filter(e => e?.severity === 'error')?.length,
+      totalWarnings: errors?.filter(e => e?.severity === 'warning')?.length
+    });
   }, []);
 
   const handleIngestData = useCallback(async () => {
@@ -94,37 +185,49 @@ const DataIntakeDashboard = () => {
     
     setIsProcessing(true);
     
-    // Simulate processing with realistic delay
+    // Re-validate before processing
+    validateAgainstMasterSchema(fileData, columnMapping);
+    
+    // Simulate processing with realistic delay and enhanced results
     setTimeout(() => {
+      const mappedFieldsCount = Object.values(columnMapping)?.filter(Boolean)?.length;
+      const totalSchemaFields = MASTER_SCHEMA?.length;
+      const completenessScore = (mappedFieldsCount / totalSchemaFields * 100)?.toFixed(1);
+      
       const mockResults = {
         totalRows: fileData?.length,
-        successfulRows: Math.floor(fileData?.length * 0.92),
-        failedRows: Math.ceil(fileData?.length * 0.08),
-        validationErrors: [
-          {
-            row: 23,
-            column: 'email',
-            value: 'invalid-email',
-            error: 'Invalid email format',
-            severity: 'error'
-          },
-          {
-            row: 45,
-            column: 'phone',
-            value: '123',
-            error: 'Phone number too short',
-            severity: 'warning'
-          }
-        ],
-        processingTime: '2.3s',
+        successfulRows: Math.floor(fileData?.length * 0.95),
+        failedRows: Math.ceil(fileData?.length * 0.05),
+        schemaCompleteness: completenessScore,
+        mappedFields: mappedFieldsCount,
+        totalSchemaFields: totalSchemaFields,
+        validationErrors: schemaValidation?.errors?.slice(0, 10) || [],
+        processingTime: '3.7s',
         uniqueId: `WF-2025-001-BATCH-${Date.now()}`,
-        timestamp: new Date()?.toISOString()
+        timestamp: new Date()?.toISOString(),
+        masterSchemaCompliance: schemaValidation?.isValid || false
       };
       
       setProcessingResults(mockResults);
       setIsProcessing(false);
-    }, 3000);
-  }, [fileData, columnMapping]);
+    }, 4000);
+  }, [fileData, columnMapping, schemaValidation]);
+
+  const handleExportSchemaTemplate = useCallback(() => {
+    const csvContent = [
+      MASTER_SCHEMA?.map(field => field?.label)?.join(','),
+      MASTER_SCHEMA?.map(field => `"${field?.description}"`)?.join(','),
+      MASTER_SCHEMA?.map(field => field?.required ? 'Required' : 'Optional')?.join(',')
+    ]?.join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `master-schema-template-${Date.now()}.csv`;
+    a?.click();
+    URL.revokeObjectURL(url);
+  }, []);
 
   const handleExportErrors = useCallback(() => {
     if (!processingResults?.validationErrors) return;
@@ -154,7 +257,8 @@ const DataIntakeDashboard = () => {
     navigate('/data-validation-console');
   }, [navigate]);
 
-  const canProceed = processingResults && processingResults?.successfulRows > 0;
+  const canProceed = processingResults && processingResults?.successfulRows > 0 && 
+                    (schemaValidation?.isValid || schemaValidation?.totalErrors === 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -166,17 +270,49 @@ const DataIntakeDashboard = () => {
           {/* Top Bar */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-semibold text-foreground">Data Intake Dashboard</h1>
+              <h1 className="text-2xl font-semibold text-foreground">Outreach Process Data Ingestor</h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Upload and process company prospect data through the IMO workflow
+                Upload CSV files and map to master schema with 37 standardized fields for company prospect data
               </p>
             </div>
             
             <div className="flex items-center space-x-4">
+              <Button
+                variant="outline"
+                size="sm"
+                iconName="Download"
+                iconPosition="left"
+                onClick={handleExportSchemaTemplate}
+              >
+                Schema Template
+              </Button>
               <IntegrationStatusIndicator />
               <SystemHealthIndicator />
             </div>
           </div>
+
+          {/* Schema Overview */}
+          {!fileData && (
+            <div className="mb-8 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6">
+              <div className="flex items-start space-x-4">
+                <Icon name="Database" size={24} className="text-blue-600 mt-1" />
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Master Schema Overview</h3>
+                  <p className="text-sm text-gray-700 mb-4">
+                    Our master schema includes {MASTER_SCHEMA?.length} standardized fields across 12 categories for comprehensive company data management.
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                    {Object.entries(SCHEMA_CATEGORIES)?.map(([key, category]) => (
+                      <div key={key} className="flex items-center space-x-2 text-xs">
+                        <Icon name={category?.icon} size={14} className={`text-${category?.color}-600`} />
+                        <span className="text-gray-700">{category?.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Upload Section */}
           <div className="mb-8">
@@ -185,6 +321,52 @@ const DataIntakeDashboard = () => {
               isProcessing={isProcessing}
             />
           </div>
+
+          {/* Schema Validation Summary */}
+          {schemaValidation?.errors?.length > 0 && (
+            <div className="mb-8">
+              <div className={`p-4 rounded-lg border ${schemaValidation?.isValid ? 'bg-yellow-50 border-yellow-200' : 'bg-red-50 border-red-200'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Icon 
+                      name={schemaValidation?.isValid ? 'AlertTriangle' : 'XCircle'} 
+                      size={20} 
+                      className={schemaValidation?.isValid ? 'text-yellow-600' : 'text-red-600'}
+                    />
+                    <div>
+                      <h4 className="font-medium text-gray-900">Schema Validation Results</h4>
+                      <p className="text-sm text-gray-600">
+                        {schemaValidation?.totalErrors} errors, {schemaValidation?.totalWarnings} warnings
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    iconName="Download"
+                    iconPosition="left"
+                    onClick={() => {
+                      const csvContent = [
+                        'Type,Field,Row,Column,Value,Message,Severity',
+                        ...schemaValidation?.errors?.map(error => 
+                          `${error?.type},"${error?.field || ''}",${error?.row || ''},"${error?.column || ''}","${error?.value || ''}","${error?.message}",${error?.severity}`
+                        )
+                      ]?.join('\n');
+                      const blob = new Blob([csvContent], { type: 'text/csv' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `schema-validation-errors-${Date.now()}.csv`;
+                      a?.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                  >
+                    Export Issues
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Data Preview Section */}
           {fileData && (
@@ -211,6 +393,7 @@ const DataIntakeDashboard = () => {
                     setFileData(null);
                     setColumnMapping({});
                     setProcessingResults(null);
+                    setSchemaValidation({});
                   }}
                 >
                   Reset Upload
@@ -225,13 +408,14 @@ const DataIntakeDashboard = () => {
                   disabled={isProcessing || Object.keys(columnMapping)?.length === 0}
                   onClick={handleIngestData}
                 >
-                  {isProcessing ? 'Processing Data...' : 'Ingest Data'}
+                  {isProcessing ? 'Processing with Master Schema...' : 'Ingest Data'}
                 </Button>
               </div>
               
               <div className="text-center mt-3">
                 <p className="text-xs text-muted-foreground">
-                  Press <kbd className="px-1.5 py-0.5 bg-muted rounded font-data">Enter</kbd> to ingest data
+                  Press <kbd className="px-1.5 py-0.5 bg-muted rounded font-data">Enter</kbd> to ingest data • 
+                  Schema compliance: {((Object.values(columnMapping)?.filter(Boolean)?.length / MASTER_SCHEMA?.length) * 100)?.toFixed(1)}%
                 </p>
               </div>
             </div>
