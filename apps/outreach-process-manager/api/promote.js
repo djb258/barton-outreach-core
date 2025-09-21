@@ -1,175 +1,158 @@
 /**
- * API Endpoint: /api/promote
- * Handles data promotion from raw_intake to production tables
- * Triggers slot creation and ensures data integrity through Composio MCP
+ * API Endpoint: /api/promote (Extended for Promotion Console)
+ * Vercel-ready serverless promotion orchestration
+ * Handles complete promotion workflow with slot creation and audit logging
  */
 
-import ComposioMCPClient from './lib/composio-mcp-client.js';
+import ComposioNeonBridge from './lib/composio-neon-bridge.js';
+import BartonDoctrineUtils from './utils/barton-doctrine.js';
 
 export default async function handler(req, res) {
   // Only accept POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({
       error: 'Method not allowed',
-      message: 'Only POST requests are accepted'
+      message: 'Only POST requests are accepted',
+      altitude: 10000,
+      doctrine: 'STAMPED'
     });
   }
 
-  const mcpClient = new ComposioMCPClient();
+  const startTime = Date.now();
+  const bridge = new ComposioNeonBridge();
 
   try {
-    // Extract filter parameters from request body
+    // Extract request parameters
     const {
-      filter = { validated: true },
-      sourceTable = 'marketing.company_raw_intake',
-      targetTable = 'marketing.company',
-      limit = 1000,
-      metadata = {}
+      filters = { validated: true },
+      batch_size = 100,
+      include_audit = true,
+      force_promotion = false
     } = req.body;
 
-    console.log(`[PROMOTE] Starting promotion from ${sourceTable} to ${targetTable}`);
-    console.log(`[PROMOTE] Filter:`, filter);
+    console.log('[PROMOTE] Starting promotion with filters:', filters);
 
     // Initialize response structure
     const response = {
       rows_promoted: 0,
+      rows_failed: 0,
       promotion_timestamp: new Date().toISOString(),
       promoted_unique_ids: [],
-      slot_creation_triggered: false,
-      barton_doctrine: {
-        process_id: mcpClient.generateProcessId(),
-        altitude: 'promotion_layer',
-        source_altitude: 'raw_intake',
-        target_altitude: 'production',
-        timestamp: new Date().toISOString()
-      },
-      promotion_details: {
-        source_table: sourceTable,
-        target_table: targetTable,
-        filter_applied: filter
+      failed_rows: [],
+      altitude: 10000,
+      doctrine: 'STAMPED',
+      process_metadata: {
+        process_id: BartonDoctrineUtils.generateProcessId('PROMOTE'),
+        started_at: new Date().toISOString(),
+        batch_size,
+        doctrine_version: process.env.DOCTRINE_HASH || 'STAMPED_v2.1.0'
       }
     };
 
-    // Step 1: Query eligible rows for promotion
-    console.log('[PROMOTE] Querying eligible rows for promotion');
+    // Step 1: Fetch validated rows from staging table via Composio MCP
+    console.log('[PROMOTE] Fetching validated rows from staging table');
 
-    let eligibleRows = [];
-    try {
-      const queryResult = await mcpClient.queryRows(
-        sourceTable,
-        filter,
-        limit
-      );
+    const fetchQuery = buildPromotionQuery(filters);
+    const fetchResult = await bridge.executeNeonOperation('QUERY_ROWS', {
+      sql: fetchQuery,
+      limit: batch_size,
+      return_metadata: true
+    });
 
-      if (queryResult.success && queryResult.data) {
-        eligibleRows = queryResult.data.rows || [];
-        console.log(`[PROMOTE] Found ${eligibleRows.length} eligible rows`);
+    if (!fetchResult.success) {
+      throw new Error(`Failed to fetch promotion candidates: ${fetchResult.error}`);
+    }
+
+    const candidateRows = fetchResult.data?.rows || [];
+    console.log(`[PROMOTE] Found ${candidateRows.length} candidates for promotion`);
+
+    if (candidateRows.length === 0) {
+      return res.status(200).json({
+        ...response,
+        message: 'No validated rows found for promotion',
+        completed_at: new Date().toISOString()
+      });
+    }
+
+    // Step 2: Process each row through promotion pipeline
+    const promotionResults = [];
+    const auditEntries = [];
+
+    for (const row of candidateRows) {
+      const promotionResult = await promoteCompanyRecord(bridge, row, response.process_metadata.process_id);
+      promotionResults.push(promotionResult);
+
+      if (promotionResult.success) {
+        response.rows_promoted++;
+        response.promoted_unique_ids.push(promotionResult.unique_id);
+
+        // Create audit entry for successful promotion
+        auditEntries.push(createAuditEntry('promotion_success', {
+          unique_id: promotionResult.unique_id,
+          company_name: row.company_name,
+          slot_id: promotionResult.slot_id,
+          process_id: response.process_metadata.process_id
+        }));
       } else {
-        console.log('[PROMOTE] No eligible rows found');
-        return res.status(200).json({
-          success: true,
-          message: 'No rows eligible for promotion',
-          ...response
+        response.rows_failed++;
+        response.failed_rows.push({
+          unique_id: row.unique_id,
+          company_name: row.company_name || 'Unknown',
+          errors: promotionResult.errors
         });
-      }
-    } catch (queryError) {
-      console.error('[PROMOTE] Query error:', queryError);
-      throw new Error(`Failed to query eligible rows: ${queryError.message}`);
-    }
 
-    // Step 2: Promote rows through Composio MCP
-    if (eligibleRows.length > 0) {
-      console.log(`[PROMOTE] Promoting ${eligibleRows.length} rows`);
-
-      try {
-        const promoteResult = await mcpClient.promoteRows(
-          sourceTable,
-          targetTable,
-          filter
-        );
-
-        if (promoteResult.success) {
-          // Extract promoted row information
-          const promotedData = promoteResult.data || {};
-
-          response.rows_promoted = promotedData.rowsPromoted || eligibleRows.length;
-          response.promoted_unique_ids = promotedData.promotedIds ||
-            eligibleRows.map(row => row.unique_id || mcpClient.generateUniqueId());
-
-          // Check if slot creation was triggered
-          response.slot_creation_triggered = promotedData.slotCreationTriggered || false;
-
-          console.log(`[PROMOTE] Successfully promoted ${response.rows_promoted} rows`);
-
-          // Step 3: Trigger slot creation if configured
-          if (response.slot_creation_triggered) {
-            console.log('[PROMOTE] Slot creation triggers activated');
-
-            response.slot_details = {
-              slots_created: promotedData.slotsCreated || response.rows_promoted,
-              slot_type: 'company_slot',
-              slot_status: 'active',
-              creation_timestamp: new Date().toISOString()
-            };
-          }
-
-          // Step 4: Update Barton Doctrine metadata
-          response.barton_doctrine.promotion_complete = true;
-          response.barton_doctrine.completion_timestamp = new Date().toISOString();
-          response.barton_doctrine.total_processing_time_ms =
-            new Date(response.barton_doctrine.completion_timestamp) -
-            new Date(response.barton_doctrine.timestamp);
-
-          // Step 5: Add audit trail
-          response.audit_trail = {
-            promoted_by: 'middle_layer_orchestration',
-            promotion_method: 'composio_mcp_neon',
-            source_filter: filter,
-            promotion_timestamp: response.promotion_timestamp,
-            verification_status: 'pending_verification'
-          };
-
-        } else {
-          throw new Error('Promotion failed through MCP');
-        }
-      } catch (promoteError) {
-        console.error('[PROMOTE] Promotion error:', promoteError);
-        throw new Error(`Failed to promote rows: ${promoteError.message}`);
+        // Create audit entry for failed promotion
+        auditEntries.push(createAuditEntry('promotion_failed', {
+          unique_id: row.unique_id,
+          company_name: row.company_name,
+          errors: promotionResult.errors,
+          process_id: response.process_metadata.process_id
+        }));
       }
     }
 
-    // Step 6: Verify promotion success (optional verification step)
-    if (response.rows_promoted > 0) {
-      console.log('[PROMOTE] Verifying promotion success');
+    // Step 3: Bulk update staging table with promotion status
+    console.log('[PROMOTE] Updating staging table with promotion status');
 
-      try {
-        const verifyResult = await mcpClient.queryRows(
-          targetTable,
-          { unique_id: { $in: response.promoted_unique_ids.slice(0, 10) } },
-          10
-        );
+    const updateResult = await bulkUpdatePromotionStatus(bridge, promotionResults);
 
-        if (verifyResult.success && verifyResult.data) {
-          const verifiedCount = verifyResult.data.rows?.length || 0;
-          response.verification = {
-            verified: verifiedCount > 0,
-            sample_verified_count: verifiedCount,
-            verification_timestamp: new Date().toISOString()
-          };
+    if (!updateResult.success) {
+      console.error('[PROMOTE] Warning: Failed to update staging table:', updateResult.error);
+    }
 
-          if (response.audit_trail) {
-            response.audit_trail.verification_status =
-              verifiedCount > 0 ? 'verified' : 'verification_failed';
-          }
-        }
-      } catch (verifyError) {
-        console.error('[PROMOTE] Verification error (non-critical):', verifyError);
-        // Non-critical error, continue
+    // Step 4: Write audit log via Composio MCP
+    if (include_audit && auditEntries.length > 0) {
+      const auditResult = await writeAuditLog(bridge, auditEntries, response.process_metadata.process_id);
+
+      if (auditResult.success) {
+        response.audit_log_url = `/logs/company_promotion_log_${new Date().toISOString().split('T')[0].replace(/-/g, '')}.json`;
+        response.audit_log_id = auditResult.log_id;
       }
     }
 
-    // Return success response
-    console.log('[PROMOTE] Process complete, returning response');
+    // Step 5: Finalize response metadata
+    response.process_metadata.completed_at = new Date().toISOString();
+    response.process_metadata.total_processing_time_ms = Date.now() - startTime;
+    response.process_metadata.performance_grade = BartonDoctrineUtils.getPerformanceGrade(
+      response.process_metadata.total_processing_time_ms
+    );
+
+    // Add STAMPED compliance
+    response.stamped_metadata = {
+      source: 'promotion_middleware',
+      timestamp: response.promotion_timestamp,
+      actor: 'composio_mcp_orchestrator',
+      method: 'stamped_promotion_pipeline',
+      process: response.process_metadata.process_id,
+      environment: process.env.NODE_ENV || 'production',
+      data: {
+        promoted_count: response.rows_promoted,
+        failed_count: response.rows_failed,
+        batch_size
+      }
+    };
+
+    console.log(`[PROMOTE] Promotion complete: ${response.rows_promoted} promoted, ${response.rows_failed} failed`);
 
     return res.status(200).json({
       success: response.rows_promoted > 0,
@@ -181,18 +164,418 @@ export default async function handler(req, res) {
 
     return res.status(500).json({
       success: false,
-      error: 'Internal server error',
+      error: 'Promotion failed',
       message: error.message,
       rows_promoted: 0,
+      rows_failed: 0,
       promotion_timestamp: new Date().toISOString(),
       promoted_unique_ids: [],
-      slot_creation_triggered: false,
-      barton_doctrine: {
-        process_id: new Date().getTime().toString(),
-        altitude: 'promotion_layer_error',
-        timestamp: new Date().toISOString(),
-        error: error.message
+      failed_rows: [],
+      altitude: 10000,
+      doctrine: 'STAMPED',
+      process_metadata: {
+        process_id: BartonDoctrineUtils.generateProcessId('PROMOTE_ERROR'),
+        error_timestamp: new Date().toISOString(),
+        error_details: {
+          message: error.message,
+          stack: error.stack
+        }
       }
     });
   }
+}
+
+/**
+ * Promote a single company record through the complete pipeline
+ */
+async function promoteCompanyRecord(bridge, row, processId) {
+  const result = {
+    unique_id: row.unique_id,
+    success: false,
+    errors: [],
+    slot_id: null,
+    promotion_metadata: {}
+  };
+
+  try {
+    // Step 1: Insert into company master table
+    const insertResult = await insertIntoMasterTable(bridge, row, processId);
+
+    if (!insertResult.success) {
+      result.errors.push('master_table_insert_failed');
+      return result;
+    }
+
+    // Step 2: Create company slot
+    const slotResult = await createCompanySlot(bridge, row, processId);
+
+    if (!slotResult.success) {
+      result.errors.push('slot_creation_failed');
+      // Continue with promotion even if slot creation fails (non-critical)
+    } else {
+      result.slot_id = slotResult.slot_id;
+    }
+
+    // Step 3: Initialize company metadata
+    const metadataResult = await initializeCompanyMetadata(bridge, row, processId);
+
+    if (!metadataResult.success) {
+      result.errors.push('metadata_initialization_failed');
+      // Continue with promotion (non-critical)
+    }
+
+    // Step 4: Trigger post-promotion webhooks/notifications
+    const notificationResult = await triggerPromotionNotifications(bridge, row, processId);
+
+    if (!notificationResult.success) {
+      result.errors.push('notification_failed');
+      // Continue with promotion (non-critical)
+    }
+
+    // Promotion successful if master table insert succeeded
+    result.success = insertResult.success;
+    result.promotion_metadata = {
+      master_table_id: insertResult.id,
+      slot_id: result.slot_id,
+      metadata_initialized: metadataResult.success,
+      notifications_sent: notificationResult.success,
+      promotion_timestamp: new Date().toISOString()
+    };
+
+    return result;
+
+  } catch (error) {
+    console.error(`[PROMOTE] Error promoting record ${row.unique_id}:`, error);
+    result.errors.push('promotion_system_error');
+    result.system_error = error.message;
+    return result;
+  }
+}
+
+/**
+ * Insert company record into master table
+ */
+async function insertIntoMasterTable(bridge, row, processId) {
+  try {
+    const promotedRow = {
+      ...row,
+      unique_id: row.unique_id,
+      process_id: processId,
+      altitude: 'production',
+      promoted_at: new Date().toISOString(),
+      promotion_source: 'staging_promotion',
+      status: 'active'
+    };
+
+    const insertSQL = `
+      INSERT INTO marketing.company (
+        unique_id, company_name, industry, contact_email, contact_phone,
+        address, website_url, employee_count, revenue, description,
+        process_id, altitude, promoted_at, promotion_source, status,
+        created_at, updated_at
+      ) VALUES (
+        '${promotedRow.unique_id}',
+        '${sanitizeSQL(promotedRow.company_name)}',
+        '${sanitizeSQL(promotedRow.industry)}',
+        '${sanitizeSQL(promotedRow.contact_email)}',
+        '${sanitizeSQL(promotedRow.contact_phone)}',
+        '${sanitizeSQL(promotedRow.address)}',
+        '${sanitizeSQL(promotedRow.website_url)}',
+        ${promotedRow.employee_count || 'NULL'},
+        ${promotedRow.revenue || 'NULL'},
+        '${sanitizeSQL(promotedRow.description || '')}',
+        '${processId}',
+        'production',
+        NOW(),
+        'staging_promotion',
+        'active',
+        NOW(),
+        NOW()
+      )
+      ON CONFLICT (unique_id) DO UPDATE SET
+        updated_at = NOW(),
+        promotion_source = 'staging_promotion_update'
+      RETURNING id, unique_id
+    `;
+
+    const result = await bridge.executeNeonOperation('EXECUTE_SQL', {
+      sql: insertSQL,
+      mode: 'write',
+      return_type: 'rows'
+    });
+
+    if (result.success && result.data?.rows?.length > 0) {
+      return {
+        success: true,
+        id: result.data.rows[0].id,
+        unique_id: result.data.rows[0].unique_id
+      };
+    }
+
+    return { success: false, error: 'Insert failed - no rows returned' };
+
+  } catch (error) {
+    console.error('[PROMOTE] Master table insert error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Create company slot for the promoted company
+ */
+async function createCompanySlot(bridge, row, processId) {
+  try {
+    const slotId = BartonDoctrineUtils.generateUniqueId('SLOT');
+
+    const slotSQL = `
+      INSERT INTO marketing.company_slots (
+        slot_id, company_unique_id, slot_type, slot_status,
+        process_id, created_at, metadata
+      ) VALUES (
+        '${slotId}',
+        '${row.unique_id}',
+        'company_slot',
+        'active',
+        '${processId}',
+        NOW(),
+        '${JSON.stringify({
+          company_name: row.company_name,
+          industry: row.industry,
+          promotion_source: 'staging'
+        }).replace(/'/g, "''")}'
+      )
+      RETURNING slot_id
+    `;
+
+    const result = await bridge.executeNeonOperation('EXECUTE_SQL', {
+      sql: slotSQL,
+      mode: 'write',
+      return_type: 'rows'
+    });
+
+    if (result.success && result.data?.rows?.length > 0) {
+      return {
+        success: true,
+        slot_id: result.data.rows[0].slot_id
+      };
+    }
+
+    return { success: false, error: 'Slot creation failed' };
+
+  } catch (error) {
+    console.error('[PROMOTE] Slot creation error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Initialize company metadata tables
+ */
+async function initializeCompanyMetadata(bridge, row, processId) {
+  try {
+    const metadataSQL = `
+      INSERT INTO marketing.company_metadata (
+        company_unique_id, metadata_type, metadata_value,
+        process_id, created_at
+      ) VALUES
+      ('${row.unique_id}', 'promotion_details', '${JSON.stringify({
+        promoted_from: 'staging',
+        promotion_timestamp: new Date().toISOString(),
+        validation_status: 'validated'
+      }).replace(/'/g, "''")}', '${processId}', NOW()),
+      ('${row.unique_id}', 'contact_preferences', '${JSON.stringify({
+        email_consent: true,
+        phone_consent: true,
+        marketing_consent: false
+      }).replace(/'/g, "''")}', '${processId}', NOW())
+    `;
+
+    const result = await bridge.executeNeonOperation('EXECUTE_SQL', {
+      sql: metadataSQL,
+      mode: 'write'
+    });
+
+    return { success: result.success };
+
+  } catch (error) {
+    console.error('[PROMOTE] Metadata initialization error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Trigger promotion notifications
+ */
+async function triggerPromotionNotifications(bridge, row, processId) {
+  try {
+    // Log notification trigger
+    const notificationSQL = `
+      INSERT INTO marketing.system_notifications (
+        notification_type, target_id, message, process_id,
+        status, created_at
+      ) VALUES (
+        'company_promoted',
+        '${row.unique_id}',
+        'Company ${sanitizeSQL(row.company_name)} successfully promoted to production',
+        '${processId}',
+        'pending',
+        NOW()
+      )
+    `;
+
+    const result = await bridge.executeNeonOperation('EXECUTE_SQL', {
+      sql: notificationSQL,
+      mode: 'write'
+    });
+
+    return { success: result.success };
+
+  } catch (error) {
+    console.error('[PROMOTE] Notification trigger error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Write audit log entries
+ */
+async function writeAuditLog(bridge, auditEntries, processId) {
+  try {
+    const logId = BartonDoctrineUtils.generateUniqueId('AUDIT');
+
+    const auditSQL = `
+      INSERT INTO marketing.company_promotion_log (
+        log_id, process_id, audit_entries, entry_count,
+        created_at, log_type
+      ) VALUES (
+        '${logId}',
+        '${processId}',
+        '${JSON.stringify(auditEntries).replace(/'/g, "''")}',
+        ${auditEntries.length},
+        NOW(),
+        'promotion_batch'
+      )
+      RETURNING log_id
+    `;
+
+    const result = await bridge.executeNeonOperation('EXECUTE_SQL', {
+      sql: auditSQL,
+      mode: 'write',
+      return_type: 'rows'
+    });
+
+    if (result.success && result.data?.rows?.length > 0) {
+      return {
+        success: true,
+        log_id: result.data.rows[0].log_id
+      };
+    }
+
+    return { success: false, error: 'Audit log creation failed' };
+
+  } catch (error) {
+    console.error('[PROMOTE] Audit log error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Create audit entry
+ */
+function createAuditEntry(action, data) {
+  return {
+    audit_id: BartonDoctrineUtils.generateUniqueId('AUDIT'),
+    action,
+    timestamp: new Date().toISOString(),
+    actor: 'promotion_middleware',
+    details: data,
+    doctrine_version: process.env.DOCTRINE_HASH || 'STAMPED_v2.1.0'
+  };
+}
+
+/**
+ * Build promotion query with filters
+ */
+function buildPromotionQuery(filters) {
+  let whereClause = "WHERE validated = true AND (promoted IS NULL OR promoted = false)";
+
+  if (filters.batch_id) {
+    whereClause += ` AND batch_id = '${filters.batch_id}'`;
+  }
+
+  if (filters.industry) {
+    whereClause += ` AND industry = '${sanitizeSQL(filters.industry)}'`;
+  }
+
+  if (filters.employee_count_min) {
+    whereClause += ` AND employee_count >= ${filters.employee_count_min}`;
+  }
+
+  return `
+    SELECT *
+    FROM marketing.company_raw_intake
+    ${whereClause}
+    ORDER BY validation_timestamp ASC
+  `;
+}
+
+/**
+ * Bulk update promotion status in staging table
+ */
+async function bulkUpdatePromotionStatus(bridge, promotionResults) {
+  try {
+    const successfulPromotions = promotionResults.filter(r => r.success);
+    const failedPromotions = promotionResults.filter(r => !r.success);
+
+    if (successfulPromotions.length > 0) {
+      const successIds = successfulPromotions.map(r => `'${r.unique_id}'`).join(', ');
+      const successSQL = `
+        UPDATE marketing.company_raw_intake
+        SET
+          promoted = true,
+          promotion_timestamp = NOW(),
+          promotion_status = 'completed'
+        WHERE unique_id IN (${successIds})
+      `;
+
+      await bridge.executeNeonOperation('EXECUTE_SQL', {
+        sql: successSQL,
+        mode: 'write'
+      });
+    }
+
+    if (failedPromotions.length > 0) {
+      const failedIds = failedPromotions.map(r => `'${r.unique_id}'`).join(', ');
+      const failedSQL = `
+        UPDATE marketing.company_raw_intake
+        SET
+          promoted = false,
+          promotion_status = 'failed',
+          promotion_errors = '${JSON.stringify(failedPromotions.reduce((acc, r) => {
+            acc[r.unique_id] = r.errors;
+            return acc;
+          }, {})).replace(/'/g, "''")}'
+        WHERE unique_id IN (${failedIds})
+      `;
+
+      await bridge.executeNeonOperation('EXECUTE_SQL', {
+        sql: failedSQL,
+        mode: 'write'
+      });
+    }
+
+    return { success: true };
+
+  } catch (error) {
+    console.error('[PROMOTE] Bulk update error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Sanitize SQL input
+ */
+function sanitizeSQL(input) {
+  if (!input) return '';
+  return input.toString().replace(/'/g, "''");
 }

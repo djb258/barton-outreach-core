@@ -7,6 +7,8 @@ import DataIntakeDashboard from './pages/data-intake-dashboard';
 import SystemAdministrationPanel from './pages/system-administration-panel';
 import DataValidationConsole from './pages/data-validation-console';
 import ValidationAdjusterConsole from './pages/validation-adjuster-console';
+import AdjusterConsole from './pages/adjuster-console';
+import PromotionConsole from './pages/promotion-console';
 
 const Routes = () => {
   return (
@@ -20,6 +22,8 @@ const Routes = () => {
         <Route path="/system-administration-panel" element={<SystemAdministrationPanel />} />
         <Route path="/data-validation-console" element={<DataValidationConsole />} />
         <Route path="/validation-adjuster-console" element={<ValidationAdjusterConsole />} />
+        <Route path="/adjuster-console" element={<AdjusterConsole />} />
+        <Route path="/promotion-console" element={<PromotionConsole />} />
         <Route path="*" element={<NotFound />} />
       </RouterRoutes>
       </ErrorBoundary>
