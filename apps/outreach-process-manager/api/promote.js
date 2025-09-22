@@ -573,6 +573,114 @@ async function bulkUpdatePromotionStatus(bridge, promotionResults) {
 }
 
 /**
+ * Write audit log entry to marketing.company_promotion_log
+ */
+async function writeAuditLog(bridge, auditEntries, processId) {
+  try {
+    const logId = BartonDoctrineUtils.generateUniqueId('LOG');
+    const batchId = processId.split('_')[1] || new Date().toISOString().split('T')[0];
+
+    // Group entries by unique_id for individual row tracking
+    const entriesGrouped = auditEntries.reduce((acc, entry) => {
+      const key = entry.unique_id || 'batch_operation';
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(entry);
+      return acc;
+    }, {});
+
+    const insertPromises = Object.entries(entriesGrouped).map(async ([uniqueId, entries]) => {
+      const isFailure = entries.some(e => e.action === 'promotion_failed');
+      const errorLog = isFailure ?
+        entries.filter(e => e.action === 'promotion_failed').map(e => e.details.errors).flat() :
+        [];
+
+      const individualLogId = BartonDoctrineUtils.generateUniqueId('ROWLOG');
+
+      const insertSQL = `
+        INSERT INTO marketing.company_promotion_log (
+          log_id, process_id, batch_id, unique_id, company_name,
+          promotion_status, error_log, audit_entries, entry_count,
+          log_type, altitude, doctrine, doctrine_version,
+          source_system, actor, method, environment, created_at
+        ) VALUES (
+          '${individualLogId}',
+          '${processId}',
+          '${batchId}',
+          '${uniqueId}',
+          '${sanitizeSQL(entries[0]?.details?.company_name || 'Unknown')}',
+          '${isFailure ? 'FAILED' : 'PROMOTED'}',
+          '${JSON.stringify(errorLog).replace(/'/g, "''")}',
+          '${JSON.stringify(entries).replace(/'/g, "''")}',
+          ${entries.length},
+          'promotion_audit',
+          10000,
+          'STAMPED',
+          '${process.env.DOCTRINE_HASH || 'v2.1.0'}',
+          'outreach_process_manager',
+          'api_promote_endpoint',
+          'composio_mcp_promotion',
+          '${process.env.NODE_ENV || 'production'}',
+          NOW()
+        )
+        RETURNING log_id
+      `;
+
+      return bridge.executeNeonOperation('EXECUTE_SQL', {
+        sql: insertSQL,
+        mode: 'write',
+        return_type: 'rows'
+      });
+    });
+
+    const results = await Promise.all(insertPromises);
+    const successfulLogs = results.filter(r => r.success);
+
+    console.log(`[AUDIT] Created ${successfulLogs.length} individual audit log entries`);
+
+    return {
+      success: successfulLogs.length > 0,
+      log_id: logId,
+      individual_logs_created: successfulLogs.length,
+      total_entries: auditEntries.length
+    };
+
+  } catch (error) {
+    console.error('[AUDIT] Failed to write audit log:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Create audit entry for promotion activity
+ */
+function createAuditEntry(action, details) {
+  return {
+    action,
+    timestamp: new Date().toISOString(),
+    unique_id: details.unique_id,
+    details: {
+      company_name: details.company_name || 'Unknown',
+      errors: details.errors || [],
+      process_id: details.process_id,
+      slot_id: details.slot_id || null,
+      metadata: details.metadata || {}
+    },
+    stamped: {
+      source: 'promotion_audit',
+      timestamp: new Date().toISOString(),
+      actor: 'api_promote_endpoint',
+      method: 'individual_row_tracking',
+      process: details.process_id,
+      environment: process.env.NODE_ENV || 'production',
+      data: details
+    }
+  };
+}
+
+/**
  * Sanitize SQL input
  */
 function sanitizeSQL(input) {
