@@ -9,7 +9,7 @@ export default function ScrapeResultsTable({ scrapeData, loading }) {
     );
   }
 
-  // CSV headers exactly as they appear in the CSV file
+  // CSV headers exactly as they appear in the CSV file - using bracket notation for access
   const csvHeaders = [
     { key: 'Number', label: 'Number' },
     { key: 'Company', label: 'Company' },
@@ -51,14 +51,14 @@ export default function ScrapeResultsTable({ scrapeData, loading }) {
     { key: 'Secondary Intent Score', label: 'Secondary Intent Score' }
   ];
 
-  // Doctrine metadata columns (always pinned at start)
+  // Doctrine metadata columns (always pinned at start) - using dot notation
   const doctrineColumns = [
     { key: 'unique_id', label: 'Unique ID', pinned: true },
     { key: 'process_id', label: 'Process ID', pinned: true },
     { key: 'altitude', label: 'Altitude', pinned: true }
   ];
 
-  // Status and scrape specific columns
+  // Status and scrape specific columns - using dot notation
   const scrapeColumns = [
     { key: 'scrape_timestamp', label: 'Scrape Timestamp' },
     { key: 'scrape_type', label: 'Scrape Type' },
@@ -118,6 +118,16 @@ export default function ScrapeResultsTable({ scrapeData, loading }) {
         {altitude || '—'}
       </span>
     );
+  };
+
+  // Helper to get value from row using bracket notation for CSV fields
+  const getRowValue = (row, key) => {
+    // For CSV headers with spaces, use bracket notation
+    if (key.includes(' ') || key.includes('#')) {
+      return row[key];
+    }
+    // For simple keys, can use either
+    return row[key];
   };
 
   const formatCellValue = (value, columnKey) => {
@@ -216,17 +226,17 @@ export default function ScrapeResultsTable({ scrapeData, loading }) {
     const exportData = scrapeData.map(row => {
       const exportRow = {};
 
-      // Include all doctrine metadata
+      // Include all doctrine metadata with their original keys
       doctrineColumns.forEach(col => {
         exportRow[col.key] = row[col.key];
       });
 
-      // Include all scrape metadata
+      // Include all scrape metadata with their original keys
       scrapeColumns.forEach(col => {
         exportRow[col.key] = row[col.key];
       });
 
-      // Include all CSV fields
+      // Include all CSV fields with their original header names (with spaces)
       csvHeaders.forEach(col => {
         exportRow[col.key] = row[col.key];
       });
@@ -281,83 +291,93 @@ export default function ScrapeResultsTable({ scrapeData, loading }) {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {scrapeData?.map((row, index) => (
-              <tr key={row?.unique_id || index} className="hover:bg-gray-50">
-                {allColumns.map((column) => (
-                  <td
-                    key={column.key}
-                    className={`px-4 py-3 text-sm ${
-                      column.pinned ? 'sticky left-0 bg-white z-10 border-r font-medium' : ''
-                    } ${
-                      column.key === 'status' ? getStatusColor(row[column.key]) : 'text-gray-900'
-                    }`}
-                    style={column.pinned ? { minWidth: '120px' } : {}}
-                  >
-                    {/* Special handling for doctrine columns */}
-                    {column.key === 'unique_id' && (
-                      <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
-                        {row[column.key] || '—'}
-                      </span>
-                    )}
+            {scrapeData?.map((row, index) => {
+              // Use unique_id as key if available, otherwise fall back to index
+              const rowKey = row?.unique_id || row?.["unique_id"] || index;
 
-                    {column.key === 'process_id' && (
-                      <span className="font-medium text-blue-800 bg-blue-50 px-2 py-1 rounded text-xs">
-                        {row[column.key] || '—'}
-                      </span>
-                    )}
+              return (
+                <tr key={rowKey} className="hover:bg-gray-50">
+                  {allColumns.map((column) => {
+                    // Get value using bracket notation for CSV fields with spaces
+                    const cellValue = getRowValue(row, column.key);
 
-                    {column.key === 'altitude' && getAltitudeBadge(row[column.key])}
-
-                    {/* Special handling for scrape metadata */}
-                    {column.key === 'status' && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium">
-                        {getStatusBadge(row[column.key])} {row[column.key]}
-                      </span>
-                    )}
-
-                    {column.key === 'scrape_timestamp' && (
-                      <span className="font-mono text-xs">
-                        {row[column.key] ? new Date(row[column.key]).toLocaleString() : '—'}
-                      </span>
-                    )}
-
-                    {column.key === 'error_log' && (
-                      <div className="max-w-xs">
-                        {row[column.key] ? (
-                          <div className="group relative">
-                            <span className="truncate cursor-help text-red-600 block">
-                              {Array.isArray(row[column.key]) ? row[column.key].join(", ") : row[column.key]}
-                            </span>
-                            <div className="absolute z-10 invisible group-hover:visible bg-red-900 text-white text-xs rounded py-1 px-2 -top-8 left-0 w-64">
-                              {Array.isArray(row[column.key]) ? row[column.key].join(", ") : row[column.key]}
-                            </div>
-                          </div>
-                        ) : (
-                          "—"
+                    return (
+                      <td
+                        key={column.key}
+                        className={`px-4 py-3 text-sm ${
+                          column.pinned ? 'sticky left-0 bg-white z-10 border-r font-medium' : ''
+                        } ${
+                          column.key === 'status' ? getStatusColor(cellValue) : 'text-gray-900'
+                        }`}
+                        style={column.pinned ? { minWidth: '120px' } : {}}
+                      >
+                        {/* Special handling for doctrine columns */}
+                        {column.key === 'unique_id' && (
+                          <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                            {cellValue || '—'}
+                          </span>
                         )}
-                      </div>
-                    )}
 
-                    {column.key === 'batch_id' && (
-                      <span className="font-mono text-xs bg-yellow-50 text-yellow-800 px-2 py-1 rounded">
-                        {row[column.key] || '—'}
-                      </span>
-                    )}
+                        {column.key === 'process_id' && (
+                          <span className="font-medium text-blue-800 bg-blue-50 px-2 py-1 rounded text-xs">
+                            {cellValue || '—'}
+                          </span>
+                        )}
 
-                    {column.key === 'scrape_type' && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                        {row[column.key] || 'COMPANY_DATA'}
-                      </span>
-                    )}
+                        {column.key === 'altitude' && getAltitudeBadge(cellValue)}
 
-                    {/* Handle CSV data columns with exact key matching */}
-                    {csvHeaders.some(h => h.key === column.key) && (
-                      formatCellValue(row[column.key], column.key)
-                    )}
-                  </td>
-                ))}
-              </tr>
-            ))}
+                        {/* Special handling for scrape metadata */}
+                        {column.key === 'status' && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium">
+                            {getStatusBadge(cellValue)} {cellValue}
+                          </span>
+                        )}
+
+                        {column.key === 'scrape_timestamp' && (
+                          <span className="font-mono text-xs">
+                            {cellValue ? new Date(cellValue).toLocaleString() : '—'}
+                          </span>
+                        )}
+
+                        {column.key === 'error_log' && (
+                          <div className="max-w-xs">
+                            {cellValue ? (
+                              <div className="group relative">
+                                <span className="truncate cursor-help text-red-600 block">
+                                  {Array.isArray(cellValue) ? cellValue.join(", ") : cellValue}
+                                </span>
+                                <div className="absolute z-10 invisible group-hover:visible bg-red-900 text-white text-xs rounded py-1 px-2 -top-8 left-0 w-64">
+                                  {Array.isArray(cellValue) ? cellValue.join(", ") : cellValue}
+                                </div>
+                              </div>
+                            ) : (
+                              "—"
+                            )}
+                          </div>
+                        )}
+
+                        {column.key === 'batch_id' && (
+                          <span className="font-mono text-xs bg-yellow-50 text-yellow-800 px-2 py-1 rounded">
+                            {cellValue || '—'}
+                          </span>
+                        )}
+
+                        {column.key === 'scrape_type' && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                            {cellValue || 'COMPANY_DATA'}
+                          </span>
+                        )}
+
+                        {/* Handle CSV data columns - use the formatted value for all CSV fields */}
+                        {csvHeaders.some(h => h.key === column.key) && (
+                          formatCellValue(cellValue, column.key)
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
