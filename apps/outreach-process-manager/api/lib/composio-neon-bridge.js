@@ -5,6 +5,8 @@
  */
 
 import fetch from 'node-fetch';
+import path from 'path';
+import { spawn } from 'child_process';
 
 class ComposioNeonBridge {
   constructor() {

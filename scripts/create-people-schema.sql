@@ -1,259 +1,59 @@
--- ============================================
--- People Schema DDL for Barton Outreach Core
--- ============================================
+-- SCHEMA: people
+-- Core contact management schema with comprehensive contact information
+-- and social media integration
 
--- Create people schema
+-- Create the people schema
 CREATE SCHEMA IF NOT EXISTS people;
 
--- ============================================
--- Core People Table
--- ============================================
-CREATE TABLE IF NOT EXISTS people.marketing_people (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    external_id TEXT, -- For tracking external system IDs (Apollo, etc.)
-    company_id UUID, -- References company.marketing_company.id
-    
-    -- Contact Information
-    first_name TEXT,
-    last_name TEXT,
-    full_name TEXT,
-    email TEXT,
-    phone TEXT,
-    
-    -- Professional Information
-    title TEXT,
-    department TEXT,
-    seniority_level TEXT, -- C-Level, VP, Director, Manager, Individual Contributor
-    role_type TEXT, -- CEO, CFO, HR, etc.
-    
-    -- Social/Web Presence
-    linkedin_url TEXT,
-    personal_website TEXT,
-    
-    -- Validation Status
-    email_validation_status TEXT DEFAULT 'unverified', -- unverified, valid, invalid, risky
-    email_validation_score NUMERIC(3,2), -- 0.00 to 1.00
-    email_validation_provider TEXT, -- MillionVerifier, ZeroBounce, etc.
-    email_validated_at TIMESTAMP,
-    
-    -- Outreach Status
-    outreach_phase INTEGER DEFAULT 0, -- 0=not contacted, 1=initial, 2=follow-up, etc.
-    lead_pipeline_status TEXT DEFAULT 'new', -- new, qualified, contacted, replied, scheduled, closed
-    lead_score NUMERIC(5,2), -- 0.00 to 100.00
-    
-    -- Contact Preferences & Compliance
-    opt_out_status BOOLEAN DEFAULT false,
-    opt_out_date TIMESTAMP,
-    gdpr_consent BOOLEAN DEFAULT false,
-    contact_preferences JSONB, -- {email: true, linkedin: false, phone: false}
-    
-    -- Data Sources & Tracking
-    source TEXT DEFAULT 'manual', -- manual, apollo, apify, import, etc.
-    source_campaign TEXT, -- Which campaign/scrape this came from
-    scrape_session_id TEXT, -- Links to the specific scrape session
-    
-    -- Metadata
-    created_at TIMESTAMP DEFAULT now(),
-    updated_at TIMESTAMP DEFAULT now(),
-    created_by TEXT DEFAULT current_user,
-    modified_by TEXT,
-    
-    -- Data Quality & Enrichment
-    data_quality_score INTEGER DEFAULT 0, -- 0-100
-    enrichment_status TEXT DEFAULT 'basic', -- basic, enriched, premium
-    last_enriched_at TIMESTAMP,
-    
-    -- Barton Doctrine Fields
-    unique_id TEXT, -- Barton unique identifier
-    process_id TEXT, -- Process that created/modified this record
-    blueprint_version_hash TEXT,
-    
-    -- Additional metadata
-    notes TEXT,
-    tags JSONB, -- Flexible tagging system
-    custom_fields JSONB -- For additional data that doesn't fit standard fields
+-- Core contact table (personal-only; company data lives elsewhere)
+-- Note: Foreign key constraints omitted initially to allow creation without dependent tables
+CREATE TABLE IF NOT EXISTS people.contact (
+  contact_unique_id        TEXT PRIMARY KEY,
+  company_unique_id        TEXT NOT NULL,
+  slot_unique_id           TEXT,
+  first_name               TEXT NOT NULL,
+  last_name                TEXT NOT NULL,
+  title                    TEXT,
+  seniority                TEXT,
+  department               TEXT,
+  email                    CITEXT,
+  email_status             TEXT,
+  email_last_verified_at   TIMESTAMPTZ,
+  mobile_phone_e164        TEXT,
+  work_phone_e164          TEXT,
+  linkedin_url             TEXT,
+  x_url                    TEXT,
+  instagram_url            TEXT,
+  facebook_url             TEXT,
+  threads_url              TEXT,
+  tiktok_url               TEXT,
+  youtube_url              TEXT,
+  personal_website_url     TEXT,
+  github_url               TEXT,
+  calendly_url             TEXT,
+  whatsapp_handle          TEXT,
+  telegram_handle          TEXT,
+  do_not_contact           BOOLEAN DEFAULT FALSE,
+  contact_owner            TEXT,
+  source_system            TEXT,
+  source_record_id         TEXT,
+  created_at               TIMESTAMPTZ DEFAULT now(),
+  updated_at               TIMESTAMPTZ DEFAULT now()
 );
 
--- ============================================
--- Contact History Table (History-First Writes)
--- ============================================
-CREATE TABLE IF NOT EXISTS people.contact_history (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    person_id UUID NOT NULL, -- References people.marketing_people.id
-    
-    -- Change Tracking
-    change_type TEXT NOT NULL, -- created, updated, email_validated, outreach_status_changed, etc.
-    old_values JSONB, -- Previous state
-    new_values JSONB, -- New state
-    changed_fields TEXT[], -- Array of field names that changed
-    
-    -- Source Information
-    source_system TEXT, -- apify, validator, manual, campaign, etc.
-    source_session_id TEXT,
-    initiated_by TEXT, -- user_id or system_process
-    
-    -- Barton Doctrine Fields
-    process_id TEXT,
-    unique_id TEXT,
-    blueprint_version_hash TEXT,
-    
-    -- Metadata
-    created_at TIMESTAMP DEFAULT now(),
-    notes TEXT
-);
+-- Performance indexes for people.contact table
+CREATE INDEX IF NOT EXISTS idx_contact_company_unique_id ON people.contact (company_unique_id);
+CREATE INDEX IF NOT EXISTS idx_contact_slot_unique_id ON people.contact (slot_unique_id);
+CREATE INDEX IF NOT EXISTS idx_contact_email ON people.contact (email);
+CREATE INDEX IF NOT EXISTS idx_contact_name ON people.contact (first_name, last_name);
+CREATE INDEX IF NOT EXISTS idx_contact_source_system ON people.contact (source_system);
+CREATE INDEX IF NOT EXISTS idx_contact_created_at ON people.contact (created_at);
+CREATE INDEX IF NOT EXISTS idx_contact_updated_at ON people.contact (updated_at);
+CREATE INDEX IF NOT EXISTS idx_contact_email_status ON people.contact (email_status);
+CREATE INDEX IF NOT EXISTS idx_contact_do_not_contact ON people.contact (do_not_contact);
 
--- ============================================
--- Validation Status Table (For detailed email validation tracking)
--- ============================================
-CREATE TABLE IF NOT EXISTS people.validation_status (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    person_id UUID NOT NULL, -- References people.marketing_people.id
-    email TEXT NOT NULL,
-    
-    -- Validation Results
-    validation_provider TEXT NOT NULL, -- MillionVerifier, ZeroBounce, etc.
-    validation_status TEXT NOT NULL, -- valid, invalid, risky, unknown
-    validation_score NUMERIC(3,2), -- 0.00 to 1.00
-    validation_reason TEXT, -- catch_all, disposable, role_based, syntax_error, etc.
-    
-    -- Detailed Results (Provider-specific)
-    provider_response JSONB, -- Full response from validation service
-    
-    -- Metadata
-    validated_at TIMESTAMP DEFAULT now(),
-    validation_cost NUMERIC(10,4), -- Cost in credits/dollars
-    
-    -- Barton Doctrine Fields
-    process_id TEXT,
-    unique_id TEXT,
-    blueprint_version_hash TEXT
-);
-
--- ============================================
--- Role Slots Table (For tracking company role requirements)
--- ============================================
-CREATE TABLE IF NOT EXISTS people.company_role_slots (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    company_id UUID NOT NULL, -- References company.marketing_company.id
-    
-    -- Role Definition
-    role_type TEXT NOT NULL, -- CEO, CFO, HR, CTO, etc.
-    target_count INTEGER DEFAULT 1, -- How many of this role we want
-    priority_level INTEGER DEFAULT 1, -- 1=highest, 5=lowest
-    
-    -- Status
-    slot_status TEXT DEFAULT 'open', -- open, filled, paused, closed
-    filled_count INTEGER DEFAULT 0,
-    
-    -- Requirements
-    seniority_requirements TEXT[], -- ['C-Level', 'VP']
-    department_preferences TEXT[], -- ['Finance', 'Operations']
-    title_keywords TEXT[], -- Keywords to match in titles
-    
-    -- Barton Doctrine Fields
-    process_id TEXT,
-    unique_id TEXT,
-    blueprint_version_hash TEXT,
-    
-    -- Metadata
-    created_at TIMESTAMP DEFAULT now(),
-    updated_at TIMESTAMP DEFAULT now(),
-    created_by TEXT DEFAULT current_user
-);
-
--- ============================================
--- Slot History Table (Track role slot changes)
--- ============================================
-CREATE TABLE IF NOT EXISTS people.slot_history (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    slot_id UUID NOT NULL, -- References people.company_role_slots.id
-    person_id UUID, -- References people.marketing_people.id (if person assigned)
-    
-    -- Action Tracking
-    action_type TEXT NOT NULL, -- slot_created, person_assigned, person_removed, slot_filled, etc.
-    old_status TEXT,
-    new_status TEXT,
-    
-    -- Source Information
-    source_system TEXT, -- apify, manual, validator, etc.
-    scrape_session_id TEXT,
-    
-    -- Barton Doctrine Fields
-    process_id TEXT,
-    unique_id TEXT,
-    blueprint_version_hash TEXT,
-    
-    -- Metadata
-    created_at TIMESTAMP DEFAULT now(),
-    initiated_by TEXT,
-    notes TEXT
-);
-
--- ============================================
--- Indexes for Performance
--- ============================================
-
--- Primary lookup indexes
-CREATE INDEX IF NOT EXISTS idx_marketing_people_email ON people.marketing_people(email);
-CREATE INDEX IF NOT EXISTS idx_marketing_people_company_id ON people.marketing_people(company_id);
-CREATE INDEX IF NOT EXISTS idx_marketing_people_external_id ON people.marketing_people(external_id);
-CREATE INDEX IF NOT EXISTS idx_marketing_people_role_type ON people.marketing_people(role_type);
-CREATE INDEX IF NOT EXISTS idx_marketing_people_pipeline_status ON people.marketing_people(lead_pipeline_status);
-
--- History table indexes
-CREATE INDEX IF NOT EXISTS idx_contact_history_person_id ON people.contact_history(person_id);
-CREATE INDEX IF NOT EXISTS idx_contact_history_created_at ON people.contact_history(created_at);
-CREATE INDEX IF NOT EXISTS idx_contact_history_change_type ON people.contact_history(change_type);
-
--- Validation indexes
-CREATE INDEX IF NOT EXISTS idx_validation_status_person_id ON people.validation_status(person_id);
-CREATE INDEX IF NOT EXISTS idx_validation_status_email ON people.validation_status(email);
-CREATE INDEX IF NOT EXISTS idx_validation_status_provider ON people.validation_status(validation_provider);
-
--- Role slots indexes
-CREATE INDEX IF NOT EXISTS idx_company_role_slots_company_id ON people.company_role_slots(company_id);
-CREATE INDEX IF NOT EXISTS idx_company_role_slots_role_type ON people.company_role_slots(role_type);
-CREATE INDEX IF NOT EXISTS idx_company_role_slots_status ON people.company_role_slots(slot_status);
-
--- Slot history indexes
-CREATE INDEX IF NOT EXISTS idx_slot_history_slot_id ON people.slot_history(slot_id);
-CREATE INDEX IF NOT EXISTS idx_slot_history_person_id ON people.slot_history(person_id);
-CREATE INDEX IF NOT EXISTS idx_slot_history_created_at ON people.slot_history(created_at);
-
--- ============================================
--- Foreign Key Constraints (Optional - depends on your setup)
--- ============================================
--- Note: Uncomment these if you want strict referential integrity
--- You may need to adjust table references based on your exact schema
-
--- ALTER TABLE people.marketing_people 
--- ADD CONSTRAINT fk_marketing_people_company 
--- FOREIGN KEY (company_id) REFERENCES company.marketing_company(id);
-
--- ALTER TABLE people.contact_history 
--- ADD CONSTRAINT fk_contact_history_person 
--- FOREIGN KEY (person_id) REFERENCES people.marketing_people(id);
-
--- ALTER TABLE people.validation_status 
--- ADD CONSTRAINT fk_validation_status_person 
--- FOREIGN KEY (person_id) REFERENCES people.marketing_people(id);
-
--- ALTER TABLE people.company_role_slots 
--- ADD CONSTRAINT fk_company_role_slots_company 
--- FOREIGN KEY (company_id) REFERENCES company.marketing_company(id);
-
--- ALTER TABLE people.slot_history 
--- ADD CONSTRAINT fk_slot_history_slot 
--- FOREIGN KEY (slot_id) REFERENCES people.company_role_slots(id);
-
--- ALTER TABLE people.slot_history 
--- ADD CONSTRAINT fk_slot_history_person 
--- FOREIGN KEY (person_id) REFERENCES people.marketing_people(id);
-
--- ============================================
--- Triggers for Updated At
--- ============================================
-CREATE OR REPLACE FUNCTION people.update_updated_at_column()
+-- Create or replace the function to update the updated_at timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = now();
@@ -261,25 +61,124 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
-CREATE TRIGGER update_marketing_people_updated_at 
-    BEFORE UPDATE ON people.marketing_people 
-    FOR EACH ROW EXECUTE FUNCTION people.update_updated_at_column();
+-- Create the trigger on people.contact table
+DROP TRIGGER IF EXISTS update_people_contact_updated_at ON people.contact;
+CREATE TRIGGER update_people_contact_updated_at
+    BEFORE UPDATE ON people.contact
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_company_role_slots_updated_at 
-    BEFORE UPDATE ON people.company_role_slots 
-    FOR EACH ROW EXECUTE FUNCTION people.update_updated_at_column();
+-- Add table and column comments for documentation
+COMMENT ON SCHEMA people IS 'Contact management schema for individual people associated with companies';
+COMMENT ON TABLE people.contact IS 'Contact information for individuals associated with companies';
 
--- ============================================
--- Comments for Documentation
--- ============================================
-COMMENT ON SCHEMA people IS 'Schema for managing people/contacts in the marketing outreach system';
-COMMENT ON TABLE people.marketing_people IS 'Main table for storing contact/people information with validation and outreach tracking';
-COMMENT ON TABLE people.contact_history IS 'History-first writes - tracks all changes to people records';
-COMMENT ON TABLE people.validation_status IS 'Detailed email validation results from various providers';
-COMMENT ON TABLE people.company_role_slots IS 'Defines role requirements for companies (CEO, CFO, HR slots)';
-COMMENT ON TABLE people.slot_history IS 'Tracks changes to role slots and person assignments';
+-- Column comments
+COMMENT ON COLUMN people.contact.contact_unique_id IS 'Unique identifier for the contact';
+COMMENT ON COLUMN people.contact.company_unique_id IS 'Reference to company this contact belongs to';
+COMMENT ON COLUMN people.contact.slot_unique_id IS 'Reference to outreach slot if applicable';
+COMMENT ON COLUMN people.contact.first_name IS 'Contact first name';
+COMMENT ON COLUMN people.contact.last_name IS 'Contact last name';
+COMMENT ON COLUMN people.contact.title IS 'Job title or position';
+COMMENT ON COLUMN people.contact.seniority IS 'Seniority level (junior, mid, senior, executive)';
+COMMENT ON COLUMN people.contact.department IS 'Department or functional area';
+COMMENT ON COLUMN people.contact.email IS 'Primary email address (case-insensitive)';
+COMMENT ON COLUMN people.contact.email_status IS 'Email validation status (valid, invalid, bounced, etc.)';
+COMMENT ON COLUMN people.contact.email_last_verified_at IS 'Last time email was verified';
+COMMENT ON COLUMN people.contact.mobile_phone_e164 IS 'Mobile phone in E.164 format';
+COMMENT ON COLUMN people.contact.work_phone_e164 IS 'Work phone in E.164 format';
+COMMENT ON COLUMN people.contact.linkedin_url IS 'LinkedIn profile URL';
+COMMENT ON COLUMN people.contact.x_url IS 'X (Twitter) profile URL';
+COMMENT ON COLUMN people.contact.instagram_url IS 'Instagram profile URL';
+COMMENT ON COLUMN people.contact.facebook_url IS 'Facebook profile URL';
+COMMENT ON COLUMN people.contact.threads_url IS 'Threads profile URL';
+COMMENT ON COLUMN people.contact.tiktok_url IS 'TikTok profile URL';
+COMMENT ON COLUMN people.contact.youtube_url IS 'YouTube channel URL';
+COMMENT ON COLUMN people.contact.personal_website_url IS 'Personal website URL';
+COMMENT ON COLUMN people.contact.github_url IS 'GitHub profile URL';
+COMMENT ON COLUMN people.contact.calendly_url IS 'Calendly booking URL';
+COMMENT ON COLUMN people.contact.whatsapp_handle IS 'WhatsApp handle or phone number';
+COMMENT ON COLUMN people.contact.telegram_handle IS 'Telegram username or handle';
+COMMENT ON COLUMN people.contact.do_not_contact IS 'Flag indicating if contact should not be reached out to';
+COMMENT ON COLUMN people.contact.contact_owner IS 'User responsible for this contact';
+COMMENT ON COLUMN people.contact.source_system IS 'System that created this contact record';
+COMMENT ON COLUMN people.contact.source_record_id IS 'Original record ID in source system';
+COMMENT ON COLUMN people.contact.created_at IS 'Record creation timestamp';
+COMMENT ON COLUMN people.contact.updated_at IS 'Record last update timestamp';
 
-COMMENT ON COLUMN people.marketing_people.lead_pipeline_status IS 'Tracks progression through outreach pipeline: new -> qualified -> contacted -> replied -> scheduled -> closed';
-COMMENT ON COLUMN people.marketing_people.email_validation_status IS 'Email validation status: unverified, valid, invalid, risky';
-COMMENT ON COLUMN people.marketing_people.unique_id IS 'Barton Doctrine unique identifier for this record';
-COMMENT ON COLUMN people.marketing_people.process_id IS 'Barton Doctrine process that created/modified this record';
+-- Create a view for easier contact querying with computed fields
+CREATE OR REPLACE VIEW people.contact_view AS
+SELECT
+    contact_unique_id,
+    company_unique_id,
+    slot_unique_id,
+    first_name,
+    last_name,
+    CONCAT(first_name, ' ', last_name) AS full_name,
+    title,
+    seniority,
+    department,
+    email,
+    email_status,
+    email_last_verified_at,
+    mobile_phone_e164,
+    work_phone_e164,
+    linkedin_url,
+    x_url,
+    instagram_url,
+    facebook_url,
+    threads_url,
+    tiktok_url,
+    youtube_url,
+    personal_website_url,
+    github_url,
+    calendly_url,
+    whatsapp_handle,
+    telegram_handle,
+    do_not_contact,
+    contact_owner,
+    source_system,
+    source_record_id,
+    created_at,
+    updated_at,
+    -- Computed fields
+    CASE
+        WHEN email IS NOT NULL AND email_status = 'valid' THEN 'available'
+        WHEN email IS NOT NULL AND email_status IN ('invalid', 'bounced') THEN 'unavailable'
+        WHEN email IS NOT NULL THEN 'pending_verification'
+        ELSE 'no_email'
+    END AS contact_availability,
+    CASE
+        WHEN linkedin_url IS NOT NULL OR x_url IS NOT NULL OR instagram_url IS NOT NULL
+             OR facebook_url IS NOT NULL OR github_url IS NOT NULL THEN true
+        ELSE false
+    END AS has_social_media,
+    CASE
+        WHEN mobile_phone_e164 IS NOT NULL OR work_phone_e164 IS NOT NULL THEN true
+        ELSE false
+    END AS has_phone
+FROM people.contact;
+
+COMMENT ON VIEW people.contact_view IS 'Enhanced contact view with computed fields for easier querying';
+
+-- Grant permissions to the appropriate roles (if they exist)
+-- Note: These will only execute if the roles exist
+DO $$
+BEGIN
+    -- Grant schema usage
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'mcp_ingest') THEN
+        GRANT USAGE ON SCHEMA people TO mcp_ingest;
+        GRANT SELECT, INSERT, UPDATE ON people.contact TO mcp_ingest;
+        GRANT SELECT ON people.contact_view TO mcp_ingest;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'mcp_promote') THEN
+        GRANT USAGE ON SCHEMA people TO mcp_promote;
+        GRANT SELECT, INSERT, UPDATE ON people.contact TO mcp_promote;
+        GRANT SELECT ON people.contact_view TO mcp_promote;
+    END IF;
+
+    -- Grant to current user (owner)
+    GRANT ALL ON SCHEMA people TO CURRENT_USER;
+    GRANT ALL ON people.contact TO CURRENT_USER;
+    GRANT ALL ON people.contact_view TO CURRENT_USER;
+END
+$$;
