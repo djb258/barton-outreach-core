@@ -2,11 +2,12 @@
  * API Endpoint: /api/scrape-log
  * Scraping Console Backend (Step 6)
  * MCP tool for querying data scraping logs from Neon
+ * Now posts all scrape entries to unified audit log
  */
 
 import ComposioNeonBridge from './lib/composio-neon-bridge.js';
 
-export default async function handler(req, res) {
+export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
     return res.status(405).json({
       error: 'Method not allowed',
@@ -46,7 +47,7 @@ export default async function handler(req, res) {
 
       // Status filter
       if (status && status !== 'All') {
-        if (['In Progress', 'Completed', 'Failed'].includes(status)) {
+        if (['In Progress', 'Completed', 'Failed', 'Success', 'Pending'].includes(status)) {
           conditions.push(`scrape_status = '${status}'`);
         }
       }
@@ -78,6 +79,7 @@ export default async function handler(req, res) {
           error_log,
           batch_id,
           process_id,
+          unique_id,
           altitude,
           doctrine,
           doctrine_version,
@@ -98,12 +100,19 @@ export default async function handler(req, res) {
       return_type: 'rows'
     });
 
+    let formattedResults = [];
+
     if (!queryResult.success) {
       // If table doesn't exist, return mock data for development
       console.log('[SCRAPE-LOG] Table not found, returning mock data');
+      formattedResults = generateMockScrapeData();
+
+      // Post mock data to audit log
+      await postToAuditLog(formattedResults, bridge);
+
       return res.status(200).json({
-        rows_returned: 5,
-        results: generateMockScrapeData(),
+        rows_returned: formattedResults.length,
+        results: formattedResults,
         altitude: 10000,
         doctrine: 'STAMPED',
         metadata: {
@@ -119,7 +128,7 @@ export default async function handler(req, res) {
     const rows = queryResult.data?.rows || [];
 
     // Format results according to specification
-    const formattedResults = rows.map(row => ({
+    formattedResults = rows.map(row => ({
       scrape_id: row.scrape_id,
       scrape_timestamp: row.scrape_timestamp,
       scrape_type: row.scrape_type,
@@ -131,8 +140,13 @@ export default async function handler(req, res) {
         : null,
       batch_id: row.batch_id,
       process_id: row.process_id,
+      unique_id: row.unique_id,
+      altitude: row.altitude || 10000,
       doctrine_version: row.doctrine_version || 'v2.1.0'
     }));
+
+    // Post all scrape results to unified audit log
+    await postToAuditLog(formattedResults, bridge);
 
     console.log(`[SCRAPE-LOG] Returning ${formattedResults.length} scraping log entries`);
 
@@ -170,6 +184,93 @@ export default async function handler(req, res) {
 }
 
 /**
+ * Post scrape results to unified audit log
+ */
+async function postToAuditLog(scrapeResults: any[], bridge: any) {
+  try {
+    console.log('[SCRAPE-LOG] Posting scrape results to audit log...');
+
+    for (const result of scrapeResults) {
+      const auditEntry = {
+        unique_id: result.unique_id || generateDoctrineId(),
+        process_id: result.process_id || `Scrape ${result.scrape_type || 'Data'}`,
+        altitude: result.altitude || 10000,
+        timestamp: result.scrape_timestamp || new Date().toISOString(),
+        status: mapScrapeStatusToAuditStatus(result.status),
+        errors: result.error_log ? (Array.isArray(result.error_log) ? result.error_log : [result.error_log]) : [],
+        source: 'scrape-log',
+        // Additional scrape-specific fields
+        scrape_id: result.scrape_id,
+        scrape_type: result.scrape_type,
+        target_url: result.target_url,
+        records_scraped: result.records_scraped,
+        batch_id: result.batch_id
+      };
+
+      // Insert into unified audit log table
+      const insertQuery = `
+        INSERT INTO marketing.unified_audit_log (
+          unique_id, process_id, altitude, timestamp, status, errors, source,
+          scrape_id, scrape_type, target_url, records_scraped, batch_id,
+          created_at, doctrine, doctrine_version
+        ) VALUES (
+          '${auditEntry.unique_id}',
+          '${auditEntry.process_id}',
+          ${auditEntry.altitude},
+          '${auditEntry.timestamp}',
+          '${auditEntry.status}',
+          '${JSON.stringify(auditEntry.errors)}',
+          '${auditEntry.source}',
+          '${auditEntry.scrape_id || ''}',
+          '${auditEntry.scrape_type || ''}',
+          '${auditEntry.target_url || ''}',
+          ${auditEntry.records_scraped || 0},
+          '${auditEntry.batch_id || ''}',
+          NOW(),
+          'STAMPED',
+          'v2.1.0'
+        ) ON CONFLICT (unique_id) DO UPDATE SET
+          status = EXCLUDED.status,
+          errors = EXCLUDED.errors,
+          timestamp = EXCLUDED.timestamp
+      `;
+
+      await bridge.executeNeonOperation('EXECUTE_SQL', {
+        sql: insertQuery,
+        mode: 'write'
+      });
+    }
+
+    console.log(`[SCRAPE-LOG] Posted ${scrapeResults.length} entries to audit log`);
+  } catch (error) {
+    console.error('[SCRAPE-LOG] Error posting to audit log:', error);
+    // Don't fail the main request if audit logging fails
+  }
+}
+
+/**
+ * Map scrape status to standard audit status
+ */
+function mapScrapeStatusToAuditStatus(scrapeStatus: string): string {
+  const status = (scrapeStatus || '').toLowerCase();
+
+  if (status === 'completed' || status === 'success') return 'Success';
+  if (status === 'failed' || status === 'error') return 'Failed';
+  if (status === 'in progress' || status === 'pending') return 'Pending';
+
+  return scrapeStatus || 'Unknown';
+}
+
+/**
+ * Generate Barton Doctrine ID
+ */
+function generateDoctrineId(): string {
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).substring(2, 8);
+  return `SHP-03-IMO-1-SCR-${timestamp}-${random}`.toUpperCase();
+}
+
+/**
  * Generate mock scraping data for development
  */
 function generateMockScrapeData() {
@@ -183,7 +284,9 @@ function generateMockScrapeData() {
       records_scraped: 150,
       error_log: null,
       batch_id: 'BATCH_2025_001',
-      process_id: 'SCRAPE_20250922_001',
+      process_id: 'Scrape Company Data',
+      unique_id: generateDoctrineId(),
+      altitude: 10000,
       doctrine_version: 'v2.1.0'
     },
     {
@@ -195,7 +298,9 @@ function generateMockScrapeData() {
       records_scraped: 75,
       error_log: null,
       batch_id: 'BATCH_2025_001',
-      process_id: 'SCRAPE_20250922_002',
+      process_id: 'Scrape Contact Emails',
+      unique_id: generateDoctrineId(),
+      altitude: 10000,
       doctrine_version: 'v2.1.0'
     },
     {
@@ -207,7 +312,9 @@ function generateMockScrapeData() {
       records_scraped: 0,
       error_log: ['rate_limit_exceeded', 'authentication_failed'],
       batch_id: 'BATCH_2025_001',
-      process_id: 'SCRAPE_20250922_003',
+      process_id: 'Scrape Social Profiles',
+      unique_id: generateDoctrineId(),
+      altitude: 10000,
       doctrine_version: 'v2.1.0'
     },
     {
@@ -219,7 +326,9 @@ function generateMockScrapeData() {
       records_scraped: 200,
       error_log: null,
       batch_id: 'BATCH_2025_002',
-      process_id: 'SCRAPE_20250922_004',
+      process_id: 'Scrape Web Content',
+      unique_id: generateDoctrineId(),
+      altitude: 10000,
       doctrine_version: 'v2.1.0'
     },
     {
@@ -231,7 +340,9 @@ function generateMockScrapeData() {
       records_scraped: 300,
       error_log: null,
       batch_id: 'BATCH_2025_002',
-      process_id: 'SCRAPE_20250922_005',
+      process_id: 'Scrape Company Data',
+      unique_id: generateDoctrineId(),
+      altitude: 10000,
       doctrine_version: 'v2.1.0'
     }
   ];
