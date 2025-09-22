@@ -46,6 +46,10 @@
       "dest": "apps/outreach-process-manager/api/logs/[logId].js"
     },
     {
+      "src": "/api/scrape-log",
+      "dest": "apps/outreach-process-manager/api/scrape-log.js"
+    },
+    {
       "src": "/",
       "dest": "apps/outreach-ui/dist/index.html"
     },
@@ -69,6 +73,9 @@
     },
     "apps/outreach-process-manager/api/logs/[logId].js": {
       "maxDuration": 15
+    },
+    "apps/outreach-process-manager/api/scrape-log.js": {
+      "maxDuration": 30
     }
   },
   "env": {

@@ -10,6 +10,7 @@ import ValidationAdjusterConsole from './pages/validation-adjuster-console';
 import AdjusterConsole from './pages/adjuster-console';
 import PromotionConsole from './pages/promotion-console';
 import AuditLogConsole from './pages/audit-log-console';
+import ScrapingConsole from './pages/scraping-console';
 
 const Routes = () => {
   return (
@@ -26,6 +27,7 @@ const Routes = () => {
         <Route path="/adjuster-console" element={<AdjusterConsole />} />
         <Route path="/promotion-console" element={<PromotionConsole />} />
         <Route path="/audit-log-console" element={<AuditLogConsole />} />
+        <Route path="/scraping-console" element={<ScrapingConsole />} />
         <Route path="*" element={<NotFound />} />
       </RouterRoutes>
       </ErrorBoundary>
