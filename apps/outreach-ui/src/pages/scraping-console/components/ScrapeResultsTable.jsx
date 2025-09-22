@@ -62,8 +62,8 @@ export default function ScrapeResultsTable({ scrapeData, loading }) {
   const scrapeColumns = [
     { key: 'scrape_timestamp', label: 'Scrape Timestamp' },
     { key: 'scrape_type', label: 'Scrape Type' },
-    { key: 'status', label: 'Status' },
-    { key: 'error_log', label: 'Error Log' },
+    { key: 'scrape_status', label: 'Status' },
+    { key: 'errors', label: 'Errors' },
     { key: 'batch_id', label: 'Batch ID' }
   ];
 
@@ -122,12 +122,11 @@ export default function ScrapeResultsTable({ scrapeData, loading }) {
   const formatCellValue = (value, columnKey) => {
     if (!value && value !== 0) return '—';
 
-    // Handle URLs - check if column name includes 'Url' or is 'Website'
+    // URL fields - clickable links
     if (columnKey === 'Website' ||
         columnKey === 'Company Linkedin Url' ||
         columnKey === 'Facebook Url' ||
-        columnKey === 'Twitter Url' ||
-        columnKey === 'Logo Url') {
+        columnKey === 'Twitter Url') {
       return (
         <a
           href={value}
@@ -141,7 +140,7 @@ export default function ScrapeResultsTable({ scrapeData, loading }) {
       );
     }
 
-    // Handle Logo Url specially with thumbnail
+    // Logo Url - inline image preview + link
     if (columnKey === 'Logo Url' && value) {
       return (
         <div className="flex items-center">
@@ -164,43 +163,55 @@ export default function ScrapeResultsTable({ scrapeData, loading }) {
       );
     }
 
-    // Handle funding amounts and revenue
-    if (columnKey === 'Total Funding' ||
-        columnKey === 'Latest Funding' ||
-        columnKey === 'Latest Funding Amount' ||
-        columnKey === 'Annual Revenue') {
+    // Right-aligned numeric fields
+    if (columnKey === '# Employees' ||
+        columnKey === 'Number of Retail Locations' ||
+        columnKey === 'Primary Intent Score' ||
+        columnKey === 'Secondary Intent Score') {
+      return (
+        <span className="text-right block">
+          {typeof value === 'number' ? value.toLocaleString() : value}
+        </span>
+      );
+    }
+
+    // Currency formatting for revenue
+    if (columnKey === 'Annual Revenue') {
       if (typeof value === 'number') {
-        return new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: 'USD',
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0
-        }).format(value);
+        return (
+          <span className="text-right block">
+            {new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'USD',
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0
+            }).format(value)}
+          </span>
+        );
+      }
+      return <span className="text-right block">{value}</span>;
+    }
+
+    // Date formatting for Last Raised At
+    if (columnKey === 'Last Raised At' && value) {
+      try {
+        const date = new Date(value);
+        if (!isNaN(date.getTime())) {
+          return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: '2-digit'
+          });
+        }
+      } catch (e) {
+        // Fall through to return original value
       }
       return value;
     }
 
-    // Handle arrays (Technologies, Keywords, Lists, SIC Codes)
-    if (Array.isArray(value)) {
-      return (
-        <div className="group relative">
-          <span className="truncate cursor-help block max-w-xs">
-            {value.slice(0, 3).join(', ')}{value.length > 3 ? '...' : ''}
-          </span>
-          {value.length > 0 && (
-            <div className="absolute z-10 invisible group-hover:visible bg-gray-900 text-white text-xs rounded py-2 px-3 bottom-full mb-1 left-0 w-64 max-w-sm">
-              <div className="font-semibold mb-1">{columnKey}:</div>
-              {value.join(', ')}
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    // Handle long descriptions with tooltips
+    // Tooltip for overflow text fields
     if ((columnKey === 'SEO Description' ||
          columnKey === 'Short Description' ||
-         columnKey === 'Keywords' ||
          columnKey === 'Company Address') &&
         typeof value === 'string' && value.length > 50) {
       return (
@@ -214,6 +225,45 @@ export default function ScrapeResultsTable({ scrapeData, loading }) {
           </div>
         </div>
       );
+    }
+
+    // Comma-separated arrays with tooltips
+    if (columnKey === 'Keywords' || columnKey === 'Technologies' || columnKey === 'SIC Codes') {
+      if (Array.isArray(value)) {
+        return (
+          <div className="group relative">
+            <span className="truncate cursor-help block max-w-xs">
+              {value.slice(0, 3).join(', ')}{value.length > 3 ? '...' : ''}
+            </span>
+            {value.length > 0 && (
+              <div className="absolute z-10 invisible group-hover:visible bg-gray-900 text-white text-xs rounded py-2 px-3 bottom-full mb-1 left-0 w-64 max-w-sm">
+                <div className="font-semibold mb-1">{columnKey}:</div>
+                {value.join(', ')}
+              </div>
+            )}
+          </div>
+        );
+      }
+      // Handle string values that might need tooltips
+      if (typeof value === 'string' && value.length > 30) {
+        return (
+          <div className="group relative">
+            <span className="truncate cursor-help block max-w-xs">
+              {value.substring(0, 30)}...
+            </span>
+            <div className="absolute z-10 invisible group-hover:visible bg-gray-900 text-white text-xs rounded py-2 px-3 bottom-full mb-1 left-0 w-64 max-w-sm">
+              <div className="font-semibold mb-1">{columnKey}:</div>
+              {value}
+            </div>
+          </div>
+        );
+      }
+      return value;
+    }
+
+    // Lists - comma-separated if array
+    if (columnKey === 'Lists' && Array.isArray(value)) {
+      return value.join(', ');
     }
 
     // Handle objects
@@ -307,14 +357,23 @@ export default function ScrapeResultsTable({ scrapeData, loading }) {
               ))}
 
               {/* CSV data columns */}
-              {csvHeaders.map(header => (
-                <th
-                  key={header}
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                >
-                  {header}
-                </th>
-              ))}
+              {csvHeaders.map(header => {
+                const isNumericColumn = header === '# Employees' ||
+                                      header === 'Number of Retail Locations' ||
+                                      header === 'Primary Intent Score' ||
+                                      header === 'Secondary Intent Score' ||
+                                      header === 'Annual Revenue';
+                return (
+                  <th
+                    key={header}
+                    className={`px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${
+                      isNumericColumn ? 'text-right' : 'text-left'
+                    }`}
+                  >
+                    {header}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -349,19 +408,23 @@ export default function ScrapeResultsTable({ scrapeData, loading }) {
                       {row.scrape_type || 'COMPANY_DATA'}
                     </span>
                   </td>
-                  <td className={`px-4 py-3 text-sm ${getStatusColor(row.status)}`}>
+                  <td className={`px-4 py-3 text-sm ${getStatusColor(row.scrape_status || row.status)}`}>
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium">
-                      {getStatusBadge(row.status)} {row.status}
+                      {getStatusBadge(row.scrape_status || row.status)} {row.scrape_status || row.status}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm">
-                    {row.error_log ? (
+                    {(row.errors || row.error_log) ? (
                       <div className="group relative">
                         <span className="truncate cursor-help text-red-600 block max-w-xs">
-                          {Array.isArray(row.error_log) ? row.error_log.join(", ") : row.error_log}
+                          {Array.isArray(row.errors || row.error_log) ?
+                            (row.errors || row.error_log).join(", ") :
+                            (row.errors || row.error_log)}
                         </span>
                         <div className="absolute z-10 invisible group-hover:visible bg-red-900 text-white text-xs rounded py-2 px-3 bottom-full mb-1 left-0 w-64">
-                          {Array.isArray(row.error_log) ? row.error_log.join(", ") : row.error_log}
+                          {Array.isArray(row.errors || row.error_log) ?
+                            (row.errors || row.error_log).join(", ") :
+                            (row.errors || row.error_log)}
                         </div>
                       </div>
                     ) : (
@@ -375,11 +438,18 @@ export default function ScrapeResultsTable({ scrapeData, loading }) {
                   </td>
 
                   {/* CSV data columns - using bracket notation */}
-                  {csvHeaders.map(header => (
-                    <td key={header} className="px-4 py-3 text-sm text-gray-900">
-                      {formatCellValue(row[header], header)}
-                    </td>
-                  ))}
+                  {csvHeaders.map(header => {
+                    const isNumericColumn = header === '# Employees' ||
+                                          header === 'Number of Retail Locations' ||
+                                          header === 'Primary Intent Score' ||
+                                          header === 'Secondary Intent Score' ||
+                                          header === 'Annual Revenue';
+                    return (
+                      <td key={header} className={`px-4 py-3 text-sm text-gray-900 ${isNumericColumn ? 'text-right' : ''}`}>
+                        {formatCellValue(row[header], header)}
+                      </td>
+                    );
+                  })}
                 </tr>
               );
             })}
