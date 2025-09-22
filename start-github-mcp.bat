@@ -1,6 +1,6 @@
 @echo off
 echo ========================================
-echo GitHub Composio MCP Server Startup
+echo UI Composio MCP Server Startup
 echo ========================================
 echo.
 
@@ -39,39 +39,39 @@ if "%COMPOSIO_API_KEY%"=="" (
 )
 
 echo.
-echo Starting GitHub Composio MCP Server...
+echo Starting UI Composio MCP Server...
 echo Press Ctrl+C to stop the server
 echo.
 echo Features:
-echo   - Repository management (list, create, delete)
-echo   - Issue tracking (list, create, update, close)
-echo   - Pull request automation (create, review, merge)
-echo   - GitHub Actions workflows (list, trigger)
-echo   - Code and repository search
-echo   - Branch management
-echo   - File operations
+echo   - Outreach Process Manager UI (6-step workflow)
+echo   - Data Intake Dashboard
+echo   - STAMPED Validation Console
+echo   - Manual Adjustment Console
+echo   - Data Promotion with Audit Logging
+echo   - Audit Log Viewer
+echo   - Scraping Console
 echo.
-echo Available custom tools:
-echo   - github_quick_search - Quick search across GitHub
-echo   - github_repo_summary - Get comprehensive repo info
-echo   - github_pr_review - Review and comment on PRs
-echo   - github_workflow_dispatch - Trigger workflows
-echo   - github_create_branch - Create new branches
+echo Available MCP integrations:
+echo   - Neon database operations (via Composio)
+echo   - Apify web scraping integration
+echo   - Email validation services
+echo   - GitHub repository management
+echo   - Vercel deployment automation
 echo.
-echo Plus all standard GitHub operations through Composio!
+echo Plus complete IMO doctrine compliance!
 echo.
 
-REM Start the MCP server
-node mcp-servers/github-composio-server.js
+REM Start the UI MCP server
+node mcp-servers/ui-composio-server.js
 
 if %errorlevel% neq 0 (
     echo.
-    echo [ERROR] MCP server failed to start!
+    echo [ERROR] UI MCP server failed to start!
     echo.
     echo Troubleshooting:
     echo 1. Check your COMPOSIO_API_KEY is valid
-    echo 2. Ensure you have set up GitHub authentication with Composio
-    echo 3. Run: node scripts/setup-github-composio.js
+    echo 2. Ensure you have set up Neon/Apify authentication with Composio
+    echo 3. Run: node scripts/setup-ui-composio.js
     echo.
     pause
     exit /b 1
