@@ -1,6 +1,7 @@
 {
   "name": "@barton/monorepo",
   "version": "1.0.0",
+  "type": "module",
   "private": true,
   "description": "Barton Outreach Core - Monorepo with IMO Creator, API services, and MCP integration",
   "workspaces": [
