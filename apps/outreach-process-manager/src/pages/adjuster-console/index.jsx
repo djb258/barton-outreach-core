@@ -1,234 +1,182 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import WorkflowSidebar from '../data-intake-dashboard/components/WorkflowSidebar';
-import AdjusterSummaryCard from './components/AdjusterSummaryCard';
-import AdjusterFilterToolbar from './components/AdjusterFilterToolbar';
-import AdjusterResultsTable from './components/AdjusterResultsTable';
+import Header from '../../components/ui/Header';
+import WorkflowProgressTracker from '../../components/ui/WorkflowProgressTracker';
 import DoctrinalMetadataDisplay from '../../components/ui/DoctrinalMetadataDisplay';
-import Button from '../../components/ui/Button';
+import SystemHealthIndicator from '../../components/ui/SystemHealthIndicator';
+import AdjusterSummaryCard from './components/AdjusterSummaryCard';
+import AdjusterResultsTable from './components/AdjusterResultsTable';
 import Icon from '../../components/AppIcon';
+import Button from '../../components/ui/Button';
 
 const AdjusterConsole = () => {
-  const [adjustmentData, setAdjustmentData] = useState(null);
-  const [filteredData, setFilteredData] = useState([]);
-  const [currentFilter, setCurrentFilter] = useState('all');
+  // BARTON DOCTRINE: Step 3 Adjuster Console State
+  const [recordType, setRecordType] = useState('company'); // 'company' | 'people'
+  const [failedRecords, setFailedRecords] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isAdjusting, setIsAdjusting] = useState(false);
-  const [isDeploying, setIsDeploying] = useState(false);
-  const [selectedRows, setSelectedRows] = useState(new Set());
-
-  // Mock API call to fetch adjustment data
-  const fetchAdjustmentData = async () => {
-    setIsLoading(true);
-    
-    // Simulate API call to /api/promote
-    setTimeout(() => {
-      const mockResponse = {
-        rows_promoted: 87,
-        rows_pending: 13,
-        rows_adjusted: 5,
-        results: [
-          {
-            unique_id: "02.01.03.04.10000.001",
-            process_id: "PRC-001",
-            company_name: "Acme Corp",
-            promoted: true,
-            adjusted: false,
-            adjustment_notes: "",
-            errors: []
-          },
-          {
-            unique_id: "02.01.03.04.10000.002", 
-            process_id: "PRC-002",
-            company_name: "Tech Solutions Inc",
-            promoted: true,
-            adjusted: true,
-            adjustment_notes: "Email domain corrected",
-            errors: []
-          },
-          {
-            unique_id: "02.01.03.04.10000.003",
-            process_id: "PRC-003", 
-            company_name: "Global Manufacturing",
-            promoted: false,
-            adjusted: false,
-            adjustment_notes: "",
-            errors: ["pending_verification"]
-          },
-          {
-            unique_id: "02.01.03.04.10000.004",
-            process_id: "PRC-004",
-            company_name: "Data Services LLC",
-            promoted: true,
-            adjusted: true,
-            adjustment_notes: "Phone number format standardized",
-            errors: []
-          },
-          {
-            unique_id: "02.01.03.04.10000.005",
-            process_id: "PRC-005",
-            company_name: "Enterprise Solutions",
-            promoted: false,
-            adjusted: false,
-            adjustment_notes: "",
-            errors: ["manual_review_required"]
-          }
-        ]
-      };
-      
-      setAdjustmentData(mockResponse);
-      setFilteredData(mockResponse?.results);
-      setIsLoading(false);
-    }, 1500);
-  };
-
-  // Filter data based on current filter
-  const applyFilter = (filterType) => {
-    setCurrentFilter(filterType);
-    
-    if (!adjustmentData?.results) return;
-    
-    let filtered = adjustmentData?.results;
-    
-    switch (filterType) {
-      case 'promoted':
-        filtered = adjustmentData?.results?.filter(record => record?.promoted);
-        break;
-      case 'pending':
-        filtered = adjustmentData?.results?.filter(record => !record?.promoted);
-        break;
-      case 'adjusted':
-        filtered = adjustmentData?.results?.filter(record => record?.adjusted);
-        break;
-      default:
-        filtered = adjustmentData?.results;
-    }
-    
-    setFilteredData(filtered);
-  };
-
-  // Handle bulk adjustments
-  const handleBulkAdjust = async () => {
-    if (selectedRows?.size === 0) return;
-    
-    setIsAdjusting(true);
-    
-    // Simulate bulk adjustment API call
-    setTimeout(() => {
-      console.log('Bulk adjusted records:', Array.from(selectedRows));
-      setSelectedRows(new Set());
-      fetchAdjustmentData();
-      setIsAdjusting(false);
-    }, 2000);
-  };
-
-  // Deploy campaign
-  const handleDeployCampaign = async () => {
-    setIsDeploying(true);
-    
-    // Simulate campaign deployment API call
-    setTimeout(() => {
-      console.log('Campaign deployed with promoted records');
-      setIsDeploying(false);
-      // Navigate to campaign deployment success page
-    }, 3000);
-  };
-
-  // Handle row selection
-  const handleRowSelect = (uniqueId, selected) => {
-    setSelectedRows(prev => {
-      const newSet = new Set(prev);
-      if (selected) {
-        newSet?.add(uniqueId);
-      } else {
-        newSet?.delete(uniqueId);
-      }
-      return newSet;
-    });
-  };
-
-  // Handle single row adjustment
-  const handleRowAdjustment = async (uniqueId, adjustmentData) => {
-    // Simulate single row adjustment
-    console.log('Adjusting row:', uniqueId, adjustmentData);
-    setTimeout(() => {
-      fetchAdjustmentData();
-    }, 1000);
-  };
+  const [isSaving, setIsSaving] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const [summaryStats, setSummaryStats] = useState({
+    validation_failed: 0,
+    enrichment_failed: 0,
+    ready_for_adjustment: 0
+  });
 
   useEffect(() => {
-    fetchAdjustmentData();
-  }, []);
+    loadFailedRecords();
+  }, [recordType]);
 
-  const promotedCount = adjustmentData?.results?.filter(r => r?.promoted)?.length || 0;
-  const pendingCount = adjustmentData?.results?.filter(r => !r?.promoted)?.length || 0;
-  const adjustedCount = adjustmentData?.results?.filter(r => r?.adjusted)?.length || 0;
-  const canDeployCampaign = promotedCount > 0;
+  const loadFailedRecords = async () => {
+    setIsLoading(true);
+
+    try {
+      console.log(`[ADJUSTER-CONSOLE] Loading ${recordType} records for adjustment`);
+
+      const response = await fetch(`/api/adjuster-fetch?type=${recordType}&limit=50`);
+      const data = await response.json();
+
+      if (data.success) {
+        setFailedRecords(data.records);
+        setSummaryStats(data.summary);
+        console.log(`[ADJUSTER-CONSOLE] Loaded ${data.records.length} failed ${recordType} records`);
+      } else {
+        console.error('[ADJUSTER-CONSOLE] Failed to load records:', data.error);
+        setFailedRecords([]);
+      }
+
+    } catch (error) {
+      console.error('[ADJUSTER-CONSOLE] Load error:', error);
+      setFailedRecords([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle record type change
+  const handleRecordTypeChange = (newType) => {
+    setRecordType(newType);
+  };
+
+  // Handle saving a record after manual adjustment
+  const handleSaveRecord = async (uniqueId, updatedFields) => {
+    setIsSaving(true);
+
+    try {
+      console.log(`[ADJUSTER-CONSOLE] Saving adjustments for ${uniqueId}`, updatedFields);
+
+      const response = await fetch('/api/adjuster-save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          unique_id: uniqueId,
+          updated_fields: updatedFields,
+          record_type: recordType
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.status === 'success') {
+        console.log(`[ADJUSTER-CONSOLE] Successfully saved ${uniqueId}:`, data.changes_applied);
+
+        // Reload the failed records to reflect changes
+        await loadFailedRecords();
+
+        return {
+          success: true,
+          message: `Applied ${data.changes_applied.length} changes. Re-validation ${data.validation_triggered ? 'triggered' : 'skipped'}.`
+        };
+      } else {
+        console.error('[ADJUSTER-CONSOLE] Save failed:', data.errors);
+        return {
+          success: false,
+          message: data.errors.join(', ')
+        };
+      }
+
+    } catch (error) {
+      console.error('[ADJUSTER-CONSOLE] Save error:', error);
+      return {
+        success: false,
+        message: 'Failed to save record adjustments'
+      };
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle record selection for future bulk operations
+  const handleRecordSelect = (uniqueId, selected) => {
+    setSelectedRecord(selected ? uniqueId : null);
+  };
+
+  const adjustedRecordsCount = failedRecords.filter(r => r.validation_status === 'pending').length;
+  const canProceedToNextStep = adjustedRecordsCount > 0;
 
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
-      <WorkflowSidebar 
+      <WorkflowProgressTracker
         currentStep={3}
-        workflowId="WF-2025-001" 
+        workflowId="WF-2025-001"
         processId="PRC-ADJ-001"
-        canProceed={canDeployCampaign}
-        onNextStep={() => {}}
+        canProceed={canProceedToNextStep}
       />
+
       {/* Main Content */}
       <div className="flex-1 overflow-hidden">
         {/* Header */}
-        <div className="bg-card border-b border-border px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">Adjuster Console</h1>
-                <p className="text-sm text-muted-foreground">Step 3 of Outreach Process Manager</p>
-              </div>
-              
-              {/* Execution Layer Badge */}
-              <div className="px-3 py-1 bg-accent/10 text-accent rounded-md text-sm font-medium">
-                Altitude: 10,000ft - Execution Layer
-              </div>
-            </div>
-            
-            <DoctrinalMetadataDisplay
-              uniqueId="02.01.03.04.10000.001"
-              processId="PRC-ADJ-001"
-              altitude="EXECUTION"
-              className="flex-row space-x-4 space-y-0"
-            />
-          </div>
-        </div>
+        <Header
+          title="Adjuster Console"
+          subtitle="Step 3 of Barton Doctrine Pipeline - Human Review & Correction"
+          processId="02.01.03.04.10000.001"
+          altitude="EXECUTION"
+        />
 
         {/* Content Area */}
         <div className="p-6 space-y-6 overflow-y-auto h-[calc(100vh-80px)]">
-          
+
+          {/* Record Type Selector */}
+          <div className="bg-card border border-border rounded-lg p-4">
+            <div className="flex items-center space-x-4">
+              <h3 className="text-lg font-medium">Record Type:</h3>
+              <div className="flex space-x-2">
+                <Button
+                  variant={recordType === 'company' ? 'default' : 'outline'}
+                  onClick={() => handleRecordTypeChange('company')}
+                  disabled={isLoading}
+                >
+                  Companies
+                </Button>
+                <Button
+                  variant={recordType === 'people' ? 'default' : 'outline'}
+                  onClick={() => handleRecordTypeChange('people')}
+                  disabled={isLoading}
+                >
+                  People
+                </Button>
+              </div>
+            </div>
+          </div>
+
           {/* Adjuster Summary Card */}
           <AdjusterSummaryCard
-            rowsPromoted={adjustmentData?.rows_promoted || 0}
-            rowsPending={adjustmentData?.rows_pending || 0}
-            rowsAdjusted={adjustmentData?.rows_adjusted || 0}
+            summaryStats={summaryStats}
+            recordType={recordType}
             isLoading={isLoading}
-          />
-
-          {/* Filter Toolbar */}
-          <AdjusterFilterToolbar
-            currentFilter={currentFilter}
-            onFilterChange={applyFilter}
-            totalCount={adjustmentData?.results?.length || 0}
-            promotedCount={promotedCount}
-            pendingCount={pendingCount}
-            adjustedCount={adjustedCount}
           />
 
           {/* Results Table */}
           <AdjusterResultsTable
-            data={filteredData}
+            records={failedRecords}
+            recordType={recordType}
             isLoading={isLoading}
-            selectedRows={selectedRows}
-            onRowSelect={handleRowSelect}
-            onRowAdjust={handleRowAdjustment}
+            isSaving={isSaving}
+            selectedRecord={selectedRecord}
+            onRecordSelect={handleRecordSelect}
+            onSaveRecord={handleSaveRecord}
           />
 
           {/* Control Buttons */}
@@ -237,66 +185,59 @@ const AdjusterConsole = () => {
               <div className="flex space-x-3">
                 <Button
                   variant="outline"
-                  iconName="Edit"
-                  onClick={handleBulkAdjust}
-                  disabled={selectedRows?.size === 0 || isAdjusting}
+                  iconName="RefreshCcw"
+                  onClick={loadFailedRecords}
+                  disabled={isLoading}
                 >
-                  {isAdjusting ? 'Adjusting...' : `Bulk Adjust (${selectedRows?.size})`}
-                </Button>
-                
-                <Button
-                  variant="default"
-                  iconName="Rocket"
-                  onClick={handleDeployCampaign}
-                  disabled={!canDeployCampaign || isDeploying}
-                >
-                  {isDeploying ? 'Deploying...' : 'Deploy Campaign'}
+                  {isLoading ? 'Loading...' : 'Refresh Records'}
                 </Button>
               </div>
-              
+
               <div className="flex space-x-3">
-                <Link to="/validation-adjuster-console">
+                <Link to="/data-validation-console">
                   <Button variant="outline" iconName="ArrowLeft">
                     Back to Validation
                   </Button>
                 </Link>
-                
+
                 <Link to="/campaign-deployment">
-                  <Button 
-                    variant="default" 
-                    iconName="ArrowRight" 
+                  <Button
+                    variant="default"
+                    iconName="ArrowRight"
                     iconPosition="right"
-                    disabled={!canDeployCampaign}
+                    disabled={!canProceedToNextStep}
                   >
-                    View Campaign Status
+                    Proceed to Campaign
                   </Button>
                 </Link>
               </div>
             </div>
           </div>
 
-          {/* Status Message */}
-          {!canDeployCampaign && (
-            <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
+          {/* Status Messages */}
+          {failedRecords.length === 0 && !isLoading && (
+            <div className="bg-success/10 border border-success/20 rounded-lg p-4">
               <div className="flex items-center space-x-2">
-                <Icon name="AlertTriangle" size={20} color="var(--color-warning)" />
-                <span className="text-sm font-medium text-warning">
-                  No promoted records available for campaign deployment. Please adjust and promote records first.
+                <Icon name="CheckCircle" size={20} color="var(--color-success)" />
+                <span className="text-sm font-medium text-success">
+                  No {recordType} records need adjustment. All validation issues have been resolved.
                 </span>
               </div>
             </div>
           )}
 
-          {selectedRows?.size > 0 && (
+          {failedRecords.length > 0 && (
             <div className="bg-info/10 border border-info/20 rounded-lg p-4">
               <div className="flex items-center space-x-2">
                 <Icon name="Info" size={20} color="var(--color-info)" />
                 <span className="text-sm font-medium text-info">
-                  {selectedRows?.size} records selected for bulk operations.
+                  {failedRecords.length} {recordType} records require manual adjustment. Click on any field to edit inline.
                 </span>
               </div>
             </div>
           )}
+
+          <SystemHealthIndicator />
 
         </div>
       </div>

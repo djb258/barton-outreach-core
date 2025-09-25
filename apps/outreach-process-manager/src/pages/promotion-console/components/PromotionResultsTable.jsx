@@ -1,7 +1,12 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
 
-const PromotionResultsTable = ({ results = [], isLoading = false, className = '' }) => {
+const PromotionResultsTable = ({
+  results = [],
+  recordType = 'company',
+  isLoading = false,
+  className = ''
+}) => {
   if (isLoading) {
     return (
       <div className={`p-8 text-center ${className}`}>
@@ -11,13 +16,13 @@ const PromotionResultsTable = ({ results = [], isLoading = false, className = ''
     );
   }
 
-  if (!results || results?.length === 0) {
+  if (!results || results.length === 0) {
     return (
-      <div className={`p-8 text-center ${className}`}>
+      <div className={`bg-card border border-border rounded-lg p-8 text-center ${className}`}>
         <Icon name="Database" size={48} className="mx-auto mb-4 text-muted-foreground opacity-50" />
-        <p className="text-muted-foreground">No promotion results available.</p>
-        <p className="text-sm text-muted-foreground mt-2">
-          Click "Promote Valid Records" to start the promotion process.
+        <h3 className="text-lg font-medium text-foreground mb-2">No Promotion Results</h3>
+        <p className="text-sm text-muted-foreground">
+          Execute a promotion batch to see detailed results for each {recordType} record.
         </p>
       </div>
     );
@@ -25,11 +30,9 @@ const PromotionResultsTable = ({ results = [], isLoading = false, className = ''
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case "Promoted":
+      case 'success':
         return <Icon name="CheckCircle" size={16} className="text-success" />;
-      case "Pending":
-        return <Icon name="Clock" size={16} className="text-warning" />;
-      case "Failed":
+      case 'failed':
         return <Icon name="XCircle" size={16} className="text-destructive" />;
       default:
         return <Icon name="Circle" size={16} className="text-muted-foreground" />;
@@ -38,102 +41,144 @@ const PromotionResultsTable = ({ results = [], isLoading = false, className = ''
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "Promoted":
-        return "text-success bg-success/10";
-      case "Pending":
-        return "text-warning bg-warning/10";
-      case "Failed":
-        return "text-destructive bg-destructive/10";
+      case 'success':
+        return 'text-success bg-success/10';
+      case 'failed':
+        return 'text-destructive bg-destructive/10';
       default:
-        return "text-muted-foreground bg-muted";
+        return 'text-muted-foreground bg-muted';
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'success':
+        return 'Promoted';
+      case 'failed':
+        return 'Failed';
+      default:
+        return 'Unknown';
     }
   };
 
   return (
-    <div className={`overflow-x-auto ${className}`}>
-      <table className="w-full">
-        <thead className="bg-muted/50 border-b border-border">
-          <tr>
-            <th className="text-left p-4 text-sm font-semibold text-foreground">
-              Company Name
-            </th>
-            <th className="text-left p-4 text-sm font-semibold text-foreground">
-              Unique ID
-            </th>
-            <th className="text-left p-4 text-sm font-semibold text-foreground">
-              Status
-            </th>
-            <th className="text-left p-4 text-sm font-semibold text-foreground">
-              Errors
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {results?.map((row, idx) => (
-            <tr 
-              key={idx} 
-              className="border-b border-border hover:bg-muted/30 transition-colors"
-            >
-              <td className="p-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                    <Icon name="Building2" size={14} className="text-primary" />
-                  </div>
-                  <span className="font-medium text-foreground">
-                    {row?.company_name || 'Unknown Company'}
-                  </span>
-                </div>
-              </td>
-              
-              <td className="p-4">
-                <code className="px-2 py-1 bg-muted rounded text-xs font-mono text-foreground">
-                  {row?.unique_id}
-                </code>
-              </td>
-              
-              <td className="p-4">
-                <div className="flex items-center space-x-2">
-                  {getStatusIcon(row?.promotion_status)}
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(row?.promotion_status)}`}>
-                    {row?.promotion_status}
-                  </span>
-                </div>
-              </td>
-              
-              <td className="p-4">
-                {row?.errors && row?.errors?.length > 0 ? (
-                  <div className="space-y-1">
-                    {row?.errors?.map((error, errorIdx) => (
-                      <div key={errorIdx} className="flex items-center space-x-2">
-                        <Icon name="AlertTriangle" size={12} className="text-destructive shrink-0" />
-                        <span className="text-xs text-destructive">{error}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <span className="text-muted-foreground text-sm">—</span>
-                )}
-              </td>
+    <div className={`bg-card border border-border rounded-lg overflow-hidden ${className}`}>
+      {/* Table Header */}
+      <div className="px-4 py-3 bg-muted/10 border-b border-border">
+        <div className="flex items-center space-x-2">
+          <Icon name="Upload" size={16} color="var(--color-muted-foreground)" />
+          <h3 className="text-sm font-medium text-foreground">Promotion Results</h3>
+          <span className="text-xs text-muted-foreground">({results.length} records)</span>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/10 border-b border-border">
+            <tr>
+              <th className="text-left py-3 px-4 font-medium text-muted-foreground">
+                {recordType === 'company' ? 'Company' : 'Person'}
+              </th>
+              <th className="text-left py-3 px-4 font-medium text-muted-foreground">
+                Barton ID
+              </th>
+              <th className="text-left py-3 px-4 font-medium text-muted-foreground">
+                Promotion Status
+              </th>
+              <th className="text-left py-3 px-4 font-medium text-muted-foreground">
+                Target Table
+              </th>
+              <th className="text-left py-3 px-4 font-medium text-muted-foreground">
+                Audit Log ID
+              </th>
+              <th className="text-left py-3 px-4 font-medium text-muted-foreground">
+                Error Details
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {results.map((result, index) => (
+              <tr
+                key={result.unique_id || index}
+                className={`border-b border-border last:border-b-0 hover:bg-muted/10 transition-colors ${
+                  result.status === 'success' ? 'bg-success/5' : result.status === 'failed' ? 'bg-destructive/5' : ''
+                }`}
+              >
+                <td className="py-3 px-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                      <Icon
+                        name={recordType === 'company' ? 'Building2' : 'User'}
+                        size={14}
+                        className="text-primary"
+                      />
+                    </div>
+                    <span className="font-medium text-foreground">
+                      {recordType === 'company' ? 'Company Record' : 'Person Record'}
+                    </span>
+                  </div>
+                </td>
+
+                <td className="py-3 px-4">
+                  <code className="px-2 py-1 bg-muted rounded text-xs font-mono text-foreground">
+                    {result.unique_id}
+                  </code>
+                </td>
+
+                <td className="py-3 px-4">
+                  <div className="flex items-center space-x-2">
+                    {getStatusIcon(result.status)}
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(result.status)}`}>
+                      {getStatusText(result.status)}
+                    </span>
+                  </div>
+                </td>
+
+                <td className="py-3 px-4">
+                  <span className="text-xs text-muted-foreground font-mono">
+                    {recordType === 'company' ? 'company_master' : 'people_master'}
+                  </span>
+                </td>
+
+                <td className="py-3 px-4">
+                  {result.audit_log_id ? (
+                    <span className="text-xs text-muted-foreground font-mono">
+                      #{result.audit_log_id}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </td>
+
+                <td className="py-3 px-4">
+                  {result.error ? (
+                    <div className="flex items-start space-x-2">
+                      <Icon name="AlertTriangle" size={12} className="text-destructive shrink-0 mt-0.5" />
+                      <span className="text-xs text-destructive">{result.error}</span>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
       {/* Table Footer */}
-      <div className="bg-muted/30 px-4 py-3 border-t border-border">
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>Total Records: {results?.length}</span>
+      <div className="px-4 py-3 bg-muted/10 border-t border-border">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>Batch Results: {results.length} records processed</span>
           <div className="flex items-center space-x-4">
             <span className="flex items-center space-x-1">
               <Icon name="CheckCircle" size={12} className="text-success" />
-              <span>{results?.filter(r => r?.promotion_status === "Promoted")?.length} promoted</span>
-            </span>
-            <span className="flex items-center space-x-1">
-              <Icon name="Clock" size={12} className="text-warning" />
-              <span>{results?.filter(r => r?.promotion_status === "Pending")?.length} pending</span>
+              <span>{results.filter(r => r.status === 'success').length} promoted</span>
             </span>
             <span className="flex items-center space-x-1">
               <Icon name="XCircle" size={12} className="text-destructive" />
-              <span>{results?.filter(r => r?.promotion_status === "Failed")?.length} failed</span>
+              <span>{results.filter(r => r.status === 'failed').length} failed</span>
             </span>
           </div>
         </div>
