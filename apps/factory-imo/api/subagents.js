@@ -1,3 +1,11 @@
+/**
+ * Doctrine Spec:
+ * - Barton ID: 01.02.02.07.10000.004
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: agent task definition and parameters
+ * - Output: agent execution results and status
+ * - MCP: Composio (Neon integrated)
+ */
 // Vercel API Route for subagent registry with garage-mcp integration
 export default async function handler(req, res) {
     if (req.method !== 'GET') {

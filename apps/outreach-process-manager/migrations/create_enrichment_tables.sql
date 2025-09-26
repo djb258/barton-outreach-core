@@ -1,3 +1,38 @@
+
+-- Updated At Trigger Function
+CREATE OR REPLACE FUNCTION trigger_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- Barton ID Generator Function
+-- Generates format: NN.NN.NN.NN.NNNNN.NNN
+CREATE OR REPLACE FUNCTION generate_barton_id()
+RETURNS VARCHAR(23) AS $$
+DECLARE
+    segment1 VARCHAR(2);
+    segment2 VARCHAR(2);
+    segment3 VARCHAR(2);
+    segment4 VARCHAR(2);
+    segment5 VARCHAR(5);
+    segment6 VARCHAR(3);
+BEGIN
+    -- Use timestamp and random for uniqueness
+    segment1 := LPAD((EXTRACT(EPOCH FROM NOW())::BIGINT % 100)::TEXT, 2, '0');
+    segment2 := LPAD((EXTRACT(MICROSECONDS FROM NOW()) % 100)::TEXT, 2, '0');
+    segment3 := LPAD((RANDOM() * 100)::INT::TEXT, 2, '0');
+    segment4 := '07'; -- Fixed segment for database records
+    segment5 := LPAD((RANDOM() * 100000)::INT::TEXT, 5, '0');
+    segment6 := LPAD((RANDOM() * 1000)::INT::TEXT, 3, '0');
+
+    RETURN segment1 || '.' || segment2 || '.' || segment3 || '.' || segment4 || '.' || segment5 || '.' || segment6;
+END;
+$$ LANGUAGE plpgsql;
+
 /**
  * Enrichment Router Database Schema
  * Step 2B of Barton Doctrine Pipeline - Validation Failure Enrichment
@@ -5,8 +40,7 @@
  */
 
 -- Create enrichment tracking table
-CREATE TABLE IF NOT EXISTS intake.validation_failed (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS intake.validation_failed (id SERIAL PRIMARY KEY,
     record_id INTEGER NOT NULL, -- FK to intake.company_raw_intake.id
     error_type TEXT NOT NULL, -- missing_state, bad_phone_format, invalid_url, etc.
     error_field TEXT NOT NULL, -- column name that failed validation
@@ -24,12 +58,14 @@ CREATE TABLE IF NOT EXISTS intake.validation_failed (
 
     -- Create indexes for performance
     CONSTRAINT validation_failed_record_error_unique UNIQUE(record_id, error_type, error_field),
-    FOREIGN KEY (record_id) REFERENCES intake.company_raw_intake(id) ON DELETE CASCADE
-);
+    FOREIGN KEY (record_id) REFERENCES intake.company_raw_intake(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 -- Create validation audit log
-CREATE TABLE IF NOT EXISTS intake.validation_audit_log (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS intake.validation_audit_log (id SERIAL PRIMARY KEY,
     record_id INTEGER NOT NULL,
     error_type TEXT NOT NULL,
     error_field TEXT NOT NULL,
@@ -49,12 +85,14 @@ CREATE TABLE IF NOT EXISTS intake.validation_audit_log (
     -- Barton Doctrine compliance
     altitude INTEGER DEFAULT 10000,
     doctrine TEXT DEFAULT 'STAMPED',
-    process_id TEXT DEFAULT 'enrichment_router_step_2b'
-);
+    process_id TEXT DEFAULT 'enrichment_router_step_2b',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 -- Create human firebreak queue table
-CREATE TABLE IF NOT EXISTS intake.human_firebreak_queue (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS intake.human_firebreak_queue (id SERIAL PRIMARY KEY,
     record_id INTEGER NOT NULL,
     error_type TEXT NOT NULL,
     error_field TEXT NOT NULL,
@@ -75,12 +113,14 @@ CREATE TABLE IF NOT EXISTS intake.human_firebreak_queue (
 
     -- Barton Doctrine compliance
     altitude INTEGER DEFAULT 10000,
-    doctrine TEXT DEFAULT 'STAMPED'
-);
+    doctrine TEXT DEFAULT 'STAMPED',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 -- Create enrichment handler registry (tracks handler capabilities)
-CREATE TABLE IF NOT EXISTS intake.enrichment_handler_registry (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS intake.enrichment_handler_registry (id SERIAL PRIMARY KEY,
     handler_name TEXT UNIQUE NOT NULL,
     handler_type TEXT NOT NULL CHECK (handler_type IN ('auto_fix', 'apify', 'abacus', 'human')),
     error_types TEXT[] NOT NULL, -- array of error types this handler can process
@@ -93,8 +133,11 @@ CREATE TABLE IF NOT EXISTS intake.enrichment_handler_registry (
     last_used_at TIMESTAMPTZ,
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_validation_failed_status ON intake.validation_failed(status);
@@ -221,3 +264,26 @@ INSERT INTO intake.validation_audit_log (
 -- Grant permissions (adjust as needed for your setup)
 -- GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA intake TO your_enrichment_user;
 -- GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA intake TO your_enrichment_user;
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();
+
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();
+
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();
+
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();

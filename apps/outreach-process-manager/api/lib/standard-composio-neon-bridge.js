@@ -1,4 +1,12 @@
 /**
+ * Doctrine Spec:
+ * - Barton ID: 99.99.99.07.79446.174
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: data query parameters and filters
+ * - Output: database records and metadata
+ * - MCP: Composio (Neon integrated)
+ */
+/**
  * Standard Composio-Neon Bridge
  * This is the definitive integration pattern for all Composio/Neon operations
  * Uses MCP server configuration with direct database connection

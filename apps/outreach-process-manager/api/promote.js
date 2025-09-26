@@ -1,4 +1,12 @@
 /**
+ * Doctrine Spec:
+ * - Barton ID: 99.99.99.07.14292.720
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: data query parameters and filters
+ * - Output: database records and metadata
+ * - MCP: Composio (Neon integrated)
+ */
+/**
  * API Endpoint: /api/promote (Extended for Promotion Console)
  * Vercel-ready serverless promotion orchestration
  * Handles complete promotion workflow with slot creation and audit logging

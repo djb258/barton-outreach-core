@@ -1,4 +1,12 @@
 /**
+ * Doctrine Spec:
+ * - Barton ID: 99.99.99.07.66740.527
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: API request parameters
+ * - Output: API response data
+ * - MCP: Composio (Neon integrated)
+ */
+/**
  * API Endpoint: /api/validate-step-2
  * Step 2 of Outreach Pipeline - Validator Agent
  * Routes to validation service for processing

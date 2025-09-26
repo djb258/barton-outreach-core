@@ -1,3 +1,38 @@
+
+-- Updated At Trigger Function
+CREATE OR REPLACE FUNCTION trigger_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- Barton ID Generator Function
+-- Generates format: NN.NN.NN.NN.NNNNN.NNN
+CREATE OR REPLACE FUNCTION generate_barton_id()
+RETURNS VARCHAR(23) AS $$
+DECLARE
+    segment1 VARCHAR(2);
+    segment2 VARCHAR(2);
+    segment3 VARCHAR(2);
+    segment4 VARCHAR(2);
+    segment5 VARCHAR(5);
+    segment6 VARCHAR(3);
+BEGIN
+    -- Use timestamp and random for uniqueness
+    segment1 := LPAD((EXTRACT(EPOCH FROM NOW())::BIGINT % 100)::TEXT, 2, '0');
+    segment2 := LPAD((EXTRACT(MICROSECONDS FROM NOW()) % 100)::TEXT, 2, '0');
+    segment3 := LPAD((RANDOM() * 100)::INT::TEXT, 2, '0');
+    segment4 := '07'; -- Fixed segment for database records
+    segment5 := LPAD((RANDOM() * 100000)::INT::TEXT, 5, '0');
+    segment6 := LPAD((RANDOM() * 1000)::INT::TEXT, 3, '0');
+
+    RETURN segment1 || '.' || segment2 || '.' || segment3 || '.' || segment4 || '.' || segment5 || '.' || segment6;
+END;
+$$ LANGUAGE plpgsql;
+
 /**
  * Step 5 Closed-Loop Attribution Tables - Barton Doctrine Pipeline
  *
@@ -13,8 +48,7 @@
  */
 
 -- Main Attribution Table
-CREATE TABLE IF NOT EXISTS marketing.closed_loop_attribution (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS marketing.closed_loop_attribution (id SERIAL PRIMARY KEY,
 
     -- Barton Doctrine IDs (preserved from intake → master → campaign → attribution)
     company_unique_id TEXT NOT NULL,
@@ -67,12 +101,14 @@ CREATE TABLE IF NOT EXISTS marketing.closed_loop_attribution (
     CONSTRAINT attribution_revenue_positive
         CHECK (revenue_amount IS NULL OR revenue_amount >= 0),
     CONSTRAINT attribution_confidence_range
-        CHECK (attribution_confidence >= 0.0 AND attribution_confidence <= 1.0)
-);
+        CHECK (attribution_confidence >= 0.0 AND attribution_confidence <= 1.0),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 -- Attribution Audit Log Table
-CREATE TABLE IF NOT EXISTS marketing.attribution_audit_log (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS marketing.attribution_audit_log (id SERIAL PRIMARY KEY,
 
     -- Attribution Record Reference
     attribution_id INTEGER REFERENCES marketing.closed_loop_attribution(id),
@@ -101,12 +137,14 @@ CREATE TABLE IF NOT EXISTS marketing.attribution_audit_log (
     session_id TEXT,
     batch_id TEXT,
 
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 -- PLE Lead Scoring History (enhanced with attribution outcomes)
-CREATE TABLE IF NOT EXISTS marketing.ple_lead_scoring_history (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS marketing.ple_lead_scoring_history (id SERIAL PRIMARY KEY,
 
     -- Record Identifiers
     company_unique_id TEXT,
@@ -132,12 +170,14 @@ CREATE TABLE IF NOT EXISTS marketing.ple_lead_scoring_history (
     updated_by TEXT DEFAULT 'attribution_feedback',
     altitude INTEGER DEFAULT 10000,
 
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 -- BIT Signal Performance (enhanced with attribution outcomes)
-CREATE TABLE IF NOT EXISTS marketing.bit_signal_performance (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS marketing.bit_signal_performance (id SERIAL PRIMARY KEY,
 
     -- Signal Details
     signal_type TEXT NOT NULL, -- 'funding_news', 'hiring_surge', 'tech_adoption', etc.
@@ -169,8 +209,11 @@ CREATE TABLE IF NOT EXISTS marketing.bit_signal_performance (
     updated_by TEXT DEFAULT 'attribution_feedback',
 
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 -- Performance Indexes
 CREATE INDEX IF NOT EXISTS idx_attribution_company
@@ -234,3 +277,26 @@ COMMENT ON COLUMN marketing.ple_lead_scoring_history.prediction_accuracy IS 'How
 
 COMMENT ON TABLE marketing.bit_signal_performance IS 'Performance tracking for BIT signals based on actual attribution outcomes';
 COMMENT ON COLUMN marketing.bit_signal_performance.correlation_strength IS 'How strongly this signal correlated with the actual outcome';
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();
+
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();
+
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();
+
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();

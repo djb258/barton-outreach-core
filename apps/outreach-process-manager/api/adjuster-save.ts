@@ -1,4 +1,12 @@
 /**
+ * Doctrine Spec:
+ * - Barton ID: 06.01.02.07.10000.015
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: adjusted record data and validation
+ * - Output: save confirmation and promotion status
+ * - MCP: Composio (Neon integrated)
+ */
+/**
  * Step 3 Adjuster Save API - Barton Doctrine Pipeline
  * Input: { unique_id, updated_fields }
  * Output: { status: "success" | "failed", errors: [] }

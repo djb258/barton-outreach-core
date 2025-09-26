@@ -1,4 +1,12 @@
 /**
+ * Doctrine Spec:
+ * - Barton ID: 99.99.99.07.87022.505
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: data query parameters and filters
+ * - Output: database records and metadata
+ * - MCP: Composio (Neon integrated)
+ */
+/**
  * API Endpoint: /api/validate
  * Step 2A Validator Agent - Core column validation for Barton Doctrine Pipeline
  * Validates intake.company_raw_intake using Standard Composio MCP Pattern

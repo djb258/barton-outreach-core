@@ -1,3 +1,44 @@
+
+-- Updated At Trigger Function
+CREATE OR REPLACE FUNCTION trigger_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- Barton ID Generator Function
+-- Generates format: NN.NN.NN.NN.NNNNN.NNN
+CREATE OR REPLACE FUNCTION generate_barton_id()
+RETURNS VARCHAR(23) AS $$
+DECLARE
+    segment1 VARCHAR(2);
+    segment2 VARCHAR(2);
+    segment3 VARCHAR(2);
+    segment4 VARCHAR(2);
+    segment5 VARCHAR(5);
+    segment6 VARCHAR(3);
+BEGIN
+    -- Use timestamp and random for uniqueness
+    segment1 := LPAD((EXTRACT(EPOCH FROM NOW())::BIGINT % 100)::TEXT, 2, '0');
+    segment2 := LPAD((EXTRACT(MICROSECONDS FROM NOW()) % 100)::TEXT, 2, '0');
+    segment3 := LPAD((RANDOM() * 100)::INT::TEXT, 2, '0');
+    segment4 := '07'; -- Fixed segment for database records
+    segment5 := LPAD((RANDOM() * 100000)::INT::TEXT, 5, '0');
+    segment6 := LPAD((RANDOM() * 1000)::INT::TEXT, 3, '0');
+
+    RETURN segment1 || '.' || segment2 || '.' || segment3 || '.' || segment4 || '.' || segment5 || '.' || segment6;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Barton Doctrine Migration
+-- File: create_schema_registry
+-- Purpose: Database schema migration with Barton ID compliance
+-- Requirements: All tables must have unique_id (Barton ID) and audit columns
+-- MCP: All access via Composio bridge, no direct connections
+
 /**
  * Schema Registry Table Migration
  * Creates the shq.schema_registry table for storing database metadata
@@ -8,8 +49,7 @@
 CREATE SCHEMA IF NOT EXISTS shq;
 
 -- Create the main schema registry table
-CREATE TABLE IF NOT EXISTS shq.schema_registry (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS shq.schema_registry (id SERIAL PRIMARY KEY,
     schema_name TEXT NOT NULL,
     table_name TEXT NOT NULL,
     column_name TEXT NOT NULL,
@@ -30,8 +70,11 @@ CREATE TABLE IF NOT EXISTS shq.schema_registry (
     created_at TIMESTAMPTZ DEFAULT NOW(),
 
     -- Ensure unique constraint for schema/table/column combination
-    UNIQUE(schema_name, table_name, column_name)
-);
+    UNIQUE(schema_name, table_name, column_name),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_schema_registry_schema_table
@@ -44,8 +87,7 @@ CREATE INDEX IF NOT EXISTS idx_schema_registry_updated
     ON shq.schema_registry(last_updated);
 
 -- Create relationships tracking table
-CREATE TABLE IF NOT EXISTS shq.table_relationships (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS shq.table_relationships (id SERIAL PRIMARY KEY,
     source_schema TEXT NOT NULL,
     source_table TEXT NOT NULL,
     target_schema TEXT NOT NULL,
@@ -58,8 +100,11 @@ CREATE TABLE IF NOT EXISTS shq.table_relationships (
     updated_at TIMESTAMPTZ DEFAULT NOW(),
 
     -- Ensure unique constraint for relationship pairs
-    UNIQUE(source_schema, source_table, target_schema, target_table, relationship_type)
-);
+    UNIQUE(source_schema, source_table, target_schema, target_table, relationship_type),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 -- Create index for relationships
 CREATE INDEX IF NOT EXISTS idx_table_relationships_source
@@ -72,8 +117,7 @@ CREATE INDEX IF NOT EXISTS idx_table_relationships_type
     ON shq.table_relationships(relationship_type);
 
 -- Create audit log for schema changes
-CREATE TABLE IF NOT EXISTS shq.schema_audit_log (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS shq.schema_audit_log (id SERIAL PRIMARY KEY,
     operation TEXT NOT NULL, -- 'scan', 'sync', 'update', 'relationship_add'
     schema_name TEXT,
     table_name TEXT,
@@ -83,8 +127,11 @@ CREATE TABLE IF NOT EXISTS shq.schema_audit_log (
     change_summary TEXT,
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    created_by TEXT DEFAULT 'system'
-);
+    created_by TEXT DEFAULT 'system',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 -- Create index for audit log
 CREATE INDEX IF NOT EXISTS idx_schema_audit_log_operation
@@ -135,3 +182,20 @@ VALUES (
     'Created schema registry and visualization system tables',
     '{"altitude": 10000, "doctrine": "STAMPED", "version": "1.0"}'::jsonb
 ) ON CONFLICT DO NOTHING;
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();
+
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();
+
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();

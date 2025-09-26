@@ -1,4 +1,12 @@
 /**
+ * Doctrine Spec:
+ * - Barton ID: 99.99.99.07.08089.421
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: data query parameters and filters
+ * - Output: database records and metadata
+ * - MCP: Composio (Neon integrated)
+ */
+/**
  * Step 2A People Validator API - Barton Doctrine Pipeline
  * Input: People Master File JSON (from Mapping App / Apify)
  * Output: JSON { rows_validated, rows_failed, details[] }

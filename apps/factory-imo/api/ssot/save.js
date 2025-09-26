@@ -1,3 +1,11 @@
+/**
+ * Doctrine Spec:
+ * - Barton ID: 99.99.99.07.22976.467
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: API request parameters
+ * - Output: API response data
+ * - MCP: Composio (Neon integrated)
+ */
 // Vercel API Route for SSOT processing with doctrine-safe IDs
 import { NextApiRequest, NextApiResponse } from 'next'
 

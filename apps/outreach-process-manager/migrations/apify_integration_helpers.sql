@@ -1,3 +1,38 @@
+
+-- Updated At Trigger Function
+CREATE OR REPLACE FUNCTION trigger_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- Barton ID Generator Function
+-- Generates format: NN.NN.NN.NN.NNNNN.NNN
+CREATE OR REPLACE FUNCTION generate_barton_id()
+RETURNS VARCHAR(23) AS $$
+DECLARE
+    segment1 VARCHAR(2);
+    segment2 VARCHAR(2);
+    segment3 VARCHAR(2);
+    segment4 VARCHAR(2);
+    segment5 VARCHAR(5);
+    segment6 VARCHAR(3);
+BEGIN
+    -- Use timestamp and random for uniqueness
+    segment1 := LPAD((EXTRACT(EPOCH FROM NOW())::BIGINT % 100)::TEXT, 2, '0');
+    segment2 := LPAD((EXTRACT(MICROSECONDS FROM NOW()) % 100)::TEXT, 2, '0');
+    segment3 := LPAD((RANDOM() * 100)::INT::TEXT, 2, '0');
+    segment4 := '07'; -- Fixed segment for database records
+    segment5 := LPAD((RANDOM() * 100000)::INT::TEXT, 5, '0');
+    segment6 := LPAD((RANDOM() * 1000)::INT::TEXT, 3, '0');
+
+    RETURN segment1 || '.' || segment2 || '.' || segment3 || '.' || segment4 || '.' || segment5 || '.' || segment6;
+END;
+$$ LANGUAGE plpgsql;
+
 /**
  * Apify Integration Helper Functions - Barton Doctrine Compliant
  * Prerequisites for Companies + People data ingestion via Apify
@@ -17,8 +52,7 @@
  * Create batch tracking table for Apify imports
  * Tracks batches of company/people data from Apify scraping runs
  */
-CREATE TABLE IF NOT EXISTS marketing.apify_batch_log (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS marketing.apify_batch_log (id SERIAL PRIMARY KEY,
     batch_unique_id TEXT NOT NULL UNIQUE, -- Barton ID for batch
     batch_type TEXT NOT NULL CHECK (batch_type IN ('companies', 'people', 'mixed')),
     source_actor_id TEXT, -- Apify actor that generated the data
@@ -41,8 +75,11 @@ CREATE TABLE IF NOT EXISTS marketing.apify_batch_log (
 
     -- Barton Doctrine
     altitude INTEGER DEFAULT 10000,
-    process_step TEXT DEFAULT 'apify_batch_import'
-);
+    process_step TEXT DEFAULT 'apify_batch_import',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 -- ==============================================================================
 -- APIFY DATA STAGING TABLES
@@ -52,8 +89,7 @@ CREATE TABLE IF NOT EXISTS marketing.apify_batch_log (
  * Staging table for raw Apify company data before validation
  * Allows bulk import then gradual validation/processing
  */
-CREATE TABLE IF NOT EXISTS marketing.apify_company_staging (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS marketing.apify_company_staging (id SERIAL PRIMARY KEY,
     batch_unique_id TEXT NOT NULL, -- Link to apify_batch_log
 
     -- Raw data from Apify (flexible schema)
@@ -75,14 +111,16 @@ CREATE TABLE IF NOT EXISTS marketing.apify_company_staging (
 
     -- Index for batch processing
     INDEX idx_apify_company_staging_batch (batch_unique_id),
-    INDEX idx_apify_company_staging_status (processing_status)
-);
+    INDEX idx_apify_company_staging_status (processing_status),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 /**
  * Staging table for raw Apify people data before validation
  */
-CREATE TABLE IF NOT EXISTS marketing.apify_people_staging (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS marketing.apify_people_staging (id SERIAL PRIMARY KEY,
     batch_unique_id TEXT NOT NULL, -- Link to apify_batch_log
 
     -- Raw data from Apify
@@ -112,8 +150,11 @@ CREATE TABLE IF NOT EXISTS marketing.apify_people_staging (
     -- Indexes
     INDEX idx_apify_people_staging_batch (batch_unique_id),
     INDEX idx_apify_people_staging_status (processing_status),
-    INDEX idx_apify_people_staging_company (company_name)
-);
+    INDEX idx_apify_people_staging_company (company_name),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 -- ==============================================================================
 -- APIFY BATCH ID GENERATION
@@ -1097,3 +1138,20 @@ $$ LANGUAGE plpgsql;
  * - Slot assignment based on job titles
  * - Full audit trail compliance
  */
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();
+
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();
+
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();

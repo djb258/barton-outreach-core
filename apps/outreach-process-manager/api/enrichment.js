@@ -1,4 +1,12 @@
 /**
+ * Doctrine Spec:
+ * - Barton ID: 99.99.99.07.33382.127
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: data query parameters and filters
+ * - Output: database records and metadata
+ * - MCP: Composio (Neon integrated)
+ */
+/**
  * API Endpoint: /api/enrichment
  * Enrichment Router API - Step 2B of Barton Doctrine Pipeline
  * Handles batch processing of validation failures through handler pipeline

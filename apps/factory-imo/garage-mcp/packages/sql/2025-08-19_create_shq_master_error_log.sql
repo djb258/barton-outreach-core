@@ -1,3 +1,44 @@
+
+-- Updated At Trigger Function
+CREATE OR REPLACE FUNCTION trigger_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- Barton ID Generator Function
+-- Generates format: NN.NN.NN.NN.NNNNN.NNN
+CREATE OR REPLACE FUNCTION generate_barton_id()
+RETURNS VARCHAR(23) AS $$
+DECLARE
+    segment1 VARCHAR(2);
+    segment2 VARCHAR(2);
+    segment3 VARCHAR(2);
+    segment4 VARCHAR(2);
+    segment5 VARCHAR(5);
+    segment6 VARCHAR(3);
+BEGIN
+    -- Use timestamp and random for uniqueness
+    segment1 := LPAD((EXTRACT(EPOCH FROM NOW())::BIGINT % 100)::TEXT, 2, '0');
+    segment2 := LPAD((EXTRACT(MICROSECONDS FROM NOW()) % 100)::TEXT, 2, '0');
+    segment3 := LPAD((RANDOM() * 100)::INT::TEXT, 2, '0');
+    segment4 := '07'; -- Fixed segment for database records
+    segment5 := LPAD((RANDOM() * 100000)::INT::TEXT, 5, '0');
+    segment6 := LPAD((RANDOM() * 1000)::INT::TEXT, 3, '0');
+
+    RETURN segment1 || '.' || segment2 || '.' || segment3 || '.' || segment4 || '.' || segment5 || '.' || segment6;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Barton Doctrine Migration
+-- File: 2025-08-19_create_shq_master_error_log
+-- Purpose: Database schema migration with Barton ID compliance
+-- Requirements: All tables must have unique_id (Barton ID) and audit columns
+-- MCP: All access via Composio bridge, no direct connections
+
 -- =====================================================================================
 -- SHQ Master Error Log Migration
 -- Creates centralized error logging tables with HEIR integration
@@ -10,8 +51,7 @@ CREATE SCHEMA IF NOT EXISTS shq;
 -- Master Error Log Table
 -- Central repository for all system errors across agents and domains
 -- =====================================================================================
-CREATE TABLE IF NOT EXISTS shq.master_error_log (
-    -- Primary identification
+CREATE TABLE IF NOT EXISTS shq.master_error_log (-- Primary identification
     id SERIAL PRIMARY KEY,
     error_id VARCHAR(50) UNIQUE NOT NULL,
     occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -54,15 +94,17 @@ CREATE TABLE IF NOT EXISTS shq.master_error_log (
     
     -- Metadata
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 -- =====================================================================================
 -- Error Patterns Table
 -- Track recurring error patterns for automated resolution
 -- =====================================================================================
-CREATE TABLE IF NOT EXISTS shq.error_patterns (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS shq.error_patterns (id SERIAL PRIMARY KEY,
     pattern_id VARCHAR(50) UNIQUE NOT NULL,
     
     -- Pattern identification
@@ -84,15 +126,17 @@ CREATE TABLE IF NOT EXISTS shq.error_patterns (
     first_seen TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     last_seen TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 -- =====================================================================================
 -- Error Resolution Attempts Table
 -- Track all resolution attempts for learning
 -- =====================================================================================
-CREATE TABLE IF NOT EXISTS shq.error_resolution_attempts (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS shq.error_resolution_attempts (id SERIAL PRIMARY KEY,
     attempt_id VARCHAR(50) UNIQUE NOT NULL,
     
     -- Link to error
@@ -115,15 +159,17 @@ CREATE TABLE IF NOT EXISTS shq.error_resolution_attempts (
     would_retry BOOLEAN,
     
     -- Metadata
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 -- =====================================================================================
 -- System Status Dashboard Table
 -- Real-time system health overview
 -- =====================================================================================
-CREATE TABLE IF NOT EXISTS shq.system_status (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS shq.system_status (id SERIAL PRIMARY KEY,
     status_id VARCHAR(50) UNIQUE NOT NULL,
     
     -- Time window
@@ -158,8 +204,11 @@ CREATE TABLE IF NOT EXISTS shq.system_status (
     
     -- Metadata
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 -- =====================================================================================
 -- Indexes for Performance
@@ -320,3 +369,26 @@ COMMENT ON TABLE shq.master_error_log IS 'Central repository for all system erro
 COMMENT ON TABLE shq.error_patterns IS 'Pattern recognition for recurring errors and automated resolution';
 COMMENT ON TABLE shq.error_resolution_attempts IS 'Learning database for error resolution attempts';
 COMMENT ON TABLE shq.system_status IS 'Real-time system health dashboard data';
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();
+
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();
+
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();
+
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();

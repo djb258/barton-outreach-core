@@ -1,4 +1,12 @@
 /**
+ * Doctrine Spec:
+ * - Barton ID: 09.01.02.07.10000.020
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: trend analysis parameters and filters
+ * - Output: trend data and visualization metrics
+ * - MCP: Composio (Neon integrated)
+ */
+/**
  * Dashboard Trends API - Step 6 Marketing Dashboard
  * Provides time-series trend data for Barton Doctrine pipeline performance
  *

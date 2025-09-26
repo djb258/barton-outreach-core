@@ -1,3 +1,44 @@
+
+-- Updated At Trigger Function
+CREATE OR REPLACE FUNCTION trigger_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- Barton ID Generator Function
+-- Generates format: NN.NN.NN.NN.NNNNN.NNN
+CREATE OR REPLACE FUNCTION generate_barton_id()
+RETURNS VARCHAR(23) AS $$
+DECLARE
+    segment1 VARCHAR(2);
+    segment2 VARCHAR(2);
+    segment3 VARCHAR(2);
+    segment4 VARCHAR(2);
+    segment5 VARCHAR(5);
+    segment6 VARCHAR(3);
+BEGIN
+    -- Use timestamp and random for uniqueness
+    segment1 := LPAD((EXTRACT(EPOCH FROM NOW())::BIGINT % 100)::TEXT, 2, '0');
+    segment2 := LPAD((EXTRACT(MICROSECONDS FROM NOW()) % 100)::TEXT, 2, '0');
+    segment3 := LPAD((RANDOM() * 100)::INT::TEXT, 2, '0');
+    segment4 := '07'; -- Fixed segment for database records
+    segment5 := LPAD((RANDOM() * 100000)::INT::TEXT, 5, '0');
+    segment6 := LPAD((RANDOM() * 1000)::INT::TEXT, 3, '0');
+
+    RETURN segment1 || '.' || segment2 || '.' || segment3 || '.' || segment4 || '.' || segment5 || '.' || segment6;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Barton Doctrine Migration
+-- File: create_company_tables
+-- Purpose: Database schema migration with Barton ID compliance
+-- Requirements: All tables must have unique_id (Barton ID) and audit columns
+-- MCP: All access via Composio bridge, no direct connections
+
 /**
  * Company Tables Migration - Barton Doctrine Ingestion Build
  * Creates marketing.company_raw_intake and marketing.company_audit_log
@@ -21,8 +62,7 @@
  * Stores validated company records with Barton unique_id
  * All optional fields are explicitly nullable for doctrine compliance
  */
-CREATE TABLE IF NOT EXISTS marketing.company_raw_intake (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS marketing.company_raw_intake (id SERIAL PRIMARY KEY,
 
     -- BARTON DOCTRINE: 6-part unique identifier (REQUIRED)
     company_unique_id TEXT NOT NULL UNIQUE,
@@ -62,8 +102,11 @@ CREATE TABLE IF NOT EXISTS marketing.company_raw_intake (
 
     -- BARTON DOCTRINE: Altitude and process tracking
     altitude INTEGER DEFAULT 10000, -- execution level
-    process_step TEXT DEFAULT 'company_intake'
-);
+    process_step TEXT DEFAULT 'company_intake',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 -- ==============================================================================
 -- MARKETING.COMPANY_AUDIT_LOG - Doctrine Audit Requirements
@@ -74,8 +117,7 @@ CREATE TABLE IF NOT EXISTS marketing.company_raw_intake (
  * Every company operation must log here for doctrine compliance
  * Provides full traceability for all company data operations
  */
-CREATE TABLE IF NOT EXISTS marketing.company_audit_log (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS marketing.company_audit_log (id SERIAL PRIMARY KEY,
 
     -- BARTON DOCTRINE: Link to company record
     company_unique_id TEXT NOT NULL, -- references company_raw_intake.company_unique_id
@@ -98,8 +140,11 @@ CREATE TABLE IF NOT EXISTS marketing.company_audit_log (
     session_id TEXT, -- batch/session grouping
 
     -- TIMING
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 -- ==============================================================================
 -- INDEXES FOR PERFORMANCE - Doctrine Requirements
@@ -288,3 +333,14 @@ INSERT INTO marketing.company_audit_log (
  * 2. Build validator agents (/api/validate-company.ts)
  * 3. Update validation console UI
  */
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();
+
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();

@@ -1,3 +1,44 @@
+
+-- Updated At Trigger Function
+CREATE OR REPLACE FUNCTION trigger_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- Barton ID Generator Function
+-- Generates format: NN.NN.NN.NN.NNNNN.NNN
+CREATE OR REPLACE FUNCTION generate_barton_id()
+RETURNS VARCHAR(23) AS $$
+DECLARE
+    segment1 VARCHAR(2);
+    segment2 VARCHAR(2);
+    segment3 VARCHAR(2);
+    segment4 VARCHAR(2);
+    segment5 VARCHAR(5);
+    segment6 VARCHAR(3);
+BEGIN
+    -- Use timestamp and random for uniqueness
+    segment1 := LPAD((EXTRACT(EPOCH FROM NOW())::BIGINT % 100)::TEXT, 2, '0');
+    segment2 := LPAD((EXTRACT(MICROSECONDS FROM NOW()) % 100)::TEXT, 2, '0');
+    segment3 := LPAD((RANDOM() * 100)::INT::TEXT, 2, '0');
+    segment4 := '07'; -- Fixed segment for database records
+    segment5 := LPAD((RANDOM() * 100000)::INT::TEXT, 5, '0');
+    segment6 := LPAD((RANDOM() * 1000)::INT::TEXT, 3, '0');
+
+    RETURN segment1 || '.' || segment2 || '.' || segment3 || '.' || segment4 || '.' || segment5 || '.' || segment6;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Barton Doctrine Migration
+-- File: create_company_slot
+-- Purpose: Database schema migration with Barton ID compliance
+-- Requirements: All tables must have unique_id (Barton ID) and audit columns
+-- MCP: All access via Composio bridge, no direct connections
+
 /**
  * Company Slot Migration - Barton Doctrine Ingestion Build
  * Creates marketing.company_slot with auto-generation of CEO/CFO/HR slots
@@ -20,8 +61,7 @@
  * Each company automatically gets CEO, CFO, HR slots on creation
  * People records attach to specific slots via company_slot_unique_id
  */
-CREATE TABLE IF NOT EXISTS marketing.company_slot (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS marketing.company_slot (id SERIAL PRIMARY KEY,
 
     -- BARTON DOCTRINE: 6-part unique identifier for slot
     company_slot_unique_id TEXT NOT NULL UNIQUE,
@@ -47,8 +87,11 @@ CREATE TABLE IF NOT EXISTS marketing.company_slot (
 
     -- BARTON DOCTRINE: Altitude and process tracking
     altitude INTEGER DEFAULT 10000, -- execution level
-    process_step TEXT DEFAULT 'slot_management'
-);
+    process_step TEXT DEFAULT 'slot_management',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 -- ==============================================================================
 -- INDEXES FOR PERFORMANCE - Slot Lookups
@@ -424,3 +467,8 @@ INSERT INTO marketing.company_raw_intake (
  * 2. Build validator agents (/api/validate-company.ts, /api/validate-people.ts)
  * 3. Update validation console UI
  */
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();

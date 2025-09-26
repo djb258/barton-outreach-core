@@ -1,3 +1,7 @@
+-- Barton Doctrine Infrastructure
+-- All tables must have unique_id (Barton ID) and audit columns
+-- MCP: Access only via Composio bridge
+
 -- Barton Outreach Core - Neon PostgreSQL Schema
 -- Secure RLS-enabled schema with SECURITY DEFINER functions
 

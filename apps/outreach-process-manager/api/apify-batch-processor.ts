@@ -1,4 +1,12 @@
 /**
+ * Doctrine Spec:
+ * - Barton ID: 07.01.01.07.10000.016
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: Apify batch job configuration and data
+ * - Output: batch processing results and status
+ * - MCP: Composio (Neon integrated)
+ */
+/**
  * Apify Batch Processor API - Barton Doctrine Pipeline
  * Handles complete Apify data processing workflow from staging to validation
  * Uses Standard Composio MCP Pattern for all database operations

@@ -1,4 +1,12 @@
 /**
+ * Doctrine Spec:
+ * - Barton ID: 99.99.99.07.14292.720
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: data query parameters and filters
+ * - Output: database records and metadata
+ * - MCP: Composio (Neon integrated)
+ */
+/**
  * Step 4 Promotion Console API - Barton Doctrine Pipeline
  * Input: { type: "company" | "people", batchSize?: 100, filter?: {} }
  * Output: Promotion results with success/failure counts and details

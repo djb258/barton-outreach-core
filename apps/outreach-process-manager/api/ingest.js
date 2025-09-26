@@ -1,4 +1,12 @@
 /**
+ * Doctrine Spec:
+ * - Barton ID: 99.99.99.07.61757.251
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: API request parameters
+ * - Output: API response data
+ * - MCP: Composio (Neon integrated)
+ */
+/**
  * API Endpoint: /api/ingest
  * Handles CSV data ingestion through Composio MCP → Neon
  * Middle layer orchestration for Outreach Process Manager

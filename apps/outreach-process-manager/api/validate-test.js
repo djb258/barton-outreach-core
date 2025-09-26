@@ -1,4 +1,12 @@
 /**
+ * Doctrine Spec:
+ * - Barton ID: 01.01.02.07.10000.002
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: email parameters and recipient data
+ * - Output: email sending status and tracking
+ * - MCP: Composio (Neon integrated)
+ */
+/**
  * Test endpoint for /api/validate
  * Use this to test the validation endpoint locally
  */

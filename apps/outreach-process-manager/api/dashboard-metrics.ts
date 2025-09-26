@@ -1,4 +1,12 @@
 /**
+ * Doctrine Spec:
+ * - Barton ID: 09.01.01.07.10000.019
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: metrics query parameters and date range
+ * - Output: dashboard metrics and KPI data
+ * - MCP: Composio (Neon integrated)
+ */
+/**
  * Dashboard Metrics API - Step 6 Marketing Dashboard
  * Provides real-time metrics from materialized views for Barton Doctrine pipeline
  *

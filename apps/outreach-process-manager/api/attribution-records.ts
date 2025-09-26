@@ -1,4 +1,12 @@
 /**
+ * Doctrine Spec:
+ * - Barton ID: 05.01.03.07.10000.013
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: attribution record filter parameters
+ * - Output: attribution record list and metadata
+ * - MCP: Composio (Neon integrated)
+ */
+/**
  * Attribution Records API - Detailed Attribution Data Retrieval
  * Fetches paginated attribution records with filtering and sorting
  *

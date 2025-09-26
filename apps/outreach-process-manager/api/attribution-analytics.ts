@@ -1,4 +1,12 @@
 /**
+ * Doctrine Spec:
+ * - Barton ID: 05.01.01.07.10000.011
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: attribution query parameters and filters
+ * - Output: attribution analytics and performance data
+ * - MCP: Composio (Neon integrated)
+ */
+/**
  * Attribution Analytics API - Performance Insights for PLE & BIT
  * Provides analytics and insights from closed-loop attribution data
  *

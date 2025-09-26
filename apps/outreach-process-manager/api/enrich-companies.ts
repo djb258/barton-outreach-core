@@ -1,4 +1,12 @@
 /**
+ * Doctrine Spec:
+ * - Barton ID: 07.01.02.07.10000.017
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: company IDs and enrichment parameters
+ * - Output: enriched company data and validation
+ * - MCP: Composio (Neon integrated)
+ */
+/**
  * Step 2B Company Enrichment API - Barton Doctrine Pipeline
  * Input: { batchSize, statusFilter }
  * Output: { rows_enriched, rows_failed, audit_log[] }

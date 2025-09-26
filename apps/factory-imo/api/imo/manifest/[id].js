@@ -1,3 +1,11 @@
+/**
+ * Doctrine Spec:
+ * - Barton ID: 99.99.99.07.15107.896
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: analytics query parameters and filters
+ * - Output: analytics data and metrics
+ * - MCP: Composio (Neon integrated)
+ */
 export default async function handler(req, res) {
   const { id } = req.query;
 

@@ -1,4 +1,12 @@
 /**
+ * Doctrine Spec:
+ * - Barton ID: 10.01.01.07.10000.021
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: audit log query and filter parameters
+ * - Output: audit trail records and compliance data
+ * - MCP: Composio (Neon integrated)
+ */
+/**
  * API Endpoint: /api/audit-log
  * Audit Log Viewer Console Backend (Step 5)
  * MCP tool for querying promotion audit logs from Neon

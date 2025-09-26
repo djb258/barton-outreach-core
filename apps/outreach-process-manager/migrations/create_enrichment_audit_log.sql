@@ -1,3 +1,44 @@
+
+-- Updated At Trigger Function
+CREATE OR REPLACE FUNCTION trigger_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- Barton ID Generator Function
+-- Generates format: NN.NN.NN.NN.NNNNN.NNN
+CREATE OR REPLACE FUNCTION generate_barton_id()
+RETURNS VARCHAR(23) AS $$
+DECLARE
+    segment1 VARCHAR(2);
+    segment2 VARCHAR(2);
+    segment3 VARCHAR(2);
+    segment4 VARCHAR(2);
+    segment5 VARCHAR(5);
+    segment6 VARCHAR(3);
+BEGIN
+    -- Use timestamp and random for uniqueness
+    segment1 := LPAD((EXTRACT(EPOCH FROM NOW())::BIGINT % 100)::TEXT, 2, '0');
+    segment2 := LPAD((EXTRACT(MICROSECONDS FROM NOW()) % 100)::TEXT, 2, '0');
+    segment3 := LPAD((RANDOM() * 100)::INT::TEXT, 2, '0');
+    segment4 := '07'; -- Fixed segment for database records
+    segment5 := LPAD((RANDOM() * 100000)::INT::TEXT, 5, '0');
+    segment6 := LPAD((RANDOM() * 1000)::INT::TEXT, 3, '0');
+
+    RETURN segment1 || '.' || segment2 || '.' || segment3 || '.' || segment4 || '.' || segment5 || '.' || segment6;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Barton Doctrine Migration
+-- File: create_enrichment_audit_log
+-- Purpose: Database schema migration with Barton ID compliance
+-- Requirements: All tables must have unique_id (Barton ID) and audit columns
+-- MCP: All access via Composio bridge, no direct connections
+
 /**
  * Enrichment Audit Log Migration - Barton Doctrine Step 2B
  * Creates intake.enrichment_audit_log for tracking all enrichment attempts
@@ -18,8 +59,7 @@
  * Tracks all enrichment attempts with before/after values
  * Required for Barton Doctrine compliance in Step 2B
  */
-CREATE TABLE IF NOT EXISTS intake.enrichment_audit_log (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS intake.enrichment_audit_log (id SERIAL PRIMARY KEY,
 
     -- BARTON DOCTRINE: ID for the row being enriched (NEVER changes)
     unique_id TEXT NOT NULL,
@@ -40,8 +80,11 @@ CREATE TABLE IF NOT EXISTS intake.enrichment_audit_log (
     session_id TEXT, -- batch/session grouping
 
     -- TIMING
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 -- ==============================================================================
 -- INDEXES FOR PERFORMANCE - Enrichment Lookups
@@ -316,3 +359,8 @@ INSERT INTO intake.enrichment_audit_log (
  * 2. Update validation console with Step 2B enrichment view
  * 3. Implement enrichment rules and re-validation triggers
  */
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();

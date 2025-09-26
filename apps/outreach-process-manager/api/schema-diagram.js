@@ -1,4 +1,12 @@
 /**
+ * Doctrine Spec:
+ * - Barton ID: 99.99.99.07.36707.806
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: data query parameters and filters
+ * - Output: database records and metadata
+ * - MCP: Composio (Neon integrated)
+ */
+/**
  * API Endpoint: /api/schema-diagram
  * Schema Diagram Generation - Creates ER diagrams and JSON exports
  * Uses Standard Composio MCP Pattern for all database operations

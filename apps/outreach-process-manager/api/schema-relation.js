@@ -1,4 +1,12 @@
 /**
+ * Doctrine Spec:
+ * - Barton ID: 99.99.99.07.57968.215
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: data query parameters and filters
+ * - Output: database records and metadata
+ * - MCP: Composio (Neon integrated)
+ */
+/**
  * API Endpoint: /api/schema-relation
  * Schema Relationship Management - Add and manage table relationships
  * Uses Standard Composio MCP Pattern for all database operations

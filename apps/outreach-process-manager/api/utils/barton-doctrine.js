@@ -1,4 +1,12 @@
 /**
+ * Doctrine Spec:
+ * - Barton ID: 99.99.99.07.75665.812
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: API request parameters
+ * - Output: API response data
+ * - MCP: Composio (Neon integrated)
+ */
+/**
  * Barton Doctrine Utilities
  * Handles unique_id, process_id, and altitude metadata
  * Ensures compliance with STAMPED doctrine

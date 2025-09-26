@@ -1,3 +1,11 @@
+/**
+ * Doctrine Spec:
+ * - Barton ID: 03.01.01.07.10000.007
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: server requests and API calls
+ * - Output: processed responses and routing data
+ * - MCP: Composio (Neon integrated)
+ */
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';

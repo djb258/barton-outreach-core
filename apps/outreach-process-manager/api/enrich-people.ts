@@ -1,4 +1,12 @@
 /**
+ * Doctrine Spec:
+ * - Barton ID: 07.01.03.07.10000.018
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: people IDs and enrichment parameters
+ * - Output: enriched people data and validation
+ * - MCP: Composio (Neon integrated)
+ */
+/**
  * Step 2B People Enrichment API - Barton Doctrine Pipeline
  * Input: { batchSize, statusFilter }
  * Output: { rows_enriched, rows_failed, audit_log[] }

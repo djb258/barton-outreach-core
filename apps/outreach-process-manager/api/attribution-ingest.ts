@@ -1,4 +1,12 @@
 /**
+ * Doctrine Spec:
+ * - Barton ID: 05.01.02.07.10000.012
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: raw attribution data and source information
+ * - Output: processed attribution records
+ * - MCP: Composio (Neon integrated)
+ */
+/**
  * Step 5 Attribution Ingest API - Barton Doctrine Pipeline
  * Input: Attribution payload from CRM systems or webhooks
  * Output: Attribution recorded with PLE/BIT updates triggered

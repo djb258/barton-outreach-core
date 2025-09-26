@@ -1,3 +1,11 @@
+/**
+ * Doctrine Spec:
+ * - Barton ID: 01.02.01.07.10000.003
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: LLM prompt and model configuration
+ * - Output: AI-generated response and metadata
+ * - MCP: Composio (Neon integrated)
+ */
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);

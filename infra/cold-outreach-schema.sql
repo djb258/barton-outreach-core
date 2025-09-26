@@ -1,3 +1,7 @@
+-- Barton Doctrine Infrastructure
+-- All tables must have unique_id (Barton ID) and audit columns
+-- MCP: Access only via Composio bridge
+
 -- Cold Outreach Database Bootstrap (Neon/PostgreSQL)
 -- Safe to run in a fresh database. Idempotent guards included where possible.
 

@@ -1,4 +1,12 @@
 /**
+ * Doctrine Spec:
+ * - Barton ID: 06.01.01.07.10000.014
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: adjustment query parameters and filters
+ * - Output: failed records requiring human adjustment
+ * - MCP: Composio (Neon integrated)
+ */
+/**
  * Step 3 Adjuster Fetch API - Barton Doctrine Pipeline
  * Input: { type: "company" | "people", limit?: 50 }
  * Returns: Failed rows with original data, validation errors, and enrichment attempts

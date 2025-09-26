@@ -1,4 +1,12 @@
 /**
+ * Doctrine Spec:
+ * - Barton ID: 99.99.99.07.34784.863
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: analytics query parameters and filters
+ * - Output: analytics data and metrics
+ * - MCP: Composio (Neon integrated)
+ */
+/**
  * Step 2B Enrichment Status API - Barton Doctrine Pipeline
  * Input: none
  * Output: Batch overview with pending/enriched/failed counts
