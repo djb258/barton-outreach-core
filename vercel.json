@@ -14,6 +14,18 @@
     {
       "src": "apps/outreach-process-manager/api/**/*.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "docs/**/*",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "branches/**/*",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "config/**/*",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
