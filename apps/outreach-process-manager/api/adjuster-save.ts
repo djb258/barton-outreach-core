@@ -26,6 +26,7 @@
  */
 
 import { StandardComposioNeonBridge } from '../utils/standard-composio-neon-bridge';
+import { auditAdjustAction, generateSessionId, calculateProcessingTime } from './auditOperations.js';
 
 interface AdjusterSaveRequest {
   unique_id: string;
@@ -51,6 +52,8 @@ export default async function handler(req: any, res: any) {
   }
 
   const bridge = new StandardComposioNeonBridge();
+  const startTime = Date.now();
+  const sessionId = generateSessionId('adjust_record');
 
   try {
     const {
@@ -81,6 +84,20 @@ export default async function handler(req: any, res: any) {
     }
 
     console.log(`[ADJUSTER-SAVE] Processing ${detectedType} adjustment for ${unique_id}`);
+
+    // Audit: Log adjustment start
+    await auditAdjustAction(
+      unique_id,
+      'start_adjustment',
+      'pending',
+      {
+        source: 'adjuster_console',
+        actor: 'human_adjuster',
+        session_id: sessionId,
+        record_type: detectedType,
+        before_values: { fields_to_change: Object.keys(updated_fields) }
+      }
+    );
 
     // Step 1: Fetch current row values
     const currentRecord = await fetchCurrentRecord(bridge, unique_id, detectedType);
@@ -117,6 +134,16 @@ export default async function handler(req: any, res: any) {
       changedFields
     );
 
+    // Step 3b: Log adjustment in validation_audit_log for the specific validation failures
+    await logValidationAdjustments(
+      bridge,
+      unique_id,
+      detectedType,
+      beforeValues,
+      afterValues,
+      changedFields
+    );
+
     // Step 4: Apply updates to intake row
     await applyUpdatesToRecord(bridge, unique_id, detectedType, updated_fields);
 
@@ -133,6 +160,25 @@ export default async function handler(req: any, res: any) {
     };
 
     console.log(`[ADJUSTER-SAVE] Successfully adjusted ${unique_id}: ${changedFields.join(', ')}`);
+
+    // Audit: Log successful adjustment completion
+    await auditAdjustAction(
+      unique_id,
+      'complete_adjustment',
+      'success',
+      {
+        source: 'adjuster_console',
+        actor: 'human_adjuster',
+        session_id: sessionId,
+        record_type: detectedType,
+        before_values: beforeValues,
+        after_values: afterValues,
+        field_changes: changedFields,
+        processing_time_ms: calculateProcessingTime(startTime),
+        confidence_score: 1.0 // Human adjustments get full confidence
+      }
+    );
+
     return res.status(200).json(response);
 
   } catch (error: any) {
@@ -358,6 +404,119 @@ async function logAdjustmentChanges(
 }
 
 /**
+ * Log adjustment changes in validation_audit_log for affected validation failures
+ */
+async function logValidationAdjustments(
+  bridge: StandardComposioNeonBridge,
+  uniqueId: string,
+  recordType: string,
+  beforeValues: Record<string, any>,
+  afterValues: Record<string, any>,
+  changedFields: string[]
+): Promise<void> {
+  try {
+    // Get the record ID first
+    let recordIdQuery: string;
+    if (recordType === 'company') {
+      recordIdQuery = `
+        SELECT id FROM marketing.company_raw_intake
+        WHERE company_unique_id = $1
+      `;
+    } else {
+      recordIdQuery = `
+        SELECT id FROM marketing.people_raw_intake
+        WHERE unique_id = $1
+      `;
+    }
+
+    const recordResult = await bridge.query(recordIdQuery, [uniqueId]);
+    if (recordResult.rows.length === 0) return;
+
+    const recordId = recordResult.rows[0].id;
+
+    // Get validation failures that might be affected by these field changes
+    const validationFailuresQuery = `
+      SELECT id, error_field, error_type
+      FROM intake.validation_failed
+      WHERE record_id = $1
+        AND status IN ('pending', 'escalated', 'human_review')
+        AND error_field = ANY($2)
+    `;
+
+    const failuresResult = await bridge.query(validationFailuresQuery, [
+      recordId,
+      changedFields
+    ]);
+
+    // Log adjustment for each affected validation failure
+    for (const failure of failuresResult.rows) {
+      const adjustmentQuery = `
+        INSERT INTO intake.validation_audit_log (
+          record_id,
+          error_type,
+          error_field,
+          attempt_source,
+          result,
+          original_value,
+          enriched_value,
+          details,
+          confidence_score,
+          barton_metadata,
+          validation_failed_id
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+        )
+      `;
+
+      const details = {
+        adjustment_type: 'human_manual',
+        before_value: beforeValues[failure.error_field],
+        after_value: afterValues[failure.error_field],
+        changed_fields: changedFields,
+        session_id: `adjuster_${Date.now()}`,
+        user_source: 'adjuster_console'
+      };
+
+      await bridge.query(adjustmentQuery, [
+        recordId,
+        failure.error_type,
+        failure.error_field,
+        'human',
+        'success', // Assuming manual adjustment is successful
+        beforeValues[failure.error_field] || null,
+        afterValues[failure.error_field] || null,
+        JSON.stringify(details),
+        1.00, // Human adjustment gets full confidence
+        JSON.stringify({
+          altitude: 10000,
+          doctrine: 'STAMPED',
+          process_id: 'step_3_adjuster',
+          unique_id: uniqueId
+        }),
+        failure.id
+      ]);
+
+      // Update the validation_failed record status to 'fixed' if value was corrected
+      if (afterValues[failure.error_field]) {
+        await bridge.query(`
+          UPDATE intake.validation_failed
+          SET status = 'fixed',
+              fixed_value = $1,
+              last_attempt_source = 'human',
+              last_attempt_at = NOW(),
+              updated_at = NOW()
+          WHERE id = $2
+        `, [afterValues[failure.error_field], failure.id]);
+      }
+    }
+
+  } catch (error) {
+    console.error('Failed to log validation adjustments:', error);
+    // Don't throw - this is logging, shouldn't break the main flow
+  }
+}
+
+/**
  * Apply updates to the intake record
  */
 async function applyUpdatesToRecord(
@@ -408,7 +567,7 @@ async function applyUpdatesToRecord(
 }
 
 /**
- * Trigger Step 2A re-validation after adjustment
+ * Trigger Step 2A re-validation after adjustment and move to intake if valid
  */
 async function triggerReValidation(
   bridge: StandardComposioNeonBridge,
@@ -419,25 +578,79 @@ async function triggerReValidation(
   errors: string[];
 }> {
   try {
-    // Set validation status to 'pending' to trigger re-validation
+    // Check if all validation failures for this record are now fixed
+    let recordIdQuery: string;
     if (recordType === 'company') {
-      await bridge.query(`
-        UPDATE marketing.company_raw_intake
-        SET validation_status = 'pending', updated_at = NOW()
+      recordIdQuery = `
+        SELECT id FROM marketing.company_raw_intake
         WHERE company_unique_id = $1
-      `, [uniqueId]);
+      `;
     } else {
-      await bridge.query(`
-        UPDATE marketing.people_raw_intake
-        SET validation_status = 'pending', updated_at = NOW()
+      recordIdQuery = `
+        SELECT id FROM marketing.people_raw_intake
         WHERE unique_id = $1
-      `, [uniqueId]);
+      `;
     }
 
-    return {
-      status: 'triggered',
-      errors: []
-    };
+    const recordResult = await bridge.query(recordIdQuery, [uniqueId]);
+    if (recordResult.rows.length === 0) {
+      return { status: 'failed', errors: ['Record not found'] };
+    }
+
+    const recordId = recordResult.rows[0].id;
+
+    // Check if there are any pending validation failures
+    const pendingFailuresQuery = `
+      SELECT COUNT(*) as count
+      FROM intake.validation_failed
+      WHERE record_id = $1
+        AND status IN ('pending', 'escalated', 'human_review')
+    `;
+
+    const pendingResult = await bridge.query(pendingFailuresQuery, [recordId]);
+    const pendingCount = parseInt(pendingResult.rows[0].count);
+
+    if (pendingCount === 0) {
+      // All validation issues are resolved - move to validated status
+      if (recordType === 'company') {
+        await bridge.query(`
+          UPDATE marketing.company_raw_intake
+          SET validation_status = 'validated', updated_at = NOW()
+          WHERE company_unique_id = $1
+        `, [uniqueId]);
+      } else {
+        await bridge.query(`
+          UPDATE marketing.people_raw_intake
+          SET validation_status = 'validated', updated_at = NOW()
+          WHERE unique_id = $1
+        `, [uniqueId]);
+      }
+
+      return {
+        status: 'validated_and_ready',
+        errors: []
+      };
+    } else {
+      // Still have pending issues - set to pending for re-validation
+      if (recordType === 'company') {
+        await bridge.query(`
+          UPDATE marketing.company_raw_intake
+          SET validation_status = 'pending', updated_at = NOW()
+          WHERE company_unique_id = $1
+        `, [uniqueId]);
+      } else {
+        await bridge.query(`
+          UPDATE marketing.people_raw_intake
+          SET validation_status = 'pending', updated_at = NOW()
+          WHERE unique_id = $1
+        `, [uniqueId]);
+      }
+
+      return {
+        status: 'triggered_revalidation',
+        errors: []
+      };
+    }
 
   } catch (error: any) {
     console.error('Failed to trigger re-validation:', error);

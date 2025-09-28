@@ -26,6 +26,7 @@
  */
 
 import { StandardComposioNeonBridge } from '../utils/standard-composio-neon-bridge';
+import { auditPromoteAction, generateSessionId, calculateProcessingTime } from './auditOperations.js';
 
 interface PromoteRequest {
   type: 'company' | 'people';

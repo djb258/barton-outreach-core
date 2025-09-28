@@ -7,6 +7,7 @@ import DataPreviewTable from './components/DataPreviewTable';
 import WorkflowSidebar from './components/WorkflowSidebar';
 import ProcessingStatusPanel from './components/ProcessingStatusPanel';
 import IntegrationStatusIndicator from './components/IntegrationStatusIndicator';
+import FeedbackSection from './components/FeedbackSection';
 import Button from '../../components/ui/Button';
 import { MASTER_SCHEMA, getAutoMappingSuggestions } from '../../constants/masterSchema';
 import Icon from '../../components/AppIcon';
@@ -257,6 +258,15 @@ const DataIntakeDashboard = () => {
     navigate('/data-validation-console');
   }, [navigate]);
 
+  const handleGenerateFeedbackReport = useCallback((reportData) => {
+    console.log('Feedback report generated:', reportData);
+    // You can add any additional logic here for handling the generated report
+  }, []);
+
+  const handleViewFeedbackReports = useCallback(() => {
+    navigate('/feedback-reports');
+  }, [navigate]);
+
   const canProceed = processingResults && processingResults?.successfulRows > 0 && 
                     (schemaValidation?.isValid || schemaValidation?.totalErrors === 0);
 
@@ -429,6 +439,18 @@ const DataIntakeDashboard = () => {
                 processingResults={processingResults}
                 onExportErrors={handleExportErrors}
                 onPromoteRecords={handlePromoteRecords}
+              />
+            </div>
+          )}
+
+          {/* Feedback Section - Step 8 Feedback Loop */}
+          {(processingResults || schemaValidation?.errors?.length > 0) && (
+            <div className="mb-8">
+              <FeedbackSection
+                processingResults={processingResults}
+                validationErrors={schemaValidation?.errors || []}
+                onGenerateReport={handleGenerateFeedbackReport}
+                onViewReports={handleViewFeedbackReports}
               />
             </div>
           )}

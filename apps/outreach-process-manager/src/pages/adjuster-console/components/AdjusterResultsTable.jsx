@@ -288,7 +288,55 @@ const AdjusterResultsTable = ({
                 {/* Validation Errors */}
                 <div>
                   <h5 className="text-sm font-medium text-foreground mb-2">Validation Issues</h5>
-                  {formatErrors(record.errors)}
+                  {record.validation_failures && record.validation_failures.length > 0 ? (
+                    <div className="space-y-2">
+                      {record.validation_failures.slice(0, 3).map((failure, idx) => (
+                        <div key={idx} className="bg-destructive/10 border border-destructive/20 rounded p-2">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="text-xs font-medium text-destructive mb-1">
+                                {failure.error_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Field: <span className="font-mono">{failure.error_field}</span>
+                              </div>
+                              {failure.raw_value && (
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  Current: <span className="font-mono bg-muted/20 px-1 rounded">{failure.raw_value}</span>
+                                </div>
+                              )}
+                              {failure.expected_format && (
+                                <div className="text-xs text-muted-foreground">
+                                  Expected: {failure.expected_format}
+                                </div>
+                              )}
+                            </div>
+                            <div className="ml-2">
+                              <div className={`text-xs px-2 py-1 rounded ${
+                                failure.status === 'pending' ? 'bg-warning/20 text-warning' :
+                                failure.status === 'fixed' ? 'bg-success/20 text-success' :
+                                'bg-muted/20 text-muted-foreground'
+                              }`}>
+                                {failure.status}
+                              </div>
+                            </div>
+                          </div>
+                          {failure.attempts > 0 && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {failure.attempts} attempt(s) by {failure.last_attempt_source || 'unknown'}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      {record.validation_failures.length > 3 && (
+                        <div className="text-xs text-muted-foreground px-2">
+                          +{record.validation_failures.length - 3} more validation issues
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    formatErrors(record.errors)
+                  )}
                 </div>
 
                 {/* Enrichment Attempts */}

@@ -6,6 +6,7 @@ import DoctrinalMetadataDisplay from '../../components/ui/DoctrinalMetadataDispl
 import SystemHealthIndicator from '../../components/ui/SystemHealthIndicator';
 import AdjusterSummaryCard from './components/AdjusterSummaryCard';
 import AdjusterResultsTable from './components/AdjusterResultsTable';
+import AdjusterFilterToolbar from './components/AdjusterFilterToolbar';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 
@@ -13,18 +14,72 @@ const AdjusterConsole = () => {
   // BARTON DOCTRINE: Step 3 Adjuster Console State
   const [recordType, setRecordType] = useState('company'); // 'company' | 'people'
   const [failedRecords, setFailedRecords] = useState([]);
+  const [filteredRecords, setFilteredRecords] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
+
+  // Filter states
+  const [currentFilter, setCurrentFilter] = useState('all');
+  const [currentErrorType, setCurrentErrorType] = useState('all');
+
   const [summaryStats, setSummaryStats] = useState({
     validation_failed: 0,
     enrichment_failed: 0,
     ready_for_adjustment: 0
   });
 
+  const [errorTypeCounts, setErrorTypeCounts] = useState({});
+
   useEffect(() => {
     loadFailedRecords();
   }, [recordType]);
+
+  // Apply filters when data or filters change
+  useEffect(() => {
+    applyFilters();
+  }, [failedRecords, currentFilter, currentErrorType]);
+
+  const applyFilters = () => {
+    let filtered = [...failedRecords];
+
+    // Apply status filter
+    if (currentFilter !== 'all') {
+      filtered = filtered.filter(record => {
+        switch (currentFilter) {
+          case 'promoted':
+            return record.validation_status === 'validated';
+          case 'pending':
+            return record.validation_status === 'pending';
+          case 'adjusted':
+            return record.validation_status === 'failed' && record.validation_failures?.some(f => f.status === 'fixed');
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Apply error type filter
+    if (currentErrorType !== 'all') {
+      filtered = filtered.filter(record => {
+        return record.validation_failures?.some(failure => failure.error_type === currentErrorType);
+      });
+    }
+
+    setFilteredRecords(filtered);
+  };
+
+  const calculateErrorTypeCounts = (records) => {
+    const counts = {};
+    records.forEach(record => {
+      if (record.validation_failures) {
+        record.validation_failures.forEach(failure => {
+          counts[failure.error_type] = (counts[failure.error_type] || 0) + 1;
+        });
+      }
+    });
+    return counts;
+  };
 
   const loadFailedRecords = async () => {
     setIsLoading(true);
@@ -38,15 +93,20 @@ const AdjusterConsole = () => {
       if (data.success) {
         setFailedRecords(data.records);
         setSummaryStats(data.summary);
+        setErrorTypeCounts(calculateErrorTypeCounts(data.records));
         console.log(`[ADJUSTER-CONSOLE] Loaded ${data.records.length} failed ${recordType} records`);
       } else {
         console.error('[ADJUSTER-CONSOLE] Failed to load records:', data.error);
         setFailedRecords([]);
+        setFilteredRecords([]);
+        setErrorTypeCounts({});
       }
 
     } catch (error) {
       console.error('[ADJUSTER-CONSOLE] Load error:', error);
       setFailedRecords([]);
+      setFilteredRecords([]);
+      setErrorTypeCounts({});
     } finally {
       setIsLoading(false);
     }
@@ -55,6 +115,17 @@ const AdjusterConsole = () => {
   // Handle record type change
   const handleRecordTypeChange = (newType) => {
     setRecordType(newType);
+    setCurrentFilter('all');
+    setCurrentErrorType('all');
+  };
+
+  // Handle filter changes
+  const handleFilterChange = (newFilter) => {
+    setCurrentFilter(newFilter);
+  };
+
+  const handleErrorTypeChange = (newErrorType) => {
+    setCurrentErrorType(newErrorType);
   };
 
   // Handle saving a record after manual adjustment
@@ -112,6 +183,13 @@ const AdjusterConsole = () => {
     setSelectedRecord(selected ? uniqueId : null);
   };
 
+  // Calculate filter counts
+  const promotedCount = failedRecords.filter(r => r.validation_status === 'validated').length;
+  const pendingCount = failedRecords.filter(r => r.validation_status === 'pending').length;
+  const adjustedCount = failedRecords.filter(r =>
+    r.validation_status === 'failed' && r.validation_failures?.some(f => f.status === 'fixed')
+  ).length;
+
   const adjustedRecordsCount = failedRecords.filter(r => r.validation_status === 'pending').length;
   const canProceedToNextStep = adjustedRecordsCount > 0;
 
@@ -168,9 +246,23 @@ const AdjusterConsole = () => {
             isLoading={isLoading}
           />
 
+          {/* Filter Toolbar */}
+          <AdjusterFilterToolbar
+            currentFilter={currentFilter}
+            onFilterChange={handleFilterChange}
+            currentErrorType={currentErrorType}
+            onErrorTypeChange={handleErrorTypeChange}
+            totalCount={failedRecords.length}
+            promotedCount={promotedCount}
+            pendingCount={pendingCount}
+            adjustedCount={adjustedCount}
+            errorTypeCounts={errorTypeCounts}
+            recordType={recordType}
+          />
+
           {/* Results Table */}
           <AdjusterResultsTable
-            records={failedRecords}
+            records={filteredRecords}
             recordType={recordType}
             isLoading={isLoading}
             isSaving={isSaving}
@@ -226,12 +318,23 @@ const AdjusterConsole = () => {
             </div>
           )}
 
-          {failedRecords.length > 0 && (
+          {failedRecords.length > 0 && filteredRecords.length === 0 && !isLoading && (
+            <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
+              <div className="flex items-center space-x-2">
+                <Icon name="Filter" size={20} color="var(--color-warning)" />
+                <span className="text-sm font-medium text-warning">
+                  No records match the current filters. Try adjusting your filter selection.
+                </span>
+              </div>
+            </div>
+          )}
+
+          {filteredRecords.length > 0 && (
             <div className="bg-info/10 border border-info/20 rounded-lg p-4">
               <div className="flex items-center space-x-2">
                 <Icon name="Info" size={20} color="var(--color-info)" />
                 <span className="text-sm font-medium text-info">
-                  {failedRecords.length} {recordType} records require manual adjustment. Click on any field to edit inline.
+                  {filteredRecords.length} {recordType} records {currentFilter !== 'all' || currentErrorType !== 'all' ? 'matching filters' : ''} require manual adjustment. Click on any field to edit inline.
                 </span>
               </div>
             </div>

@@ -45,6 +45,7 @@ interface CompanyRecord {
   updated_at: string;
   errors: string[];
   enrichment_attempts: EnrichmentAttempt[];
+  validation_failures: ValidationFailure[];
 }
 
 interface PersonRecord {
@@ -68,7 +69,20 @@ interface PersonRecord {
   updated_at: string;
   errors: string[];
   enrichment_attempts: EnrichmentAttempt[];
+  validation_failures: ValidationFailure[];
   slot_type?: string;
+}
+
+interface ValidationFailure {
+  error_type: string;
+  error_field: string;
+  raw_value?: string;
+  expected_format?: string;
+  attempts: number;
+  last_attempt_source?: string;
+  status: string;
+  fixed_value?: string;
+  metadata?: Record<string, any>;
 }
 
 interface EnrichmentAttempt {
@@ -156,13 +170,14 @@ export default async function handler(req: any, res: any) {
 
 /**
  * Fetch failed company records that need manual adjustment
+ * Pulls from validation_failed table with original intake data
  */
 async function fetchFailedCompanyRecords(
   bridge: StandardComposioNeonBridge,
   limit: number
 ): Promise<CompanyRecord[]> {
   const query = `
-    SELECT
+    SELECT DISTINCT
       c.company_unique_id,
       c.company_name,
       c.website_url,
@@ -180,31 +195,89 @@ async function fetchFailedCompanyRecords(
       c.validation_status,
       c.created_at,
       c.updated_at,
-      c.validation_errors
+      c.validation_errors,
+      -- Validation failed details
+      vf.error_type,
+      vf.error_field,
+      vf.raw_value,
+      vf.expected_format,
+      vf.attempts,
+      vf.last_attempt_source,
+      vf.status as validation_failed_status,
+      vf.fixed_value,
+      vf.metadata as validation_metadata
     FROM marketing.company_raw_intake c
-    WHERE c.validation_status = 'failed'
-    ORDER BY c.updated_at DESC
+    INNER JOIN intake.validation_failed vf ON vf.record_id = c.id
+    WHERE vf.status IN ('pending', 'escalated', 'human_review')
+    ORDER BY vf.updated_at DESC, c.updated_at DESC
     LIMIT $1
   `;
 
   const result = await bridge.query(query, [limit]);
 
-  return result.rows.map(row => ({
-    ...row,
-    errors: parseValidationErrors(row.validation_errors),
-    enrichment_attempts: [] // Will be populated separately
-  }));
+  // Group by company and collect all validation errors
+  const companyMap = new Map();
+
+  for (const row of result.rows) {
+    const companyId = row.company_unique_id;
+
+    if (!companyMap.has(companyId)) {
+      companyMap.set(companyId, {
+        company_unique_id: row.company_unique_id,
+        company_name: row.company_name,
+        website_url: row.website_url,
+        industry: row.industry,
+        employee_count: row.employee_count,
+        company_phone: row.company_phone,
+        address_street: row.address_street,
+        address_city: row.address_city,
+        address_state: row.address_state,
+        address_zip: row.address_zip,
+        address_country: row.address_country,
+        linkedin_url: row.linkedin_url,
+        source_system: row.source_system,
+        source_record_id: row.source_record_id,
+        validation_status: row.validation_status,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        errors: [],
+        enrichment_attempts: [],
+        validation_failures: []
+      });
+    }
+
+    const company = companyMap.get(companyId);
+    company.validation_failures.push({
+      error_type: row.error_type,
+      error_field: row.error_field,
+      raw_value: row.raw_value,
+      expected_format: row.expected_format,
+      attempts: row.attempts,
+      last_attempt_source: row.last_attempt_source,
+      status: row.validation_failed_status,
+      fixed_value: row.fixed_value,
+      metadata: row.validation_metadata
+    });
+
+    // Add error to errors array if not already present
+    if (!company.errors.includes(row.error_type)) {
+      company.errors.push(row.error_type);
+    }
+  }
+
+  return Array.from(companyMap.values());
 }
 
 /**
  * Fetch failed people records that need manual adjustment
+ * Pulls from validation_failed table with original intake data
  */
 async function fetchFailedPeopleRecords(
   bridge: StandardComposioNeonBridge,
   limit: number
 ): Promise<PersonRecord[]> {
   const query = `
-    SELECT
+    SELECT DISTINCT
       p.unique_id,
       p.company_unique_id,
       p.company_slot_unique_id,
@@ -224,21 +297,80 @@ async function fetchFailedPeopleRecords(
       p.created_at,
       p.updated_at,
       p.validation_errors,
-      cs.slot_type
+      cs.slot_type,
+      -- Validation failed details
+      vf.error_type,
+      vf.error_field,
+      vf.raw_value,
+      vf.expected_format,
+      vf.attempts,
+      vf.last_attempt_source,
+      vf.status as validation_failed_status,
+      vf.fixed_value,
+      vf.metadata as validation_metadata
     FROM marketing.people_raw_intake p
     LEFT JOIN marketing.company_slot cs ON p.company_slot_unique_id = cs.company_slot_unique_id
-    WHERE p.validation_status = 'failed'
-    ORDER BY p.updated_at DESC
+    INNER JOIN intake.validation_failed vf ON vf.record_id = p.id
+    WHERE vf.status IN ('pending', 'escalated', 'human_review')
+    ORDER BY vf.updated_at DESC, p.updated_at DESC
     LIMIT $1
   `;
 
   const result = await bridge.query(query, [limit]);
 
-  return result.rows.map(row => ({
-    ...row,
-    errors: parseValidationErrors(row.validation_errors),
-    enrichment_attempts: [] // Will be populated separately
-  }));
+  // Group by person and collect all validation errors
+  const peopleMap = new Map();
+
+  for (const row of result.rows) {
+    const personId = row.unique_id;
+
+    if (!peopleMap.has(personId)) {
+      peopleMap.set(personId, {
+        unique_id: row.unique_id,
+        company_unique_id: row.company_unique_id,
+        company_slot_unique_id: row.company_slot_unique_id,
+        first_name: row.first_name,
+        last_name: row.last_name,
+        full_name: row.full_name,
+        title: row.title,
+        seniority: row.seniority,
+        department: row.department,
+        email: row.email,
+        work_phone_e164: row.work_phone_e164,
+        personal_phone_e164: row.personal_phone_e164,
+        linkedin_url: row.linkedin_url,
+        source_system: row.source_system,
+        source_record_id: row.source_record_id,
+        validation_status: row.validation_status,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        slot_type: row.slot_type,
+        errors: [],
+        enrichment_attempts: [],
+        validation_failures: []
+      });
+    }
+
+    const person = peopleMap.get(personId);
+    person.validation_failures.push({
+      error_type: row.error_type,
+      error_field: row.error_field,
+      raw_value: row.raw_value,
+      expected_format: row.expected_format,
+      attempts: row.attempts,
+      last_attempt_source: row.last_attempt_source,
+      status: row.validation_failed_status,
+      fixed_value: row.fixed_value,
+      metadata: row.validation_metadata
+    });
+
+    // Add error to errors array if not already present
+    if (!person.errors.includes(row.error_type)) {
+      person.errors.push(row.error_type);
+    }
+  }
+
+  return Array.from(peopleMap.values());
 }
 
 /**
@@ -291,26 +423,32 @@ async function getCompanySummary(
   enrichment_failed: number;
   ready_for_adjustment: number;
 }> {
-  // Get validation failed count
+  // Get validation failed count from validation_failed table
   const validationFailedQuery = `
-    SELECT COUNT(*) as count
-    FROM marketing.company_raw_intake
-    WHERE validation_status = 'failed'
+    SELECT COUNT(DISTINCT vf.record_id) as count
+    FROM intake.validation_failed vf
+    JOIN marketing.company_raw_intake c ON vf.record_id = c.id
+    WHERE vf.status IN ('pending', 'escalated', 'human_review')
   `;
 
   // Get enrichment failed count (records that had enrichment attempts but still failed)
   const enrichmentFailedQuery = `
-    SELECT COUNT(DISTINCT e.unique_id) as count
-    FROM intake.enrichment_audit_log e
-    JOIN marketing.company_raw_intake c ON e.unique_id = c.company_unique_id
-    WHERE e.unique_id LIKE '04.04.01.%'
-      AND c.validation_status = 'failed'
-      AND e.action = 'enrich'
-      AND e.status IN ('failed', 'partial')
+    SELECT COUNT(DISTINCT vf.record_id) as count
+    FROM intake.validation_failed vf
+    JOIN marketing.company_raw_intake c ON vf.record_id = c.id
+    JOIN intake.validation_audit_log val ON val.validation_failed_id = vf.id
+    WHERE vf.status IN ('pending', 'escalated', 'human_review')
+      AND val.attempt_source IN ('apify', 'abacus', 'auto_fix')
+      AND val.result = 'fail'
   `;
 
-  // Ready for adjustment = failed records (regardless of enrichment status)
-  const readyForAdjustmentQuery = validationFailedQuery;
+  // Ready for adjustment = pending validation failed records
+  const readyForAdjustmentQuery = `
+    SELECT COUNT(DISTINCT vf.record_id) as count
+    FROM intake.validation_failed vf
+    JOIN marketing.company_raw_intake c ON vf.record_id = c.id
+    WHERE vf.status = 'pending'
+  `;
 
   const [validationResult, enrichmentResult, readyResult] = await Promise.all([
     bridge.query(validationFailedQuery),
@@ -335,26 +473,32 @@ async function getPeopleSummary(
   enrichment_failed: number;
   ready_for_adjustment: number;
 }> {
-  // Get validation failed count
+  // Get validation failed count from validation_failed table
   const validationFailedQuery = `
-    SELECT COUNT(*) as count
-    FROM marketing.people_raw_intake
-    WHERE validation_status = 'failed'
+    SELECT COUNT(DISTINCT vf.record_id) as count
+    FROM intake.validation_failed vf
+    JOIN marketing.people_raw_intake p ON vf.record_id = p.id
+    WHERE vf.status IN ('pending', 'escalated', 'human_review')
   `;
 
   // Get enrichment failed count (records that had enrichment attempts but still failed)
   const enrichmentFailedQuery = `
-    SELECT COUNT(DISTINCT e.unique_id) as count
-    FROM intake.enrichment_audit_log e
-    JOIN marketing.people_raw_intake p ON e.unique_id = p.unique_id
-    WHERE e.unique_id LIKE '04.04.02.%'
-      AND p.validation_status = 'failed'
-      AND e.action = 'enrich'
-      AND e.status IN ('failed', 'partial')
+    SELECT COUNT(DISTINCT vf.record_id) as count
+    FROM intake.validation_failed vf
+    JOIN marketing.people_raw_intake p ON vf.record_id = p.id
+    JOIN intake.validation_audit_log val ON val.validation_failed_id = vf.id
+    WHERE vf.status IN ('pending', 'escalated', 'human_review')
+      AND val.attempt_source IN ('apify', 'abacus', 'auto_fix')
+      AND val.result = 'fail'
   `;
 
-  // Ready for adjustment = failed records (regardless of enrichment status)
-  const readyForAdjustmentQuery = validationFailedQuery;
+  // Ready for adjustment = pending validation failed records
+  const readyForAdjustmentQuery = `
+    SELECT COUNT(DISTINCT vf.record_id) as count
+    FROM intake.validation_failed vf
+    JOIN marketing.people_raw_intake p ON vf.record_id = p.id
+    WHERE vf.status = 'pending'
+  `;
 
   const [validationResult, enrichmentResult, readyResult] = await Promise.all([
     bridge.query(validationFailedQuery),

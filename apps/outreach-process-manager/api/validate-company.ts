@@ -25,6 +25,7 @@
 
 import { NextApiRequest, NextApiResponse } from 'next';
 import StandardComposioNeonBridge from './lib/standard-composio-neon-bridge.js';
+import { auditValidateAction, generateSessionId, calculateProcessingTime } from './auditOperations.js';
 
 // ==============================================================================
 // BARTON DOCTRINE: Tool Code Mapping
@@ -145,6 +146,9 @@ export default async function handler(
   const startTime = Date.now();
   const bridge = new StandardComposioNeonBridge();
 
+  // Audit Setup: Generate session ID for batch tracking
+  const sessionId = generateSessionId('validate_batch');
+
   try {
     console.log('[VALIDATE-COMPANY] Starting company validation process');
 
@@ -167,6 +171,24 @@ export default async function handler(
       `company_batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     console.log(`[VALIDATE-COMPANY] Processing ${masterFile.companies.length} companies (batch: ${batchId}, tool: ${toolSource})`);
+
+    // Audit: Log batch validation start
+    await auditValidateAction(
+      `batch_${batchId}`,
+      'start_batch_validation',
+      'pending',
+      {
+        source: 'validate_company_api',
+        actor: 'validation_system',
+        session_id: sessionId,
+        record_type: 'company',
+        after_values: {
+          batch_size: masterFile.companies.length,
+          tool_source: toolSource,
+          batch_id: batchId
+        }
+      }
+    );
 
     // Validate each company record
     const validationResults: ValidationResult[] = [];
