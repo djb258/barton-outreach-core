@@ -1,25 +1,32 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
 
-const AdjusterSummaryCard = ({ 
-  rowsPromoted = 0,
-  rowsPending = 0,
-  rowsAdjusted = 0,
+const AdjusterSummaryCard = ({
+  summaryStats = {
+    validation_failed: 0,
+    enrichment_failed: 0,
+    ready_for_adjustment: 0
+  },
+  recordType = 'company',
   isLoading = false,
   className = ''
 }) => {
-  const totalRows = rowsPromoted + rowsPending;
-  const promotionRate = totalRows > 0 ? Math.round((rowsPromoted / totalRows) * 100) : 0;
-  const adjustmentRate = totalRows > 0 ? Math.round((rowsAdjusted / totalRows) * 100) : 0;
+  const { validation_failed, enrichment_failed, ready_for_adjustment } = summaryStats;
+
+  const enrichmentSuccessRate = validation_failed > 0
+    ? Math.round(((validation_failed - enrichment_failed) / validation_failed) * 100)
+    : 0;
 
   return (
     <div className={`bg-card border border-border rounded-lg p-6 ${className}`}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-3">
           <Icon name="Settings" size={24} color="var(--color-primary)" />
-          <h2 className="text-xl font-semibold text-foreground">Adjustment Summary</h2>
+          <h2 className="text-xl font-semibold text-foreground">
+            {recordType === 'company' ? 'Company' : 'People'} Adjustment Summary
+          </h2>
         </div>
-        
+
         {isLoading && (
           <div className="flex items-center space-x-2 text-muted-foreground">
             <Icon name="Loader2" size={16} className="animate-spin" />
@@ -28,81 +35,83 @@ const AdjusterSummaryCard = ({
         )}
       </div>
 
-      <div className="grid grid-cols-4 gap-6">
-        {/* Total Records */}
+      <div className="grid grid-cols-3 gap-6">
+        {/* Validation Failed Records */}
         <div className="text-center">
-          <div className="text-3xl font-bold text-foreground mb-1">
-            {totalRows?.toLocaleString()}
+          <div className="text-3xl font-bold text-destructive mb-1">
+            {validation_failed?.toLocaleString()}
           </div>
-          <div className="text-sm text-muted-foreground">Total Records</div>
-        </div>
-
-        {/* Promoted Records */}
-        <div className="text-center">
-          <div className="text-3xl font-bold text-success mb-1">
-            {rowsPromoted?.toLocaleString()}
-          </div>
-          <div className="text-sm text-muted-foreground">Promoted</div>
-          <div className="text-xs text-success mt-1">
-            {promotionRate}% promoted
+          <div className="text-sm text-muted-foreground">Validation Failed</div>
+          <div className="text-xs text-muted-foreground mt-1">
+            Original validation failures
           </div>
         </div>
 
-        {/* Pending Records */}
+        {/* Enrichment Failed Records */}
         <div className="text-center">
           <div className="text-3xl font-bold text-warning mb-1">
-            {rowsPending?.toLocaleString()}
+            {enrichment_failed?.toLocaleString()}
           </div>
-          <div className="text-sm text-muted-foreground">Pending</div>
+          <div className="text-sm text-muted-foreground">Enrichment Failed</div>
           <div className="text-xs text-warning mt-1">
-            {totalRows > 0 ? Math.round((rowsPending / totalRows) * 100) : 0}% pending
+            Could not auto-fix
           </div>
         </div>
 
-        {/* Adjusted Records */}
+        {/* Ready for Adjustment */}
         <div className="text-center">
           <div className="text-3xl font-bold text-info mb-1">
-            {rowsAdjusted?.toLocaleString()}
+            {ready_for_adjustment?.toLocaleString()}
           </div>
-          <div className="text-sm text-muted-foreground">Adjusted</div>
+          <div className="text-sm text-muted-foreground">Ready for Adjustment</div>
           <div className="text-xs text-info mt-1">
-            {adjustmentRate}% adjusted
+            Manual review required
           </div>
         </div>
       </div>
 
-      {/* Progress Indicators */}
-      {totalRows > 0 && (
+      {/* Enrichment Success Rate */}
+      {validation_failed > 0 && (
         <div className="mt-6 space-y-4">
-          {/* Promotion Progress */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-foreground">Promotion Progress</span>
-              <span className="text-sm text-muted-foreground">{promotionRate}% promoted</span>
+              <span className="text-sm font-medium text-foreground">Enrichment Success Rate</span>
+              <span className="text-sm text-muted-foreground">{enrichmentSuccessRate}%</span>
             </div>
             <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
               <div className="h-full flex">
-                <div 
+                <div
                   className="bg-success transition-all duration-500"
-                  style={{ width: `${promotionRate}%` }}
+                  style={{ width: `${enrichmentSuccessRate}%` }}
                 />
-                <div 
-                  className="bg-warning transition-all duration-500"
-                  style={{ width: `${100 - promotionRate}%` }}
+                <div
+                  className="bg-destructive transition-all duration-500"
+                  style={{ width: `${100 - enrichmentSuccessRate}%` }}
                 />
               </div>
             </div>
           </div>
 
-          {/* Adjustment Indicator */}
+          {/* Human Review Indicator */}
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Records requiring adjustments:</span>
+            <span className="text-muted-foreground">Requiring human review:</span>
             <span className="font-medium text-foreground">
-              {rowsAdjusted} ({adjustmentRate}%)
+              {ready_for_adjustment} records ({Math.round((ready_for_adjustment / validation_failed) * 100)}%)
             </span>
           </div>
         </div>
       )}
+
+      {/* Step 3 Doctrine Notice */}
+      <div className="mt-4 p-3 bg-accent/10 rounded-lg border border-accent/20">
+        <div className="flex items-start space-x-2">
+          <Icon name="AlertCircle" size={16} color="var(--color-accent)" className="mt-0.5" />
+          <div className="text-xs text-accent">
+            <span className="font-medium">Barton Doctrine Step 3:</span> Human adjusters can only modify data fields.
+            Barton IDs remain intact. All changes are logged to audit tables.
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

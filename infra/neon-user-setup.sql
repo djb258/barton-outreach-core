@@ -1,3 +1,7 @@
+-- Barton Doctrine Infrastructure
+-- All tables must have unique_id (Barton ID) and audit columns
+-- MCP: Access only via Composio bridge
+
 -- Neon User Setup for MCP Integration
 -- Run this after executing neon.sql to create the MCP user
 

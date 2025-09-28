@@ -1,3 +1,44 @@
+
+-- Updated At Trigger Function
+CREATE OR REPLACE FUNCTION trigger_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- Barton ID Generator Function
+-- Generates format: NN.NN.NN.NN.NNNNN.NNN
+CREATE OR REPLACE FUNCTION generate_barton_id()
+RETURNS VARCHAR(23) AS $$
+DECLARE
+    segment1 VARCHAR(2);
+    segment2 VARCHAR(2);
+    segment3 VARCHAR(2);
+    segment4 VARCHAR(2);
+    segment5 VARCHAR(5);
+    segment6 VARCHAR(3);
+BEGIN
+    -- Use timestamp and random for uniqueness
+    segment1 := LPAD((EXTRACT(EPOCH FROM NOW())::BIGINT % 100)::TEXT, 2, '0');
+    segment2 := LPAD((EXTRACT(MICROSECONDS FROM NOW()) % 100)::TEXT, 2, '0');
+    segment3 := LPAD((RANDOM() * 100)::INT::TEXT, 2, '0');
+    segment4 := '07'; -- Fixed segment for database records
+    segment5 := LPAD((RANDOM() * 100000)::INT::TEXT, 5, '0');
+    segment6 := LPAD((RANDOM() * 1000)::INT::TEXT, 3, '0');
+
+    RETURN segment1 || '.' || segment2 || '.' || segment3 || '.' || segment4 || '.' || segment5 || '.' || segment6;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Barton Doctrine Migration
+-- File: 2025-08-19_ids
+-- Purpose: Database schema migration with Barton ID compliance
+-- Requirements: All tables must have unique_id (Barton ID) and audit columns
+-- MCP: All access via Composio bridge, no direct connections
+
 -- =====================================================================================
 -- ID System Migration
 -- Creates tables and functions for unique ID and process ID management
@@ -10,8 +51,7 @@ CREATE SCHEMA IF NOT EXISTS shq;
 -- ID Registry Table
 -- Central vault for all generated unique IDs
 -- =====================================================================================
-CREATE TABLE IF NOT EXISTS shq.id_registry (
-    -- Primary identification
+CREATE TABLE IF NOT EXISTS shq.id_registry (-- Primary identification
     unique_id VARCHAR(100) PRIMARY KEY,
     
     -- ID components (parsed from unique_id)
@@ -34,15 +74,17 @@ CREATE TABLE IF NOT EXISTS shq.id_registry (
     -- Validation
     is_valid BOOLEAN NOT NULL DEFAULT TRUE,
     invalidated_at TIMESTAMPTZ,
-    invalidation_reason TEXT
-);
+    invalidation_reason TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 -- =====================================================================================
 -- Process Registry Table  
 -- Audit trail for all process executions
 -- =====================================================================================
-CREATE TABLE IF NOT EXISTS shq.process_registry (
-    -- Primary identification
+CREATE TABLE IF NOT EXISTS shq.process_registry (-- Primary identification
     process_id VARCHAR(50) PRIMARY KEY,
     
     -- Process context
@@ -78,15 +120,17 @@ CREATE TABLE IF NOT EXISTS shq.process_registry (
     initiated_by VARCHAR(100),
     tags TEXT[],
     notes TEXT,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 -- =====================================================================================
 -- Process Sequence Table
 -- Manages atomic sequence generation per plan+date
 -- =====================================================================================
-CREATE TABLE IF NOT EXISTS shq.process_seq (
-    -- Composite key
+CREATE TABLE IF NOT EXISTS shq.process_seq (-- Composite key
     plan_id VARCHAR(50) NOT NULL,
     date_component VARCHAR(8) NOT NULL, -- YYYYMMDD format
     
@@ -99,22 +143,27 @@ CREATE TABLE IF NOT EXISTS shq.process_seq (
     locked_until TIMESTAMPTZ,
     locked_by VARCHAR(100),
     
-    PRIMARY KEY (plan_id, date_component)
-);
+    PRIMARY KEY (plan_id, date_component),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 -- =====================================================================================
 -- Entity Type Registry
 -- Defines valid entity types for unique ID generation
 -- =====================================================================================
-CREATE TABLE IF NOT EXISTS shq.entity_types (
-    entity_type VARCHAR(10) PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS shq.entity_types (entity_type VARCHAR(10) PRIMARY KEY,
     description TEXT NOT NULL,
     db_code VARCHAR(3) NOT NULL,
     hive_range VARCHAR(10), -- e.g., "01-05" for valid hive codes
     validation_rules JSONB,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
 
 -- =====================================================================================
 -- Indexes for Performance
@@ -446,3 +495,26 @@ COMMENT ON TABLE shq.id_registry IS 'Central registry for all unique IDs with HE
 COMMENT ON TABLE shq.process_registry IS 'Audit trail and status tracking for all process executions';
 COMMENT ON TABLE shq.process_seq IS 'Atomic sequence generation for deterministic process IDs';
 COMMENT ON TABLE shq.entity_types IS 'Registry of valid entity types for unique ID generation';
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();
+
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();
+
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();
+
+-- Trigger for IF
+CREATE TRIGGER trigger_IF_updated_at
+    BEFORE UPDATE ON IF
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();

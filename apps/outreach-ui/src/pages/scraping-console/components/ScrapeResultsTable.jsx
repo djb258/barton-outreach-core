@@ -9,69 +9,67 @@ export default function ScrapeResultsTable({ scrapeData, loading }) {
     );
   }
 
-  // CSV headers exactly as they appear in the CSV file - using bracket notation for access
+  // CSV headers exactly as they appear in the CSV file
   const csvHeaders = [
-    { key: 'Number', label: 'Number' },
-    { key: 'Company', label: 'Company' },
-    { key: 'Company Name for Emails', label: 'Company Name for Emails' },
-    { key: 'Account Stage', label: 'Account Stage' },
-    { key: 'Lists', label: 'Lists' },
-    { key: '# Employees', label: '# Employees' },
-    { key: 'Industry', label: 'Industry' },
-    { key: 'Account Owner', label: 'Account Owner' },
-    { key: 'Website', label: 'Website' },
-    { key: 'Company Linkedin Url', label: 'Company Linkedin Url' },
-    { key: 'Facebook Url', label: 'Facebook Url' },
-    { key: 'Twitter Url', label: 'Twitter Url' },
-    { key: 'Company Street', label: 'Company Street' },
-    { key: 'Company City', label: 'Company City' },
-    { key: 'Company State', label: 'Company State' },
-    { key: 'Company Country', label: 'Company Country' },
-    { key: 'Company Postal Code', label: 'Company Postal Code' },
-    { key: 'Company Address', label: 'Company Address' },
-    { key: 'Keywords', label: 'Keywords' },
-    { key: 'Company Phone', label: 'Company Phone' },
-    { key: 'SEO Description', label: 'SEO Description' },
-    { key: 'Technologies', label: 'Technologies' },
-    { key: 'Total Funding', label: 'Total Funding' },
-    { key: 'Latest Funding', label: 'Latest Funding' },
-    { key: 'Latest Funding Amount', label: 'Latest Funding Amount' },
-    { key: 'Last Raised At', label: 'Last Raised At' },
-    { key: 'Annual Revenue', label: 'Annual Revenue' },
-    { key: 'Number of Retail Locations', label: 'Number of Retail Locations' },
-    { key: 'Apollo Account Id', label: 'Apollo Account Id' },
-    { key: 'SIC Codes', label: 'SIC Codes' },
-    { key: 'Short Description', label: 'Short Description' },
-    { key: 'Founded Year', label: 'Founded Year' },
-    { key: 'Logo Url', label: 'Logo Url' },
-    { key: 'Subsidiary of', label: 'Subsidiary of' },
-    { key: 'Primary Intent Topic', label: 'Primary Intent Topic' },
-    { key: 'Primary Intent Score', label: 'Primary Intent Score' },
-    { key: 'Secondary Intent Topic', label: 'Secondary Intent Topic' },
-    { key: 'Secondary Intent Score', label: 'Secondary Intent Score' }
+    'Number',
+    'Company',
+    'Company Name for Emails',
+    'Account Stage',
+    'Lists',
+    '# Employees',
+    'Industry',
+    'Account Owner',
+    'Website',
+    'Company Linkedin Url',
+    'Facebook Url',
+    'Twitter Url',
+    'Company Street',
+    'Company City',
+    'Company State',
+    'Company Country',
+    'Company Postal Code',
+    'Company Address',
+    'Keywords',
+    'Company Phone',
+    'SEO Description',
+    'Technologies',
+    'Total Funding',
+    'Latest Funding',
+    'Latest Funding Amount',
+    'Last Raised At',
+    'Annual Revenue',
+    'Number of Retail Locations',
+    'Apollo Account Id',
+    'SIC Codes',
+    'Short Description',
+    'Founded Year',
+    'Logo Url',
+    'Subsidiary of',
+    'Primary Intent Topic',
+    'Primary Intent Score',
+    'Secondary Intent Topic',
+    'Secondary Intent Score'
   ];
 
-  // Doctrine metadata columns (always pinned at start) - using dot notation
+  // Doctrine metadata columns (always pinned at start)
   const doctrineColumns = [
     { key: 'unique_id', label: 'Unique ID', pinned: true },
     { key: 'process_id', label: 'Process ID', pinned: true },
     { key: 'altitude', label: 'Altitude', pinned: true }
   ];
 
-  // Status and scrape specific columns - using dot notation
+  // Status and scrape specific columns
   const scrapeColumns = [
     { key: 'scrape_timestamp', label: 'Scrape Timestamp' },
     { key: 'scrape_type', label: 'Scrape Type' },
-    { key: 'status', label: 'Status' },
-    { key: 'error_log', label: 'Error Log' },
+    { key: 'scrape_status', label: 'Status' },
+    { key: 'errors', label: 'Errors' },
     { key: 'batch_id', label: 'Batch ID' }
   ];
 
-  // Combine all columns: doctrine + scrape + CSV data
-  const allColumns = [...doctrineColumns, ...scrapeColumns, ...csvHeaders];
-
   const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
+    const statusLower = status?.toLowerCase();
+    switch (statusLower) {
       case "success":
       case "completed":
         return "text-green-600 bg-green-50";
@@ -88,7 +86,8 @@ export default function ScrapeResultsTable({ scrapeData, loading }) {
   };
 
   const getStatusBadge = (status) => {
-    switch (status?.toLowerCase()) {
+    const statusLower = status?.toLowerCase();
+    switch (statusLower) {
       case "success":
       case "completed":
         return "✅";
@@ -120,27 +119,20 @@ export default function ScrapeResultsTable({ scrapeData, loading }) {
     );
   };
 
-  // Helper to get value from row using bracket notation for CSV fields
-  const getRowValue = (row, key) => {
-    // For CSV headers with spaces, use bracket notation
-    if (key.includes(' ') || key.includes('#')) {
-      return row[key];
-    }
-    // For simple keys, can use either
-    return row[key];
-  };
-
   const formatCellValue = (value, columnKey) => {
     if (!value && value !== 0) return '—';
 
-    // Handle URLs
-    if (columnKey.toLowerCase().includes('url') || columnKey === 'Website') {
+    // URL fields - clickable links
+    if (columnKey === 'Website' ||
+        columnKey === 'Company Linkedin Url' ||
+        columnKey === 'Facebook Url' ||
+        columnKey === 'Twitter Url') {
       return (
         <a
           href={value}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-600 hover:underline max-w-xs truncate block"
+          className="text-blue-600 hover:underline truncate block max-w-xs"
           title={value}
         >
           {value}
@@ -148,7 +140,7 @@ export default function ScrapeResultsTable({ scrapeData, loading }) {
       );
     }
 
-    // Handle Logo URLs specially
+    // Logo Url - inline image preview + link
     if (columnKey === 'Logo Url' && value) {
       return (
         <div className="flex items-center">
@@ -171,52 +163,112 @@ export default function ScrapeResultsTable({ scrapeData, loading }) {
       );
     }
 
-    // Handle funding amounts
-    if (columnKey.includes('Funding') || columnKey === 'Annual Revenue') {
+    // Right-aligned numeric fields
+    if (columnKey === '# Employees' ||
+        columnKey === 'Number of Retail Locations' ||
+        columnKey === 'Primary Intent Score' ||
+        columnKey === 'Secondary Intent Score') {
+      return (
+        <span className="text-right block">
+          {typeof value === 'number' ? value.toLocaleString() : value}
+        </span>
+      );
+    }
+
+    // Currency formatting for revenue
+    if (columnKey === 'Annual Revenue') {
       if (typeof value === 'number') {
-        return new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: 'USD',
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0
-        }).format(value);
+        return (
+          <span className="text-right block">
+            {new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'USD',
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0
+            }).format(value)}
+          </span>
+        );
+      }
+      return <span className="text-right block">{value}</span>;
+    }
+
+    // Date formatting for Last Raised At
+    if (columnKey === 'Last Raised At' && value) {
+      try {
+        const date = new Date(value);
+        if (!isNaN(date.getTime())) {
+          return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: '2-digit'
+          });
+        }
+      } catch (e) {
+        // Fall through to return original value
       }
       return value;
     }
 
-    // Handle arrays (for technologies, keywords, lists, etc.)
-    if (Array.isArray(value)) {
+    // Tooltip for overflow text fields
+    if ((columnKey === 'SEO Description' ||
+         columnKey === 'Short Description' ||
+         columnKey === 'Company Address') &&
+        typeof value === 'string' && value.length > 50) {
       return (
         <div className="group relative">
-          <span className="truncate cursor-help max-w-xs block">
-            {value.slice(0, 3).join(', ')}{value.length > 3 ? '...' : ''}
+          <span className="truncate cursor-help block max-w-xs">
+            {value.substring(0, 50)}...
           </span>
-          {value.length > 0 && (
-            <div className="absolute z-10 invisible group-hover:visible bg-black text-white text-xs rounded py-2 px-3 -top-8 left-0 w-64 max-w-sm">
-              {value.join(', ')}
-            </div>
-          )}
+          <div className="absolute z-10 invisible group-hover:visible bg-gray-900 text-white text-xs rounded py-2 px-3 bottom-full mb-1 left-0 w-96 max-w-sm">
+            <div className="font-semibold mb-1">{columnKey}:</div>
+            {value}
+          </div>
         </div>
       );
+    }
+
+    // Comma-separated arrays with tooltips
+    if (columnKey === 'Keywords' || columnKey === 'Technologies' || columnKey === 'SIC Codes') {
+      if (Array.isArray(value)) {
+        return (
+          <div className="group relative">
+            <span className="truncate cursor-help block max-w-xs">
+              {value.slice(0, 3).join(', ')}{value.length > 3 ? '...' : ''}
+            </span>
+            {value.length > 0 && (
+              <div className="absolute z-10 invisible group-hover:visible bg-gray-900 text-white text-xs rounded py-2 px-3 bottom-full mb-1 left-0 w-64 max-w-sm">
+                <div className="font-semibold mb-1">{columnKey}:</div>
+                {value.join(', ')}
+              </div>
+            )}
+          </div>
+        );
+      }
+      // Handle string values that might need tooltips
+      if (typeof value === 'string' && value.length > 30) {
+        return (
+          <div className="group relative">
+            <span className="truncate cursor-help block max-w-xs">
+              {value.substring(0, 30)}...
+            </span>
+            <div className="absolute z-10 invisible group-hover:visible bg-gray-900 text-white text-xs rounded py-2 px-3 bottom-full mb-1 left-0 w-64 max-w-sm">
+              <div className="font-semibold mb-1">{columnKey}:</div>
+              {value}
+            </div>
+          </div>
+        );
+      }
+      return value;
+    }
+
+    // Lists - comma-separated if array
+    if (columnKey === 'Lists' && Array.isArray(value)) {
+      return value.join(', ');
     }
 
     // Handle objects
     if (typeof value === 'object') {
       return JSON.stringify(value);
-    }
-
-    // Handle long text with truncation
-    if (typeof value === 'string' && value.length > 50) {
-      return (
-        <div className="group relative">
-          <span className="truncate cursor-help max-w-xs block">
-            {value.substring(0, 50)}...
-          </span>
-          <div className="absolute z-10 invisible group-hover:visible bg-black text-white text-xs rounded py-2 px-3 -top-8 left-0 w-64 max-w-sm">
-            {value}
-          </div>
-        </div>
-      );
     }
 
     return value;
@@ -226,19 +278,25 @@ export default function ScrapeResultsTable({ scrapeData, loading }) {
     const exportData = scrapeData.map(row => {
       const exportRow = {};
 
-      // Include all doctrine metadata with their original keys
+      // Include doctrine metadata
       doctrineColumns.forEach(col => {
-        exportRow[col.key] = row[col.key];
+        if (row[col.key]) {
+          exportRow[col.key] = row[col.key];
+        }
       });
 
-      // Include all scrape metadata with their original keys
+      // Include scrape metadata
       scrapeColumns.forEach(col => {
-        exportRow[col.key] = row[col.key];
+        if (row[col.key]) {
+          exportRow[col.key] = row[col.key];
+        }
       });
 
-      // Include all CSV fields with their original header names (with spaces)
-      csvHeaders.forEach(col => {
-        exportRow[col.key] = row[col.key];
+      // Include all CSV fields with exact header names
+      csvHeaders.forEach(header => {
+        if (row[header] !== undefined) {
+          exportRow[header] = row[header];
+        }
       });
 
       return exportRow;
@@ -257,7 +315,7 @@ export default function ScrapeResultsTable({ scrapeData, loading }) {
 
   return (
     <div className="bg-white rounded-2xl shadow overflow-hidden">
-      {/* Export Button */}
+      {/* Header with Export Button */}
       <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-medium text-gray-900">
@@ -277,101 +335,118 @@ export default function ScrapeResultsTable({ scrapeData, loading }) {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b">
             <tr>
-              {allColumns.map((column) => (
+              {/* Doctrine columns (pinned) */}
+              {doctrineColumns.map(col => (
                 <th
-                  key={column.key}
-                  className={`px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${
-                    column.pinned ? 'sticky left-0 bg-gray-100 z-10 border-r' : ''
-                  }`}
-                  style={column.pinned ? { minWidth: '120px' } : {}}
+                  key={col.key}
+                  className="sticky left-0 z-10 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-100 border-r"
+                  style={{ minWidth: '120px' }}
                 >
-                  {column.label}
+                  {col.label}
                 </th>
               ))}
+
+              {/* Scrape metadata columns */}
+              {scrapeColumns.map(col => (
+                <th
+                  key={col.key}
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                >
+                  {col.label}
+                </th>
+              ))}
+
+              {/* CSV data columns */}
+              {csvHeaders.map(header => {
+                const isNumericColumn = header === '# Employees' ||
+                                      header === 'Number of Retail Locations' ||
+                                      header === 'Primary Intent Score' ||
+                                      header === 'Secondary Intent Score' ||
+                                      header === 'Annual Revenue';
+                return (
+                  <th
+                    key={header}
+                    className={`px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${
+                      isNumericColumn ? 'text-right' : 'text-left'
+                    }`}
+                  >
+                    {header}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {scrapeData?.map((row, index) => {
-              // Use unique_id as key if available, otherwise fall back to index
-              const rowKey = row?.unique_id || row?.["unique_id"] || index;
+              const rowKey = row?.unique_id || index;
 
               return (
                 <tr key={rowKey} className="hover:bg-gray-50">
-                  {allColumns.map((column) => {
-                    // Get value using bracket notation for CSV fields with spaces
-                    const cellValue = getRowValue(row, column.key);
+                  {/* Doctrine columns (pinned) */}
+                  <td className="sticky left-0 z-10 px-4 py-3 text-sm bg-white border-r">
+                    <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                      {row.unique_id || '—'}
+                    </span>
+                  </td>
+                  <td className="sticky left-[120px] z-10 px-4 py-3 text-sm bg-white border-r">
+                    <span className="font-medium text-blue-800 bg-blue-50 px-2 py-1 rounded text-xs">
+                      {row.process_id || '—'}
+                    </span>
+                  </td>
+                  <td className="sticky left-[240px] z-10 px-4 py-3 text-sm bg-white border-r">
+                    {getAltitudeBadge(row.altitude)}
+                  </td>
 
+                  {/* Scrape metadata columns */}
+                  <td className="px-4 py-3 text-sm">
+                    <span className="font-mono text-xs">
+                      {row.scrape_timestamp ? new Date(row.scrape_timestamp).toLocaleString() : '—'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-sm">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                      {row.scrape_type || 'COMPANY_DATA'}
+                    </span>
+                  </td>
+                  <td className={`px-4 py-3 text-sm ${getStatusColor(row.scrape_status || row.status)}`}>
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium">
+                      {getStatusBadge(row.scrape_status || row.status)} {row.scrape_status || row.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-sm">
+                    {(row.errors || row.error_log) ? (
+                      <div className="group relative">
+                        <span className="truncate cursor-help text-red-600 block max-w-xs">
+                          {Array.isArray(row.errors || row.error_log) ?
+                            (row.errors || row.error_log).join(", ") :
+                            (row.errors || row.error_log)}
+                        </span>
+                        <div className="absolute z-10 invisible group-hover:visible bg-red-900 text-white text-xs rounded py-2 px-3 bottom-full mb-1 left-0 w-64">
+                          {Array.isArray(row.errors || row.error_log) ?
+                            (row.errors || row.error_log).join(", ") :
+                            (row.errors || row.error_log)}
+                        </div>
+                      </div>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-sm">
+                    <span className="font-mono text-xs bg-yellow-50 text-yellow-800 px-2 py-1 rounded">
+                      {row.batch_id || '—'}
+                    </span>
+                  </td>
+
+                  {/* CSV data columns - using bracket notation */}
+                  {csvHeaders.map(header => {
+                    const isNumericColumn = header === '# Employees' ||
+                                          header === 'Number of Retail Locations' ||
+                                          header === 'Primary Intent Score' ||
+                                          header === 'Secondary Intent Score' ||
+                                          header === 'Annual Revenue';
                     return (
-                      <td
-                        key={column.key}
-                        className={`px-4 py-3 text-sm ${
-                          column.pinned ? 'sticky left-0 bg-white z-10 border-r font-medium' : ''
-                        } ${
-                          column.key === 'status' ? getStatusColor(cellValue) : 'text-gray-900'
-                        }`}
-                        style={column.pinned ? { minWidth: '120px' } : {}}
-                      >
-                        {/* Special handling for doctrine columns */}
-                        {column.key === 'unique_id' && (
-                          <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
-                            {cellValue || '—'}
-                          </span>
-                        )}
-
-                        {column.key === 'process_id' && (
-                          <span className="font-medium text-blue-800 bg-blue-50 px-2 py-1 rounded text-xs">
-                            {cellValue || '—'}
-                          </span>
-                        )}
-
-                        {column.key === 'altitude' && getAltitudeBadge(cellValue)}
-
-                        {/* Special handling for scrape metadata */}
-                        {column.key === 'status' && (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium">
-                            {getStatusBadge(cellValue)} {cellValue}
-                          </span>
-                        )}
-
-                        {column.key === 'scrape_timestamp' && (
-                          <span className="font-mono text-xs">
-                            {cellValue ? new Date(cellValue).toLocaleString() : '—'}
-                          </span>
-                        )}
-
-                        {column.key === 'error_log' && (
-                          <div className="max-w-xs">
-                            {cellValue ? (
-                              <div className="group relative">
-                                <span className="truncate cursor-help text-red-600 block">
-                                  {Array.isArray(cellValue) ? cellValue.join(", ") : cellValue}
-                                </span>
-                                <div className="absolute z-10 invisible group-hover:visible bg-red-900 text-white text-xs rounded py-1 px-2 -top-8 left-0 w-64">
-                                  {Array.isArray(cellValue) ? cellValue.join(", ") : cellValue}
-                                </div>
-                              </div>
-                            ) : (
-                              "—"
-                            )}
-                          </div>
-                        )}
-
-                        {column.key === 'batch_id' && (
-                          <span className="font-mono text-xs bg-yellow-50 text-yellow-800 px-2 py-1 rounded">
-                            {cellValue || '—'}
-                          </span>
-                        )}
-
-                        {column.key === 'scrape_type' && (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                            {cellValue || 'COMPANY_DATA'}
-                          </span>
-                        )}
-
-                        {/* Handle CSV data columns - use the formatted value for all CSV fields */}
-                        {csvHeaders.some(h => h.key === column.key) && (
-                          formatCellValue(cellValue, column.key)
-                        )}
+                      <td key={header} className={`px-4 py-3 text-sm text-gray-900 ${isNumericColumn ? 'text-right' : ''}`}>
+                        {formatCellValue(row[header], header)}
                       </td>
                     );
                   })}

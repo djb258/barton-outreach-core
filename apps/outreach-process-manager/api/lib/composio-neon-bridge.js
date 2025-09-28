@@ -1,30 +1,51 @@
 /**
+ * Doctrine Spec:
+ * - Barton ID: 99.99.99.07.86694.789
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: data query parameters and filters
+ * - Output: database records and metadata
+ * - MCP: Composio (Neon integrated)
+ */
+/**
  * Composio-Neon Bridge
  * Connects to actual Composio MCP server for Neon operations
  * Updated with working API endpoints and fallback strategies
  */
 
-import fetch from 'node-fetch';
+import { Composio } from '@composio/core';
 
 class ComposioNeonBridge {
   constructor() {
-    this.composioBaseUrl = process.env.COMPOSIO_BASE_URL || 'https://backend.composio.dev';
-    this.composioApiKey = process.env.COMPOSIO_API_KEY || 'ak_t-F0AbvfZHUZSUrqAGNn';
+    this.composio = new Composio({
+      apiKey: process.env.COMPOSIO_API_KEY || 'ak_t-F0AbvfZHUZSUrqAGNn',
+    });
     this.neonDatabaseUrl = process.env.NEON_DATABASE_URL;
-    this.mcpServerUrl = process.env.MCP_SERVER_URL || 'http://localhost:3001';
     this.isInitialized = false;
+    this.connectedAccountId = null;
   }
 
   /**
-   * Initialize MCP server connection
+   * Initialize Composio connection
    */
   async initialize() {
     if (this.isInitialized) return;
 
     try {
-      // Start MCP server if not running
-      await this.startMCPServer();
+      // Get connected accounts to find Neon
+      const accountsResult = await this.composio.connectedAccounts.list();
+      const accounts = accountsResult.items || accountsResult;
+
+      // Look for Neon connected account
+      this.connectedAccountId = accounts.find?.(acc =>
+        acc.appName?.toLowerCase() === 'neon'
+      )?.id;
+
+      if (!this.connectedAccountId) {
+        console.log('[BRIDGE] No Neon account found, will attempt direct connection');
+      }
+
       this.isInitialized = true;
+      console.log('[BRIDGE] Composio initialized successfully');
     } catch (error) {
       console.error('[BRIDGE] Failed to initialize:', error);
       throw error;
@@ -32,212 +53,80 @@ class ComposioNeonBridge {
   }
 
   /**
-   * Start the MCP server process
-   */
-  async startMCPServer() {
-    return new Promise((resolve, reject) => {
-      const mcpServerPath = path.join(
-        process.cwd(),
-        'mcp-servers',
-        'github-composio-server.js'
-      );
-
-      // Check if server is already running
-      fetch(`${this.mcpServerUrl}/health`)
-        .then(res => {
-          if (res.ok) {
-            console.log('[BRIDGE] MCP server already running');
-            resolve();
-          }
-        })
-        .catch(() => {
-          // Server not running, start it
-          console.log('[BRIDGE] Starting MCP server...');
-
-          const mcpProcess = spawn('node', [mcpServerPath], {
-            env: {
-              ...process.env,
-              COMPOSIO_API_KEY: this.composioApiKey,
-              COMPOSIO_BASE_URL: this.composioBaseUrl,
-              PORT: '3001'
-            },
-            detached: false
-          });
-
-          mcpProcess.stdout.on('data', (data) => {
-            console.log(`[MCP Server]: ${data}`);
-            if (data.toString().includes('MCP server running')) {
-              resolve();
-            }
-          });
-
-          mcpProcess.stderr.on('data', (data) => {
-            console.error(`[MCP Server Error]: ${data}`);
-          });
-
-          mcpProcess.on('error', (error) => {
-            reject(error);
-          });
-
-          // Give server time to start
-          setTimeout(resolve, 2000);
-        });
-    });
-  }
-
-  /**
-   * Execute Neon database operation through Composio with fallback strategies
+   * Execute Neon database operation through Composio SDK
    */
   async executeNeonOperation(operation, params) {
     console.log(`🔍 Executing Neon operation: ${operation}`, params);
 
-    // Strategy 1: Check if Composio API is accessible
     try {
-      const connectivityCheck = await this.checkComposioConnectivity();
-      if (connectivityCheck.success) {
-        console.log(`✅ Composio API connected - ${connectivityCheck.apps_count} apps available`);
+      await this.initialize();
 
-        // Try to execute action (this currently fails but we keep trying)
-        const composioResult = await this.tryComposioExecution(operation, params);
-        if (composioResult.success) {
-          return composioResult;
-        }
-      }
-    } catch (error) {
-      console.log(`⚠️ Composio execution failed: ${error.message}`);
-    }
+      // Map operation to Composio action
+      const actionName = this.mapOperationToAction(operation);
 
-    // Strategy 2: Use mock data for development/demo purposes
-    console.log(`📝 Using mock data for operation: ${operation}`);
-    return this.getMockData(operation, params);
-  }
-
-  /**
-   * Check Composio API connectivity (we know this works from testing)
-   */
-  async checkComposioConnectivity() {
-    try {
-      const response = await fetch(`${this.composioBaseUrl}/api/v1/apps`, {
-        headers: {
-          'Authorization': `Bearer ${this.composioApiKey}`,
-          'X-API-Key': this.composioApiKey
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        return {
-          success: true,
-          message: `Connected to Composio - ${data.items.length} apps available`,
-          apps_count: data.items.length
-        };
-      }
-
-      return { success: false, error: `HTTP ${response.status}` };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  }
-
-  /**
-   * Try Composio execution (this currently doesn't work due to 404/405 errors)
-   */
-  async tryComposioExecution(operation, params) {
-    const toolName = `NEON_${operation.toUpperCase()}`;
-
-    try {
-      // This endpoint returns 404 in our tests, but we keep it for when it's fixed
-      const response = await fetch(`${this.composioBaseUrl}/api/v1/actions/execute`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.composioApiKey}`,
-          'Content-Type': 'application/json'
+      // Execute via Composio SDK
+      const result = await this.composio.actions.execute({
+        actionName: actionName,
+        appName: 'neon',
+        params: {
+          sql: params.sql,
+          database_url: this.neonDatabaseUrl,
+          ...params
         },
-        body: JSON.stringify({
-          appName: 'neon',
-          actionName: toolName,
-          params: {
-            ...params,
-            database_url: this.neonDatabaseUrl
-          }
-        })
+        connectedAccountId: this.connectedAccountId
       });
 
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Composio API error (${response.status}): ${error}`);
-      }
-
-      const result = await response.json();
+      console.log(`✅ Composio execution successful`);
       return {
         success: true,
         data: result.data || result,
-        metadata: {
-          tool: toolName,
-          timestamp: new Date().toISOString(),
-          composio_request_id: result.request_id
-        }
+        source: 'composio_sdk'
       };
+
     } catch (error) {
-      console.error(`[BRIDGE] Composio execution failed (${operation}):`, error);
+      console.error(`[BRIDGE] Composio execution failed:`, error.message);
+
+      // If there's no connected account, the error might indicate we need to use a different approach
+      if (error.message?.includes('No connected account') || !this.connectedAccountId) {
+        // Try without connected account ID
+        try {
+          const result = await this.composio.actions.execute({
+            actionName: this.mapOperationToAction(operation),
+            appName: 'neon',
+            params: {
+              sql: params.sql,
+              database_url: this.neonDatabaseUrl,
+              ...params
+            }
+          });
+
+          return {
+            success: true,
+            data: result.data || result,
+            source: 'composio_sdk'
+          };
+        } catch (retryError) {
+          console.error(`[BRIDGE] Retry failed:`, retryError.message);
+        }
+      }
+
       throw error;
     }
   }
 
   /**
-   * Provide mock data for operations during development
+   * Map operation to Composio action name
    */
-  getMockData(operation, params) {
-    const mockResponses = {
-      'QUERY_ROWS': {
-        success: true,
-        data: [
-          {
-            test_connection: 1,
-            current_time: new Date().toISOString()
-          }
-        ],
-        source: 'mock_data',
-        message: 'Mock data - Composio MCP bridge configured but action execution pending setup'
-      },
-
-      'LIST_TABLES': {
-        success: true,
-        data: {
-          tables: [
-            'company_promotion_log',
-            'data_scraping_log',
-            'outreach_campaigns',
-            'lead_validation_results'
-          ]
-        },
-        source: 'mock_data',
-        message: 'Mock table list - actual Neon integration pending Composio action setup'
-      },
-
-      'EXECUTE_SQL': {
-        success: true,
-        data: {
-          rows: params.mode === 'read' ? [
-            { id: 1, name: 'Sample Record', created_at: new Date().toISOString() }
-          ] : [],
-          affected_rows: params.mode === 'write' ? 1 : 0,
-          return_type: params.return_type || 'rows'
-        },
-        source: 'mock_data',
-        message: 'Mock SQL execution - actual database operations pending MCP setup'
-      }
+  mapOperationToAction(operation) {
+    const actionMap = {
+      'EXECUTE_SQL': 'neon_execute_sql',
+      'QUERY_ROWS': 'neon_execute_sql',
+      'LIST_TABLES': 'neon_execute_sql'
     };
 
-    const mockResponse = mockResponses[operation] || {
-      success: false,
-      error: `Mock data not available for operation: ${operation}`,
-      source: 'mock_data'
-    };
-
-    console.log(`📝 Returning mock data for ${operation}:`, mockResponse);
-    return mockResponse;
+    return actionMap[operation] || 'neon_execute_sql';
   }
+
 
   /**
    * Insert rows into Neon through Composio

@@ -1,3 +1,11 @@
+/**
+ * Doctrine Spec:
+ * - Barton ID: 03.01.03.07.10000.009
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: outreach API requests and parameters
+ * - Output: outreach operation results
+ * - MCP: Composio (Neon integrated)
+ */
 // Outreach-specific endpoints for the UI components
 // These endpoints connect to your original schema tables and monitoring views
 

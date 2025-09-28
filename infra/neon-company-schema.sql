@@ -1,3 +1,7 @@
+-- Barton Doctrine Infrastructure
+-- All tables must have unique_id (Barton ID) and audit columns
+-- MCP: Access only via Composio bridge
+
 -- ===================================================
 -- NEON DATABASE SCHEMA: Company & People Integration
 -- ===================================================

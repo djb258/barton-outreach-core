@@ -21,7 +21,8 @@ const WorkflowSidebar = ({
     { id: 5, name: 'Segmentation', description: 'Segment prospects by criteria', icon: 'Filter', status: 'pending' },
     { id: 6, name: 'Campaign Setup', description: 'Configure outreach campaigns', icon: 'Target', status: 'pending' },
     { id: 7, name: 'Review & Approval', description: 'Final review before deployment', icon: 'Eye', status: 'pending' },
-    { id: 8, name: 'Deployment', description: 'Deploy to outreach systems', icon: 'Send', status: 'pending' }
+    { id: 8, name: 'Feedback Loop', description: 'Analyze errors and improve process', icon: 'RotateCcw', status: 'pending' },
+    { id: 9, name: 'Deployment', description: 'Deploy to outreach systems', icon: 'Send', status: 'pending' }
   ];
 
   const getStepStatus = (stepId) => {

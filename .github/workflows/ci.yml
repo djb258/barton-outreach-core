@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI/CD Pipeline with Barton Doctrine Compliance
 
 on:
   push:
@@ -11,41 +11,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
         cache: 'npm'
-    
+
     - name: Install dependencies
       run: npm ci
-    
+
     - name: Run linting
       run: npm run lint
-    
+
     - name: Build frontend
       run: npm run build
-      
+
   test-backend:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-    
+
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    
+
     - name: Run compliance check
       run: python tools/repo_compliance_check.py .
       continue-on-error: true
-    
+
     - name: Test blueprint scoring
       run: python tools/blueprint_score.py example
       continue-on-error: true
@@ -55,20 +55,217 @@ jobs:
     needs: [test-frontend, test-backend]
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-    
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    
+
     - name: HEIR Compliance Audit
       run: |
         echo "Running HEIR compliance checks..."
         python tools/repo_compliance_check.py .
         echo "HEIR audit completed"
       continue-on-error: true
+
+  barton-doctrine-compliance:
+    runs-on: ubuntu-latest
+    needs: [test-frontend, test-backend]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Barton Doctrine Validation
+      run: |
+        echo "🔍 Running Barton Doctrine compliance checks..."
+        node .github/workflows/barton-doctrine-validator.mjs .
+        echo "✅ Barton Doctrine validation completed"
+
+    - name: Upload Barton Doctrine Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: barton-doctrine-report
+        path: barton-doctrine-report.json
+        retention-days: 30
+
+  mcp-enforcement:
+    runs-on: ubuntu-latest
+    needs: [test-frontend, test-backend]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: MCP-Only Enforcement Check
+      run: |
+        echo "🔍 Checking for direct database connections..."
+
+        # Check for direct Neon imports
+        NEON_VIOLATIONS=$(find . -name "*.ts" -o -name "*.js" | grep -v node_modules | xargs grep -l "@neondatabase/serverless" | grep -v "node_modules" || true)
+
+        # Check for direct Firebase imports
+        FIREBASE_VIOLATIONS=$(find . -name "*.ts" -o -name "*.js" | grep -v node_modules | xargs grep -l "firebase" | grep -v "node_modules" || true)
+
+        # Check for direct pg imports
+        PG_VIOLATIONS=$(find . -name "*.ts" -o -name "*.js" | grep -v node_modules | xargs grep -l "import.*pg" | grep -v "node_modules" || true)
+
+        TOTAL_VIOLATIONS=0
+
+        if [ -n "$NEON_VIOLATIONS" ]; then
+          echo "❌ Direct Neon database connections found:"
+          echo "$NEON_VIOLATIONS"
+          TOTAL_VIOLATIONS=$((TOTAL_VIOLATIONS + $(echo "$NEON_VIOLATIONS" | wc -l)))
+        fi
+
+        if [ -n "$FIREBASE_VIOLATIONS" ]; then
+          echo "❌ Direct Firebase connections found:"
+          echo "$FIREBASE_VIOLATIONS"
+          TOTAL_VIOLATIONS=$((TOTAL_VIOLATIONS + $(echo "$FIREBASE_VIOLATIONS" | wc -l)))
+        fi
+
+        if [ -n "$PG_VIOLATIONS" ]; then
+          echo "❌ Direct PostgreSQL connections found:"
+          echo "$PG_VIOLATIONS"
+          TOTAL_VIOLATIONS=$((TOTAL_VIOLATIONS + $(echo "$PG_VIOLATIONS" | wc -l)))
+        fi
+
+        if [ $TOTAL_VIOLATIONS -gt 0 ]; then
+          echo "💥 MCP-Only enforcement FAILED! Found $TOTAL_VIOLATIONS violations."
+          echo "All database operations must go through ComposioNeonBridge."
+          exit 1
+        else
+          echo "✅ MCP-Only enforcement PASSED! No direct database connections found."
+        fi
+
+  barton-id-validation:
+    runs-on: ubuntu-latest
+    needs: [test-frontend, test-backend]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Barton ID Format Validation
+      run: |
+        echo "🔍 Validating Barton ID formats in codebase..."
+
+        # Check for Barton ID patterns
+        BARTON_ID_REGEX="[0-9]{2}\.[0-9]{2}\.[0-9]{2}\.[0-9]{2}\.[0-9]{5}\.[0-9]{3}"
+
+        # Find files with Barton ID references
+        FILES_WITH_IDS=$(find . -name "*.ts" -o -name "*.js" -o -name "*.sql" | grep -v node_modules | xargs grep -l "Barton ID\|barton_id\|unique_id" || true)
+
+        if [ -n "$FILES_WITH_IDS" ]; then
+          echo "📋 Files with Barton ID references:"
+          echo "$FILES_WITH_IDS"
+
+          # Validate format in each file
+          INVALID_IDS=$(find . -name "*.ts" -o -name "*.js" | grep -v node_modules | xargs grep -H "Barton ID:" | grep -v "$BARTON_ID_REGEX" || true)
+
+          if [ -n "$INVALID_IDS" ]; then
+            echo "❌ Invalid Barton ID formats found:"
+            echo "$INVALID_IDS"
+            echo "Expected format: NN.NN.NN.NN.NNNNN.NNN"
+            exit 1
+          else
+            echo "✅ All Barton IDs follow correct format: NN.NN.NN.NN.NNNNN.NNN"
+          fi
+        else
+          echo "⚠️  No Barton ID references found in codebase"
+        fi
+
+  step8-scoring-compliance:
+    runs-on: ubuntu-latest
+    needs: [test-frontend, test-backend]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Step 8 Scoring API Compliance
+      run: |
+        echo "🔍 Validating Step 8 Lead Scoring compliance..."
+
+        # Check for scoring API files
+        SCORING_FILES=$(find . -name "*scoring*" -name "*.ts" | grep -v node_modules || true)
+
+        if [ -n "$SCORING_FILES" ]; then
+          echo "📋 Found scoring files:"
+          echo "$SCORING_FILES"
+
+          # Check each scoring file for MCP compliance
+          for file in $SCORING_FILES; do
+            echo "Checking $file..."
+
+            # Must have Doctrine header
+            if ! grep -q "Doctrine Spec:" "$file"; then
+              echo "❌ Missing Doctrine header in $file"
+              exit 1
+            fi
+
+            # Must use ComposioNeonBridge (not direct Neon)
+            if grep -q "@neondatabase/serverless" "$file"; then
+              echo "❌ Direct Neon import found in $file - must use ComposioNeonBridge"
+              exit 1
+            fi
+
+            # Should have MCP import
+            if ! grep -q "ComposioNeonBridge" "$file"; then
+              echo "❌ Missing ComposioNeonBridge import in $file"
+              exit 1
+            fi
+          done
+
+          echo "✅ All Step 8 scoring APIs are MCP-compliant"
+        else
+          echo "⚠️  No scoring API files found"
+        fi
+
+  # Combined compliance gate
+  compliance-gate:
+    runs-on: ubuntu-latest
+    needs: [barton-doctrine-compliance, mcp-enforcement, barton-id-validation, step8-scoring-compliance]
+    if: always()
+    steps:
+    - name: Compliance Gate
+      run: |
+        echo "🚪 Barton Doctrine Compliance Gate"
+
+        # Check if all compliance jobs passed
+        BARTON_STATUS="${{ needs.barton-doctrine-compliance.result }}"
+        MCP_STATUS="${{ needs.mcp-enforcement.result }}"
+        ID_STATUS="${{ needs.barton-id-validation.result }}"
+        STEP8_STATUS="${{ needs.step8-scoring-compliance.result }}"
+
+        echo "Barton Doctrine: $BARTON_STATUS"
+        echo "MCP Enforcement: $MCP_STATUS"
+        echo "Barton ID Validation: $ID_STATUS"
+        echo "Step 8 Compliance: $STEP8_STATUS"
+
+        if [[ "$BARTON_STATUS" == "success" && "$MCP_STATUS" == "success" && "$ID_STATUS" == "success" && "$STEP8_STATUS" == "success" ]]; then
+          echo "✅ All Barton Doctrine compliance checks PASSED!"
+          echo "Repository is compliant with Step 8 scoring requirements"
+        else
+          echo "❌ Barton Doctrine compliance checks FAILED!"
+          echo "Please fix violations before proceeding with deployment"
+          exit 1
+        fi

@@ -1,3 +1,7 @@
+-- Barton Doctrine Infrastructure
+-- All tables must have unique_id (Barton ID) and audit columns
+-- MCP: Access only via Composio bridge
+
 -- Lean Outreach DB: Marketing Cleanup & Canonical Bootstrap (Neon/Postgres)
 -- Safe to run once; adapts if objects already exist.
 

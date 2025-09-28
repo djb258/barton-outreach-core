@@ -1,3 +1,11 @@
+/**
+ * Doctrine Spec:
+ * - Barton ID: 03.01.02.07.10000.008
+ * - Altitude: 10000 (Execution Layer)
+ * - Input: MCP render request and template data
+ * - Output: rendered output and execution status
+ * - MCP: Composio (Neon integrated)
+ */
 // MCP Server integration for Render deployment
 // This bypasses CORS issues by using Composio MCP directly
 

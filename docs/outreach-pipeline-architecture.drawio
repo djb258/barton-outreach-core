@@ -1,0 +1,164 @@
+<mxfile host="app.diagrams.net" modified="2025-01-17T00:00:00.000Z" agent="5.0" etag="pipeline-architecture" version="24.8.7" type="device">
+  <diagram name="Outreach Pipeline Tracker" id="outreach_pipeline_tracker">
+    <mxGraphModel dx="1422" dy="754" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Firebase Layer -->
+        <mxCell id="firebase_layer" value="🔥 Firebase (Working Layer)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=16;fontStyle=1;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="380" height="600" as="geometry" />
+        </mxCell>
+
+        <mxCell id="step1" value="Step 1 – CSV Intake&#xa;(Staging → company_raw_intake, person_raw_intake)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="60" y="80" width="340" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="step2a" value="Step 2A – Validator Agent&#xa;(Validation + validation_failed)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="60" y="160" width="340" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="step2b" value="Step 2B – Enrichment&#xa;(Normalization, role inference, enrichment_jobs)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="60" y="240" width="340" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="step2c" value="Step 2C – Apify Scraping&#xa;(Apify actors → staging tables)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="60" y="320" width="340" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="step3" value="Step 3 – Adjuster Console&#xa;(Human-in-the-loop error resolution)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="60" y="400" width="340" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="step4" value="Step 4 – Promotion Console&#xa;(Promotion logic → master tables in Neon)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="60" y="480" width="340" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Neon Vault Layer -->
+        <mxCell id="neon_vault" value="💾 Neon (Vault Layer)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=16;fontStyle=1;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="480" y="40" width="300" height="400" as="geometry" />
+        </mxCell>
+
+        <mxCell id="company_master" value="Company Master&#xa;(company_master)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="500" y="80" width="260" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="person_master" value="Person Master&#xa;(person_master)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="500" y="160" width="260" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="unified_audit" value="Unified Audit Log&#xa;(marketing.unified_audit_log)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="500" y="240" width="260" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="outreach_tracking" value="Outreach Sync Tracking&#xa;(outreach_sync_tracking)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="500" y="320" width="260" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Outreach Platforms -->
+        <mxCell id="outreach_layer" value="📤 Outreach Platforms" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=16;fontStyle=1;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="820" y="40" width="280" height="200" as="geometry" />
+        </mxCell>
+
+        <mxCell id="instantly" value="Instantly Campaigns" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cce5ff;strokeColor=#36393d;" vertex="1" parent="1">
+          <mxGeometry x="840" y="80" width="240" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="heyreach" value="HeyReach Campaigns" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cce5ff;strokeColor=#36393d;" vertex="1" parent="1">
+          <mxGeometry x="840" y="160" width="240" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Governance & Monitoring -->
+        <mxCell id="governance_layer" value="📊 Governance &amp; Monitoring" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=16;fontStyle=1;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="40" y="680" width="1060" height="240" as="geometry" />
+        </mxCell>
+
+        <mxCell id="step5" value="Step 5 – Audit Trail Integration&#xa;(Standardized doctrine logs)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcc99;strokeColor=#36393d;" vertex="1" parent="1">
+          <mxGeometry x="60" y="720" width="240" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="step6" value="Step 6 – Outreach Engine Sync&#xa;(Sync promoted contacts → Instantly + HeyReach)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcc99;strokeColor=#36393d;" vertex="1" parent="1">
+          <mxGeometry x="320" y="720" width="240" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="step7" value="Step 7 – Monitoring Dashboard&#xa;(Pipeline health, throughput, error tracking)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcc99;strokeColor=#36393d;" vertex="1" parent="1">
+          <mxGeometry x="580" y="720" width="240" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="step8" value="Step 8 – Feedback Loop&#xa;(Error pattern detection + recommendations)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcc99;strokeColor=#36393d;" vertex="1" parent="1">
+          <mxGeometry x="840" y="720" width="240" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Connections -->
+        <mxCell id="conn1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="step1" target="step2a">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="conn2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="step2a" target="step2b">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="conn3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="step2b" target="step2c">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="conn4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="step2c" target="step3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="conn5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="step3" target="step4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="conn6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="step4" target="company_master">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="conn7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="step4" target="person_master">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="510" />
+              <mxPoint x="450" y="190" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="conn8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="company_master" target="instantly">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="conn9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="person_master" target="heyreach">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="800" y="190" />
+              <mxPoint x="800" y="190" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="conn10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="step6" target="outreach_tracking">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="440" y="800" />
+              <mxPoint x="440" y="820" />
+              <mxPoint x="630" y="820" />
+              <mxPoint x="630" y="320" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="conn11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="step7" target="unified_audit">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="700" y="800" />
+              <mxPoint x="700" y="840" />
+              <mxPoint x="630" y="840" />
+              <mxPoint x="630" y="240" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
