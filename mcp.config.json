@@ -5,7 +5,11 @@
       "args": ["-m", "composio", "serve"],
       "env": {
         "COMPOSIO_API_KEY": "${COMPOSIO_API_KEY}",
-        "COMPOSIO_DEFAULT_ENTITY": "${COMPOSIO_DEFAULT_ENTITY:-default}"
+        "COMPOSIO_DEFAULT_ENTITY": "${COMPOSIO_DEFAULT_ENTITY:-default}",
+        "MILLIONVERIFY_API_KEY": "${MILLIONVERIFY_API_KEY}",
+        "APIFY_API_KEY": "${APIFY_API_KEY}",
+        "INSTANTLY_API_KEY": "${INSTANTLY_API_KEY}",
+        "HEYREACH_API_KEY": "${HEYREACH_API_KEY}"
       },
       "description": "Composio AI agent tools platform - primary MCP server",
       "priority": 1,
@@ -16,10 +20,14 @@
       },
       "capabilities": [
         "ai_tools",
-        "workflow_automation", 
+        "workflow_automation",
         "action_execution",
         "app_integrations",
-        "claude_optimization"
+        "claude_optimization",
+        "millionverify_email_verification",
+        "apify_web_scraping",
+        "instantly_outreach_campaigns",
+        "heyreach_outreach_campaigns"
       ]
     },
     "reftools": {
@@ -60,6 +68,55 @@
         "database_access",
         "heir_compliance"
       ]
+    }
+  },
+  "agents": {
+    "claude": {
+      "type": "claude",
+      "server": "composio",
+      "capabilities": [
+        "repo_read_write",
+        "firebase_firestore",
+        "firebase_hosting",
+        "neon_vault_access",
+        "builderio_component_registration",
+        "doctrine_compliance"
+      ],
+      "env": {
+        "COMPOSIO_API_KEY": "${COMPOSIO_API_KEY}",
+        "FIREBASE_SERVICE_ACCOUNT_KEY": "${FIREBASE_SERVICE_ACCOUNT_KEY}",
+        "DATABASE_URL": "${DATABASE_URL}",
+        "BUILDERIO_API_KEY": "${BUILDERIO_API_KEY}",
+        "MCP_AGENT_ID": "claude-barton-outreach"
+      },
+      "description": "Claude Code agent with full Barton Doctrine compliance and MCP integration",
+      "priority": 1
+    },
+    "chatgpt": {
+      "type": "chatgpt",
+      "server": "composio",
+      "capabilities": [
+        "repo_read_write",
+        "firebase_firestore",
+        "firebase_hosting",
+        "neon_vault_access",
+        "builderio_component_registration",
+        "doctrine_compliance"
+      ],
+      "env": {
+        "COMPOSIO_API_KEY": "${COMPOSIO_API_KEY}",
+        "FIREBASE_SERVICE_ACCOUNT_KEY": "${FIREBASE_SERVICE_ACCOUNT_KEY}",
+        "DATABASE_URL": "${DATABASE_URL}",
+        "BUILDERIO_API_KEY": "${BUILDERIO_API_KEY}",
+        "MCP_AGENT_ID": "chatgpt-barton-outreach",
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}"
+      },
+      "description": "ChatGPT agent with same tool access as Claude for collaborative development",
+      "priority": 2,
+      "rate_limiting": {
+        "requests_per_minute": 60,
+        "burst_limit": 10
+      }
     }
   },
   "orchestration": {
