@@ -28,7 +28,13 @@
     "mcp:demo": "node packages/mcp-clients/run.mjs",
     "garage-bay:audit": "python garage_bay.py --target .",
     "compliance:check": "cd tools && python repo_compliance_check.py .",
-    "docs:generate": "bash tools/deep_wiki_generator.sh"
+    "docs:generate": "bash tools/deep_wiki_generator.sh",
+    "scrape:apify": "node agents/specialists/apifyRunner.js",
+    "verify:email": "node agents/specialists/millionVerifyRunner.js",
+    "outreach:run": "node agents/specialists/outreachRunner.js",
+    "audit:query": "node ops/orbt/auditLogger.js",
+    "neon:test": "node ops/orbt/neonWriter.js",
+    "history:check": "node ops/orbt/historyEnforcer.js"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

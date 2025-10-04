@@ -19,7 +19,8 @@
     "factory:dev": "node factory/ui/dev.js",
     "factory:build": "node factory/ui/build.js",
     "garage-bay:audit": "python garage_bay.py --target .",
-    "docs": "node scripts/gen-wiki.mjs"
+    "docs": "node scripts/gen-wiki.mjs",
+    "builderio:register": "node scripts/register-builderio-components.js"
   },
   "dependencies": {
     "@barton/data-router": "file:../../packages/data-router",
