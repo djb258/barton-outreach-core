@@ -146,7 +146,9 @@ export default function DataIngestionPage() {
             <CardDescription>Data ingestion workflow from file upload to database</CardDescription>
           </CardHeader>
           <CardContent>
-            <ProcessFlowDiagram branch={ingestionBranch} />
+            <div className="text-sm text-muted-foreground">
+              Process flow diagram for {ingestionBranch.name}
+            </div>
           </CardContent>
         </Card>
       )}

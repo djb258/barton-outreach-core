@@ -8,7 +8,7 @@ import { IMOHEIRStatus } from '@/components/imo/IMOHEIRStatus';
 import BlueprintManager from '@/components/imo/BlueprintManager';
 import { IMOService } from '@/lib/imo/imo-service';
 import { IMOManifest, IMOBucket } from '@/lib/imo/types';
-import { Save, RefreshCw, FileText, Shield, Blueprint } from 'lucide-react';
+import { Save, RefreshCw, FileText, Shield, Layers } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function IMOCreatorPage() {
