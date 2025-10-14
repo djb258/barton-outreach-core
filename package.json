@@ -14,6 +14,7 @@
     "dev:factory-imo": "npm run dev --workspace=apps/factory-imo",
     "dev:amplify-client": "npm run dev --workspace=apps/amplify-client",
     "build": "npm run build --workspaces --if-present",
+    "build:dev": "vite build --mode development",
     "build:api": "npm run build --workspace=apps/api",
     "build:factory-imo": "npm run build --workspace=apps/factory-imo",
     "build:amplify-client": "npm run build --workspace=apps/amplify-client",
