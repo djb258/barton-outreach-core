@@ -30,7 +30,9 @@
       "Bash(done)",
       "Bash(git fetch:*)",
       "Bash(git clone:*)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\n🎨 Integrate Barton Pipeline Vision UI\n\nIntegrated complete UI from barton-pipeline-vision repository:\n\n✅ NEW UI COMPONENTS:\n- AppSidebar - Main navigation sidebar\n- ChartCard - Reusable chart container\n- KPIBanner - Key performance indicators display\n- IntegrityRing - Data integrity visualization\n- MasterErrorLog - Centralized error tracking\n- IntegrityAuditPanel - Audit trail viewer\n- MissingDataPanel - Data quality monitoring\n- QuickActions - Action shortcuts\n\n✅ CHARTS & ANALYTICS:\n- DoctrineHeatmap - Step compliance heatmap\n- DualTrendChart - Dual metric trends\n- ErrorTrendChart - Error pattern analysis\n- IntegrityTrendChart - Data quality trends\n- LatencyChart - Performance monitoring\n\n✅ MESSAGING COMPONENTS:\n- BilatoEditor - Message template editor\n- BilatoTemplateList - Template management\n- CampaignTable - Campaign overview\n\n✅ OVERVIEW COMPONENTS:\n- DataQualityPanel - Data health dashboard\n- StepProgressCards - Process step tracking\n- TopIssuesPanel - Issue prioritization\n\n✅ NEW PAGES:\n- Overview - Executive dashboard\n- ControlTower - Operations center\n- Analytics - Metrics and insights\n- Messaging - Campaign management\n\n✅ UPDATED DEPENDENCIES:\n- React Router for navigation\n- Recharts for visualizations\n- Shadcn UI components updated\n- MCP client integration\n\n🎯 Complete pipeline visualization UI integrated\n📊 Real-time monitoring and analytics enabled\n🎨 Consistent design system across all views\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }
