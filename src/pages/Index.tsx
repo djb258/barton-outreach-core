@@ -9,7 +9,8 @@ const Index = () => {
   const navigate = useNavigate();
   
   return (
-    <div>
+    <div style={{ background: 'white', minHeight: '100vh', padding: '20px' }}>
+      <h1 style={{ color: 'black', fontSize: '24px' }}>Test - If you see this, React is working</h1>
       <div className="absolute top-4 right-4 z-10">
         <Button
           onClick={() => navigate('/imo-creator')}
