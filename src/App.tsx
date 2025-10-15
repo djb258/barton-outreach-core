@@ -1,41 +1,37 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import HEIRPage from "./pages/HEIRPage";
-import DoctrineMapPage from "./pages/DoctrineMapPage";
-import DataIngestionPage from "./pages/doctrine/DataIngestionPage";
-import LeadIntakePage from "./pages/doctrine/LeadIntakePage";
-import MessageGenerationPage from "./pages/doctrine/MessageGenerationPage";
-import CampaignExecutionPage from "./pages/doctrine/CampaignExecutionPage";
-import IMOCreatorPage from "./pages/IMOCreatorPage";
-import NotFound from "./pages/NotFound";
-
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/heir" element={<HEIRPage />} />
-          <Route path="/doctrine-map" element={<DoctrineMapPage />} />
-          <Route path="/doctrine/data-ingestion" element={<DataIngestionPage />} />
-          <Route path="/doctrine/lead-intake" element={<LeadIntakePage />} />
-          <Route path="/doctrine/message-generation" element={<MessageGenerationPage />} />
-          <Route path="/doctrine/campaign-execution" element={<CampaignExecutionPage />} />
-          <Route path="/imo-creator" element={<IMOCreatorPage />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  console.log('APP IS RENDERING - CHECK CONSOLE');
+  
+  return (
+    <div style={{
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px'
+    }}>
+      <div style={{
+        background: 'white',
+        padding: '40px',
+        borderRadius: '12px',
+        boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
+        maxWidth: '600px',
+        textAlign: 'center'
+      }}>
+        <h1 style={{ color: '#333', fontSize: '32px', marginBottom: '16px' }}>
+          ✅ App is Running!
+        </h1>
+        <p style={{ color: '#666', fontSize: '18px', marginBottom: '24px' }}>
+          If you can see this message, React and Vite are working correctly.
+        </p>
+        <div style={{ background: '#f0f0f0', padding: '20px', borderRadius: '8px' }}>
+          <p style={{ color: '#333', margin: 0 }}>
+            Check your browser console for the log message.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default App;
