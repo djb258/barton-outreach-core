@@ -1,26 +1,12 @@
-import { BartonTemplate } from '@/components/template/BartonTemplate';
-import { outreachConfig } from '@/lib/template/application-config';
-import { Button } from '@/components/ui/button';
-import { FileText } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+// Update this page (the content is just a fallback if you fail to update the page)
 
 const Index = () => {
-  console.log('Index component rendering...', outreachConfig);
-  const navigate = useNavigate();
-  
   return (
-    <div>
-      <div className="absolute top-4 right-4 z-10">
-        <Button
-          onClick={() => navigate('/imo-creator')}
-          variant="outline"
-          className="flex items-center gap-2"
-        >
-          <FileText className="h-4 w-4" />
-          IMO Creator
-        </Button>
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="text-center">
+        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
+        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
       </div>
-      <BartonTemplate config={outreachConfig} />
     </div>
   );
 };

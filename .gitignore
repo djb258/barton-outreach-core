@@ -22,10 +22,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-# HEIR Agent System (embedded repo)
-HEIR-AGENT-SYSTEM/
-
-# HEIR Agent System
-.claude/
-heir-project-config.json

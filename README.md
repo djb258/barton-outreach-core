@@ -1,24 +1,8 @@
-# Barton Outreach Core
-
-## Marketing > Outreach Doctrine (Barton)
-
-Modular, altitude-based pages for Doctrine Tracker interactive drill-down:
-- **30k**: docs/pages/30000-vision.md
-- **20k**: docs/pages/20000-categories.md
-- **10k**: docs/pages/10000-specialization.md
-- **5k/1k**: docs/pages/05000-execution.md
-
-### HEIR Agent System Integration
-
-This project includes a complete HEIR (Hierarchical Execution Intelligence & Repair) agent system:
-- Access the system at `/heir` route
-- 12 specialized agents (orchestrators, managers, specialists)
-- Real-time task management and system monitoring
-- Integration with Apollo, Apify, MillionVerifier, Instantly, and HeyReach APIs
+# Welcome to your Lovable project
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/1c02fda0-b967-4efc-807c-309dfdd81983
+**URL**: https://lovable.dev/projects/a8e59576-8676-4e68-b0fc-322fc78b5a7c
 
 ## How can I edit this code?
 
@@ -26,7 +10,7 @@ There are several ways of editing your application.
 
 **Use Lovable**
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/1c02fda0-b967-4efc-807c-309dfdd81983) and start prompting.
+Simply visit the [Lovable Project](https://lovable.dev/projects/a8e59576-8676-4e68-b0fc-322fc78b5a7c) and start prompting.
 
 Changes made via Lovable will be committed automatically to this repo.
 
@@ -78,7 +62,7 @@ This project is built with:
 
 ## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/1c02fda0-b967-4efc-807c-309dfdd81983) and click on Share -> Publish.
+Simply open [Lovable](https://lovable.dev/projects/a8e59576-8676-4e68-b0fc-322fc78b5a7c) and click on Share -> Publish.
 
 ## Can I connect a custom domain to my Lovable project?
 
@@ -86,4 +70,4 @@ Yes, you can!
 
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
