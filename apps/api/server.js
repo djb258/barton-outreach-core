@@ -554,6 +554,10 @@ setupOutreachEndpoints(app, executeSecureQuery);
 import { setupRenderMCPEndpoints } from './mcp-render-endpoint.js';
 setupRenderMCPEndpoints(app);
 
+// Import and mount Neon routes
+import neonRouter from './routes/neon/index.js';
+app.use('/neon', neonRouter);
+
 // Default route
 app.get('/', (req, res) => {
   res.json({
@@ -570,7 +574,18 @@ app.get('/', (req, res) => {
       outreach_companies: 'GET /api/outreach/companies',
       outreach_contacts: 'GET /api/outreach/contacts',
       outreach_queues: 'GET /api/outreach/queues/{type}',
-      process_queue: 'POST /api/outreach/queues/{type}/process'
+      process_queue: 'POST /api/outreach/queues/{type}/process',
+      // Neon endpoints (analytics & monitoring)
+      neon_health: 'GET /neon/health',
+      neon_dashboard: 'GET /neon/dashboard-summary',
+      neon_errors: 'GET /neon/errors',
+      neon_integrity: 'GET /neon/integrity',
+      neon_missing: 'GET /neon/missing',
+      neon_messaging: 'GET /neon/messaging',
+      neon_analytics_error_trend: 'GET /neon/analytics/error-trend',
+      neon_analytics_doctrine_compliance: 'GET /neon/analytics/doctrine-compliance',
+      neon_analytics_latency: 'GET /neon/analytics/latency',
+      neon_analytics_data_quality: 'GET /neon/analytics/data-quality'
     }
   });
 });
