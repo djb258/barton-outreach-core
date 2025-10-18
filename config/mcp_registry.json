@@ -13,43 +13,68 @@
       "Version tracking ensures compatibility across distributed repos"
     ]
   },
-  "engine_version": "1.0.0",
-  "last_updated": "2025-09-26T12:30:00Z",
+  "engine_version": "1.3.0",
+  "last_updated": "2025-10-18T00:00:00Z",
   "production_urls": {
     "frontend": "https://imo-creator.vercel.app",
-    "backend": "https://composio-imo-creator-url.onrender.com",
-    "api_base": "https://composio-imo-creator-url.onrender.com/api"
+    "backend": "http://localhost:3001/tool",
+    "api_base": "http://localhost:3001/tool"
   },
   "engine_capabilities": [
     {
       "tool": "Composio MCP Server",
       "type": "MCP",
-      "endpoint": "https://composio-imo-creator-url.onrender.com",
+      "endpoint": "https://api.composio.dev",
       "doctrine_id": "04.04.00",
       "status": "active",
-      "api_key": "ak_t-F0AbvfZHUZSUrqAGNn",
-      "description": "Primary Composio MCP integration hub for IMO-Creator ecosystem"
+      "api_key": "oak_d4qEQhMSdWBgvAI3XELr",
+      "description": "Primary Composio MCP integration hub - 100+ tools and services"
     },
     {
-      "tool": "Neon",
+      "tool": "_21RISK Toolkit",
       "type": "MCP",
-      "endpoint": "https://composio-imo-creator-url.onrender.com/api/composio/neon",
+      "endpoint": "http://localhost:3001/tool",
       "doctrine_id": "04.04.01",
-      "status": "active"
+      "status": "active",
+      "toolkit_tools": [
+        "GET_COMPLIANCE", "GET_ITEMS", "GET_ITEMS_PER_MONTH",
+        "GET_ORGANIZATIONS", "GET_PROPERTIES", "GET_REPORTS",
+        "GET_RISKMODEL_CATEGORIES", "GET_RISK_MODELS", "GET_SITES"
+      ],
+      "description": "Risk management and compliance toolkit - 9 tools for audit, compliance, and organizational structure"
     },
     {
-      "tool": "Firebase",
+      "tool": "_2CHAT Toolkit",
       "type": "MCP",
-      "endpoint": "https://composio-imo-creator-url.onrender.com/api/composio/firebase",
+      "endpoint": "http://localhost:3001/tool",
       "doctrine_id": "04.04.02",
-      "status": "active"
+      "status": "active",
+      "toolkit_tools": [
+        "CREATE_CONTACT", "GET_API_USAGE_INFO", "LIST_CONTACTS",
+        "LIST_WEBHOOKS", "TEST_API_KEY"
+      ],
+      "description": "Chat and contact management toolkit - 5 tools for WhatsApp/chat communication"
     },
     {
-      "tool": "Apify",
+      "tool": "ABLY Toolkit",
       "type": "MCP",
-      "endpoint": "https://composio-imo-creator-url.onrender.com/api/composio/apify",
+      "endpoint": "http://localhost:3001/tool",
       "doctrine_id": "04.04.03",
-      "status": "active"
+      "status": "active",
+      "toolkit_tools": [
+        "BATCH_PRESENCE", "BATCH_PRESENCE_HISTORY", "CREATE_CHANNEL",
+        "DELETE_CHANNEL_SUBSCRIPTION", "GET_CHANNEL_DETAILS", "GET_CHANNEL_HISTORY"
+      ],
+      "description": "Real-time messaging and presence toolkit - 6 tools for channels and messaging"
+    },
+    {
+      "tool": "Builder.io",
+      "type": "MCP",
+      "endpoint": "http://localhost:3001/tool",
+      "doctrine_id": "04.04.04",
+      "status": "active",
+      "api_key": "9502e3493ccf42339f36d16b4a482c70",
+      "description": "Builder.io visual development platform integration for UI/UX generation"
     },
     {
       "tool": "n8n",
@@ -64,6 +89,142 @@
       "endpoint": "https://make-instance/webhook",
       "doctrine_id": "04.04.F2",
       "status": "active"
+    },
+    {
+      "tool": "Firebase MCP Server",
+      "type": "MCP",
+      "endpoint": "http://localhost:3001",
+      "doctrine_id": "04.04.05",
+      "status": "active",
+      "barton_doctrine_role": "staging_memory",
+      "toolkit_tools": [
+        "FIREBASE_WRITE", "FIREBASE_READ", "FIREBASE_UPDATE",
+        "FIREBASE_DELETE", "FIREBASE_STUDIO_LIST", "FIREBASE_STUDIO_DEPLOY"
+      ],
+      "required_env_vars": [
+        "FIREBASE_PROJECT_ID", "FIREBASE_CLIENT_EMAIL", "FIREBASE_PRIVATE_KEY",
+        "FIREBASE_DATABASE_URL", "FIREBASE_STORAGE_BUCKET"
+      ],
+      "description": "Firebase staging memory with Barton Doctrine validation - all writes require unique_id, process_id, timestamp_last_touched, validated"
+    },
+    {
+      "tool": "Million Verifier",
+      "type": "Custom API",
+      "endpoint": "https://api.millionverifier.com",
+      "doctrine_id": "04.04.06",
+      "status": "active",
+      "api_key": "7hLlWoR3DCDoDwDllpafUh4U9",
+      "toolkit_tools": [
+        "VERIFY_EMAIL", "BATCH_VERIFY", "GET_CREDITS", "GET_RESULTS"
+      ],
+      "api_endpoints": {
+        "verify_single": "/v3/verify",
+        "batch_upload": "/v3/bulkapi/verifyfile",
+        "get_credits": "/v3/credits",
+        "get_results": "/v3/bulkapi/download"
+      },
+      "authentication": {
+        "type": "api_key",
+        "key_param": "api",
+        "key_location": "query"
+      },
+      "description": "Million Verifier email validation service for single and batch email verification"
+    },
+    {
+      "tool": "ChartDB",
+      "type": "MCP",
+      "endpoint": "http://localhost:3001/tool",
+      "doctrine_id": "04.04.07",
+      "status": "active",
+      "repo_url": "https://github.com/djb258/chartdb.git",
+      "ctb_branch": "sys/chartdb",
+      "toolkit_tools": [
+        "GENERATE_SCHEMA_DIAGRAM", "EXPORT_DDL", "IMPORT_DATABASE",
+        "VISUALIZE_RELATIONSHIPS", "COMPARE_SCHEMAS", "GENERATE_DOCS"
+      ],
+      "capabilities": [
+        "database_schema_visualization",
+        "entity_relationship_diagrams",
+        "ddl_generation",
+        "schema_comparison",
+        "database_documentation"
+      ],
+      "description": "ChartDB database schema visualization tool - create, visualize, and export database schemas with ER diagrams"
+    },
+    {
+      "tool": "Activepieces",
+      "type": "MCP",
+      "endpoint": "http://localhost:3001/tool",
+      "doctrine_id": "04.04.08",
+      "status": "active",
+      "repo_url": "https://github.com/djb258/activepieces.git",
+      "ctb_branch": "sys/activepieces",
+      "toolkit_tools": [
+        "CREATE_FLOW", "EXECUTE_FLOW", "LIST_FLOWS", "UPDATE_FLOW",
+        "DELETE_FLOW", "GET_FLOW_RUNS", "TRIGGER_WEBHOOK", "SCHEDULE_FLOW"
+      ],
+      "capabilities": [
+        "workflow_automation",
+        "no_code_automation",
+        "api_integrations",
+        "scheduled_tasks",
+        "webhook_triggers",
+        "flow_orchestration"
+      ],
+      "description": "Activepieces workflow automation platform - build and execute no-code automation flows with 100+ integrations"
+    },
+    {
+      "tool": "Windmill",
+      "type": "MCP",
+      "endpoint": "http://localhost:3001/tool",
+      "doctrine_id": "04.04.09",
+      "status": "active",
+      "repo_url": "https://github.com/djb258/windmill.git",
+      "ctb_branch": "sys/windmill",
+      "toolkit_tools": [
+        "RUN_SCRIPT", "DEPLOY_APP", "CREATE_FLOW", "SCHEDULE_TASK",
+        "LIST_SCRIPTS", "GET_LOGS", "MANAGE_VARIABLES", "EXECUTE_WORKFLOW"
+      ],
+      "capabilities": [
+        "script_execution",
+        "workflow_orchestration",
+        "app_deployment",
+        "developer_platform",
+        "job_scheduling",
+        "resource_management"
+      ],
+      "integration_languages": [
+        "python", "typescript", "bash", "go", "sql"
+      ],
+      "description": "Windmill developer platform - execute scripts, deploy apps, and orchestrate workflows with multi-language support"
+    },
+    {
+      "tool": "Anthropic_Claude_Skills",
+      "type": "MCP",
+      "endpoint": "composio://anthropic",
+      "doctrine_id": "04.04.10",
+      "status": "active",
+      "scope": "global",
+      "ctb_branch": "sys/claude-skills",
+      "toolkit_tools": [
+        "CLAUDE_ANALYZE", "CLAUDE_REASON", "CLAUDE_GENERATE",
+        "CLAUDE_REVIEW", "CLAUDE_PLAN", "CLAUDE_EXECUTE"
+      ],
+      "capabilities": [
+        "extended_context_processing",
+        "multi_step_reasoning",
+        "content_generation",
+        "code_review",
+        "task_planning",
+        "workflow_orchestration"
+      ],
+      "model": "claude-sonnet-4.5-20250929",
+      "max_tokens": 200000,
+      "required_env_vars": [
+        "ANTHROPIC_API_KEY",
+        "ANTHROPIC_MODEL"
+      ],
+      "description": "Anthropic Claude Skills AI/SHQ reasoning layer - extended context, multi-step reasoning, and autonomous workflow execution"
     }
   ],
   "repo_usage": {

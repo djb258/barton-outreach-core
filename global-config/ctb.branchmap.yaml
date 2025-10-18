@@ -1,6 +1,6 @@
 meta:
-  version: 1.0
-  last_updated: 2025-10-09
+  version: 1.3
+  last_updated: 2025-10-18
   description: |
     Canonical CTB (Christmas Tree Backbone) branch structure and merge rules for all Barton repos.
     Enforced automatically by Claude-Code and GitHub Actions.
@@ -26,6 +26,10 @@ altitudes:
       - sys/github-factory
       - sys/builder-bridge
       - sys/security-audit
+      - sys/chartdb
+      - sys/activepieces
+      - sys/windmill
+      - sys/claude-skills
     merge_to: none
     protection: strict
     auto_create: true
@@ -169,6 +173,34 @@ file_organization:
   sys/security-audit:
     - ".env.example"
     - "VERCEL_ENVS.md"
+
+  sys/chartdb:
+    - "chartdb/**"
+    - "database/schema/**"
+    - "db/visualization/**"
+    - "*chartdb*.json"
+    - "*chartdb*.yaml"
+
+  sys/activepieces:
+    - "activepieces/**"
+    - "workflows/**"
+    - "automation/flows/**"
+    - "*activepieces*.json"
+    - "*activepieces*.yaml"
+
+  sys/windmill:
+    - "windmill/**"
+    - "scripts/windmill/**"
+    - "apps/windmill/**"
+    - "*windmill*.ts"
+    - "*windmill*.json"
+
+  sys/claude-skills:
+    - "sys/claude-skills/**"
+    - "claude.skills.md"
+    - "claude.manifest.json"
+    - "*claude-skills*.ts"
+    - "*claude-skills*.json"
 
   imo/input:
     - "garage_bay.py"
