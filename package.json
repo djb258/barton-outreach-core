@@ -27,6 +27,7 @@
     "neon:schema": "node scripts/get-neon-schema.mjs",
     "neon:company-schema": "node scripts/get-company-schema.mjs",
     "schema:refresh": "tsx scripts/refresh-schema-map.ts",
+    "sync:errors": "tsx scripts/sync-errors-to-firebase.ts",
     "mcp:demo": "node packages/mcp-clients/run.mjs",
     "garage-bay:audit": "python garage_bay.py --target .",
     "compliance:check": "cd tools && python repo_compliance_check.py .",
@@ -40,14 +41,18 @@
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "@types/pg": "^8.11.10",
     "concurrently": "^8.2.2",
     "eslint": "^8.0.0",
     "nodemon": "^3.0.1",
     "prettier": "^3.0.0",
+    "tsx": "^4.19.2",
     "typescript": "^5.0.0"
   },
   "dependencies": {
     "@composio/core": "^0.1.52",
+    "axios": "^1.7.9",
+    "pg": "^8.13.1",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-aspect-ratio": "^1.1.7",

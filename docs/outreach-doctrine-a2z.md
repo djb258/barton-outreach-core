@@ -1106,15 +1106,839 @@ async function retryWithLogging(operation, maxRetries = 3) {
 
 ---
 
+## 1️⃣3️⃣ Error Monitoring & Visualization Doctrine
+
+The **Error Monitoring & Visualization Doctrine** ensures that every error inserted into `shq_error_log` automatically surfaces in Firebase dashboards for live observability, real-time triage, and operational awareness.
+
+---
+
+### **Purpose**
+
+All errors logged to the Neon `shq_error_log` table must be:
+1. **Automatically synced** to Firebase Firestore for real-time visualization
+2. **Visible** in Lovable.dev and barton-pipeline-vision dashboards
+3. **Actionable** with severity-based alerts and resolution tracking
+4. **Auditable** with complete history and context preservation
+
+**Key Principle**: Firebase is read-only for humans but writable by Composio service agents. No direct database writes—all synchronization flows through Composio MCP.
+
+---
+
+### **Architecture Flow Diagram**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Error Flow Architecture                       │
+└─────────────────────────────────────────────────────────────────┘
+
+[ Any Agent or Script ]
+         │
+         │ (1) Error occurs
+         v
+INSERT INTO shq_error_log (Neon PostgreSQL)
+         │
+         │ error_id: UUID
+         │ agent_name: "Apify Orchestrator"
+         │ process_id: "Enrich Contacts from Apify"
+         │ unique_id: "04.01.02.05.10000.001"
+         │ severity: "error"
+         │ message: "Scrape timeout after 30s"
+         │ stack_trace: "Error: timeout..."
+         │
+         │ (2) Sync script polls (every 60s)
+         v
+┌─────────────────────────────────────┐
+│   scripts/sync-errors-to-firebase   │
+│   (via Composio MCP)                │
+└─────────────────────────────────────┘
+         │
+         │ (3) Query new errors
+         │ WHERE firebase_synced IS FALSE
+         │
+         v
+┌─────────────────────────────────────┐
+│      Composio MCP → Firebase        │
+│      Connector (write)              │
+└─────────────────────────────────────┘
+         │
+         │ (4) Write to Firestore
+         v
+Firebase Firestore Collection: "error_log"
+         │
+         │ {
+         │   error_id: "uuid",
+         │   timestamp: "2025-01-20T15:30:00Z",
+         │   agent_name: "Apify Orchestrator",
+         │   severity: "error",
+         │   message: "Scrape timeout..."
+         │ }
+         │
+         │ (5) Real-time updates
+         v
+┌─────────────────────────────────────┐
+│   Lovable.dev / Pipeline Vision     │
+│   Dashboards (read-only)            │
+└─────────────────────────────────────┘
+         │
+         │ Displays:
+         │ - Error counters by severity
+         │ - Recent error timeline
+         │ - Agent error rates
+         │ - Resolution status
+         v
+  [ Ops Team → Investigate & Resolve ]
+```
+
+---
+
+### **Firestore Collection Schema**
+
+**Collection Name**: `error_log`
+
+**Document Structure**:
+```json
+{
+  "error_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "timestamp": "2025-01-20T15:30:00.000Z",
+  "agent_name": "Apify Orchestrator",
+  "process_id": "Enrich Contacts from Apify",
+  "unique_id": "04.01.02.05.10000.001",
+  "severity": "error",
+  "message": "Apify scrape failed for company_id=123, url=https://example.com, reason=timeout",
+  "stack_trace": "Error: timeout\n  at apifyRunner.js:45:10\n  at async scrapeCompany:67:5",
+  "resolved": false,
+  "resolution_notes": null,
+  "last_touched": "2025-01-20T15:30:00.000Z",
+  "neon_id": 12345,
+  "synced_at": "2025-01-20T15:31:00.000Z"
+}
+```
+
+**Field Definitions**:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `error_id` | string | UUID from Neon (unique identifier) |
+| `timestamp` | timestamp | When error occurred (ISO 8601) |
+| `agent_name` | string | Name of agent that encountered error |
+| `process_id` | string | Human-readable process identifier |
+| `unique_id` | string | Doctrine numeric ID (6-part dotted notation) |
+| `severity` | string | Error level: info, warning, error, critical |
+| `message` | string | Human-readable error message |
+| `stack_trace` | string | Full stack trace for debugging |
+| `resolved` | boolean | Whether error has been resolved |
+| `resolution_notes` | string | Notes on how error was resolved |
+| `last_touched` | timestamp | Last update time |
+| `neon_id` | number | Original Neon table ID for reference |
+| `synced_at` | timestamp | When synced to Firebase |
+
+---
+
+### **Synchronization Mechanism**
+
+#### **Polling Strategy**
+
+The sync script runs every 60 seconds to:
+1. Query Neon for new errors (`firebase_synced IS FALSE OR firebase_synced IS NULL`)
+2. Transform rows to Firestore document format
+3. Write to Firebase via Composio MCP connector
+4. Mark synced rows in Neon (`firebase_synced = TRUE`)
+
+#### **Database Schema Update**
+
+Add `firebase_synced` column to `shq_error_log`:
+
+```sql
+-- Add sync tracking column
+ALTER TABLE shq_error_log
+ADD COLUMN IF NOT EXISTS firebase_synced BOOLEAN DEFAULT FALSE;
+
+-- Add index for sync queries
+CREATE INDEX IF NOT EXISTS idx_error_log_firebase_synced
+ON shq_error_log(firebase_synced, timestamp DESC);
+```
+
+#### **Sync Script Flow**
+
+```
+[1] Query Neon for unsynced errors
+    ↓
+[2] Batch fetch (max 100 per run)
+    ↓
+[3] For each error:
+    - Transform to Firestore format
+    - Send via Composio Firebase connector
+    - Mark as synced in Neon
+    ↓
+[4] Log sync statistics
+    ↓
+[5] Sleep 60 seconds, repeat
+```
+
+---
+
+### **Implementation: Sync Script**
+
+**File**: `scripts/sync-errors-to-firebase.ts`
+
+```typescript
+#!/usr/bin/env tsx
+
+/**
+ * Barton Outreach Core - Error Sync to Firebase
+ *
+ * Syncs errors from Neon shq_error_log to Firebase Firestore
+ * for real-time dashboard visualization via Composio MCP.
+ *
+ * Usage:
+ *   npm run sync:errors
+ *   tsx scripts/sync-errors-to-firebase.ts
+ */
+
+import { neonClient } from '../src/lib/neonClient.js';
+import { sendToFirebase } from '../src/lib/composioClient.js';
+
+interface ErrorRecord {
+  id: number;
+  error_id: string;
+  timestamp: Date;
+  agent_name: string;
+  process_id: string;
+  unique_id: string;
+  severity: 'info' | 'warning' | 'error' | 'critical';
+  message: string;
+  stack_trace: string | null;
+  resolved: boolean;
+  resolution_notes: string | null;
+  last_touched: Date;
+}
+
+/**
+ * Sync errors from Neon to Firebase
+ */
+async function syncErrors(): Promise<void> {
+  console.log('🔄 Starting error sync to Firebase...\n');
+
+  try {
+    // Query unsynced errors from Neon
+    const result = await neonClient.query<ErrorRecord>(`
+      SELECT
+        id,
+        error_id,
+        timestamp,
+        agent_name,
+        process_id,
+        unique_id,
+        severity,
+        message,
+        stack_trace,
+        resolved,
+        resolution_notes,
+        last_touched
+      FROM shq_error_log
+      WHERE firebase_synced IS FALSE OR firebase_synced IS NULL
+      ORDER BY timestamp DESC
+      LIMIT 100;
+    `);
+
+    if (result.rowCount === 0) {
+      console.log('✅ No new errors to sync.');
+      return;
+    }
+
+    console.log(`📊 Found ${result.rowCount} errors to sync\n`);
+
+    let successCount = 0;
+    let failCount = 0;
+
+    // Process each error
+    for (const error of result.rows) {
+      try {
+        // Transform to Firestore document format
+        const firestoreDoc = {
+          error_id: error.error_id,
+          timestamp: error.timestamp.toISOString(),
+          agent_name: error.agent_name,
+          process_id: error.process_id,
+          unique_id: error.unique_id,
+          severity: error.severity,
+          message: error.message,
+          stack_trace: error.stack_trace || '',
+          resolved: error.resolved,
+          resolution_notes: error.resolution_notes || null,
+          last_touched: error.last_touched.toISOString(),
+          neon_id: error.id,
+          synced_at: new Date().toISOString(),
+        };
+
+        // Send to Firebase via Composio MCP
+        await sendToFirebase('error_log', firestoreDoc);
+
+        // Mark as synced in Neon
+        await neonClient.query(
+          'UPDATE shq_error_log SET firebase_synced = TRUE WHERE id = $1;',
+          [error.id]
+        );
+
+        successCount++;
+
+        // Log progress every 10 errors
+        if (successCount % 10 === 0) {
+          console.log(`   ⏳ Synced ${successCount}/${result.rowCount}...`);
+        }
+      } catch (err) {
+        console.error(`   ❌ Failed to sync error ${error.error_id}:`, err);
+        failCount++;
+      }
+    }
+
+    console.log('\n📈 Sync Summary:');
+    console.log(`   ✅ Success: ${successCount}`);
+    console.log(`   ❌ Failed: ${failCount}`);
+    console.log(`   📊 Total: ${result.rowCount}`);
+  } catch (error) {
+    console.error('❌ Error during sync:', error);
+    throw error;
+  }
+}
+
+/**
+ * Main execution
+ */
+async function main() {
+  try {
+    await syncErrors();
+    console.log('\n✅ Error sync completed successfully!');
+  } catch (error) {
+    console.error('\n❌ Error sync failed:', error);
+    process.exit(1);
+  }
+}
+
+// Run if executed directly
+main();
+
+export { syncErrors };
+```
+
+---
+
+### **Automation Setup**
+
+#### **1. NPM Script**
+
+Add to `package.json`:
+
+```json
+{
+  "scripts": {
+    "sync:errors": "tsx scripts/sync-errors-to-firebase.ts"
+  }
+}
+```
+
+#### **2. Continuous Sync (Optional)**
+
+**Option A: Firebase Cloud Functions**
+
+```typescript
+// firebase/functions/src/scheduledErrorSync.ts
+import * as functions from 'firebase-functions';
+import { syncErrors } from './syncErrors';
+
+export const scheduledErrorSync = functions.pubsub
+  .schedule('every 1 minutes')
+  .onRun(async (context) => {
+    await syncErrors();
+    console.log('✅ Scheduled error sync completed');
+  });
+```
+
+**Option B: Composio Scheduled Job**
+
+```json
+{
+  "trigger": "schedule",
+  "schedule": "*/1 * * * *",
+  "action": "run_script",
+  "script": "npm run sync:errors"
+}
+```
+
+**Option C: Node.js Daemon**
+
+```typescript
+// Run continuously with 60s interval
+setInterval(async () => {
+  await syncErrors();
+}, 60000);
+```
+
+---
+
+### **Dashboard Specification**
+
+**File**: `firebase/error_dashboard_spec.json`
+
+```json
+{
+  "dashboard": {
+    "name": "Barton Outreach - Error Monitoring",
+    "description": "Real-time error tracking and operational health",
+    "refresh_interval": 30,
+    "widgets": [
+      {
+        "id": "error_counter_critical",
+        "type": "counter",
+        "label": "🔴 Critical Errors (Unresolved)",
+        "query": {
+          "collection": "error_log",
+          "where": [
+            ["severity", "==", "critical"],
+            ["resolved", "==", false]
+          ]
+        },
+        "alert": {
+          "threshold": 1,
+          "action": "push_notification",
+          "message": "Critical errors detected - immediate action required"
+        }
+      },
+      {
+        "id": "error_counter_open",
+        "type": "counter",
+        "label": "⚠️ Open Errors (All Severities)",
+        "query": {
+          "collection": "error_log",
+          "where": [["resolved", "==", false]]
+        }
+      },
+      {
+        "id": "severity_breakdown",
+        "type": "pie",
+        "label": "📊 Error Severity Breakdown (Last 24h)",
+        "query": {
+          "collection": "error_log",
+          "where": [
+            ["timestamp", ">=", "now-24h"]
+          ],
+          "groupBy": "severity"
+        },
+        "colors": {
+          "info": "#3b82f6",
+          "warning": "#f59e0b",
+          "error": "#ef4444",
+          "critical": "#dc2626"
+        }
+      },
+      {
+        "id": "agent_error_rates",
+        "type": "bar",
+        "label": "🤖 Agent Error Rates (Last 7 days)",
+        "query": {
+          "collection": "error_log",
+          "where": [
+            ["timestamp", ">=", "now-7d"]
+          ],
+          "groupBy": "agent_name",
+          "orderBy": ["count", "desc"],
+          "limit": 10
+        }
+      },
+      {
+        "id": "recent_errors",
+        "type": "table",
+        "label": "🕒 Recent Errors (Last 25)",
+        "query": {
+          "collection": "error_log",
+          "orderBy": ["timestamp", "desc"],
+          "limit": 25
+        },
+        "columns": [
+          {
+            "field": "timestamp",
+            "label": "Time",
+            "format": "relative"
+          },
+          {
+            "field": "severity",
+            "label": "Severity",
+            "format": "badge"
+          },
+          {
+            "field": "agent_name",
+            "label": "Agent"
+          },
+          {
+            "field": "process_id",
+            "label": "Process"
+          },
+          {
+            "field": "message",
+            "label": "Message",
+            "truncate": 60
+          },
+          {
+            "field": "resolved",
+            "label": "Status",
+            "format": "boolean",
+            "values": {
+              "true": "✅ Resolved",
+              "false": "⏳ Open"
+            }
+          }
+        ],
+        "actions": [
+          {
+            "label": "View Details",
+            "action": "navigate",
+            "target": "/errors/:error_id"
+          },
+          {
+            "label": "Mark Resolved",
+            "action": "update",
+            "field": "resolved",
+            "value": true
+          }
+        ]
+      },
+      {
+        "id": "error_timeline",
+        "type": "line",
+        "label": "📈 Error Timeline (Last 7 days)",
+        "query": {
+          "collection": "error_log",
+          "where": [
+            ["timestamp", ">=", "now-7d"]
+          ],
+          "groupBy": {
+            "field": "timestamp",
+            "interval": "1h"
+          },
+          "groupBy2": "severity"
+        },
+        "series": ["info", "warning", "error", "critical"]
+      },
+      {
+        "id": "resolution_rate",
+        "type": "gauge",
+        "label": "🎯 Resolution Rate (Last 30 days)",
+        "query": {
+          "collection": "error_log",
+          "where": [
+            ["timestamp", ">=", "now-30d"]
+          ],
+          "aggregate": "percentage",
+          "field": "resolved",
+          "value": true
+        },
+        "thresholds": [
+          {"value": 90, "color": "green", "label": "Excellent"},
+          {"value": 75, "color": "yellow", "label": "Good"},
+          {"value": 50, "color": "orange", "label": "Fair"},
+          {"value": 0, "color": "red", "label": "Poor"}
+        ]
+      }
+    ],
+    "filters": [
+      {
+        "field": "severity",
+        "type": "multiselect",
+        "options": ["info", "warning", "error", "critical"]
+      },
+      {
+        "field": "agent_name",
+        "type": "select",
+        "source": "distinct"
+      },
+      {
+        "field": "resolved",
+        "type": "boolean",
+        "labels": ["Show All", "Unresolved Only"]
+      },
+      {
+        "field": "timestamp",
+        "type": "daterange",
+        "presets": ["today", "last-7d", "last-30d", "last-90d"]
+      }
+    ]
+  }
+}
+```
+
+---
+
+### **Security Configuration**
+
+#### **Composio Token Permissions**
+
+```json
+{
+  "token": "composio_firebase_writer",
+  "scopes": [
+    "firebase.firestore.write",
+    "firebase.firestore.read"
+  ],
+  "resources": [
+    "collection:error_log"
+  ],
+  "restrictions": {
+    "write_only_collections": ["error_log"],
+    "no_delete": true,
+    "rate_limit": "1000/hour"
+  }
+}
+```
+
+#### **Firebase Security Rules**
+
+```javascript
+// firestore.rules
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // error_log collection
+    match /error_log/{errorId} {
+      // Composio service can write
+      allow write: if request.auth.token.role == 'service';
+
+      // Authenticated users can read
+      allow read: if request.auth != null;
+
+      // Dashboard users (viewer role) can read only
+      allow read: if request.auth.token.role == 'viewer';
+    }
+  }
+}
+```
+
+#### **Dashboard User Permissions**
+
+| Role | Permissions | Actions Allowed |
+|------|-------------|-----------------|
+| `viewer` | Read-only | View errors, filter, export |
+| `operator` | Read + Update | Mark as resolved, add notes |
+| `admin` | Full access | All operations + configuration |
+| `service` | Write-only | Sync errors from Neon (Composio) |
+
+---
+
+### **Operational Workflows**
+
+#### **Workflow 1: Error Detection & Alert**
+
+```
+[1] Agent encounters error
+    ↓
+[2] Error logged to shq_error_log (Neon)
+    ↓
+[3] Sync script picks up error within 60s
+    ↓
+[4] Error written to Firebase error_log
+    ↓
+[5] Dashboard updates in real-time
+    ↓
+[6] If severity = 'critical':
+    - Push notification sent to ops team
+    - Slack/email alert triggered
+    ↓
+[7] Operator investigates via dashboard
+    ↓
+[8] Mark as resolved with notes
+```
+
+#### **Workflow 2: Manual Resolution**
+
+```
+[1] Operator logs into Firebase dashboard
+    ↓
+[2] Filters errors by:
+    - severity = 'error' OR 'critical'
+    - resolved = false
+    - agent_name = 'Apify Orchestrator'
+    ↓
+[3] Clicks error row → View full details
+    ↓
+[4] Reviews:
+    - Stack trace
+    - Process ID
+    - Unique ID
+    - Context
+    ↓
+[5] Fixes root cause (code/config change)
+    ↓
+[6] Marks error as resolved
+    ↓
+[7] Adds resolution notes:
+    "Fixed timeout by increasing scrape delay to 5s"
+    ↓
+[8] Firebase updates resolved = true
+    ↓
+[9] Neon shq_error_log updated via reverse sync (optional)
+```
+
+#### **Workflow 3: Trend Analysis**
+
+```
+[1] Analyst opens dashboard
+    ↓
+[2] Views "Agent Error Rates" widget
+    ↓
+[3] Identifies spike:
+    - Apify Orchestrator: 45 errors/day (up from 5/day)
+    ↓
+[4] Drills down to error timeline
+    ↓
+[5] Filters by:
+    - agent_name = 'Apify Orchestrator'
+    - timestamp >= last 7 days
+    ↓
+[6] Analyzes common patterns:
+    - 80% are "timeout" errors
+    - All occur between 2-4 AM UTC
+    ↓
+[7] Root cause identified:
+    - Target websites slow during off-hours
+    ↓
+[8] Solution implemented:
+    - Increase timeout from 30s → 60s
+    - Schedule scrapes during business hours
+    ↓
+[9] Monitor error rate drop over next 7 days
+```
+
+---
+
+### **Command Reference**
+
+#### **Manual Sync**
+
+```bash
+# Run sync once
+npm run sync:errors
+
+# Expected output:
+# 🔄 Starting error sync to Firebase...
+# 📊 Found 12 errors to sync
+# ✅ Success: 12
+# ❌ Failed: 0
+# 📊 Total: 12
+```
+
+#### **Continuous Monitoring**
+
+```bash
+# Start sync daemon (runs every 60s)
+npm run sync:errors:watch
+
+# Stop daemon
+npm run sync:errors:stop
+```
+
+#### **Dashboard Deployment**
+
+```bash
+# Deploy Firebase dashboard configuration
+firebase deploy --only firestore:rules,functions
+
+# Verify deployment
+firebase projects:list
+```
+
+#### **Health Check**
+
+```bash
+# Check last sync time
+SELECT MAX(synced_at) as last_sync
+FROM (
+  SELECT last_touched as synced_at
+  FROM shq_error_log
+  WHERE firebase_synced = TRUE
+) AS synced;
+
+# Count unsynced errors
+SELECT COUNT(*) as unsynced_count
+FROM shq_error_log
+WHERE firebase_synced IS FALSE OR firebase_synced IS NULL;
+```
+
+---
+
+### **Error Codes Glossary**
+
+See `/docs/error_handling.md` for a complete reference of standard error codes and their meanings.
+
+**Common Error Codes**:
+
+| Code | Description | Severity | Recovery |
+|------|-------------|----------|----------|
+| `APIFY_TIMEOUT` | Apify scrape exceeded timeout (30s) | error | Retry with longer timeout |
+| `APIFY_RATE_LIMIT` | Apify API rate limit exceeded | warning | Wait 60s and retry |
+| `NEON_CONN_ERR` | Neon database connection failed | critical | Check connection string, restart pool |
+| `NEON_QUERY_ERR` | SQL query execution failed | error | Review query syntax, check schema |
+| `BIT_PARSE_FAIL` | Buyer intent signal parse error | error | Validate JSON payload format |
+| `PLE_RULE_ERR` | Pipeline logic rule evaluation failed | error | Review rule definition syntax |
+| `MV_AUTH_FAIL` | MillionVerify authentication failed | critical | Check API key, rotate if compromised |
+| `MV_QUOTA_EXCEED` | MillionVerify quota exceeded | warning | Upgrade plan or throttle requests |
+| `COMPOSIO_TIMEOUT` | Composio MCP request timeout | error | Retry with exponential backoff |
+| `FIREBASE_WRITE_ERR` | Firebase write operation failed | error | Check token permissions, retry |
+| `DOCTRINE_ID_INVALID` | Invalid unique_id or process_id format | error | Validate ID format before logging |
+
+---
+
+### **Monitoring Best Practices**
+
+#### **1. Alert Thresholds**
+
+Set appropriate thresholds for each severity level:
+
+- **Critical**: Alert immediately (push + Slack)
+- **Error**: Alert if >10 in 1 hour
+- **Warning**: Alert if >50 in 1 hour
+- **Info**: No alert, dashboard only
+
+#### **2. Resolution SLAs**
+
+| Severity | Response Time | Resolution Time |
+|----------|---------------|-----------------|
+| Critical | 15 minutes | 1 hour |
+| Error | 1 hour | 4 hours |
+| Warning | 4 hours | 24 hours |
+| Info | Best effort | N/A |
+
+#### **3. Dashboard Review Cadence**
+
+- **Daily**: Review critical and error counts
+- **Weekly**: Analyze error trends and agent performance
+- **Monthly**: Review resolution rates and SLA compliance
+
+#### **4. Data Retention**
+
+- **Neon `shq_error_log`**: Retain 90 days, archive to S3
+- **Firebase `error_log`**: Retain 30 days, auto-delete old docs
+- **Resolved errors**: Archive after 7 days of resolution
+
+---
+
 ## 🔟 Summary
 
-With the **Barton Doctrine Numbering System** and **Master Error Table** in place, the Barton Outreach system achieves:
+With the **complete Outreach Doctrine A→Z system** in place, the Barton Outreach platform achieves:
 
+✅ **Architecture Clarity**: Complete mapping of altitudes, repos, and data flow
 ✅ **Complete Traceability**: Every operation tracked with unique_id and process_id
-✅ **Error Visibility**: All errors logged and visible in real-time dashboards
+✅ **Standardized Error Tracking**: Global error log with UUID tracking
+✅ **Real-time Visibility**: All errors synced to Firebase dashboards within 60s
 ✅ **Operational Insights**: Analytics on error patterns, agent performance, and system health
 ✅ **Doctrine Compliance**: Standardized ID format enforced across all agents and tools
 ✅ **Rapid Debugging**: Full context (agent, process, unique_id, stack trace) for every error
+✅ **Proactive Monitoring**: Severity-based alerts and SLA-driven resolution workflows
+
+The system provides a complete end-to-end solution for:
+- **Development**: Schema map for programmatic access
+- **Operations**: Real-time error monitoring and triage
+- **Analytics**: Trend analysis and performance optimization
+- **Compliance**: Audit trail and doctrine enforcement
 
 ---
 
