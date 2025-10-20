@@ -26,6 +26,7 @@
     "db:setup-company": "cd infra && psql $DATABASE_URL -f neon-company-schema.sql",
     "neon:schema": "node scripts/get-neon-schema.mjs",
     "neon:company-schema": "node scripts/get-company-schema.mjs",
+    "schema:refresh": "tsx scripts/refresh-schema-map.ts",
     "mcp:demo": "node packages/mcp-clients/run.mjs",
     "garage-bay:audit": "python garage_bay.py --target .",
     "compliance:check": "cd tools && python repo_compliance_check.py .",

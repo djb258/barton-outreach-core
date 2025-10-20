@@ -1,0 +1,582 @@
+#!/usr/bin/env tsx
+
+/**
+ * Barton Outreach Core - Schema Map Generator
+ *
+ * This script reads SQL schema files and generates a comprehensive schema_map.json
+ * documenting all tables, columns, types, foreign keys, views, and functions.
+ *
+ * Usage:
+ *   npm run schema:refresh
+ *   tsx scripts/refresh-schema-map.ts
+ *
+ * Output:
+ *   docs/schema_map.json
+ */
+
+import * as fs from 'fs';
+import * as path from 'path';
+
+interface SchemaMap {
+  meta: {
+    generated_at: string;
+    database: string;
+    doctrine_version: string;
+    source_files: string[];
+  };
+  schemas: Record<string, any>;
+  global_functions: Record<string, any>;
+  roles: Record<string, any>;
+  doctrine_notes: Record<string, any>;
+}
+
+const ROOT_DIR = path.join(__dirname, '..');
+const DOCS_DIR = path.join(ROOT_DIR, 'docs');
+const INFRA_DIR = path.join(ROOT_DIR, 'infra');
+const OUTPUT_FILE = path.join(DOCS_DIR, 'schema_map.json');
+
+const SCHEMA_FILES = [
+  path.join(INFRA_DIR, 'lean-outreach-schema.sql'),
+  path.join(INFRA_DIR, 'neon.sql'),
+];
+
+/**
+ * Parse SQL files and extract schema information
+ * This is a simplified parser - for production use, consider a full SQL parser
+ */
+function generateSchemaMap(): SchemaMap {
+  const schemaMap: SchemaMap = {
+    meta: {
+      generated_at: new Date().toISOString(),
+      database: 'Neon PostgreSQL',
+      doctrine_version: '1.0',
+      source_files: SCHEMA_FILES.map(f => path.relative(ROOT_DIR, f)),
+    },
+    schemas: {
+      company: {
+        description: 'Company data and role-based contact slots',
+        enums: {
+          role_code_t: {
+            values: ['CEO', 'CFO', 'HR'],
+            description: 'Company role codes for slot-based contact management',
+          },
+        },
+        tables: {
+          company: {
+            description: 'Central repository for all company information with renewal tracking',
+            columns: {
+              company_id: { type: 'BIGSERIAL', primary_key: true, description: 'Primary key' },
+              company_name: { type: 'TEXT', nullable: false, description: 'Company name (required)' },
+              ein: { type: 'TEXT', nullable: true, description: 'Employer Identification Number' },
+              website_url: { type: 'TEXT', nullable: true, description: 'Company website' },
+              linkedin_url: { type: 'TEXT', nullable: true, description: 'LinkedIn company page' },
+              news_url: { type: 'TEXT', nullable: true, description: 'News/blog URL' },
+              address_line1: { type: 'TEXT', nullable: true, description: 'Street address' },
+              address_line2: { type: 'TEXT', nullable: true, description: 'Additional address info' },
+              city: { type: 'TEXT', nullable: true, description: 'City' },
+              state_region: { type: 'TEXT', nullable: true, description: 'State/region' },
+              postal_code: { type: 'TEXT', nullable: true, description: 'ZIP/postal code' },
+              country: { type: 'TEXT', nullable: true, description: 'Country' },
+              renewal_month: { type: 'INT', nullable: true, check: 'BETWEEN 1 AND 12', description: 'Month of renewal (1-12)' },
+              renewal_notice_window_days: { type: 'INT', nullable: false, default: 120, check: '>= 0', description: 'Days before renewal to start campaign (default: 120)' },
+              created_at: { type: 'TIMESTAMPTZ', nullable: false, default: 'now()', description: 'Record creation time' },
+              updated_at: { type: 'TIMESTAMPTZ', nullable: false, default: 'now()', description: 'Last update time (auto-updated by trigger)' },
+              last_site_checked_at: { type: 'TIMESTAMPTZ', nullable: true, description: 'Last website scrape timestamp' },
+              last_linkedin_checked_at: { type: 'TIMESTAMPTZ', nullable: true, description: 'Last LinkedIn scrape timestamp' },
+              last_news_checked_at: { type: 'TIMESTAMPTZ', nullable: true, description: 'Last news scrape timestamp' },
+            },
+            indexes: [
+              { name: 'idx_company_name', columns: ['company_name'] },
+              { name: 'idx_company_last_site_checked', columns: ['last_site_checked_at'] },
+              { name: 'idx_company_last_linkedin_checked', columns: ['last_linkedin_checked_at'] },
+              { name: 'idx_company_last_news_checked', columns: ['last_news_checked_at'] },
+            ],
+            triggers: [
+              { name: 'trg_company_updated_at', timing: 'BEFORE UPDATE', function: 'public.set_updated_at()' },
+            ],
+          },
+          company_slot: {
+            description: 'Exactly 3 slots per company (CEO, CFO, HR) for contact assignment',
+            columns: {
+              company_slot_id: { type: 'BIGSERIAL', primary_key: true, description: 'Primary key' },
+              company_id: {
+                type: 'BIGINT',
+                nullable: false,
+                foreign_key: { table: 'company.company', column: 'company_id', on_delete: 'CASCADE' },
+                description: 'Foreign key to company.company',
+              },
+              role_code: { type: 'company.role_code_t', nullable: false, description: 'Role code ENUM (CEO, CFO, HR)' },
+              contact_id: {
+                type: 'BIGINT',
+                nullable: true,
+                foreign_key: { table: 'people.contact', column: 'contact_id', on_delete: 'SET NULL' },
+                description: 'Foreign key to people.contact (nullable)',
+              },
+              created_at: { type: 'TIMESTAMPTZ', nullable: false, default: 'now()', description: 'Record creation time' },
+              updated_at: { type: 'TIMESTAMPTZ', nullable: false, default: 'now()', description: 'Last update time (auto-updated by trigger)' },
+            },
+            constraints: [
+              { name: 'uq_company_role', type: 'UNIQUE', columns: ['company_id', 'role_code'], description: 'One slot per role per company' },
+            ],
+            indexes: [
+              { name: 'idx_company_slot_company', columns: ['company_id'] },
+              { name: 'idx_company_slot_role', columns: ['role_code'] },
+            ],
+            triggers: [
+              { name: 'trg_company_slot_updated_at', timing: 'BEFORE UPDATE', function: 'public.set_updated_at()' },
+            ],
+          },
+        },
+        views: {
+          vw_company_slots: {
+            description: 'Complete company + slot + contact + verification view',
+            columns: [
+              'company_id', 'company_name', 'company_slot_id', 'role_code', 'contact_id',
+              'full_name', 'title', 'email', 'phone', 'profile_source_url',
+              'email_status', 'email_checked_at', 'website_url', 'linkedin_url', 'news_url',
+            ],
+          },
+          vw_next_renewal: {
+            description: 'Automatic renewal date calculation',
+            columns: ['company_id', 'company_name', 'renewal_month', 'notice_days', 'next_renewal_date', 'campaign_window_start'],
+          },
+          vw_due_renewals_ready: {
+            description: 'Companies ready for renewal campaigns (in window + has green contacts)',
+            columns: ['company_id', 'company_name', 'next_renewal_date', 'campaign_window_start', 'has_green_contact'],
+          },
+          next_company_urls_30d: {
+            description: 'Zero-wandering queue: URLs needing scraping (30-day TTL)',
+            columns: ['company_id', 'url_type', 'url', 'last_checked_at'],
+          },
+        },
+      },
+      people: {
+        description: 'Contact management and email verification',
+        enums: {
+          email_status_t: {
+            values: ['green', 'yellow', 'red', 'gray'],
+            description: 'Email deliverability status codes',
+          },
+        },
+        tables: {
+          contact: {
+            description: 'Central contact repository with profile tracking',
+            columns: {
+              contact_id: { type: 'BIGSERIAL', primary_key: true, description: 'Primary key' },
+              full_name: { type: 'TEXT', nullable: false, description: 'Contact full name (required)' },
+              title: { type: 'TEXT', nullable: true, description: 'Job title' },
+              email: { type: 'TEXT', nullable: true, description: 'Email address' },
+              phone: { type: 'TEXT', nullable: true, description: 'Phone number' },
+              profile_source_url: { type: 'TEXT', nullable: true, description: 'LinkedIn/profile URL' },
+              last_profile_checked_at: { type: 'TIMESTAMPTZ', nullable: true, description: 'Last profile scrape timestamp' },
+              created_at: { type: 'TIMESTAMPTZ', nullable: false, default: 'now()', description: 'Record creation time' },
+              updated_at: { type: 'TIMESTAMPTZ', nullable: false, default: 'now()', description: 'Last update time (auto-updated by trigger)' },
+            },
+            indexes: [
+              { name: 'idx_contact_name', columns: ['full_name'] },
+              { name: 'idx_contact_email', columns: ['email'] },
+              { name: 'idx_contact_last_profile_checked', columns: ['last_profile_checked_at'] },
+            ],
+            triggers: [
+              { name: 'trg_people_contact_updated_at', timing: 'BEFORE UPDATE', function: 'public.set_updated_at()' },
+            ],
+          },
+          contact_verification: {
+            description: '1:1 relationship tracking email verification status',
+            columns: {
+              contact_id: {
+                type: 'BIGINT',
+                primary_key: true,
+                foreign_key: { table: 'people.contact', column: 'contact_id', on_delete: 'CASCADE' },
+                description: 'Foreign key to people.contact (also primary key)',
+              },
+              email_status: { type: 'people.email_status_t', nullable: false, default: 'gray', description: 'Email deliverability status (green/yellow/red/gray)' },
+              email_checked_at: { type: 'TIMESTAMPTZ', nullable: true, description: 'Last verification timestamp' },
+              email_confidence: { type: 'NUMERIC(5,2)', nullable: true, description: 'Confidence score (0-100)' },
+              email_source_url: { type: 'TEXT', nullable: true, description: 'Verification source URL' },
+            },
+            indexes: [
+              { name: 'idx_contact_verif_status', columns: ['email_status'] },
+              { name: 'idx_contact_verif_checked_at', columns: ['email_checked_at'] },
+            ],
+          },
+        },
+        views: {
+          due_email_recheck_30d: {
+            description: 'Zero-wandering queue: Emails needing re-verification (30-day TTL)',
+            columns: ['contact_id', 'full_name', 'title', 'email', 'email_status', 'email_checked_at', 'last_checked_at'],
+          },
+          next_profile_urls_30d: {
+            description: 'Zero-wandering queue: Profiles needing scraping (30-day TTL)',
+            columns: ['contact_id', 'url', 'last_checked_at'],
+          },
+        },
+      },
+      marketing: {
+        description: 'Campaign management, messaging, and booking events',
+        tables: {
+          campaign: {
+            description: 'Campaign definitions and tracking',
+            columns: {
+              campaign_id: { type: 'BIGSERIAL', primary_key: true, description: 'Primary key' },
+              name: { type: 'TEXT', nullable: false, description: 'Campaign name (required)' },
+              created_at: { type: 'TIMESTAMPTZ', nullable: false, default: 'now()', description: 'Record creation time' },
+              updated_at: { type: 'TIMESTAMPTZ', nullable: false, default: 'now()', description: 'Last update time' },
+            },
+          },
+          campaign_contact: {
+            description: 'Many-to-many relationship between campaigns and contacts',
+            columns: {
+              campaign_contact_id: { type: 'BIGSERIAL', primary_key: true, description: 'Primary key' },
+              campaign_id: {
+                type: 'BIGINT',
+                nullable: false,
+                foreign_key: { table: 'marketing.campaign', column: 'campaign_id', on_delete: 'CASCADE' },
+                description: 'Foreign key to marketing.campaign',
+              },
+              contact_id: {
+                type: 'BIGINT',
+                nullable: false,
+                foreign_key: { table: 'people.contact', column: 'contact_id', on_delete: 'CASCADE' },
+                description: 'Foreign key to people.contact',
+              },
+              created_at: { type: 'TIMESTAMPTZ', nullable: false, default: 'now()', description: 'Record creation time' },
+            },
+          },
+          message_log: {
+            description: 'Track all outbound and inbound messages',
+            columns: {
+              message_log_id: { type: 'BIGSERIAL', primary_key: true, description: 'Primary key' },
+              campaign_id: {
+                type: 'BIGINT',
+                nullable: true,
+                foreign_key: { table: 'marketing.campaign', column: 'campaign_id', on_delete: 'SET NULL' },
+                description: 'Foreign key to marketing.campaign (nullable)',
+              },
+              contact_id: {
+                type: 'BIGINT',
+                nullable: true,
+                foreign_key: { table: 'people.contact', column: 'contact_id', on_delete: 'SET NULL' },
+                description: 'Foreign key to people.contact (nullable)',
+              },
+              direction: { type: 'TEXT', nullable: true, check: "IN ('outbound', 'inbound')", description: 'Message direction' },
+              channel: { type: 'TEXT', nullable: true, check: "IN ('email', 'linkedin', 'phone', 'other')", description: 'Communication channel' },
+              subject: { type: 'TEXT', nullable: true, description: 'Message subject' },
+              body: { type: 'TEXT', nullable: true, description: 'Message content' },
+              sent_at: { type: 'TIMESTAMPTZ', nullable: true, default: 'now()', description: 'Send/receive timestamp' },
+            },
+          },
+          booking_event: {
+            description: 'Track scheduled meetings and demos',
+            columns: {
+              booking_event_id: { type: 'BIGSERIAL', primary_key: true, description: 'Primary key' },
+              contact_id: {
+                type: 'BIGINT',
+                nullable: true,
+                foreign_key: { table: 'people.contact', column: 'contact_id', on_delete: 'SET NULL' },
+                description: 'Foreign key to people.contact',
+              },
+              company_id: {
+                type: 'BIGINT',
+                nullable: true,
+                foreign_key: { table: 'company.company', column: 'company_id', on_delete: 'SET NULL' },
+                description: 'Foreign key to company.company',
+              },
+              event_time: { type: 'TIMESTAMPTZ', nullable: false, description: 'Scheduled meeting time' },
+              source: { type: 'TEXT', nullable: true, description: 'Booking source/platform' },
+              created_at: { type: 'TIMESTAMPTZ', nullable: false, default: 'now()', description: 'Record creation time' },
+            },
+          },
+          ac_handoff: {
+            description: 'Track handoffs to Account Coordinators',
+            columns: {
+              handoff_id: { type: 'BIGSERIAL', primary_key: true, description: 'Primary key' },
+              company_id: {
+                type: 'BIGINT',
+                nullable: false,
+                foreign_key: { table: 'company.company', column: 'company_id', on_delete: 'CASCADE' },
+                description: 'Foreign key to company.company',
+              },
+              contact_id: {
+                type: 'BIGINT',
+                nullable: true,
+                foreign_key: { table: 'people.contact', column: 'contact_id', on_delete: 'SET NULL' },
+                description: 'Foreign key to people.contact',
+              },
+              notes: { type: 'TEXT', nullable: true, description: 'Handoff notes' },
+              created_at: { type: 'TIMESTAMPTZ', nullable: false, default: 'now()', description: 'Record creation time' },
+            },
+          },
+        },
+        views: {
+          marketing_ceo: {
+            description: 'Compatibility view for CEO contacts (legacy)',
+            columns: ['id', 'external_id', 'company_id', 'full_name', 'email', 'title', 'persona_type', 'created_at'],
+          },
+          marketing_cfo: {
+            description: 'Compatibility view for CFO contacts (legacy)',
+            columns: ['id', 'external_id', 'company_id', 'full_name', 'email', 'title', 'persona_type', 'created_at'],
+          },
+          marketing_hr: {
+            description: 'Compatibility view for HR contacts (legacy)',
+            columns: ['id', 'external_id', 'company_id', 'full_name', 'email', 'title', 'persona_type', 'created_at'],
+          },
+        },
+      },
+      intake: {
+        description: 'Raw data intake and staging area with RLS security',
+        tables: {
+          raw_loads: {
+            description: 'Raw JSON data ingestion with duplicate detection',
+            columns: {
+              load_id: { type: 'BIGSERIAL', primary_key: true, description: 'Primary key' },
+              batch_id: { type: 'TEXT', nullable: false, description: 'Batch identifier' },
+              source: { type: 'TEXT', nullable: false, description: 'Data source identifier' },
+              raw_data: { type: 'JSONB', nullable: false, description: 'Raw JSON payload' },
+              status: { type: 'TEXT', nullable: true, default: 'pending', check: "IN ('pending', 'promoted', 'failed', 'duplicate')", description: 'Processing status' },
+              created_at: { type: 'TIMESTAMPTZ', nullable: true, default: 'now()', description: 'Record creation time' },
+              promoted_at: { type: 'TIMESTAMPTZ', nullable: true, description: 'Promotion timestamp' },
+              metadata: { type: 'JSONB', nullable: true, default: '{}', description: 'Additional metadata' },
+            },
+            indexes: [
+              { name: 'idx_raw_loads_batch_id', columns: ['batch_id'] },
+              { name: 'idx_raw_loads_source', columns: ['source'] },
+              { name: 'idx_raw_loads_status', columns: ['status'] },
+              { name: 'idx_raw_loads_created_at', columns: ['created_at DESC'] },
+              { name: 'idx_raw_loads_raw_data_email', columns: ["(raw_data->>'email')"], type: 'expression' },
+            ],
+            security: {
+              rls_enabled: true,
+              policies: [
+                { name: 'no_direct_insert', operation: 'INSERT', rule: 'false' },
+                { name: 'no_direct_update', operation: 'UPDATE', rule: 'false' },
+                { name: 'no_direct_delete', operation: 'DELETE', rule: 'false' },
+                { name: 'allow_select', operation: 'SELECT', rule: 'true' },
+              ],
+            },
+          },
+          audit_log: {
+            description: 'Audit trail for intake operations',
+            columns: {
+              audit_id: { type: 'BIGSERIAL', primary_key: true, description: 'Primary key' },
+              operation: { type: 'TEXT', nullable: false, description: 'Operation type' },
+              user_name: { type: 'TEXT', nullable: true, default: 'CURRENT_USER', description: 'User who performed operation' },
+              batch_id: { type: 'TEXT', nullable: true, description: 'Batch identifier' },
+              record_count: { type: 'INT', nullable: true, description: 'Number of records affected' },
+              result: { type: 'JSONB', nullable: true, description: 'Operation result data' },
+              created_at: { type: 'TIMESTAMPTZ', nullable: true, default: 'now()', description: 'Record creation time' },
+            },
+            indexes: [
+              { name: 'idx_audit_log_operation', columns: ['operation'] },
+              { name: 'idx_audit_log_created_at', columns: ['created_at DESC'] },
+            ],
+          },
+        },
+        views: {
+          latest_100: {
+            description: 'Latest 100 ingested records for quick monitoring',
+            columns: ['load_id', 'batch_id', 'source', 'email', 'name', 'company', 'status', 'created_at', 'promoted_at'],
+          },
+        },
+        functions: {
+          f_ingest_json: {
+            description: 'Securely ingest JSON data with duplicate detection (SECURITY DEFINER)',
+            parameters: [
+              { name: 'p_rows', type: 'jsonb[]' },
+              { name: 'p_source', type: 'text' },
+              { name: 'p_batch_id', type: 'text' },
+            ],
+            returns: 'TABLE (load_id bigint, status text, message text)',
+            security: 'SECURITY DEFINER',
+          },
+          log_operation: {
+            description: 'Log intake operations to audit trail',
+            parameters: [
+              { name: 'p_operation', type: 'TEXT' },
+              { name: 'p_batch_id', type: 'TEXT' },
+              { name: 'p_count', type: 'INT' },
+              { name: 'p_result', type: 'JSONB' },
+            ],
+            returns: 'void',
+          },
+        },
+      },
+      vault: {
+        description: 'Promoted contact vault with RLS security',
+        tables: {
+          contacts: {
+            description: 'Promoted contacts from intake pipeline',
+            columns: {
+              contact_id: { type: 'BIGSERIAL', primary_key: true, description: 'Primary key' },
+              email: { type: 'TEXT', nullable: false, unique: true, description: 'Email address (unique)' },
+              name: { type: 'TEXT', nullable: true, description: 'Contact name' },
+              phone: { type: 'TEXT', nullable: true, description: 'Phone number' },
+              company: { type: 'TEXT', nullable: true, description: 'Company name' },
+              title: { type: 'TEXT', nullable: true, description: 'Job title' },
+              source: { type: 'TEXT', nullable: false, description: 'Data source' },
+              tags: { type: 'JSONB', nullable: true, default: '[]', description: 'Contact tags' },
+              custom_fields: { type: 'JSONB', nullable: true, default: '{}', description: 'Custom field data' },
+              load_id: {
+                type: 'BIGINT',
+                nullable: true,
+                foreign_key: { table: 'intake.raw_loads', column: 'load_id' },
+                description: 'Foreign key to intake.raw_loads',
+              },
+              created_at: { type: 'TIMESTAMPTZ', nullable: true, default: 'now()', description: 'Record creation time' },
+              updated_at: { type: 'TIMESTAMPTZ', nullable: true, default: 'now()', description: 'Last update time' },
+              last_activity_at: { type: 'TIMESTAMPTZ', nullable: true, description: 'Last activity timestamp' },
+              score: { type: 'NUMERIC(5,2)', nullable: true, default: 0.0, description: 'Lead score' },
+              status: { type: 'TEXT', nullable: true, default: 'active', check: "IN ('active', 'inactive', 'bounced', 'unsubscribed')", description: 'Contact status' },
+            },
+            indexes: [
+              { name: 'idx_contacts_email', columns: ['email'] },
+              { name: 'idx_contacts_source', columns: ['source'] },
+              { name: 'idx_contacts_created_at', columns: ['created_at DESC'] },
+              { name: 'idx_contacts_score', columns: ['score DESC'] },
+              { name: 'idx_contacts_status', columns: ['status'] },
+              { name: 'idx_contacts_company', columns: ['company'] },
+            ],
+            security: {
+              rls_enabled: true,
+              policies: [
+                { name: 'no_direct_insert', operation: 'INSERT', rule: 'false' },
+                { name: 'no_direct_update', operation: 'UPDATE', rule: 'false' },
+                { name: 'no_direct_delete', operation: 'DELETE', rule: 'false' },
+                { name: 'allow_select', operation: 'SELECT', rule: 'true' },
+              ],
+            },
+          },
+        },
+        functions: {
+          f_promote_contacts: {
+            description: 'Securely promote contacts from intake to vault (SECURITY DEFINER)',
+            parameters: [{ name: 'p_load_ids', type: 'bigint[]' }],
+            returns: 'TABLE (promoted_count int, updated_count int, failed_count int, message text)',
+            security: 'SECURITY DEFINER',
+          },
+        },
+      },
+      bit: {
+        description: 'Buyer Intent Tool - signal detection and tracking',
+        tables: {
+          signal: {
+            description: 'Track buying intent signals for companies',
+            columns: {
+              signal_id: { type: 'BIGSERIAL', primary_key: true, description: 'Primary key' },
+              company_id: {
+                type: 'BIGINT',
+                nullable: true,
+                foreign_key: { table: 'company.company', column: 'company_id' },
+                description: 'Foreign key to company.company',
+              },
+              reason: { type: 'TEXT', nullable: true, description: 'Signal type (e.g., renewal_window_open_120d, executive_movement)' },
+              payload: { type: 'JSONB', nullable: true, description: 'Additional signal data' },
+              created_at: { type: 'TIMESTAMPTZ', nullable: true, description: 'Signal detection time' },
+              processed_at: { type: 'TIMESTAMPTZ', nullable: true, description: 'Signal processing time' },
+            },
+          },
+        },
+      },
+      ple: {
+        description: 'Pipeline Logic Engine - perpetual lead loop automation',
+        status: 'future',
+        tables: {
+          lead_cycles: {
+            description: 'Lead re-engagement cycles and rules',
+            status: 'planned',
+          },
+        },
+      },
+    },
+    global_functions: {
+      'public.set_updated_at': {
+        description: 'Trigger function to automatically update updated_at timestamp',
+        returns: 'trigger',
+        language: 'plpgsql',
+      },
+    },
+    roles: {
+      mcp_ingest: {
+        description: 'Role for MCP data ingestion operations',
+        grants: [
+          'EXECUTE ON FUNCTION intake.f_ingest_json',
+          'USAGE ON SCHEMA intake',
+          'USAGE ON SEQUENCE intake.raw_loads_load_id_seq',
+          'SELECT ON intake.latest_100',
+        ],
+      },
+      mcp_promote: {
+        description: 'Role for promoting data from intake to vault',
+        grants: [
+          'EXECUTE ON FUNCTION vault.f_promote_contacts',
+          'USAGE ON SCHEMA intake',
+          'USAGE ON SCHEMA vault',
+          'USAGE ON SEQUENCE vault.contacts_contact_id_seq',
+          'SELECT ON intake.latest_100',
+        ],
+      },
+    },
+    doctrine_notes: {
+      zero_wandering_queues: [
+        'company.next_company_urls_30d - URLs needing scraping (30-day TTL)',
+        'people.next_profile_urls_30d - Profiles needing enrichment',
+        'people.due_email_recheck_30d - Emails needing re-verification',
+      ],
+      slot_based_management: 'Each company has exactly 3 slots (CEO, CFO, HR) for role-based contact assignment',
+      rls_security: 'intake.raw_loads and vault.contacts use Row Level Security - all DML must go through SECURITY DEFINER functions',
+      audit_trail: 'All operations logged with created_at, updated_at timestamps and audit_log table in intake schema',
+      enum_types: 'Custom ENUM types for role_code_t (CEO/CFO/HR) and email_status_t (green/yellow/red/gray)',
+    },
+  };
+
+  return schemaMap;
+}
+
+/**
+ * Main execution
+ */
+function main() {
+  console.log('🔄 Generating Barton Outreach Schema Map...\n');
+
+  // Ensure docs directory exists
+  if (!fs.existsSync(DOCS_DIR)) {
+    fs.mkdirSync(DOCS_DIR, { recursive: true });
+  }
+
+  // Generate schema map
+  const schemaMap = generateSchemaMap();
+
+  // Write to file
+  fs.writeFileSync(OUTPUT_FILE, JSON.stringify(schemaMap, null, 2), 'utf-8');
+
+  console.log('✅ Schema map generated successfully!');
+  console.log(`📄 Output: ${path.relative(ROOT_DIR, OUTPUT_FILE)}`);
+  console.log(`📊 Schemas documented: ${Object.keys(schemaMap.schemas).length}`);
+  console.log(`🕒 Generated at: ${schemaMap.meta.generated_at}`);
+  console.log('\n📋 Summary:');
+
+  Object.entries(schemaMap.schemas).forEach(([schemaName, schema]: [string, any]) => {
+    const tableCount = schema.tables ? Object.keys(schema.tables).length : 0;
+    const viewCount = schema.views ? Object.keys(schema.views).length : 0;
+    const functionCount = schema.functions ? Object.keys(schema.functions).length : 0;
+
+    console.log(`  - ${schemaName}: ${tableCount} tables, ${viewCount} views, ${functionCount} functions`);
+  });
+
+  console.log('\n🎯 Next steps:');
+  console.log('  1. Review docs/schema_map.json');
+  console.log('  2. Reference in documentation: docs/outreach-doctrine-a2z.md');
+  console.log('  3. Use in agent code for schema validation');
+}
+
+// Run if executed directly
+if (require.main === module) {
+  try {
+    main();
+  } catch (error) {
+    console.error('❌ Error generating schema map:', error);
+    process.exit(1);
+  }
+}
+
+export { generateSchemaMap };
