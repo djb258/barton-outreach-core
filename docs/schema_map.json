@@ -1,11 +1,11 @@
 {
   "meta": {
-    "generated_at": "2025-01-20T00:00:00Z",
+    "generated_at": "2025-10-20T14:36:57.645Z",
     "database": "Neon PostgreSQL",
     "doctrine_version": "1.0",
     "source_files": [
-      "infra/lean-outreach-schema.sql",
-      "infra/neon.sql"
+      "infra\\lean-outreach-schema.sql",
+      "infra\\neon.sql"
     ]
   },
   "schemas": {
@@ -13,7 +13,11 @@
       "description": "Company data and role-based contact slots",
       "enums": {
         "role_code_t": {
-          "values": ["CEO", "CFO", "HR"],
+          "values": [
+            "CEO",
+            "CFO",
+            "HR"
+          ],
           "description": "Company role codes for slot-based contact management"
         }
       },
@@ -123,10 +127,30 @@
             }
           },
           "indexes": [
-            { "name": "idx_company_name", "columns": ["company_name"] },
-            { "name": "idx_company_last_site_checked", "columns": ["last_site_checked_at"] },
-            { "name": "idx_company_last_linkedin_checked", "columns": ["last_linkedin_checked_at"] },
-            { "name": "idx_company_last_news_checked", "columns": ["last_news_checked_at"] }
+            {
+              "name": "idx_company_name",
+              "columns": [
+                "company_name"
+              ]
+            },
+            {
+              "name": "idx_company_last_site_checked",
+              "columns": [
+                "last_site_checked_at"
+              ]
+            },
+            {
+              "name": "idx_company_last_linkedin_checked",
+              "columns": [
+                "last_linkedin_checked_at"
+              ]
+            },
+            {
+              "name": "idx_company_last_news_checked",
+              "columns": [
+                "last_news_checked_at"
+              ]
+            }
           ],
           "triggers": [
             {
@@ -186,13 +210,26 @@
             {
               "name": "uq_company_role",
               "type": "UNIQUE",
-              "columns": ["company_id", "role_code"],
+              "columns": [
+                "company_id",
+                "role_code"
+              ],
               "description": "One slot per role per company"
             }
           ],
           "indexes": [
-            { "name": "idx_company_slot_company", "columns": ["company_id"] },
-            { "name": "idx_company_slot_role", "columns": ["role_code"] }
+            {
+              "name": "idx_company_slot_company",
+              "columns": [
+                "company_id"
+              ]
+            },
+            {
+              "name": "idx_company_slot_role",
+              "columns": [
+                "role_code"
+              ]
+            }
           ],
           "triggers": [
             {
@@ -260,7 +297,12 @@
       "description": "Contact management and email verification",
       "enums": {
         "email_status_t": {
-          "values": ["green", "yellow", "red", "gray"],
+          "values": [
+            "green",
+            "yellow",
+            "red",
+            "gray"
+          ],
           "description": "Email deliverability status codes"
         }
       },
@@ -317,9 +359,24 @@
             }
           },
           "indexes": [
-            { "name": "idx_contact_name", "columns": ["full_name"] },
-            { "name": "idx_contact_email", "columns": ["email"] },
-            { "name": "idx_contact_last_profile_checked", "columns": ["last_profile_checked_at"] }
+            {
+              "name": "idx_contact_name",
+              "columns": [
+                "full_name"
+              ]
+            },
+            {
+              "name": "idx_contact_email",
+              "columns": [
+                "email"
+              ]
+            },
+            {
+              "name": "idx_contact_last_profile_checked",
+              "columns": [
+                "last_profile_checked_at"
+              ]
+            }
           ],
           "triggers": [
             {
@@ -365,8 +422,18 @@
             }
           },
           "indexes": [
-            { "name": "idx_contact_verif_status", "columns": ["email_status"] },
-            { "name": "idx_contact_verif_checked_at", "columns": ["email_checked_at"] }
+            {
+              "name": "idx_contact_verif_status",
+              "columns": [
+                "email_status"
+              ]
+            },
+            {
+              "name": "idx_contact_verif_checked_at",
+              "columns": [
+                "email_checked_at"
+              ]
+            }
           ]
         }
       },
@@ -699,19 +766,61 @@
             }
           },
           "indexes": [
-            { "name": "idx_raw_loads_batch_id", "columns": ["batch_id"] },
-            { "name": "idx_raw_loads_source", "columns": ["source"] },
-            { "name": "idx_raw_loads_status", "columns": ["status"] },
-            { "name": "idx_raw_loads_created_at", "columns": ["created_at DESC"] },
-            { "name": "idx_raw_loads_raw_data_email", "columns": ["(raw_data->>'email')"], "type": "expression" }
+            {
+              "name": "idx_raw_loads_batch_id",
+              "columns": [
+                "batch_id"
+              ]
+            },
+            {
+              "name": "idx_raw_loads_source",
+              "columns": [
+                "source"
+              ]
+            },
+            {
+              "name": "idx_raw_loads_status",
+              "columns": [
+                "status"
+              ]
+            },
+            {
+              "name": "idx_raw_loads_created_at",
+              "columns": [
+                "created_at DESC"
+              ]
+            },
+            {
+              "name": "idx_raw_loads_raw_data_email",
+              "columns": [
+                "(raw_data->>'email')"
+              ],
+              "type": "expression"
+            }
           ],
           "security": {
             "rls_enabled": true,
             "policies": [
-              { "name": "no_direct_insert", "operation": "INSERT", "rule": "false" },
-              { "name": "no_direct_update", "operation": "UPDATE", "rule": "false" },
-              { "name": "no_direct_delete", "operation": "DELETE", "rule": "false" },
-              { "name": "allow_select", "operation": "SELECT", "rule": "true" }
+              {
+                "name": "no_direct_insert",
+                "operation": "INSERT",
+                "rule": "false"
+              },
+              {
+                "name": "no_direct_update",
+                "operation": "UPDATE",
+                "rule": "false"
+              },
+              {
+                "name": "no_direct_delete",
+                "operation": "DELETE",
+                "rule": "false"
+              },
+              {
+                "name": "allow_select",
+                "operation": "SELECT",
+                "rule": "true"
+              }
             ]
           }
         },
@@ -757,8 +866,18 @@
             }
           },
           "indexes": [
-            { "name": "idx_audit_log_operation", "columns": ["operation"] },
-            { "name": "idx_audit_log_created_at", "columns": ["created_at DESC"] }
+            {
+              "name": "idx_audit_log_operation",
+              "columns": [
+                "operation"
+              ]
+            },
+            {
+              "name": "idx_audit_log_created_at",
+              "columns": [
+                "created_at DESC"
+              ]
+            }
           ]
         }
       },
@@ -782,9 +901,18 @@
         "f_ingest_json": {
           "description": "Securely ingest JSON data with duplicate detection (SECURITY DEFINER)",
           "parameters": [
-            { "name": "p_rows", "type": "jsonb[]" },
-            { "name": "p_source", "type": "text" },
-            { "name": "p_batch_id", "type": "text" }
+            {
+              "name": "p_rows",
+              "type": "jsonb[]"
+            },
+            {
+              "name": "p_source",
+              "type": "text"
+            },
+            {
+              "name": "p_batch_id",
+              "type": "text"
+            }
           ],
           "returns": "TABLE (load_id bigint, status text, message text)",
           "security": "SECURITY DEFINER"
@@ -792,10 +920,22 @@
         "log_operation": {
           "description": "Log intake operations to audit trail",
           "parameters": [
-            { "name": "p_operation", "type": "TEXT" },
-            { "name": "p_batch_id", "type": "TEXT" },
-            { "name": "p_count", "type": "INT" },
-            { "name": "p_result", "type": "JSONB" }
+            {
+              "name": "p_operation",
+              "type": "TEXT"
+            },
+            {
+              "name": "p_batch_id",
+              "type": "TEXT"
+            },
+            {
+              "name": "p_count",
+              "type": "INT"
+            },
+            {
+              "name": "p_result",
+              "type": "JSONB"
+            }
           ],
           "returns": "void"
         }
@@ -884,7 +1024,7 @@
             "score": {
               "type": "NUMERIC(5,2)",
               "nullable": true,
-              "default": 0.00,
+              "default": 0,
               "description": "Lead score"
             },
             "status": {
@@ -896,20 +1036,66 @@
             }
           },
           "indexes": [
-            { "name": "idx_contacts_email", "columns": ["email"] },
-            { "name": "idx_contacts_source", "columns": ["source"] },
-            { "name": "idx_contacts_created_at", "columns": ["created_at DESC"] },
-            { "name": "idx_contacts_score", "columns": ["score DESC"] },
-            { "name": "idx_contacts_status", "columns": ["status"] },
-            { "name": "idx_contacts_company", "columns": ["company"] }
+            {
+              "name": "idx_contacts_email",
+              "columns": [
+                "email"
+              ]
+            },
+            {
+              "name": "idx_contacts_source",
+              "columns": [
+                "source"
+              ]
+            },
+            {
+              "name": "idx_contacts_created_at",
+              "columns": [
+                "created_at DESC"
+              ]
+            },
+            {
+              "name": "idx_contacts_score",
+              "columns": [
+                "score DESC"
+              ]
+            },
+            {
+              "name": "idx_contacts_status",
+              "columns": [
+                "status"
+              ]
+            },
+            {
+              "name": "idx_contacts_company",
+              "columns": [
+                "company"
+              ]
+            }
           ],
           "security": {
             "rls_enabled": true,
             "policies": [
-              { "name": "no_direct_insert", "operation": "INSERT", "rule": "false" },
-              { "name": "no_direct_update", "operation": "UPDATE", "rule": "false" },
-              { "name": "no_direct_delete", "operation": "DELETE", "rule": "false" },
-              { "name": "allow_select", "operation": "SELECT", "rule": "true" }
+              {
+                "name": "no_direct_insert",
+                "operation": "INSERT",
+                "rule": "false"
+              },
+              {
+                "name": "no_direct_update",
+                "operation": "UPDATE",
+                "rule": "false"
+              },
+              {
+                "name": "no_direct_delete",
+                "operation": "DELETE",
+                "rule": "false"
+              },
+              {
+                "name": "allow_select",
+                "operation": "SELECT",
+                "rule": "true"
+              }
             ]
           }
         }
@@ -918,7 +1104,10 @@
         "f_promote_contacts": {
           "description": "Securely promote contacts from intake to vault (SECURITY DEFINER)",
           "parameters": [
-            { "name": "p_load_ids", "type": "bigint[]" }
+            {
+              "name": "p_load_ids",
+              "type": "bigint[]"
+            }
           ],
           "returns": "TABLE (promoted_count int, updated_count int, failed_count int, message text)",
           "security": "SECURITY DEFINER"

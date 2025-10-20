@@ -16,6 +16,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 
 interface SchemaMap {
   meta: {
@@ -30,6 +31,8 @@ interface SchemaMap {
   doctrine_notes: Record<string, any>;
 }
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.join(__dirname, '..');
 const DOCS_DIR = path.join(ROOT_DIR, 'docs');
 const INFRA_DIR = path.join(ROOT_DIR, 'infra');
@@ -569,14 +572,12 @@ function main() {
   console.log('  3. Use in agent code for schema validation');
 }
 
-// Run if executed directly
-if (require.main === module) {
-  try {
-    main();
-  } catch (error) {
-    console.error('❌ Error generating schema map:', error);
-    process.exit(1);
-  }
+// Run main function
+try {
+  main();
+} catch (error) {
+  console.error('❌ Error generating schema map:', error);
+  process.exit(1);
 }
 
 export { generateSchemaMap };
