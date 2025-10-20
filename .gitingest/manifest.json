@@ -4,13 +4,13 @@
     "name": "Barton Outreach Doctrine",
     "version": "1.3.2",
     "compliance": "100%",
-    "commit": "bbc1c67",
+    "commit": "9251c2f",
     "audit_report": "docs/audit_report.md",
     "final_summary": "FINAL_AUDIT_SUMMARY.md",
     "entry_docs": [
-      "docs/outreach-doctrine-a2z.md",
-      "docs/error_handling.md",
-      "docs/schema_map.json"
+      "outreach-doctrine-a2z.md",
+      "error_handling.md",
+      "schema_map.json"
     ],
     "description": "Full-stack outreach automation system implementing the Barton Doctrine A→Z. Includes ingestion, enrichment, messaging, buyer-intent tracking, error monitoring, and visualization via Composio MCP, Neon, Firebase, and Lovable.dev."
   },
