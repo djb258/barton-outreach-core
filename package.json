@@ -31,6 +31,7 @@
     "mcp:demo": "node packages/mcp-clients/run.mjs",
     "garage-bay:audit": "python garage_bay.py --target .",
     "compliance:check": "cd tools && python repo_compliance_check.py .",
+    "compliance:complete": "tsx scripts/complete-compliance-via-composio.ts",
     "docs:generate": "bash tools/deep_wiki_generator.sh",
     "scrape:apify": "node agents/specialists/apifyRunner.js",
     "verify:email": "node agents/specialists/millionVerifyRunner.js",
