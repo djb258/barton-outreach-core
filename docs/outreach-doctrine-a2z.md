@@ -506,4 +506,616 @@ git push origin main
 
 ---
 
-**Next: add section on unique_id, process_id, and master error table.**
+## 1️⃣1️⃣ Barton Doctrine Numbering System
+
+The **Barton Doctrine Numbering System** provides a standardized, hierarchical identification scheme for all operations across the outreach pipeline. Every process execution is assigned both a **unique_id** (numeric, 6-part) and a **process_id** (human-readable, Verb + Object).
+
+---
+
+### **unique_id Format**
+
+The `unique_id` follows a **6-part dotted decimal notation** that encodes the full operational context:
+
+```
+[database].[subhive].[microprocess].[tool].[altitude].[step]
+```
+
+### **Segment Breakdown**
+
+| Segment | Description | Example |
+|---------|-------------|---------|
+| **database** | 2-digit code for Neon hive | `04` |
+| **subhive** | 2-digit for doctrine subhive (e.g., 01 = outreach) | `01` |
+| **microprocess** | 2-digit identifier for logical workflow group | `03` |
+| **tool** | 2-digit from `shq_tool_registry` (e.g., Neon=04, Apify=05, VibeOS=06, MillionVerify=07, BIT=08, PLE=09) | `06` |
+| **altitude** | 5-digit decimal (30000, 20000, 10000, 05000, 01000) | `05000` |
+| **step** | 3-digit increment per microprocess | `001` |
+
+### **Example unique_id**
+
+```
+04.01.03.06.05000.001
+```
+
+**Translation**:
+- `04` = Neon database hive
+- `01` = Outreach subhive
+- `03` = Messaging microprocess group
+- `06` = VibeOS tool
+- `05000` = Execution altitude
+- `001` = First step in messaging microprocess
+
+**Human-readable**: "Send Segmented Messaging via VibeOS"
+
+---
+
+### **Tool Registry Reference**
+
+| Tool Code | Tool Name | Purpose |
+|-----------|-----------|---------|
+| `04` | Neon | Database operations |
+| `05` | Apify | Web scraping |
+| `06` | VibeOS | AI-powered messaging |
+| `07` | MillionVerify | Email verification |
+| `08` | BIT | Buyer Intent Tool |
+| `09` | PLE | Pipeline Logic Engine |
+| `10` | Apollo | Lead enrichment |
+| `11` | Instantly | Email delivery |
+| `12` | HeyReach | LinkedIn outreach |
+
+---
+
+### **process_id Format**
+
+The `process_id` is a **human-readable string** that describes the operation using the pattern:
+
+```
+[Verb] + [Object] + [Context]
+```
+
+**Examples**:
+- `Load WV–OH Companies into Neon`
+- `Enrich Contacts from Apify`
+- `Verify Contacts with MillionVerify`
+- `Send Segmented Messaging via VibeOS`
+- `Process Buyer Intent Signals`
+
+**Rules**:
+- Start with an action verb (Load, Enrich, Verify, Send, Process, etc.)
+- Include the object being acted upon (Companies, Contacts, Signals, etc.)
+- Add context if needed (from/via/with tool name)
+- Keep it under 60 characters for readability
+
+---
+
+### **Process ID Mapping Table**
+
+This table maps existing operations to their doctrine-compliant IDs:
+
+| Altitude | Process ID | unique_id | Tool | Table |
+|----------|------------|-----------|------|-------|
+| **20k** | Load WV–OH Companies into Neon | `04.01.01.04.20000.001–005` | Neon | `marketing.company_intake` |
+| **10k** | Enrich Contacts from Apify | `04.01.02.05.10000.001` | Apify | `marketing.company_people` |
+| **10k** | Verify Contacts with MillionVerify | `04.01.02.07.10000.002` | MillionVerify | `marketing.company_people` |
+| **10k** | Maintain Segmented Templates | `04.01.03.06.10000.003` | VibeOS | `marketing.message_templates` |
+| **5k** | Send Segmented Messaging via VibeOS | `04.01.03.06.05000.001` | VibeOS | `marketing.message_templates` |
+| **5k** | Process Buyer Intent Signals | `04.01.03.08.05000.002` | BIT | `bit.signal` |
+| **5k** | Operate Perpetual Lead Engine | `04.01.03.09.05000.003` | PLE | `ple.lead_cycles` |
+
+---
+
+### **ID Generation Rules**
+
+#### **When to Generate a New unique_id**
+
+Generate a new `unique_id` for:
+- Every new process execution
+- Each distinct step within a microprocess
+- All agent operations that modify data
+- Any operation logged to audit trail
+
+#### **When to Reuse a unique_id**
+
+Reuse the same `unique_id` for:
+- Retry attempts of the same operation
+- Progress updates within a single step
+- Log entries for the same execution
+
+#### **Step Numbering Convention**
+
+- `001–099`: Primary operations
+- `100–199`: Validation and error handling
+- `200–299`: Cleanup and post-processing
+- `900–999`: Rollback and recovery
+
+**Example Microprocess Flow**:
+```
+04.01.02.05.10000.001  →  Scrape company website
+04.01.02.05.10000.002  →  Scrape LinkedIn profile
+04.01.02.05.10000.003  →  Scrape news sources
+04.01.02.05.10000.101  →  Validate scraped data
+04.01.02.05.10000.201  →  Clean and normalize data
+04.01.02.05.10000.901  →  Rollback on failure
+```
+
+---
+
+### **Implementation Example**
+
+**JavaScript ID Generation**:
+```javascript
+function generateUniqueId(microprocess, tool, altitude, step) {
+  const database = '04';  // Neon hive
+  const subhive = '01';   // Outreach
+  return `${database}.${subhive}.${microprocess}.${tool}.${altitude}.${step}`;
+}
+
+// Usage
+const uniqueId = generateUniqueId('03', '06', '05000', '001');
+// Result: "04.01.03.06.05000.001"
+
+const processId = "Send Segmented Messaging via VibeOS";
+```
+
+**SQL Query with ID Logging**:
+```sql
+-- Log operation start
+INSERT INTO process_registry (unique_id, process_id, altitude, status, started_at)
+VALUES ('04.01.03.06.05000.001', 'Send Segmented Messaging via VibeOS', 5000, 'in_progress', now());
+
+-- Perform operation
+INSERT INTO marketing.message_log (campaign_id, contact_id, subject, body, sent_at)
+VALUES (123, 456, 'Q1 Renewal Notice', '...', now());
+
+-- Log operation completion
+UPDATE process_registry
+SET status = 'completed', completed_at = now()
+WHERE unique_id = '04.01.03.06.05000.001';
+```
+
+---
+
+### **Doctrine Compliance Checks**
+
+All operations must validate their IDs against these rules:
+
+✅ **Valid unique_id**:
+- Exactly 6 segments separated by dots
+- Each segment matches expected pattern (2, 2, 2, 2, 5, 3 digits)
+- Tool code exists in `shq_tool_registry`
+- Altitude matches predefined list (30000, 20000, 10000, 05000, 01000)
+
+✅ **Valid process_id**:
+- Starts with uppercase verb
+- Contains object being acted upon
+- Under 60 characters
+- No special characters except hyphens and spaces
+
+**Validation Function**:
+```javascript
+function validateDoctrineId(uniqueId, processId) {
+  // Validate unique_id format
+  const pattern = /^\d{2}\.\d{2}\.\d{2}\.\d{2}\.\d{5}\.\d{3}$/;
+  if (!pattern.test(uniqueId)) {
+    throw new Error(`Invalid unique_id format: ${uniqueId}`);
+  }
+
+  // Validate altitude
+  const altitude = uniqueId.split('.')[4];
+  const validAltitudes = ['30000', '20000', '10000', '05000', '01000'];
+  if (!validAltitudes.includes(altitude)) {
+    throw new Error(`Invalid altitude: ${altitude}`);
+  }
+
+  // Validate process_id length
+  if (processId.length > 60) {
+    throw new Error(`process_id too long: ${processId}`);
+  }
+
+  return true;
+}
+```
+
+---
+
+## 1️⃣2️⃣ Master Error Table
+
+The **Master Error Table** (`shq_error_log`) is a centralized, global error tracking system that captures every system or agent error across all altitudes and microprocesses.
+
+---
+
+### **Table Schema**
+
+```sql
+CREATE TABLE IF NOT EXISTS shq_error_log (
+    id SERIAL PRIMARY KEY,
+    error_id TEXT UNIQUE,
+    timestamp TIMESTAMPTZ DEFAULT now(),
+    agent_name TEXT,
+    process_id TEXT,
+    unique_id TEXT,
+    severity TEXT CHECK (severity IN ('info', 'warning', 'error', 'critical')),
+    message TEXT,
+    stack_trace TEXT,
+    resolved BOOLEAN DEFAULT false,
+    resolution_notes TEXT,
+    last_touched TIMESTAMPTZ DEFAULT now()
+);
+
+-- Indexes for performance
+CREATE INDEX idx_error_log_agent ON shq_error_log(agent_name);
+CREATE INDEX idx_error_log_process ON shq_error_log(process_id);
+CREATE INDEX idx_error_log_unique ON shq_error_log(unique_id);
+CREATE INDEX idx_error_log_severity ON shq_error_log(severity);
+CREATE INDEX idx_error_log_resolved ON shq_error_log(resolved);
+CREATE INDEX idx_error_log_timestamp ON shq_error_log(timestamp DESC);
+```
+
+---
+
+### **Field Definitions**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | SERIAL | Auto-incrementing primary key |
+| `error_id` | TEXT | UUID v4 for global error tracking |
+| `timestamp` | TIMESTAMPTZ | When the error occurred |
+| `agent_name` | TEXT | Name of the agent that encountered the error |
+| `process_id` | TEXT | Human-readable process identifier (e.g., "Enrich Contacts from Apify") |
+| `unique_id` | TEXT | Doctrine numeric ID (e.g., "04.01.02.05.10000.001") |
+| `severity` | TEXT | Error severity level: `info`, `warning`, `error`, `critical` |
+| `message` | TEXT | Human-readable error message |
+| `stack_trace` | TEXT | Full stack trace for debugging |
+| `resolved` | BOOLEAN | Whether the error has been resolved (default: false) |
+| `resolution_notes` | TEXT | Notes on how the error was resolved |
+| `last_touched` | TIMESTAMPTZ | Last time this error was updated |
+
+---
+
+### **Severity Levels**
+
+| Level | Description | Action Required | Example |
+|-------|-------------|-----------------|---------|
+| `info` | Informational, no action needed | Monitor | "Contact already exists in database" |
+| `warning` | Potential issue, degraded service | Review within 24 hours | "Email verification confidence below 80%" |
+| `error` | Operation failed, retry possible | Investigate within 4 hours | "Apify scrape timeout after 30s" |
+| `critical` | System failure, immediate action | Immediate investigation | "Database connection lost" |
+
+---
+
+### **Error Handling Doctrine**
+
+All agents, scripts, and tools **must** adhere to these rules:
+
+#### **1. Mandatory Error Logging**
+
+Every error must be logged to `shq_error_log`:
+- ✅ Use UUID v4 for `error_id`
+- ✅ Include both `process_id` and `unique_id`
+- ✅ Capture full `stack_trace` when available
+- ✅ Set appropriate `severity` level
+
+#### **2. Error ID Uniqueness**
+
+Each error occurrence gets a unique `error_id`:
+- Use `gen_random_uuid()` in PostgreSQL
+- Use `crypto.randomUUID()` in Node.js
+- Never reuse error IDs across different errors
+
+#### **3. Context Propagation**
+
+Errors must include context for debugging:
+- Agent name (e.g., "Apify Orchestrator")
+- Process ID (e.g., "Enrich Contacts from Apify")
+- Unique ID (e.g., "04.01.02.05.10000.001")
+- Full stack trace when available
+
+#### **4. Firebase Dashboard Integration**
+
+All errors are visible in Firebase dashboards:
+- Real-time error stream for monitoring
+- Severity-based alerts (critical → instant notification)
+- Error resolution tracking
+
+---
+
+### **SQL Insert Examples**
+
+#### **Basic Error Logging**
+
+```sql
+INSERT INTO shq_error_log (
+    error_id,
+    agent_name,
+    process_id,
+    unique_id,
+    severity,
+    message
+)
+VALUES (
+    gen_random_uuid()::TEXT,
+    'Validator Agent',
+    'Enrich Contacts from Apify',
+    '04.01.02.05.10000.001',
+    'error',
+    'Apify scrape failed due to timeout'
+);
+```
+
+#### **Error with Stack Trace**
+
+```sql
+INSERT INTO shq_error_log (
+    error_id,
+    agent_name,
+    process_id,
+    unique_id,
+    severity,
+    message,
+    stack_trace
+)
+VALUES (
+    gen_random_uuid()::TEXT,
+    'MillionVerify Orchestrator',
+    'Verify Contacts with MillionVerify',
+    '04.01.02.07.10000.002',
+    'critical',
+    'MillionVerify API authentication failed',
+    'Error: 401 Unauthorized\n  at apiClient.verify (/agents/specialists/millionVerifyRunner.js:45:10)'
+);
+```
+
+#### **Mark Error as Resolved**
+
+```sql
+UPDATE shq_error_log
+SET resolved = true,
+    resolution_notes = 'Updated API key and retried successfully',
+    last_touched = now()
+WHERE error_id = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+```
+
+---
+
+### **JavaScript Error Logging Helper**
+
+```javascript
+async function logError({
+  agentName,
+  processId,
+  uniqueId,
+  severity,
+  message,
+  error
+}) {
+  const errorId = crypto.randomUUID();
+  const stackTrace = error?.stack || '';
+
+  const query = `
+    INSERT INTO shq_error_log (
+      error_id, agent_name, process_id, unique_id,
+      severity, message, stack_trace
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    RETURNING id, error_id
+  `;
+
+  const values = [
+    errorId,
+    agentName,
+    processId,
+    uniqueId,
+    severity,
+    message,
+    stackTrace
+  ];
+
+  const result = await db.query(query, values);
+
+  // Also log to Firebase for real-time dashboards
+  await firebaseLogError({
+    errorId,
+    agentName,
+    processId,
+    severity,
+    message,
+    timestamp: new Date()
+  });
+
+  return result.rows[0];
+}
+
+// Usage in agents
+try {
+  await apifyRunner.scrape(companyUrl);
+} catch (error) {
+  await logError({
+    agentName: 'Apify Orchestrator',
+    processId: 'Enrich Contacts from Apify',
+    uniqueId: '04.01.02.05.10000.001',
+    severity: 'error',
+    message: `Failed to scrape ${companyUrl}`,
+    error
+  });
+
+  throw error; // Re-throw after logging
+}
+```
+
+---
+
+### **Error Analysis Queries**
+
+#### **Unresolved Errors by Severity**
+
+```sql
+SELECT severity, COUNT(*) as error_count
+FROM shq_error_log
+WHERE resolved = false
+GROUP BY severity
+ORDER BY
+  CASE severity
+    WHEN 'critical' THEN 1
+    WHEN 'error' THEN 2
+    WHEN 'warning' THEN 3
+    WHEN 'info' THEN 4
+  END;
+```
+
+#### **Top 10 Most Common Errors**
+
+```sql
+SELECT message, COUNT(*) as occurrences, MAX(timestamp) as last_seen
+FROM shq_error_log
+WHERE timestamp > now() - INTERVAL '7 days'
+GROUP BY message
+ORDER BY occurrences DESC
+LIMIT 10;
+```
+
+#### **Agent Error Rate**
+
+```sql
+SELECT
+  agent_name,
+  COUNT(*) as total_errors,
+  SUM(CASE WHEN severity = 'critical' THEN 1 ELSE 0 END) as critical_errors,
+  SUM(CASE WHEN resolved THEN 1 ELSE 0 END) as resolved_errors,
+  ROUND(100.0 * SUM(CASE WHEN resolved THEN 1 ELSE 0 END) / COUNT(*), 2) as resolution_rate
+FROM shq_error_log
+WHERE timestamp > now() - INTERVAL '30 days'
+GROUP BY agent_name
+ORDER BY total_errors DESC;
+```
+
+#### **Error Timeline (Daily)**
+
+```sql
+SELECT
+  DATE(timestamp) as error_date,
+  severity,
+  COUNT(*) as error_count
+FROM shq_error_log
+WHERE timestamp > now() - INTERVAL '30 days'
+GROUP BY DATE(timestamp), severity
+ORDER BY error_date DESC, severity;
+```
+
+---
+
+### **Firebase Dashboard Integration**
+
+The error log is mirrored to Firebase for real-time monitoring:
+
+**Firestore Collection**: `errors`
+
+**Document Structure**:
+```json
+{
+  "errorId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "agentName": "Apify Orchestrator",
+  "processId": "Enrich Contacts from Apify",
+  "uniqueId": "04.01.02.05.10000.001",
+  "severity": "error",
+  "message": "Apify scrape failed due to timeout",
+  "timestamp": "2025-01-20T15:30:00Z",
+  "resolved": false,
+  "resolutionNotes": null
+}
+```
+
+**Dashboard Features**:
+- 🔴 Critical error alerts (instant push notifications)
+- 📊 Error rate trends by agent and severity
+- 🔍 Full-text search across error messages
+- ✅ One-click error resolution marking
+- 📈 Resolution time metrics (MTTD, MTTR)
+
+---
+
+### **Error Handling Best Practices**
+
+#### **1. Fail Fast, Log Everything**
+```javascript
+// ❌ Bad: Silent failure
+if (!data) return;
+
+// ✅ Good: Log and throw
+if (!data) {
+  await logError({
+    agentName: 'Data Validator',
+    processId: 'Validate Input Data',
+    uniqueId: '04.01.01.04.20000.101',
+    severity: 'error',
+    message: 'Missing required data field'
+  });
+  throw new Error('Missing required data');
+}
+```
+
+#### **2. Include Context in Error Messages**
+```javascript
+// ❌ Bad: Generic message
+throw new Error('Scrape failed');
+
+// ✅ Good: Detailed message
+throw new Error(`Apify scrape failed for company_id=${companyId}, url=${url}, reason=timeout`);
+```
+
+#### **3. Use Appropriate Severity Levels**
+```javascript
+// Info: Operational notes
+await logError({ severity: 'info', message: 'Contact already verified, skipping' });
+
+// Warning: Degraded service
+await logError({ severity: 'warning', message: 'Email confidence 75% (below 80% threshold)' });
+
+// Error: Operation failed, retry possible
+await logError({ severity: 'error', message: 'Apify timeout, will retry in 60s' });
+
+// Critical: System failure
+await logError({ severity: 'critical', message: 'Database connection lost' });
+```
+
+#### **4. Implement Retry Logic with Error Logging**
+```javascript
+async function retryWithLogging(operation, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      const severity = attempt === maxRetries ? 'error' : 'warning';
+
+      await logError({
+        agentName: 'Retry Handler',
+        processId: operation.name,
+        uniqueId: operation.uniqueId,
+        severity,
+        message: `Attempt ${attempt}/${maxRetries} failed: ${error.message}`,
+        error
+      });
+
+      if (attempt === maxRetries) throw error;
+
+      // Exponential backoff
+      await sleep(Math.pow(2, attempt) * 1000);
+    }
+  }
+}
+```
+
+---
+
+## 🔟 Summary
+
+With the **Barton Doctrine Numbering System** and **Master Error Table** in place, the Barton Outreach system achieves:
+
+✅ **Complete Traceability**: Every operation tracked with unique_id and process_id
+✅ **Error Visibility**: All errors logged and visible in real-time dashboards
+✅ **Operational Insights**: Analytics on error patterns, agent performance, and system health
+✅ **Doctrine Compliance**: Standardized ID format enforced across all agents and tools
+✅ **Rapid Debugging**: Full context (agent, process, unique_id, stack trace) for every error
+
+---
+
+**End of Outreach Doctrine A→Z Guide**
