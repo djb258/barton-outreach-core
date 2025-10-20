@@ -33,6 +33,19 @@ const CUSTOM_LIMIT = args.find(arg => arg.startsWith('--limit'))?.split('=')[1];
 const LIMIT = CUSTOM_LIMIT ? parseInt(CUSTOM_LIMIT, 10) : BATCH_SIZE;
 
 // ============================================================================
+// COLOR CODING - Barton Doctrine Severity Colors
+// ============================================================================
+
+const SEVERITY_COLORS: Record<string, string> = {
+  info: '#28A745',     // Green - Normal / success messages
+  warning: '#FFC107',  // Yellow - Caution / potential issue
+  error: '#FD7E14',    // Orange - Standard error
+  critical: '#DC3545', // Red - Critical system failure
+};
+
+const DEFAULT_COLOR = '#6C757D'; // Gray - Unknown severity
+
+// ============================================================================
 // TYPES
 // ============================================================================
 
@@ -64,6 +77,7 @@ interface FirebaseErrorDoc {
   resolved: boolean;
   resolution_notes: string | null;
   last_touched: string; // ISO 8601
+  color: string; // Hex color for visualization (#28A745, #FFC107, #FD7E14, #DC3545)
   neon_id: number; // Reference back to source
   synced_at: string; // ISO 8601
 }
@@ -216,6 +230,9 @@ class ErrorSyncOrchestrator {
   }
 
   transformToFirebaseDoc(row: NeonErrorRow): FirebaseErrorDoc {
+    // Map severity to color using Barton Doctrine color coding
+    const color = SEVERITY_COLORS[row.severity] || DEFAULT_COLOR;
+
     return {
       error_id: row.error_id,
       timestamp: row.timestamp.toISOString(),
@@ -228,6 +245,7 @@ class ErrorSyncOrchestrator {
       resolved: row.resolved,
       resolution_notes: row.resolution_notes,
       last_touched: row.last_touched.toISOString(),
+      color, // Hex color for dashboard visualization
       neon_id: row.id,
       synced_at: new Date().toISOString(),
     };
@@ -235,8 +253,9 @@ class ErrorSyncOrchestrator {
 
   async syncSingleError(row: NeonErrorRow, index: number): Promise<boolean> {
     const errorIdShort = row.error_id.substring(0, 12);
+    const color = SEVERITY_COLORS[row.severity] || DEFAULT_COLOR;
     console.log(
-      `[${index + 1}/${this.stats.total_fetched}] Syncing ${errorIdShort}... (${row.severity})`
+      `[${index + 1}/${this.stats.total_fetched}] Syncing ${errorIdShort}... (${row.severity} → ${color})`
     );
 
     try {

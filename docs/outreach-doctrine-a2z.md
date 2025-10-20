@@ -1170,6 +1170,7 @@ Firebase Firestore Collection: "error_log"
          │   timestamp: "2025-01-20T15:30:00Z",
          │   agent_name: "Apify Orchestrator",
          │   severity: "error",
+         │   color: "#FD7E14",  ← Auto-assigned (orange)
          │   message: "Scrape timeout..."
          │ }
          │
@@ -1209,6 +1210,7 @@ Firebase Firestore Collection: "error_log"
   "resolved": false,
   "resolution_notes": null,
   "last_touched": "2025-01-20T15:30:00.000Z",
+  "color": "#FD7E14",
   "neon_id": 12345,
   "synced_at": "2025-01-20T15:31:00.000Z"
 }
@@ -1231,6 +1233,45 @@ Firebase Firestore Collection: "error_log"
 | `last_touched` | timestamp | Last update time |
 | `neon_id` | number | Original Neon table ID for reference |
 | `synced_at` | timestamp | When synced to Firebase |
+| `color` | string | Hex color code for visual severity representation |
+
+---
+
+### **Color Coding Rules**
+
+The **Barton Doctrine** uses standardized color codes to ensure consistent visual representation across all dashboards (Firebase, Lovable.dev, barton-pipeline-vision).
+
+#### **Severity Color Mapping**
+
+| Severity | Color Hex | Visual | Meaning |
+|----------|-----------|--------|---------|
+| `info` | `#28A745` | 🟢 Green | Normal / success messages |
+| `warning` | `#FFC107` | 🟡 Yellow | Caution / potential issue |
+| `error` | `#FD7E14` | 🟠 Orange | Standard error requiring attention |
+| `critical` | `#DC3545` | 🔴 Red | Critical system failure - immediate action required |
+
+**Default**: `#6C757D` (Gray) for unknown/null severity values.
+
+#### **Implementation**
+
+The `color` field is automatically assigned during the sync process:
+
+```typescript
+const SEVERITY_COLORS: Record<string, string> = {
+  info: '#28A745',
+  warning: '#FFC107',
+  error: '#FD7E14',
+  critical: '#DC3545',
+};
+
+const color = SEVERITY_COLORS[row.severity] || '#6C757D';
+```
+
+This ensures:
+- ✅ Consistent color representation across all dashboards
+- ✅ Instant visual severity recognition
+- ✅ Lovable.dev sidebar badges match Firebase dashboard colors
+- ✅ barton-pipeline-vision UI uses the same palette
 
 ---
 

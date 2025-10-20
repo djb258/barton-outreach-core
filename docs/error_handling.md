@@ -288,6 +288,218 @@ WHERE timestamp > NOW() - INTERVAL '24 hours';
 
 ---
 
+## Composio Credential Handling
+
+### **Environment Variables**
+
+The sync script requires Composio MCP credentials to write to Firebase. Configure these in your environment or CI secrets:
+
+```bash
+# .env file or CI secrets
+NEON_DATABASE_URL=postgresql://user:pass@host/db
+COMPOSIO_MCP_URL=http://localhost:3001
+COMPOSIO_SERVICE=firebase
+COMPOSIO_CRED_SCOPE=firebase.write
+COMPOSIO_API_KEY=your_composio_api_key_here
+FIREBASE_PROJECT_ID=barton-outreach
+```
+
+### **Credential Retrieval**
+
+Composio automatically retrieves Firebase credentials when configured properly:
+
+```bash
+# Verify Composio has Firebase access
+curl -H "Authorization: Bearer ${COMPOSIO_API_KEY}" \
+  https://backend.composio.dev/api/v3/integrations/firebase
+
+# Check Firebase connection status
+curl -X POST http://localhost:3001/tool \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tool": "firebase_health_check",
+    "data": {},
+    "unique_id": "04.01.99.10.01000.001",
+    "process_id": "Check Firebase Connection",
+    "orbt_layer": 1,
+    "blueprint_version": "1.0"
+  }'
+```
+
+### **Security Best Practices**
+
+✅ **DO**:
+- Store credentials in environment variables or CI secrets
+- Use Composio MCP as the only Firebase write interface
+- Rotate API keys every 90 days
+- Grant minimal required permissions (firebase.write only)
+
+❌ **DO NOT**:
+- Store Firebase Admin SDK credentials locally
+- Allow direct Firebase writes from client applications
+- Commit API keys to version control
+- Share credentials across multiple environments
+
+### **Composio Configuration**
+
+**Connect Firebase to Composio** (one-time setup):
+
+```bash
+# Using Composio CLI
+composio integration add firebase \
+  --project-id barton-outreach \
+  --service-account-key /path/to/service-account.json
+
+# Verify connection
+composio integration list | grep firebase
+```
+
+**Expected Output**:
+```
+✅ firebase (connected)
+   Project: barton-outreach
+   Scopes: firestore.read, firestore.write
+   Connected: 2025-01-15
+```
+
+---
+
+## Automation Schedule
+
+### **Sync Job Configuration**
+
+The error sync script should run automatically every 60 seconds via a scheduled job. Multiple automation options are available:
+
+#### **Option 1: Composio Cron Job (Recommended)**
+
+Register a cron job with Composio MCP:
+
+```bash
+composio schedule create \
+  --job "sync-outreach-errors" \
+  --interval "*/1 * * * *" \
+  --command "npm run sync:errors" \
+  --working-dir "/path/to/barton-outreach-core" \
+  --env-file ".env"
+```
+
+**Job Configuration**:
+```json
+{
+  "job_name": "sync-outreach-errors",
+  "schedule": "*/1 * * * *",
+  "command": "npm run sync:errors",
+  "working_directory": "/path/to/barton-outreach-core",
+  "timeout_seconds": 30,
+  "retry_on_failure": true,
+  "max_retries": 3,
+  "alert_on_failure": true,
+  "alert_channels": ["slack", "email"]
+}
+```
+
+#### **Option 2: Node.js Daemon**
+
+Run as a persistent background process:
+
+```typescript
+// daemon/error-sync-daemon.ts
+import { CronJob } from 'cron';
+import { exec } from 'child_process';
+
+const job = new CronJob('*/1 * * * *', () => {
+  console.log(`[${new Date().toISOString()}] Running error sync...`);
+
+  exec('npm run sync:errors', (error, stdout, stderr) => {
+    if (error) {
+      console.error(`❌ Sync failed: ${error.message}`);
+      return;
+    }
+    console.log(stdout);
+  });
+});
+
+job.start();
+console.log('✅ Error sync daemon started (every 60 seconds)');
+```
+
+**Run daemon**:
+```bash
+npm install cron
+tsx daemon/error-sync-daemon.ts &
+```
+
+#### **Option 3: Firebase Scheduled Function**
+
+Deploy as a Firebase Cloud Function:
+
+```typescript
+// firebase/functions/src/scheduled-sync.ts
+import * as functions from 'firebase-functions';
+import { exec } from 'child_process';
+
+export const scheduledErrorSync = functions.pubsub
+  .schedule('every 1 minutes')
+  .onRun(async (context) => {
+    console.log('Running scheduled error sync...');
+
+    return new Promise((resolve, reject) => {
+      exec('npm run sync:errors', (error, stdout) => {
+        if (error) {
+          console.error('Sync failed:', error);
+          reject(error);
+        } else {
+          console.log(stdout);
+          resolve(stdout);
+        }
+      });
+    });
+  });
+```
+
+**Deploy**:
+```bash
+cd firebase/functions
+npm install
+firebase deploy --only functions:scheduledErrorSync
+```
+
+#### **Option 4: System Cron (Linux/macOS)**
+
+Add to crontab:
+
+```bash
+# Edit crontab
+crontab -e
+
+# Add this line
+* * * * * cd /path/to/barton-outreach-core && npm run sync:errors >> /var/log/error-sync.log 2>&1
+```
+
+### **Monitoring Automation**
+
+**Check job status**:
+```bash
+# Composio
+composio schedule status sync-outreach-errors
+
+# System cron logs
+tail -f /var/log/error-sync.log
+
+# Firebase Functions logs
+firebase functions:log --only scheduledErrorSync
+```
+
+**Expected healthy output (every 60 seconds)**:
+```
+[2025-01-20T15:30:00Z] 🚀 Starting Firebase Error Sync...
+[2025-01-20T15:30:01Z] 📥 Fetched 5 unsynced errors from Neon...
+[2025-01-20T15:30:03Z] ✅ Successfully synced 5 errors
+[2025-01-20T15:30:03Z] 📊 SYNC SUMMARY: 5 fetched, 5 synced, 0 failed
+```
+
+---
+
 ## Dashboard Usage
 
 ### **Accessing Dashboards**

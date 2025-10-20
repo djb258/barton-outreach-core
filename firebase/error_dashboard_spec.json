@@ -6,9 +6,17 @@
     "refresh_interval": 30,
     "theme": {
       "primary_color": "#3b82f6",
-      "danger_color": "#dc2626",
-      "warning_color": "#f59e0b",
-      "success_color": "#10b981"
+      "danger_color": "#DC3545",
+      "warning_color": "#FFC107",
+      "success_color": "#28A745",
+      "error_color": "#FD7E14",
+      "info_color": "#28A745"
+    },
+    "doctrine_colors": {
+      "info": "#28A745",
+      "warning": "#FFC107",
+      "error": "#FD7E14",
+      "critical": "#DC3545"
     },
     "widgets": [
       {
@@ -88,10 +96,10 @@
           "groupBy": "severity"
         },
         "colors": {
-          "info": "#3b82f6",
-          "warning": "#f59e0b",
-          "error": "#ef4444",
-          "critical": "#dc2626"
+          "info": "#28A745",
+          "warning": "#FFC107",
+          "error": "#FD7E14",
+          "critical": "#DC3545"
         },
         "position": {
           "row": 3,
@@ -143,11 +151,12 @@
             "label": "Severity",
             "format": "badge",
             "width": 100,
+            "badge_color_field": "color",
             "badge_colors": {
-              "info": "blue",
-              "warning": "yellow",
-              "error": "orange",
-              "critical": "red"
+              "info": "#28A745",
+              "warning": "#FFC107",
+              "error": "#FD7E14",
+              "critical": "#DC3545"
             }
           },
           {
@@ -165,6 +174,13 @@
             "label": "Message",
             "truncate": 60,
             "width": 300
+          },
+          {
+            "field": "color",
+            "label": "Color",
+            "format": "color_swatch",
+            "width": 80,
+            "visible": false
           },
           {
             "field": "resolved",
@@ -218,10 +234,10 @@
           "groupBy2": "severity"
         },
         "series": [
-          {"name": "info", "color": "#3b82f6"},
-          {"name": "warning", "color": "#f59e0b"},
-          {"name": "error", "color": "#ef4444"},
-          {"name": "critical", "color": "#dc2626"}
+          {"name": "info", "color": "#28A745"},
+          {"name": "warning", "color": "#FFC107"},
+          {"name": "error", "color": "#FD7E14"},
+          {"name": "critical", "color": "#DC3545"}
         ],
         "position": {
           "row": 13,

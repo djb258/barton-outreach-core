@@ -1,0 +1,279 @@
+{
+  "layout": "doctrine_tracker_sidebar",
+  "description": "Lovable.dev sidebar integration for Barton Outreach Doctrine error monitoring and system health",
+  "version": "1.0",
+  "sections": [
+    {
+      "title": "Error Center",
+      "icon": "alert-triangle",
+      "type": "list",
+      "source": "firebase.error_log",
+      "description": "Real-time error tracking from all Barton Outreach agents",
+      "filters": [
+        {
+          "field": "resolved",
+          "equals": false
+        }
+      ],
+      "sort": {
+        "field": "timestamp",
+        "order": "desc"
+      },
+      "limit": 25,
+      "display": {
+        "title_field": "process_id",
+        "subtitle_field": "message",
+        "badge_field": "severity",
+        "badge_color_field": "color",
+        "timestamp_field": "timestamp",
+        "metadata": [
+          {
+            "label": "Agent",
+            "field": "agent_name"
+          },
+          {
+            "label": "Unique ID",
+            "field": "unique_id"
+          }
+        ]
+      },
+      "actions": [
+        {
+          "label": "View Details",
+          "icon": "eye",
+          "action": "navigate",
+          "target": "/errors/:error_id"
+        },
+        {
+          "label": "Mark Resolved",
+          "icon": "check-circle",
+          "action": "update",
+          "collection": "error_log",
+          "document_id_field": "error_id",
+          "updates": {
+            "resolved": true,
+            "resolution_notes": "Resolved via Lovable.dev"
+          },
+          "confirmation": "Mark this error as resolved?"
+        }
+      ]
+    },
+    {
+      "title": "Critical Alerts",
+      "icon": "alert-circle",
+      "type": "counter",
+      "source": "firebase.error_log",
+      "description": "Count of unresolved critical errors requiring immediate attention",
+      "filters": [
+        {
+          "field": "severity",
+          "equals": "critical"
+        },
+        {
+          "field": "resolved",
+          "equals": false
+        }
+      ],
+      "display": {
+        "color": "#DC3545",
+        "threshold": {
+          "value": 1,
+          "alert": true,
+          "message": "🚨 Critical errors detected - immediate action required"
+        }
+      }
+    },
+    {
+      "title": "Open Errors",
+      "icon": "alert-triangle",
+      "type": "counter",
+      "source": "firebase.error_log",
+      "description": "Total count of all unresolved errors across the system",
+      "filters": [
+        {
+          "field": "resolved",
+          "equals": false
+        }
+      ],
+      "display": {
+        "color": "#FD7E14",
+        "breakdown": {
+          "field": "severity",
+          "show_pie": true
+        }
+      }
+    },
+    {
+      "title": "Doctrine Sync Health",
+      "icon": "activity",
+      "type": "summary",
+      "description": "System health metrics for doctrine compliance and integration status",
+      "metrics": [
+        {
+          "label": "Neon Schema Sync",
+          "source": "schema_map.status",
+          "expected_value": "healthy",
+          "display": {
+            "healthy": {
+              "icon": "check-circle",
+              "color": "#28A745",
+              "label": "Synced"
+            },
+            "stale": {
+              "icon": "alert-triangle",
+              "color": "#FFC107",
+              "label": "Stale"
+            },
+            "error": {
+              "icon": "x-circle",
+              "color": "#DC3545",
+              "label": "Error"
+            }
+          }
+        },
+        {
+          "label": "Composio MCP Status",
+          "source": "integration.health",
+          "expected_value": "online",
+          "display": {
+            "online": {
+              "icon": "check-circle",
+              "color": "#28A745",
+              "label": "Online"
+            },
+            "degraded": {
+              "icon": "alert-triangle",
+              "color": "#FFC107",
+              "label": "Degraded"
+            },
+            "offline": {
+              "icon": "x-circle",
+              "color": "#DC3545",
+              "label": "Offline"
+            }
+          }
+        },
+        {
+          "label": "Firebase Sync",
+          "source": "firebase.sync_status",
+          "expected_value": "active",
+          "display": {
+            "active": {
+              "icon": "check-circle",
+              "color": "#28A745",
+              "label": "Active"
+            },
+            "paused": {
+              "icon": "pause-circle",
+              "color": "#FFC107",
+              "label": "Paused"
+            },
+            "failed": {
+              "icon": "x-circle",
+              "color": "#DC3545",
+              "label": "Failed"
+            }
+          }
+        },
+        {
+          "label": "Neon Database",
+          "source": "neon.connection_status",
+          "expected_value": "connected",
+          "display": {
+            "connected": {
+              "icon": "check-circle",
+              "color": "#28A745",
+              "label": "Connected"
+            },
+            "connecting": {
+              "icon": "loader",
+              "color": "#FFC107",
+              "label": "Connecting"
+            },
+            "disconnected": {
+              "icon": "x-circle",
+              "color": "#DC3545",
+              "label": "Disconnected"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Agent Activity",
+      "icon": "cpu",
+      "type": "timeline",
+      "source": "firebase.error_log",
+      "description": "Recent activity timeline across all HEIR agents",
+      "limit": 10,
+      "display": {
+        "group_by": "agent_name",
+        "time_field": "timestamp",
+        "event_field": "message",
+        "severity_field": "severity",
+        "color_field": "color",
+        "show_resolved": false
+      }
+    },
+    {
+      "title": "Severity Distribution",
+      "icon": "pie-chart",
+      "type": "chart",
+      "source": "firebase.error_log",
+      "description": "Breakdown of errors by severity level (last 7 days)",
+      "filters": [
+        {
+          "field": "timestamp",
+          "operator": ">=",
+          "value": "now-7d"
+        }
+      ],
+      "display": {
+        "chart_type": "pie",
+        "group_by": "severity",
+        "colors": {
+          "info": "#28A745",
+          "warning": "#FFC107",
+          "error": "#FD7E14",
+          "critical": "#DC3545"
+        }
+      }
+    }
+  ],
+  "refresh": {
+    "enabled": true,
+    "interval_seconds": 30,
+    "pause_on_interaction": true
+  },
+  "notifications": {
+    "enabled": true,
+    "channels": ["in_app", "desktop"],
+    "filters": [
+      {
+        "field": "severity",
+        "in": ["error", "critical"]
+      }
+    ],
+    "sound": {
+      "critical": "alert-high",
+      "error": "alert-medium",
+      "warning": "alert-low"
+    }
+  },
+  "theme": {
+    "sidebar_width": 400,
+    "compact_mode": false,
+    "dark_mode": "auto"
+  },
+  "deployment": {
+    "target": "lovable.dev",
+    "integration": "firebase_composio_mcp",
+    "environment": "production"
+  },
+  "metadata": {
+    "created_at": "2025-10-20",
+    "created_by": "Barton Outreach Core Team",
+    "version": "1.0",
+    "doctrine_version": "1.3.2"
+  }
+}
