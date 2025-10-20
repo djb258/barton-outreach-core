@@ -790,13 +790,79 @@ async function syncErrors(options?: {
 
 ## Related Documentation
 
-- **Outreach Doctrine A→Z**: `/docs/outreach-doctrine-a2z.md`
-- **Database Schema**: `/docs/schema_map.json`
-- **Agent Registry**: `/docs/outreach-doctrine-a2z.md#agent-registry`
-- **Firebase Dashboard Spec**: `/firebase/error_dashboard_spec.json`
+### Primary References
+
+- **[Outreach Doctrine A→Z](./outreach-doctrine-a2z.md)** - Complete system documentation with 14 sections
+  - [Section 11: Barton Doctrine Numbering System](./outreach-doctrine-a2z.md#1%EF%B8%8F⃣1%EF%B8%8F⃣-barton-doctrine-numbering-system)
+  - [Section 12: Master Error Table](./outreach-doctrine-a2z.md#1%EF%B8%8F⃣2%EF%B8%8F⃣-master-error-table)
+  - [Section 13: Error Monitoring & Visualization](./outreach-doctrine-a2z.md#1%EF%B8%8F⃣3%EF%B8%8F⃣-error-monitoring--visualization-doctrine)
+  - [Section 14: Related Documentation](./outreach-doctrine-a2z.md#1%EF%B8%8F⃣4%EF%B8%8F⃣-related-documentation--artifacts)
+
+### Implementation Files
+
+- **[Error Sync Script](../scripts/sync-errors-to-firebase.ts)** - Production-ready Neon → Firebase sync with:
+  - Color mapping (Barton Doctrine colors)
+  - Batch processing and idempotency
+  - CLI support (`--dry-run`, `--limit`)
+  - Run with: `npm run sync:errors`
+
+- **[Firebase Dashboard Spec](../firebase/error_dashboard_spec.json)** - 11 widgets for real-time monitoring:
+  - Critical/open/resolved error counters
+  - Severity breakdown and agent error rates
+  - Error timeline and resolution metrics
+
+- **[Lovable Dashboard Layout](../lovable/dashboard_layout.json)** - Lovable.dev sidebar integration:
+  - 6 sections with real-time error tracking
+  - Color-coded severity badges
+  - System health metrics
+
+### Database & Schema
+
+- **[Database Schema Map](./schema_map.json)** - Complete schema documentation (7 schemas, 15+ tables)
+  - Includes `shq_error_log` table definition (after migration)
+  - Programmatically generated via `npm run schema:refresh`
+
+- **[Error Log Table Migration](../infra/2025-10-20_create_shq_error_log.sql)** - SQL script to create `shq_error_log`:
+  - Run with: `psql $DATABASE_URL -f infra/2025-10-20_create_shq_error_log.sql`
+  - Includes indexes, triggers, and comments
+
+### Configuration & Integration
+
+- **[Composio Integration Guide](../COMPOSIO_INTEGRATION.md)** - MCP setup and configuration
+- **[MCP Registry](../config/mcp_registry.json)** - Registered tools (ChartDB, Activepieces, Windmill, Claude Skills)
+- **[Package.json Scripts](../package.json)** - All automation commands (`schema:refresh`, `sync:errors`, etc.)
+
+### Quality & Compliance
+
+- **[Audit Report](./audit_report.md)** - Latest doctrinal compliance audit with:
+  - Detailed findings for 8 compliance sections
+  - SQL migration scripts for missing components
+  - Actionable roadmap to 100% compliance
+
+- **[Troubleshooting Guide](./TROUBLESHOOTING.md)** - Common issues and solutions (90%+ coverage)
+
+### Quick Navigation
+
+```bash
+# View complete doctrine
+cat docs/outreach-doctrine-a2z.md
+
+# Check database schema
+cat docs/schema_map.json
+
+# Review error sync script
+cat scripts/sync-errors-to-firebase.ts
+
+# Run error sync (dry run)
+npm run sync:errors -- --dry-run --limit 10
+
+# Check compliance status
+cat docs/audit_report.md
+```
 
 ---
 
-**Last Updated**: January 2025
+**Document Version**: 1.3.2
+**Last Updated**: 2025-10-20
 **Maintained By**: Barton Outreach Core Team
-**Contact**: ops-team@example.com
+**Referenced In**: [Outreach Doctrine A→Z](./outreach-doctrine-a2z.md#1%EF%B8%8F⃣3%EF%B8%8F⃣-error-monitoring--visualization-doctrine)

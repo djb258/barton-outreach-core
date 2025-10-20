@@ -76,6 +76,26 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
+## Deployment Platform
+
+✅ **Active**: **Vercel Serverless** (primary and only deployment platform)
+
+❌ **Deprecated**: Render (legacy files archived in `archive/render-legacy/`)
+
+### Deployment Architecture
+
+All external service integrations flow through **Composio MCP** server (port 3001), which runs independently of the deployment platform. This enables:
+- Serverless-first architecture (Vercel edge functions)
+- 100+ service integrations via single MCP interface
+- No direct API credentials in deployment environment
+- Simplified deployment and scaling
+
+See: [VERCEL_DEPLOYMENT_GUIDE.md](./VERCEL_DEPLOYMENT_GUIDE.md) for deployment instructions
+
+See: [COMPOSIO_INTEGRATION.md](./COMPOSIO_INTEGRATION.md) for MCP integration details
+
+**Note**: Legacy Render files have been archived as part of doctrinal compliance audit (October 2025). See [docs/audit_report.md](./docs/audit_report.md) for details.
+
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/1c02fda0-b967-4efc-807c-309dfdd81983) and click on Share -> Publish.

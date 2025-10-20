@@ -12,6 +12,26 @@
  *   npm run sync:errors -- --dry-run
  *
  * Part of Barton Outreach Core - Error Monitoring & Visualization Doctrine
+ *
+ * @see {@link ../docs/outreach-doctrine-a2z.md#1️⃣3️⃣-error-monitoring--visualization-doctrine | Doctrine Section 13}
+ * @see {@link ../docs/error_handling.md | Complete Error Handling Guide}
+ * @see {@link ../firebase/error_dashboard_spec.json | Firebase Dashboard Configuration}
+ * @see {@link ../lovable/dashboard_layout.json | Lovable.dev Sidebar Integration}
+ *
+ * Database Table:
+ * @see {@link ../infra/2025-10-20_create_shq_error_log.sql | Error Log Table Migration}
+ *
+ * Key Features:
+ * - Color mapping (Barton Doctrine severity colors: #28A745, #FFC107, #FD7E14, #DC3545)
+ * - Batch processing (100 errors per run, configurable with --limit)
+ * - Idempotent sync (firebase_synced flag prevents duplicates)
+ * - ORBT-compliant payloads (unique_id, process_id, orbt_layer)
+ * - Comprehensive error handling with detailed logging
+ *
+ * Environment Variables Required:
+ * - NEON_DATABASE_URL: PostgreSQL connection string
+ * - COMPOSIO_MCP_URL: Composio MCP server URL (default: http://localhost:3001)
+ * - FIREBASE_PROJECT_ID: Firebase project identifier (default: barton-outreach)
  */
 
 import { Pool } from 'pg';

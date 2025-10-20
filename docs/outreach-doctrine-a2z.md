@@ -1983,4 +1983,166 @@ The system provides a complete end-to-end solution for:
 
 ---
 
+## 1️⃣4️⃣ Related Documentation & Artifacts
+
+This section provides direct links to implementation files, configuration artifacts, and supporting documentation referenced throughout this guide.
+
+### 📊 Schema Documentation
+
+- **[Schema Map (JSON)](./schema_map.json)** - Complete database schema with all 7 schemas (company, people, marketing, intake, vault, bit, ple), 15+ tables, foreign keys, views, and functions. Generated programmatically via `schema:refresh` script.
+
+- **[Refresh Schema Script](../scripts/refresh-schema-map.ts)** - TypeScript script to regenerate `schema_map.json` by parsing SQL schema files. Run with `npm run schema:refresh`.
+
+- **[SQL Schema Files](../infra/)** - Source SQL definitions:
+  - `lean-outreach-schema.sql` - Main schema definitions
+  - `neon.sql` - Intake/vault schemas with RLS
+  - `2025-10-20_create_shq_error_log.sql` - Error log table migration
+
+### 🚨 Error Monitoring & Visualization
+
+- **[Error Handling Guide](./error_handling.md)** - Comprehensive error management documentation (740+ lines) including:
+  - Standard error codes glossary (50+ codes across 9 categories)
+  - Error logging best practices with TypeScript examples
+  - Firebase sync configuration and automation
+  - Dashboard usage guide with filtering and resolution workflows
+  - Alerting configuration (Slack, email, SMS channels)
+  - Troubleshooting common issues
+  - Maintenance tasks and API reference
+
+- **[Firebase Dashboard Specification](../firebase/error_dashboard_spec.json)** - Error dashboard widget configuration with 11 widgets:
+  - 3 counter widgets (critical errors, open errors, resolved 24h)
+  - 1 pie chart (severity breakdown with Barton Doctrine colors)
+  - 1 bar chart (agent error rates)
+  - 1 data table (recent errors with inline actions)
+  - 1 line chart (error timeline)
+  - 1 gauge (resolution rate)
+  - 1 metric widget (MTTR)
+  - 1 list widget (top error messages)
+
+- **[Lovable Dashboard Layout](../lovable/dashboard_layout.json)** - Lovable.dev sidebar integration (186 lines) with 6 sections:
+  - Error Center (real-time error list with filters)
+  - Critical Alerts (counter with threshold alerts)
+  - Open Errors (counter with severity breakdown)
+  - Doctrine Sync Health (system health metrics: Neon, Composio, Firebase)
+  - Agent Activity (timeline of recent agent operations)
+  - Severity Distribution (pie chart with 7-day window)
+
+- **[Error Sync Script](../scripts/sync-errors-to-firebase.ts)** - Production-ready TypeScript sync script (398 lines):
+  - Neon → Composio MCP → Firebase synchronization
+  - Color mapping (Barton Doctrine colors: #28A745, #FFC107, #FD7E14, #DC3545)
+  - Batch processing (100 errors per run)
+  - Idempotent with `firebase_synced` flag
+  - CLI support (`--dry-run`, `--limit`)
+  - Comprehensive error handling and logging
+
+### 🔌 Integration Configuration
+
+- **[Composio Integration Guide](../COMPOSIO_INTEGRATION.md)** - Complete guide to Composio MCP setup and 100+ service integrations
+
+- **[Composio Connection](./composio_connection.md)** - Connection verification, troubleshooting, and authentication
+
+- **[MCP Registry](../config/mcp_registry.json)** - Registered MCP tools (4 mandatory: ChartDB, Activepieces, Windmill, Claude Skills)
+
+### 🏗️ Architecture Documentation
+
+- **[Architecture Overview](./ARCHITECTURE.md)** - System architecture with component relationships and data flow diagrams
+
+- **[Pipeline Architecture](./PIPELINE_ARCHITECTURE.md)** - Data processing pipelines across all altitudes (30k → 1k)
+
+- **[Agent Architecture](./AGENT_ARCHITECTURE.md)** - 12 HEIR agents documentation with specialization and orchestration patterns
+
+- **[Outreach Altitude Map](./OUTREACH_ALTITUDE_MAP.md)** - Detailed altitude-based phase documentation
+
+### 📜 Deployment & Operations
+
+- **[Vercel Deployment Guide](../VERCEL_DEPLOYMENT_GUIDE.md)** - Serverless deployment instructions (No Render - Vercel only)
+
+- **[Quickstart Guide](../QUICKSTART.md)** - Get started in 5 minutes with development environment setup
+
+- **[Troubleshooting Guide](./TROUBLESHOOTING.md)** - Common issues and solutions (90%+ coverage)
+
+- **[Audit Report](./audit_report.md)** - Doctrinal compliance audit with detailed findings, fix commands, and roadmap to 100% compliance
+
+### 🛠️ Automation Scripts
+
+All scripts are available in `/scripts/` directory and registered in `package.json`:
+
+```bash
+# Schema documentation
+npm run schema:refresh          # Regenerate schema_map.json
+
+# Error monitoring
+npm run sync:errors             # Sync errors to Firebase
+npm run sync:errors -- --dry-run --limit 10  # Test run
+
+# Database operations
+npm run db:migrate              # Run Neon migrations
+npm run neon:schema             # Fetch live schema
+
+# Agent operations
+npm run scrape:apify            # Run Apify scraper
+npm run verify:email            # Run MillionVerify
+npm run outreach:run            # Run outreach orchestrator
+
+# Quality assurance
+npm run garage-bay:audit        # Run Garage Bay audit
+npm run compliance:check        # Run CTB compliance check
+```
+
+### 📋 Quick Reference Tables
+
+**Barton Doctrine Numbering System** (Section 11):
+```
+Format: [database].[subhive].[microprocess].[tool].[altitude].[step]
+Example: 04.01.02.05.10000.001
+
+04 = Neon (database)
+01 = Outreach (subhive)
+02 = Enrichment (microprocess)
+05 = Apify (tool)
+10000 = Specialization altitude
+001 = First step
+```
+
+**Severity Color Codes** (Section 13):
+```
+info:     #28A745 (Green)  🟢
+warning:  #FFC107 (Yellow) 🟡
+error:    #FD7E14 (Orange) 🟠
+critical: #DC3545 (Red)    🔴
+```
+
+**Repository Map** (Section 2):
+```
+30k Vision    → barton-vision-docs
+20k Category  → barton-category-definitions
+10k Special   → barton-outreach-core (this repo)
+5k Execution  → barton-pipeline-vision
+1k Visual     → barton-dashboard-ui
+```
+
+---
+
+### 💡 Navigation Tips
+
+**For Developers**:
+1. Start with [Schema Map](./schema_map.json) for database structure
+2. Review [Error Handling Guide](./error_handling.md) for logging patterns
+3. Check [Architecture Overview](./ARCHITECTURE.md) for system design
+4. Use [Troubleshooting Guide](./TROUBLESHOOTING.md) when issues arise
+
+**For Operations**:
+1. Monitor [Firebase Dashboard](../firebase/error_dashboard_spec.json) for real-time errors
+2. Run [Sync Script](../scripts/sync-errors-to-firebase.ts) every 60 seconds
+3. Review [Audit Report](./audit_report.md) for compliance status
+4. Follow [SLA response times](#monitoring-best-practices) for error resolution
+
+**For Project Managers**:
+1. Review [Outreach Doctrine A→Z](./outreach-doctrine-a2z.md) (this document) for complete system overview
+2. Check [Audit Report](./audit_report.md) for compliance metrics
+3. Monitor [Dashboard](../lovable/dashboard_layout.json) for operational health
+4. Review [Architecture](./ARCHITECTURE.md) for technical decisions
+
+---
+
 **End of Outreach Doctrine A→Z Guide**
