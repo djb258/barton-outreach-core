@@ -1,0 +1,186 @@
+{
+  "manifest_version": "1.0.0",
+  "doctrine": {
+    "name": "Barton Outreach Doctrine",
+    "version": "1.3.2",
+    "compliance": "100%",
+    "commit": "bbc1c67",
+    "audit_report": "docs/audit_report.md",
+    "final_summary": "FINAL_AUDIT_SUMMARY.md",
+    "entry_docs": [
+      "docs/outreach-doctrine-a2z.md",
+      "docs/error_handling.md",
+      "docs/schema_map.json"
+    ],
+    "description": "Full-stack outreach automation system implementing the Barton Doctrine A→Z. Includes ingestion, enrichment, messaging, buyer-intent tracking, error monitoring, and visualization via Composio MCP, Neon, Firebase, and Lovable.dev."
+  },
+  "structure": {
+    "altitudes": {
+      "30000": "Vision",
+      "20000": "Category",
+      "10000": "Specialization",
+      "5000": "Execution",
+      "1000": "Visualization"
+    },
+    "core_directories": [
+      "/docs",
+      "/scripts",
+      "/firebase",
+      "/lovable",
+      "/infra"
+    ],
+    "main_schemas": [
+      "company",
+      "people",
+      "marketing",
+      "intake",
+      "vault",
+      "bit",
+      "ple",
+      "shq"
+    ]
+  },
+  "registry": {
+    "tool_registry": [
+      {
+        "tool_id": 4,
+        "name": "Neon",
+        "purpose": "Data vault"
+      },
+      {
+        "tool_id": 5,
+        "name": "Apify",
+        "purpose": "Data enrichment"
+      },
+      {
+        "tool_id": 6,
+        "name": "VibeOS",
+        "purpose": "Messaging delivery"
+      },
+      {
+        "tool_id": 7,
+        "name": "MillionVerify",
+        "purpose": "Email verification"
+      },
+      {
+        "tool_id": 8,
+        "name": "BIT",
+        "purpose": "Buyer Intent Tracker"
+      },
+      {
+        "tool_id": 9,
+        "name": "PLE",
+        "purpose": "Perpetual Lead Engine"
+      },
+      {
+        "tool_id": 10,
+        "name": "ChartDB",
+        "purpose": "Analytics and visualization"
+      },
+      {
+        "tool_id": 11,
+        "name": "Windmill",
+        "purpose": "Workflow and orchestration engine"
+      },
+      {
+        "tool_id": 12,
+        "name": "ClaudeSkills",
+        "purpose": "Internal Claude Code skill framework"
+      }
+    ],
+    "color_doctrine": {
+      "info": "#28A745",
+      "warning": "#FFC107",
+      "error": "#FD7E14",
+      "critical": "#DC3545"
+    }
+  },
+  "automation": {
+    "scripts": {
+      "schema_refresh": "npm run schema:refresh",
+      "sync_errors": "npm run sync:errors"
+    },
+    "cron_jobs": [
+      {
+        "name": "sync-outreach-errors",
+        "interval": "*/1 * * * *",
+        "command": "npm run sync:errors",
+        "executor": "Composio Cron"
+      }
+    ]
+  },
+  "visualization": {
+    "firebase_dashboard": "firebase/error_dashboard_spec.json",
+    "lovable_dashboard": "lovable/dashboard_layout.json",
+    "dashboard_tabs": [
+      "Overview",
+      "Active Errors",
+      "Metrics"
+    ],
+    "widgets": 17,
+    "auto_refresh_seconds": 30
+  },
+  "database": {
+    "primary": "Neon PostgreSQL",
+    "schemas": 8,
+    "tables": 15,
+    "error_table": "shq_error_log",
+    "indexes": 8,
+    "trigger": "trg_update_error_log_timestamp",
+    "rls_enabled": false
+  },
+  "integration": {
+    "bus": "Composio MCP",
+    "env_variables": [
+      "COMPOSIO_MCP_URL",
+      "COMPOSIO_API_KEY",
+      "NEON_DATABASE_URL",
+      "FIREBASE_PROJECT_ID"
+    ],
+    "prohibited_integrations": [
+      "Render"
+    ],
+    "notes": "All external services must route through Composio MCP. Direct API calls to Google/Firebase are prohibited."
+  },
+  "monitoring": {
+    "dashboards": [
+      "Firebase",
+      "Lovable.dev"
+    ],
+    "severity_levels": [
+      "info",
+      "warning",
+      "error",
+      "critical"
+    ],
+    "alert_channels": [
+      "Slack",
+      "Email",
+      "SMS"
+    ],
+    "data_flow": "Neon → Composio → Firebase → Dashboard",
+    "metrics": [
+      "MTTR",
+      "Error Rate",
+      "Resolution Rate"
+    ]
+  },
+  "compliance": {
+    "score": 100,
+    "last_audit": "2025-10-20T00:00:00Z",
+    "auditor": "Claude Code Automated Audit",
+    "validation_tests": 8,
+    "next_audit_due": "2025-10-21"
+  },
+  "ingestion": {
+    "gitingest_branch": "gitingest",
+    "entry_path": ".gitingest/",
+    "readme": ".gitingest/README_INGEST.md",
+    "description": "Machine-ingestible branch providing doctrine metadata for all LOMs and agents. Used for onboarding and validation."
+  },
+  "usage_notes": {
+    "for_loms": "Read manifest.json first, then load outreach-doctrine-a2z.md and schema_map.json for full context. Execute validation scripts before writing data.",
+    "for_agents": "Register unique_id and process_id before execution. Use Composio MCP for integrations. Log errors to shq_error_log with proper severity and color mapping.",
+    "for_humans": "Refer to FINAL_AUDIT_SUMMARY.md for historical progression and compliance details."
+  }
+}
