@@ -1,0 +1,19 @@
+{
+  "tool_name": "apify_run_actor_sync_get_dataset_items",
+  "limits": {
+    "max_daily_runs": 20,
+    "max_concurrent_runs": 3,
+    "max_leads_per_run": 500,
+    "max_runtime_seconds": 300,
+    "max_monthly_cost_usd": 25
+  },
+  "actions": {
+    "on_limit_reached": "pause_tool",
+    "on_warning": "log_to_mantis",
+    "notify": "validator@bartonhq.com"
+  },
+  "metadata": {
+    "doctrine_id": "04.04.07",
+    "enforced_by": "Composio MCP Global Policy"
+  }
+}
