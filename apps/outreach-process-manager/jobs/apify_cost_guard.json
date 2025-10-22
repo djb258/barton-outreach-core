@@ -1,0 +1,18 @@
+{
+  "name": "Apify Cost Guard",
+  "description": "Daily check of Apify run costs; pauses tool if threshold exceeded.",
+  "tool": "neon_execute_sql",
+  "schedule": "RRULE:FREQ=DAILY;BYHOUR=23;BYMINUTE=0;BYSECOND=0",
+  "query": "SELECT SUM(estimated_cost) AS total_cost FROM marketing.actor_usage_log WHERE date(run_started_at)=current_date;",
+  "postProcess": {
+    "condition": "$RESULT.total_cost > 25",
+    "tool": "composio_pause_tool",
+    "input": {
+      "tool_name": "apify_run_actor_sync_get_dataset_items"
+    }
+  },
+  "metadata": {
+    "doctrine_id": "04.04.07",
+    "audited_by": "Validator GBT"
+  }
+}
