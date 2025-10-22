@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS marketing.people_master (unique_id TEXT PRIMARY KEY,
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     full_name TEXT GENERATED ALWAYS AS (
-        TRIM(CONCAT(first_name, ' ', last_name))
+        TRIM(first_name || ' ' || last_name)
     ) STORED,
 
     -- Professional data
@@ -105,11 +105,8 @@ CREATE TABLE IF NOT EXISTS marketing.people_master (unique_id TEXT PRIMARY KEY,
     CONSTRAINT people_master_slot_barton_id_format
         CHECK (company_slot_unique_id ~ '^04\.04\.05\.[0-9]{2}\.[0-9]{5}\.[0-9]{3}$'),
     CONSTRAINT people_master_email_format
-        CHECK (email IS NULL OR email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
+        CHECK (email IS NULL OR email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
+);
 
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_people_master_company_id ON marketing.people_master(company_unique_id);
@@ -132,8 +129,10 @@ COMMENT ON COLUMN marketing.people_master.company_unique_id IS 'Reference to par
 COMMENT ON COLUMN marketing.people_master.company_slot_unique_id IS 'Reference to company slot Barton ID';
 COMMENT ON COLUMN marketing.people_master.promoted_from_intake_at IS 'Timestamp when record was promoted from people_raw_intake';
 COMMENT ON COLUMN marketing.people_master.promotion_audit_log_id IS 'Reference to the audit log entry for this promotion';
--- Trigger for IF
-CREATE TRIGGER trigger_IF_updated_at
-    BEFORE UPDATE ON IF
+
+-- Trigger for auto-updating updated_at timestamp
+DROP TRIGGER IF EXISTS trigger_people_master_updated_at ON marketing.people_master;
+CREATE TRIGGER trigger_people_master_updated_at
+    BEFORE UPDATE ON marketing.people_master
     FOR EACH ROW
     EXECUTE FUNCTION trigger_updated_at();

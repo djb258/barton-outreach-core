@@ -1,0 +1,32 @@
+{
+  "timestamp": "2025-10-21T17:31:43.878954Z",
+  "unique_id": "04.01.99.11.05000.001",
+  "process_id": "Apify Actor Discovery and Schema Analysis",
+  "discoveredActors": [],
+  "currentlyUsedActors": [
+    {
+      "actorId": "apify/email-phone-scraper",
+      "usage": "Primary contact scraper in apifyRunner.js",
+      "location": "agents/specialists/apifyRunner.js:18"
+    },
+    {
+      "actorId": "apify~linkedin-profile-scraper",
+      "usage": "LinkedIn profile scraping",
+      "location": "packages/mcp-clients/src/clients/apify-mcp-client.ts:57"
+    },
+    {
+      "actorId": "apify~website-content-crawler",
+      "usage": "Website contact extraction",
+      "location": "packages/mcp-clients/src/clients/apify-mcp-client.ts:118"
+    }
+  ],
+  "mockActors": [
+    "linkedin-company-scraper",
+    "website-content-crawler",
+    "company-data-scraper",
+    "business-permit-scraper",
+    "financial-data-scraper"
+  ],
+  "errors": [],
+  "topExecutiveEnrichmentActors": []
+}

@@ -1,0 +1,837 @@
+{
+  "version": "1.0",
+  "name": "Executive Enrichment Schema",
+  "description": "Database schema for Barton Outreach Core - Executive Enrichment Process",
+  "databaseType": "postgresql",
+  "databaseName": "Marketing DB",
+  "connectionString": "postgresql://Marketing%20DB_owner@ep-ancient-waterfall-a42vy0du-pooler.us-east-1.aws.neon.tech/Marketing%20DB",
+  "lastUpdated": "2025-10-21T19:51:23.668Z",
+  "tables": [
+    {
+      "id": "table_1",
+      "name": "company_raw_intake",
+      "schema": "intake",
+      "x": 100,
+      "y": 100,
+      "color": "#87CEEB",
+      "comment": "Source table: 446 West Virginia companies from CSV import",
+      "columns": [
+        {
+          "id": "col_1_1",
+          "name": "id",
+          "type": {
+            "id": "serial",
+            "name": "SERIAL"
+          },
+          "primaryKey": true,
+          "notNull": true,
+          "unique": true,
+          "comment": "Sequential ID: 1-446"
+        },
+        {
+          "id": "col_1_2",
+          "name": "company",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "comment": "Primary company name"
+        },
+        {
+          "id": "col_1_3",
+          "name": "company_name_for_emails",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "comment": "Alternative name for email campaigns"
+        },
+        {
+          "id": "col_1_4",
+          "name": "website",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "comment": "Company website (99% coverage: 442/446)"
+        },
+        {
+          "id": "col_1_5",
+          "name": "company_linkedin_url",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "comment": "LinkedIn company page (95% coverage: 424/446)"
+        },
+        {
+          "id": "col_1_6",
+          "name": "facebook_url",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          }
+        },
+        {
+          "id": "col_1_7",
+          "name": "twitter_url",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          }
+        },
+        {
+          "id": "col_1_8",
+          "name": "industry",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "comment": "Industry classification (98% coverage: 437/446)"
+        },
+        {
+          "id": "col_1_9",
+          "name": "sic_codes",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "comment": "SIC industry codes"
+        },
+        {
+          "id": "col_1_10",
+          "name": "num_employees",
+          "type": {
+            "id": "integer",
+            "name": "INTEGER"
+          },
+          "comment": "Employee count: 51-2100 (100% coverage)"
+        },
+        {
+          "id": "col_1_11",
+          "name": "founded_year",
+          "type": {
+            "id": "integer",
+            "name": "INTEGER"
+          },
+          "comment": "Year founded: 1700-2025"
+        },
+        {
+          "id": "col_1_12",
+          "name": "company_address",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          }
+        },
+        {
+          "id": "col_1_13",
+          "name": "company_city",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          }
+        },
+        {
+          "id": "col_1_14",
+          "name": "company_state",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "comment": "100% West Virginia"
+        },
+        {
+          "id": "col_1_15",
+          "name": "company_zip",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          }
+        },
+        {
+          "id": "col_1_16",
+          "name": "company_country",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "comment": "100% United States"
+        },
+        {
+          "id": "col_1_17",
+          "name": "company_phone",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "comment": "Main phone (92% coverage: 410/446)"
+        },
+        {
+          "id": "col_1_18",
+          "name": "company_email",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          }
+        },
+        {
+          "id": "col_1_19",
+          "name": "created_at",
+          "type": {
+            "id": "timestamptz",
+            "name": "TIMESTAMPTZ"
+          },
+          "default": "NOW()"
+        },
+        {
+          "id": "col_1_20",
+          "name": "updated_at",
+          "type": {
+            "id": "timestamptz",
+            "name": "TIMESTAMPTZ"
+          },
+          "default": "NOW()"
+        }
+      ],
+      "indexes": [
+        {
+          "id": "idx_1_1",
+          "name": "idx_company_raw_intake_website",
+          "columns": ["website"],
+          "unique": false
+        },
+        {
+          "id": "idx_1_2",
+          "name": "idx_company_raw_intake_industry",
+          "columns": ["industry"],
+          "unique": false
+        },
+        {
+          "id": "idx_1_3",
+          "name": "idx_company_raw_intake_state",
+          "columns": ["company_state"],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "id": "table_2",
+      "name": "company_master",
+      "schema": "marketing",
+      "x": 500,
+      "y": 100,
+      "color": "#90EE90",
+      "comment": "Master table: 446 promoted companies with Barton IDs",
+      "columns": [
+        {
+          "id": "col_2_1",
+          "name": "company_unique_id",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "primaryKey": true,
+          "notNull": true,
+          "unique": true,
+          "comment": "Barton ID format: 04.04.01.XX.XXXXX.XXX"
+        },
+        {
+          "id": "col_2_2",
+          "name": "company_name",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "notNull": true,
+          "comment": "COALESCE(company, company_name_for_emails)"
+        },
+        {
+          "id": "col_2_3",
+          "name": "website_url",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "notNull": true,
+          "comment": "COALESCE(website, 'https://example.com')"
+        },
+        {
+          "id": "col_2_4",
+          "name": "industry",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          }
+        },
+        {
+          "id": "col_2_5",
+          "name": "employee_count",
+          "type": {
+            "id": "integer",
+            "name": "INTEGER"
+          },
+          "comment": "Range: 51-2100, Avg: 165"
+        },
+        {
+          "id": "col_2_6",
+          "name": "company_phone",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          }
+        },
+        {
+          "id": "col_2_7",
+          "name": "address_street",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          }
+        },
+        {
+          "id": "col_2_8",
+          "name": "address_city",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          }
+        },
+        {
+          "id": "col_2_9",
+          "name": "address_state",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          }
+        },
+        {
+          "id": "col_2_10",
+          "name": "address_zip",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          }
+        },
+        {
+          "id": "col_2_11",
+          "name": "address_country",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          }
+        },
+        {
+          "id": "col_2_12",
+          "name": "linkedin_url",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          }
+        },
+        {
+          "id": "col_2_13",
+          "name": "facebook_url",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          }
+        },
+        {
+          "id": "col_2_14",
+          "name": "twitter_url",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          }
+        },
+        {
+          "id": "col_2_15",
+          "name": "sic_codes",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          }
+        },
+        {
+          "id": "col_2_16",
+          "name": "founded_year",
+          "type": {
+            "id": "integer",
+            "name": "INTEGER"
+          }
+        },
+        {
+          "id": "col_2_17",
+          "name": "keywords",
+          "type": {
+            "id": "text[]",
+            "name": "TEXT[]"
+          },
+          "comment": "Available but not yet populated"
+        },
+        {
+          "id": "col_2_18",
+          "name": "description",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "comment": "Available but not yet populated"
+        },
+        {
+          "id": "col_2_19",
+          "name": "source_system",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "notNull": true,
+          "comment": "Static: 'intake_promotion'"
+        },
+        {
+          "id": "col_2_20",
+          "name": "source_record_id",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "comment": "Links to intake.company_raw_intake.id"
+        },
+        {
+          "id": "col_2_21",
+          "name": "promoted_from_intake_at",
+          "type": {
+            "id": "timestamptz",
+            "name": "TIMESTAMPTZ"
+          },
+          "notNull": true,
+          "default": "NOW()"
+        },
+        {
+          "id": "col_2_22",
+          "name": "promotion_audit_log_id",
+          "type": {
+            "id": "integer",
+            "name": "INTEGER"
+          }
+        },
+        {
+          "id": "col_2_23",
+          "name": "created_at",
+          "type": {
+            "id": "timestamptz",
+            "name": "TIMESTAMPTZ"
+          },
+          "default": "NOW()"
+        },
+        {
+          "id": "col_2_24",
+          "name": "updated_at",
+          "type": {
+            "id": "timestamptz",
+            "name": "TIMESTAMPTZ"
+          },
+          "default": "NOW()"
+        }
+      ],
+      "indexes": [
+        {
+          "id": "idx_2_1",
+          "name": "idx_company_master_company_name",
+          "columns": ["company_name"],
+          "unique": false
+        },
+        {
+          "id": "idx_2_2",
+          "name": "idx_company_master_industry",
+          "columns": ["industry"],
+          "unique": false
+        },
+        {
+          "id": "idx_2_3",
+          "name": "idx_company_master_source_system",
+          "columns": ["source_system"],
+          "unique": false
+        },
+        {
+          "id": "idx_2_4",
+          "name": "idx_company_master_promoted_at",
+          "columns": ["promoted_from_intake_at"],
+          "unique": false
+        }
+      ],
+      "checks": [
+        {
+          "id": "check_2_1",
+          "name": "company_master_barton_id_format",
+          "expression": "company_unique_id ~ '^04\\.04\\.01\\.[0-9]{2}\\.[0-9]{5}\\.[0-9]{3}$'"
+        },
+        {
+          "id": "check_2_2",
+          "name": "company_master_employee_count_positive",
+          "expression": "employee_count IS NULL OR employee_count >= 0"
+        },
+        {
+          "id": "check_2_3",
+          "name": "company_master_founded_year_reasonable",
+          "expression": "founded_year IS NULL OR (founded_year >= 1700 AND founded_year <= EXTRACT(YEAR FROM NOW()))"
+        }
+      ]
+    },
+    {
+      "id": "table_3",
+      "name": "people_master",
+      "schema": "marketing",
+      "x": 900,
+      "y": 100,
+      "color": "#FFE4B5",
+      "comment": "Target table: 0 rows (ready for enrichment) → 1500-2500 expected",
+      "columns": [
+        {
+          "id": "col_3_1",
+          "name": "unique_id",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "primaryKey": true,
+          "notNull": true,
+          "unique": true,
+          "comment": "Barton ID format: 04.04.02.XX.XXXXX.XXX"
+        },
+        {
+          "id": "col_3_2",
+          "name": "company_unique_id",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "notNull": true,
+          "comment": "FOREIGN KEY → company_master.company_unique_id"
+        },
+        {
+          "id": "col_3_3",
+          "name": "company_slot_unique_id",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "notNull": true,
+          "comment": "⚠️ BLOCKER: Slot assignment TBD"
+        },
+        {
+          "id": "col_3_4",
+          "name": "first_name",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "notNull": true,
+          "comment": "From Apify: firstName"
+        },
+        {
+          "id": "col_3_5",
+          "name": "last_name",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "notNull": true,
+          "comment": "From Apify: lastName"
+        },
+        {
+          "id": "col_3_6",
+          "name": "full_name",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "comment": "GENERATED: TRIM(first_name || ' ' || last_name)"
+        },
+        {
+          "id": "col_3_7",
+          "name": "title",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "comment": "From Apify: CEO, CFO, CHRO, CTO"
+        },
+        {
+          "id": "col_3_8",
+          "name": "seniority",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "comment": "From Apify: c-suite, vp, director"
+        },
+        {
+          "id": "col_3_9",
+          "name": "department",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "comment": "Inferred from title"
+        },
+        {
+          "id": "col_3_10",
+          "name": "email",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "comment": "From Apify: work email"
+        },
+        {
+          "id": "col_3_11",
+          "name": "work_phone_e164",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "comment": "E.164 format: +1-XXX-XXX-XXXX"
+        },
+        {
+          "id": "col_3_12",
+          "name": "personal_phone_e164",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          }
+        },
+        {
+          "id": "col_3_13",
+          "name": "linkedin_url",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "comment": "From Apify: LinkedIn profile"
+        },
+        {
+          "id": "col_3_14",
+          "name": "twitter_url",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          }
+        },
+        {
+          "id": "col_3_15",
+          "name": "facebook_url",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          }
+        },
+        {
+          "id": "col_3_16",
+          "name": "bio",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "comment": "Executive biography (if available from Apify)"
+        },
+        {
+          "id": "col_3_17",
+          "name": "skills",
+          "type": {
+            "id": "text[]",
+            "name": "TEXT[]"
+          },
+          "comment": "Skills array (if available from Apify)"
+        },
+        {
+          "id": "col_3_18",
+          "name": "education",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "comment": "Education background (if available from Apify)"
+        },
+        {
+          "id": "col_3_19",
+          "name": "certifications",
+          "type": {
+            "id": "text[]",
+            "name": "TEXT[]"
+          },
+          "comment": "Professional certifications (if available from Apify)"
+        },
+        {
+          "id": "col_3_20",
+          "name": "source_system",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "notNull": true,
+          "comment": "Static: 'apify_leads_finder'"
+        },
+        {
+          "id": "col_3_21",
+          "name": "source_record_id",
+          "type": {
+            "id": "text",
+            "name": "TEXT"
+          },
+          "comment": "Apify run ID"
+        },
+        {
+          "id": "col_3_22",
+          "name": "promoted_from_intake_at",
+          "type": {
+            "id": "timestamptz",
+            "name": "TIMESTAMPTZ"
+          },
+          "notNull": true,
+          "default": "NOW()"
+        },
+        {
+          "id": "col_3_23",
+          "name": "promotion_audit_log_id",
+          "type": {
+            "id": "integer",
+            "name": "INTEGER"
+          }
+        },
+        {
+          "id": "col_3_24",
+          "name": "created_at",
+          "type": {
+            "id": "timestamptz",
+            "name": "TIMESTAMPTZ"
+          },
+          "default": "NOW()"
+        },
+        {
+          "id": "col_3_25",
+          "name": "updated_at",
+          "type": {
+            "id": "timestamptz",
+            "name": "TIMESTAMPTZ"
+          },
+          "default": "NOW()"
+        }
+      ],
+      "indexes": [
+        {
+          "id": "idx_3_1",
+          "name": "idx_people_master_company_id",
+          "columns": ["company_unique_id"],
+          "unique": false
+        },
+        {
+          "id": "idx_3_2",
+          "name": "idx_people_master_slot_id",
+          "columns": ["company_slot_unique_id"],
+          "unique": false
+        },
+        {
+          "id": "idx_3_3",
+          "name": "idx_people_master_full_name",
+          "columns": ["full_name"],
+          "unique": false
+        },
+        {
+          "id": "idx_3_4",
+          "name": "idx_people_master_email",
+          "columns": ["email"],
+          "unique": false
+        },
+        {
+          "id": "idx_3_5",
+          "name": "idx_people_master_title",
+          "columns": ["title"],
+          "unique": false
+        },
+        {
+          "id": "idx_3_6",
+          "name": "idx_people_master_source_system",
+          "columns": ["source_system"],
+          "unique": false
+        },
+        {
+          "id": "idx_3_7",
+          "name": "idx_people_master_promoted_at",
+          "columns": ["promoted_from_intake_at"],
+          "unique": false
+        }
+      ],
+      "checks": [
+        {
+          "id": "check_3_1",
+          "name": "people_master_barton_id_format",
+          "expression": "unique_id ~ '^04\\.04\\.02\\.[0-9]{2}\\.[0-9]{5}\\.[0-9]{3}$'"
+        },
+        {
+          "id": "check_3_2",
+          "name": "people_master_company_barton_id_format",
+          "expression": "company_unique_id ~ '^04\\.04\\.01\\.[0-9]{2}\\.[0-9]{5}\\.[0-9]{3}$'"
+        },
+        {
+          "id": "check_3_3",
+          "name": "people_master_slot_barton_id_format",
+          "expression": "company_slot_unique_id ~ '^04\\.04\\.05\\.[0-9]{2}\\.[0-9]{5}\\.[0-9]{3}$'"
+        },
+        {
+          "id": "check_3_4",
+          "name": "people_master_email_format",
+          "expression": "email IS NULL OR email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$'"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel_1",
+      "name": "intake_to_master_promotion",
+      "sourceTableId": "table_1",
+      "sourceColumnId": "col_1_1",
+      "targetTableId": "table_2",
+      "targetColumnId": "col_2_20",
+      "type": "one-to-one",
+      "comment": "Promotion tracking: intake.id → company_master.source_record_id"
+    },
+    {
+      "id": "rel_2",
+      "name": "company_to_executives",
+      "sourceTableId": "table_2",
+      "sourceColumnId": "col_2_1",
+      "targetTableId": "table_3",
+      "targetColumnId": "col_3_2",
+      "type": "one-to-many",
+      "comment": "Company has multiple executives: company_master.company_unique_id → people_master.company_unique_id"
+    }
+  ],
+  "statistics": {
+    "intake.company_raw_intake": {
+      "row_count": 446,
+      "data_quality": {
+        "website": "99% (442/446)",
+        "linkedin": "95% (424/446)",
+        "industry": "98% (437/446)",
+        "employees": "100% (446/446)",
+        "state": "100% (446/446)",
+        "phone": "92% (410/446)"
+      }
+    },
+    "marketing.company_master": {
+      "row_count": 446,
+      "industries": 78,
+      "employee_range": "51-2100",
+      "avg_employees": 165,
+      "promoted_at": "2025-10-21T19:51:23.668Z"
+    },
+    "marketing.people_master": {
+      "row_count": 0,
+      "expected_after_enrichment": "1500-2500",
+      "status": "Ready for enrichment"
+    }
+  }
+}

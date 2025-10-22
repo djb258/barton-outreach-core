@@ -90,11 +90,13 @@ CREATE TABLE IF NOT EXISTS marketing.company_master (company_unique_id TEXT PRIM
     CONSTRAINT company_master_employee_count_positive
         CHECK (employee_count IS NULL OR employee_count >= 0),
     CONSTRAINT company_master_founded_year_reasonable
-        CHECK (founded_year IS NULL OR (founded_year >= 1800 AND founded_year <= EXTRACT(YEAR FROM NOW()))),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW());
+        CHECK (founded_year IS NULL OR (founded_year >= 1700 AND founded_year <= EXTRACT(YEAR FROM NOW())))
+);
+
+-- Drop and recreate founded_year constraint to allow older companies
+ALTER TABLE marketing.company_master DROP CONSTRAINT IF EXISTS company_master_founded_year_reasonable;
+ALTER TABLE marketing.company_master ADD CONSTRAINT company_master_founded_year_reasonable
+    CHECK (founded_year IS NULL OR (founded_year >= 1700 AND founded_year <= EXTRACT(YEAR FROM NOW())));
 
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_company_master_company_name ON marketing.company_master(company_name);
@@ -107,8 +109,10 @@ COMMENT ON TABLE marketing.company_master IS 'Master table for validated and pro
 COMMENT ON COLUMN marketing.company_master.company_unique_id IS 'Barton ID format: 04.04.01.XX.XXXXX.XXX (immutable during promotion)';
 COMMENT ON COLUMN marketing.company_master.promoted_from_intake_at IS 'Timestamp when record was promoted from company_raw_intake';
 COMMENT ON COLUMN marketing.company_master.promotion_audit_log_id IS 'Reference to the audit log entry for this promotion';
--- Trigger for IF
-CREATE TRIGGER trigger_IF_updated_at
-    BEFORE UPDATE ON IF
+
+-- Trigger for auto-updating updated_at timestamp
+DROP TRIGGER IF EXISTS trigger_company_master_updated_at ON marketing.company_master;
+CREATE TRIGGER trigger_company_master_updated_at
+    BEFORE UPDATE ON marketing.company_master
     FOR EACH ROW
     EXECUTE FUNCTION trigger_updated_at();
