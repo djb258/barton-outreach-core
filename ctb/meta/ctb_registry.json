@@ -1,0 +1,3814 @@
+{
+  "generated": "2025-10-23T11:29:54.340232",
+  "version": "1.0",
+  "total_files": 496,
+  "branches": {
+    "ai": {
+      "count": 2,
+      "barton_id": "03.01.00",
+      "enforcement_dist": {
+        "HEIR": 1,
+        "ORBT": 0,
+        "None": 1
+      }
+    },
+    "docs": {
+      "count": 41,
+      "barton_id": "06.01.00",
+      "enforcement_dist": {
+        "HEIR": 4,
+        "ORBT": 9,
+        "None": 28
+      }
+    },
+    "meta": {
+      "count": 3,
+      "barton_id": "08.01.00",
+      "enforcement_dist": {
+        "HEIR": 0,
+        "ORBT": 0,
+        "None": 3
+      }
+    },
+    "sys/activepieces": {
+      "count": 1,
+      "barton_id": "04.04.08",
+      "enforcement_dist": {
+        "HEIR": 0,
+        "ORBT": 0,
+        "None": 1
+      }
+    },
+    "sys/api": {
+      "count": 23,
+      "barton_id": "04.04.12",
+      "enforcement_dist": {
+        "HEIR": 6,
+        "ORBT": 17,
+        "None": 0
+      }
+    },
+    "sys/chartdb": {
+      "count": 1,
+      "barton_id": "04.04.07",
+      "enforcement_dist": {
+        "HEIR": 0,
+        "ORBT": 0,
+        "None": 1
+      }
+    },
+    "sys": {
+      "count": 1,
+      "barton_id": "04.04.00",
+      "enforcement_dist": {
+        "HEIR": 0,
+        "ORBT": 0,
+        "None": 1
+      }
+    },
+    "sys/cli": {
+      "count": 3,
+      "barton_id": "04.04.14",
+      "enforcement_dist": {
+        "HEIR": 0,
+        "ORBT": 0,
+        "None": 3
+      }
+    },
+    "sys/composio-mcp": {
+      "count": 3,
+      "barton_id": "04.04.02",
+      "enforcement_dist": {
+        "HEIR": 0,
+        "ORBT": 0,
+        "None": 3
+      }
+    },
+    "sys/firebase-workbench": {
+      "count": 43,
+      "barton_id": "04.04.01",
+      "enforcement_dist": {
+        "HEIR": 16,
+        "ORBT": 17,
+        "None": 10
+      }
+    },
+    "sys/github-factory": {
+      "count": 9,
+      "barton_id": "04.04.06",
+      "enforcement_dist": {
+        "HEIR": 3,
+        "ORBT": 2,
+        "None": 4
+      }
+    },
+    "sys/libs": {
+      "count": 7,
+      "barton_id": "04.04.23",
+      "enforcement_dist": {
+        "HEIR": 0,
+        "ORBT": 1,
+        "None": 6
+      }
+    },
+    "sys/security-audit": {
+      "count": 1,
+      "barton_id": "04.04.11",
+      "enforcement_dist": {
+        "HEIR": 1,
+        "ORBT": 0,
+        "None": 0
+      }
+    },
+    "sys/services": {
+      "count": 1,
+      "barton_id": "04.04.15",
+      "enforcement_dist": {
+        "HEIR": 0,
+        "ORBT": 1,
+        "None": 0
+      }
+    },
+    "sys/tests": {
+      "count": 5,
+      "barton_id": "04.04.17",
+      "enforcement_dist": {
+        "HEIR": 5,
+        "ORBT": 0,
+        "None": 0
+      }
+    },
+    "sys/tools": {
+      "count": 12,
+      "barton_id": "04.04.24",
+      "enforcement_dist": {
+        "HEIR": 2,
+        "ORBT": 1,
+        "None": 9
+      }
+    },
+    "sys/windmill": {
+      "count": 1,
+      "barton_id": "04.04.09",
+      "enforcement_dist": {
+        "HEIR": 0,
+        "ORBT": 0,
+        "None": 1
+      }
+    },
+    "sys/ops": {
+      "count": 5,
+      "barton_id": "04.04.13",
+      "enforcement_dist": {
+        "HEIR": 1,
+        "ORBT": 0,
+        "None": 4
+      }
+    },
+    "sys/nodes": {
+      "count": 9,
+      "barton_id": "04.04.22",
+      "enforcement_dist": {
+        "HEIR": 0,
+        "ORBT": 2,
+        "None": 7
+      }
+    },
+    "sys/modules": {
+      "count": 4,
+      "barton_id": "04.04.21",
+      "enforcement_dist": {
+        "HEIR": 0,
+        "ORBT": 0,
+        "None": 4
+      }
+    },
+    "sys/mechanic": {
+      "count": 1,
+      "barton_id": "04.04.20",
+      "enforcement_dist": {
+        "HEIR": 0,
+        "ORBT": 0,
+        "None": 1
+      }
+    },
+    "sys/factory": {
+      "count": 2,
+      "barton_id": "04.04.19",
+      "enforcement_dist": {
+        "HEIR": 0,
+        "ORBT": 0,
+        "None": 2
+      }
+    },
+    "meta/global-config": {
+      "count": 10,
+      "barton_id": "08.01.01",
+      "enforcement_dist": {
+        "HEIR": 2,
+        "ORBT": 0,
+        "None": 8
+      }
+    },
+    "docs/analysis": {
+      "count": 39,
+      "barton_id": "06.01.01",
+      "enforcement_dist": {
+        "HEIR": 8,
+        "ORBT": 17,
+        "None": 14
+      }
+    },
+    "docs/examples": {
+      "count": 1,
+      "barton_id": "06.01.03",
+      "enforcement_dist": {
+        "HEIR": 0,
+        "ORBT": 0,
+        "None": 1
+      }
+    },
+    "docs/pages": {
+      "count": 4,
+      "barton_id": "06.01.07",
+      "enforcement_dist": {
+        "HEIR": 1,
+        "ORBT": 0,
+        "None": 3
+      }
+    },
+    "docs/scripts": {
+      "count": 37,
+      "barton_id": "06.01.04",
+      "enforcement_dist": {
+        "HEIR": 11,
+        "ORBT": 2,
+        "None": 24
+      }
+    },
+    "docs/wiki": {
+      "count": 3,
+      "barton_id": "06.01.10",
+      "enforcement_dist": {
+        "HEIR": 0,
+        "ORBT": 0,
+        "None": 3
+      }
+    },
+    "docs/blueprints": {
+      "count": 2,
+      "barton_id": "06.01.06",
+      "enforcement_dist": {
+        "HEIR": 0,
+        "ORBT": 0,
+        "None": 2
+      }
+    },
+    "docs/archive": {
+      "count": 5,
+      "barton_id": "06.01.05",
+      "enforcement_dist": {
+        "HEIR": 0,
+        "ORBT": 2,
+        "None": 3
+      }
+    },
+    "data/infra": {
+      "count": 13,
+      "barton_id": "05.01.01",
+      "enforcement_dist": {
+        "HEIR": 0,
+        "ORBT": 13,
+        "None": 0
+      }
+    },
+    "data/migrations": {
+      "count": 55,
+      "barton_id": "05.01.02",
+      "enforcement_dist": {
+        "HEIR": 45,
+        "ORBT": 10,
+        "None": 0
+      }
+    },
+    "ai/garage-bay": {
+      "count": 98,
+      "barton_id": "03.01.02",
+      "enforcement_dist": {
+        "HEIR": 19,
+        "ORBT": 43,
+        "None": 36
+      }
+    },
+    "ai/scripts": {
+      "count": 35,
+      "barton_id": "03.01.04",
+      "enforcement_dist": {
+        "HEIR": 7,
+        "ORBT": 21,
+        "None": 7
+      }
+    },
+    "ai/testing": {
+      "count": 12,
+      "barton_id": "03.01.03",
+      "enforcement_dist": {
+        "HEIR": 12,
+        "ORBT": 0,
+        "None": 0
+      }
+    },
+    "ai/tools": {
+      "count": 1,
+      "barton_id": "03.01.05",
+      "enforcement_dist": {
+        "HEIR": 1,
+        "ORBT": 0,
+        "None": 0
+      }
+    },
+    "ai/agents": {
+      "count": 3,
+      "barton_id": "03.01.01",
+      "enforcement_dist": {
+        "HEIR": 3,
+        "ORBT": 0,
+        "None": 0
+      }
+    }
+  },
+  "files": [
+    {
+      "path": "ai\\AGENT_GUIDE.md",
+      "ctb_branch": "ai",
+      "barton_id": "03.01.00",
+      "unique_id": "CTB-1898B0A7",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\render_start.py",
+      "ctb_branch": "ai",
+      "barton_id": "03.01.00",
+      "unique_id": "CTB-97D1F7D1",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\40k_star.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-21D8DDBE",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\AGENT_ARCHITECTURE.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-89348035",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "docs\\APOLLO_INGEST_INTEGRATION.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-98F3C841",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\ARCHITECTURE.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-EBDC91A5",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\audit_report.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-F15CFC31",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "docs\\CLAUDE.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-052A1484",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\COMPLETE_DEPLOYMENT.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-C0176AA5",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\COMPLIANCE_STATUS.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-38BB3774",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\composio_connection.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-766CAB84",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\COMPOSIO_INTEGRATION.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-C5CC1D9B",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\COMPOSIO_INTEGRATION_UPDATED.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-B5F45368",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\COMPOSIO_MIGRATION_CHECKLIST.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-B7A730AE",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "docs\\COMPOSIO_STANDARD_INTEGRATION.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-E77CD4ED",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\COMPOSIO_VERIFICATION_REPORT.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-8485B0A7",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\CTB_IMPLEMENTATION_REPORT.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-20ADB6E1",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\DATABASE_SCHEMA.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-3DBE9487",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\DEPLOYMENT_URLS.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-0F146021",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\DEPLOY_NOW.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-6BFA5153",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\DEPLOY_WITH_WORKING_MCP.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-576CCC41",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\DRAWIO_INTEGRATION.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-367886BA",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\error_handling.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-82C597D3",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\FINAL_AUDIT_SUMMARY.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-C00848C1",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "docs\\imo_architecture.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-1B73B153",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\NEON_IMPLEMENTATION_SUMMARY.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-2E5F81C5",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\NEON_INTEGRATION.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-8FA273C3",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\NEXT_STEPS.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-1BA2485B",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\orchestration-usage.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-B184DD6C",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\outreach-doctrine-a2z.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-52684564",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\OUTREACH_ALTITUDE_MAP.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-B55D14D8",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\PIPELINE_ARCHITECTURE.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-802F212D",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\PIPELINE_INTEGRATION.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-8DE5FFA9",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\PRODUCTION_IMPROVEMENTS.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-A13B2AC7",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\QUICKSTART.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-17F355DE",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\README.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-04C6E90F",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\SCAFFOLD_INSTRUCTIONS.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-26A21518",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\SCHEMA_DIAGRAM.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-10793FD3",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\SCHEMA_VERIFICATION_REPORT.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-973D0B3F",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\TROUBLESHOOTING.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-E8F0E79B",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\UI-APPS-README.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-D580DA44",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\UI_BUILDER_SETUP.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-C8CF02F9",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\VERCEL_DEPLOYMENT_GUIDE.md",
+      "ctb_branch": "docs",
+      "barton_id": "06.01.00",
+      "unique_id": "CTB-A4073A3E",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "meta\\eslint.config.js",
+      "ctb_branch": "meta",
+      "barton_id": "08.01.00",
+      "unique_id": "CTB-E7F6D45C",
+      "enforcement": "None"
+    },
+    {
+      "path": "meta\\postcss.config.js",
+      "ctb_branch": "meta",
+      "barton_id": "08.01.00",
+      "unique_id": "CTB-B19118AB",
+      "enforcement": "None"
+    },
+    {
+      "path": "meta\\tailwind.config.ts",
+      "ctb_branch": "meta",
+      "barton_id": "08.01.00",
+      "unique_id": "CTB-96996CDB",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\activepieces\\README.md",
+      "ctb_branch": "sys/activepieces",
+      "barton_id": "04.04.08",
+      "unique_id": "CTB-B22FF26D",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\api\\hello-before-doctrine.js",
+      "ctb_branch": "sys/api",
+      "barton_id": "04.04.12",
+      "unique_id": "CTB-1D2748D3",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\api\\hello.js",
+      "ctb_branch": "sys/api",
+      "barton_id": "04.04.12",
+      "unique_id": "CTB-348E6773",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\api\\index.ts",
+      "ctb_branch": "sys/api",
+      "barton_id": "04.04.12",
+      "unique_id": "CTB-0E63FFB7",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\api\\llm-before-doctrine.js",
+      "ctb_branch": "sys/api",
+      "barton_id": "04.04.12",
+      "unique_id": "CTB-0B55F935",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\api\\llm.js",
+      "ctb_branch": "sys/api",
+      "barton_id": "04.04.12",
+      "unique_id": "CTB-5908F513",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\api\\main.py",
+      "ctb_branch": "sys/api",
+      "barton_id": "04.04.12",
+      "unique_id": "CTB-2A9DA55E",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\api\\start-orchestrators.ts",
+      "ctb_branch": "sys/api",
+      "barton_id": "04.04.12",
+      "unique_id": "CTB-A93F47AB",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\api\\subagents-before-doctrine.js",
+      "ctb_branch": "sys/api",
+      "barton_id": "04.04.12",
+      "unique_id": "CTB-8830BDAF",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\api\\subagents.js",
+      "ctb_branch": "sys/api",
+      "barton_id": "04.04.12",
+      "unique_id": "CTB-42AE8A2E",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\api\\test-before-doctrine.js",
+      "ctb_branch": "sys/api",
+      "barton_id": "04.04.12",
+      "unique_id": "CTB-A9B2995E",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\api\\test.js",
+      "ctb_branch": "sys/api",
+      "barton_id": "04.04.12",
+      "unique_id": "CTB-0EC0696C",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\api\\webhooks.ts",
+      "ctb_branch": "sys/api",
+      "barton_id": "04.04.12",
+      "unique_id": "CTB-04FCC693",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\chartdb\\README.md",
+      "ctb_branch": "sys/chartdb",
+      "barton_id": "04.04.07",
+      "unique_id": "CTB-15766AF3",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\claude-skills\\README.md",
+      "ctb_branch": "sys",
+      "barton_id": "04.04.00",
+      "unique_id": "CTB-2CD1077D",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\cli\\kickoff.ts",
+      "ctb_branch": "sys/cli",
+      "barton_id": "04.04.14",
+      "unique_id": "CTB-54E4A7FB",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\cli\\status.ts",
+      "ctb_branch": "sys/cli",
+      "barton_id": "04.04.14",
+      "unique_id": "CTB-E209FE2B",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\cli\\trigger.ts",
+      "ctb_branch": "sys/cli",
+      "barton_id": "04.04.14",
+      "unique_id": "CTB-CED619C3",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\composio-mcp\\github-composio-server.js",
+      "ctb_branch": "sys/composio-mcp",
+      "barton_id": "04.04.02",
+      "unique_id": "CTB-05572C27",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\composio-mcp\\github-direct-server.js",
+      "ctb_branch": "sys/composio-mcp",
+      "barton_id": "04.04.02",
+      "unique_id": "CTB-000F967C",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\composio-mcp\\smartsheet-server.js",
+      "ctb_branch": "sys/composio-mcp",
+      "barton_id": "04.04.02",
+      "unique_id": "CTB-AAECE233",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\firebase-workbench\\barton-doctrine-firebase-service.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-3B26763B",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\firebase-workbench\\barton-intake-service.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-BDD11D6C",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\firebase-workbench\\deploy-step1-verification.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-8C6655BD",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\firebase-workbench\\deploy-verify-step2.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-40DD54DF",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\firebase-workbench\\deploy-verify-step2a.cjs",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-5CEF49B4",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\firebase-workbench\\deploy-verify-step2b.cjs",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-4A96253D",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\firebase-workbench\\deploy-verify-step2c.cjs",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-E13BF602",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\firebase-workbench\\enrichment-mcp-endpoints.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-F474D277",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\firebase-workbench\\enrichment-schema.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-3F056BEE",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\firebase-workbench\\firebase_mcp.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-4CF1370C",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\firebase-workbench\\firebase_workflow_example.md",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-A53032A9",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\firebase-workbench\\firestore-schema.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-B9D03D29",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\firebase-workbench\\history-schema.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-F9711C7F",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\firebase-workbench\\intake-mcp-endpoints.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-90AC4648",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\firebase-workbench\\intake-schema.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-019EDFB9",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\firebase-workbench\\intake-validation-service.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-0AF8F2AB",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\firebase-workbench\\mcp-endpoints.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-8442157C",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\firebase-workbench\\outreach-sync-mcp-endpoints.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-DDAD4BC5",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\firebase-workbench\\promotion-mcp-endpoints.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-09422FF7",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\firebase-workbench\\scraping-mcp-endpoints.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-BBFB11E4",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\firebase-workbench\\step2-deployment-check.cjs",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-398EB6E6",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\firebase-workbench\\test-mcp-enforcement.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-16D21529",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\firebase-workbench\\test-step1-deployment.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-3AAD66A4",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\firebase-workbench\\test-step2-intake.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-7FDC707E",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\firebase-workbench\\test-step2a-standalone.cjs",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-FD9A2C09",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\firebase-workbench\\test-step2a-validation.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-EA0FD284",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\firebase-workbench\\test-step2b-enrichment.cjs",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-8AA733BA",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\firebase-workbench\\test-step2c-scraping.cjs",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-9296F47D",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\firebase-workbench\\test-step4-promotion.cjs",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-CFF8E654",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\firebase-workbench\\test-step6-outreach-sync.cjs",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-8697D7A8",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\firebase-workbench\\test-step7-monitoring.cjs",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-6055A1CB",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\firebase-workbench\\validation-failed-schema.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-566BBF69",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\firebase-workbench\\validator-mcp-endpoints.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-13297CDA",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\github-factory\\bootstrap-repo.cjs",
+      "ctb_branch": "sys/github-factory",
+      "barton_id": "04.04.06",
+      "unique_id": "CTB-FE5DFABC",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\libs\\__init__.py",
+      "ctb_branch": "sys/libs",
+      "barton_id": "04.04.23",
+      "unique_id": "CTB-49E4FFCA",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\security-audit\\VERCEL_ENVS.md",
+      "ctb_branch": "sys/security-audit",
+      "barton_id": "04.04.11",
+      "unique_id": "CTB-975894A3",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\services\\router.js",
+      "ctb_branch": "sys/services",
+      "barton_id": "04.04.15",
+      "unique_id": "CTB-03363C6E",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\tests\\history-layer.test.js",
+      "ctb_branch": "sys/tests",
+      "barton_id": "04.04.17",
+      "unique_id": "CTB-67873DD0",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\tests\\README.md",
+      "ctb_branch": "sys/tests",
+      "barton_id": "04.04.17",
+      "unique_id": "CTB-3D79CA8C",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\tests\\test_compliance.py",
+      "ctb_branch": "sys/tests",
+      "barton_id": "04.04.17",
+      "unique_id": "CTB-C5CB0390",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\tests\\test_ctb_scripts.sh",
+      "ctb_branch": "sys/tests",
+      "barton_id": "04.04.17",
+      "unique_id": "CTB-8E6A8974",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\tests\\test_registry.py",
+      "ctb_branch": "sys/tests",
+      "barton_id": "04.04.17",
+      "unique_id": "CTB-25D13F78",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\tools\\blueprint_score.py",
+      "ctb_branch": "sys/tools",
+      "barton_id": "04.04.24",
+      "unique_id": "CTB-FB485CFB",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\tools\\blueprint_visual.py",
+      "ctb_branch": "sys/tools",
+      "barton_id": "04.04.24",
+      "unique_id": "CTB-9886E72E",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\tools\\compliance_heartbeat.py",
+      "ctb_branch": "sys/tools",
+      "barton_id": "04.04.24",
+      "unique_id": "CTB-8511BCBF",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\tools\\deep_wiki_generator.sh",
+      "ctb_branch": "sys/tools",
+      "barton_id": "04.04.24",
+      "unique_id": "CTB-0ADA46E8",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\tools\\demo_client.py",
+      "ctb_branch": "sys/tools",
+      "barton_id": "04.04.24",
+      "unique_id": "CTB-DEDECF4A",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\tools\\demo_workflow.py",
+      "ctb_branch": "sys/tools",
+      "barton_id": "04.04.24",
+      "unique_id": "CTB-75B676E0",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\tools\\garage_bay_demo.py",
+      "ctb_branch": "sys/tools",
+      "barton_id": "04.04.24",
+      "unique_id": "CTB-4FF8257B",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\tools\\ids.py",
+      "ctb_branch": "sys/tools",
+      "barton_id": "04.04.24",
+      "unique_id": "CTB-7A937C6E",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\tools\\repo_audit.py",
+      "ctb_branch": "sys/tools",
+      "barton_id": "04.04.24",
+      "unique_id": "CTB-7F02C42B",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\tools\\repo_compliance_check.py",
+      "ctb_branch": "sys/tools",
+      "barton_id": "04.04.24",
+      "unique_id": "CTB-502B0694",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\tools\\repo_compliance_fixer.py",
+      "ctb_branch": "sys/tools",
+      "barton_id": "04.04.24",
+      "unique_id": "CTB-73783F1A",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\tools\\wiki_generator.sh",
+      "ctb_branch": "sys/tools",
+      "barton_id": "04.04.24",
+      "unique_id": "CTB-658CC118",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\windmill\\README.md",
+      "ctb_branch": "sys/windmill",
+      "barton_id": "04.04.09",
+      "unique_id": "CTB-0EFAFE26",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\ops\\orbt\\auditLogger.js",
+      "ctb_branch": "sys/ops",
+      "barton_id": "04.04.13",
+      "unique_id": "CTB-92FC16CB",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\ops\\orbt\\historyEnforcer.js",
+      "ctb_branch": "sys/ops",
+      "barton_id": "04.04.13",
+      "unique_id": "CTB-B9C22555",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\ops\\orbt\\neonWriter.js",
+      "ctb_branch": "sys/ops",
+      "barton_id": "04.04.13",
+      "unique_id": "CTB-B85E88A9",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\ops\\orbt\\README.md",
+      "ctb_branch": "sys/ops",
+      "barton_id": "04.04.13",
+      "unique_id": "CTB-C6862B7A",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\ops\\orbt\\runbooks.md",
+      "ctb_branch": "sys/ops",
+      "barton_id": "04.04.13",
+      "unique_id": "CTB-B429E7E8",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\nodes\\node-1-company-people-ple\\README.md",
+      "ctb_branch": "sys/nodes",
+      "barton_id": "04.04.22",
+      "unique_id": "CTB-6C9C6CA8",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\nodes\\node-1-company-people-ple\\TODO.md",
+      "ctb_branch": "sys/nodes",
+      "barton_id": "04.04.22",
+      "unique_id": "CTB-AF095AE8",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\nodes\\node-1-company-people-ple\\schema\\MIGRATION_MANIFEST.md",
+      "ctb_branch": "sys/nodes",
+      "barton_id": "04.04.22",
+      "unique_id": "CTB-A64D533E",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\nodes\\node-1-company-people-ple\\20k\\api\\error_model.md",
+      "ctb_branch": "sys/nodes",
+      "barton_id": "04.04.22",
+      "unique_id": "CTB-6C8BCAA3",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\nodes\\node-1-company-people-ple\\20k\\history\\history_policy.md",
+      "ctb_branch": "sys/nodes",
+      "barton_id": "04.04.22",
+      "unique_id": "CTB-CA39D76D",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\nodes\\node-1-company-people-ple\\20k\\people\\linking.md",
+      "ctb_branch": "sys/nodes",
+      "barton_id": "04.04.22",
+      "unique_id": "CTB-1D8D7717",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\nodes\\node-1-company-people-ple\\20k\\people\\people.md",
+      "ctb_branch": "sys/nodes",
+      "barton_id": "04.04.22",
+      "unique_id": "CTB-CF683D18",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\nodes\\node-1-company-people-ple\\20k\\validation\\provider_contract.md",
+      "ctb_branch": "sys/nodes",
+      "barton_id": "04.04.22",
+      "unique_id": "CTB-E0EB83B0",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\nodes\\node-1-company-people-ple\\20k\\validation\\validation_plan.md",
+      "ctb_branch": "sys/nodes",
+      "barton_id": "04.04.22",
+      "unique_id": "CTB-4D0A9E89",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\modules\\altitude-05000\\page-05000.md",
+      "ctb_branch": "sys/modules",
+      "barton_id": "04.04.21",
+      "unique_id": "CTB-3FBFEE49",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\modules\\altitude-10000\\page-10000.md",
+      "ctb_branch": "sys/modules",
+      "barton_id": "04.04.21",
+      "unique_id": "CTB-72CC2A74",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\modules\\altitude-20000\\page-20000.md",
+      "ctb_branch": "sys/modules",
+      "barton_id": "04.04.21",
+      "unique_id": "CTB-52437A4D",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\modules\\altitude-30000\\page-30000.md",
+      "ctb_branch": "sys/modules",
+      "barton_id": "04.04.21",
+      "unique_id": "CTB-E63412D8",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\mechanic\\recall\\recall.sh",
+      "ctb_branch": "sys/mechanic",
+      "barton_id": "04.04.20",
+      "unique_id": "CTB-F451FBD2",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\libs\\imo_tools\\api_mapper_tool.py",
+      "ctb_branch": "sys/libs",
+      "barton_id": "04.04.23",
+      "unique_id": "CTB-A394334C",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\libs\\imo_tools\\base_tool.py",
+      "ctb_branch": "sys/libs",
+      "barton_id": "04.04.23",
+      "unique_id": "CTB-B329434C",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\libs\\imo_tools\\csv_mapper_tool.py",
+      "ctb_branch": "sys/libs",
+      "barton_id": "04.04.23",
+      "unique_id": "CTB-AB0B3932",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\libs\\imo_tools\\parser_tool.py",
+      "ctb_branch": "sys/libs",
+      "barton_id": "04.04.23",
+      "unique_id": "CTB-FC063A9F",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\libs\\imo_tools\\pdf_mapper_tool.py",
+      "ctb_branch": "sys/libs",
+      "barton_id": "04.04.23",
+      "unique_id": "CTB-B5E0B4FB",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\libs\\imo_tools\\__init__.py",
+      "ctb_branch": "sys/libs",
+      "barton_id": "04.04.23",
+      "unique_id": "CTB-2A683140",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\github-factory\\scripts\\ctb_audit_generator.py",
+      "ctb_branch": "sys/github-factory",
+      "barton_id": "04.04.06.02",
+      "unique_id": "CTB-AUDIT-GEN-001",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\github-factory\\scripts\\ctb_metadata_tagger.py",
+      "ctb_branch": "sys/github-factory",
+      "barton_id": "04.04.06.01",
+      "unique_id": "CTB-TAGGER-001",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\github-factory\\scripts\\ctb_remediation.py",
+      "ctb_branch": "sys/github-factory",
+      "barton_id": "04.04.06.03",
+      "unique_id": "CTB-REMEDIATE-001",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\github-factory\\scripts\\deploy.bat",
+      "ctb_branch": "sys/github-factory",
+      "barton_id": "04.04.06",
+      "unique_id": "CTB-A69C7A5F",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\github-factory\\scripts\\deploy.sh",
+      "ctb_branch": "sys/github-factory",
+      "barton_id": "04.04.06",
+      "unique_id": "CTB-9B9A25D7",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\github-factory\\scripts\\start-github-direct.bat",
+      "ctb_branch": "sys/github-factory",
+      "barton_id": "04.04.06",
+      "unique_id": "CTB-7CAF2DF9",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\github-factory\\scripts\\start-github-mcp.bat",
+      "ctb_branch": "sys/github-factory",
+      "barton_id": "04.04.06",
+      "unique_id": "CTB-52C593CF",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\github-factory\\scripts\\start-smartsheet-mcp.bat",
+      "ctb_branch": "sys/github-factory",
+      "barton_id": "04.04.06",
+      "unique_id": "CTB-DCA82368",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\firebase-workbench\\functions\\enrichmentOperations.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-2D54C41A",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\firebase-workbench\\functions\\generateBartonId.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-93752FE2",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\firebase-workbench\\functions\\historyIntegration.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-C4823A7B",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\firebase-workbench\\functions\\historyOperations.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-F31BAF8A",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\firebase-workbench\\functions\\intakeOperations.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-AB772D5F",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\firebase-workbench\\functions\\metricsOperations.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-83FD2B7E",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\firebase-workbench\\functions\\outreachSyncOperations.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-33968D8F",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\firebase-workbench\\functions\\promotionOperations.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-E4BD44FC",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\firebase-workbench\\functions\\scrapingOperations.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-BAD33609",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\firebase-workbench\\functions\\validationOperations.js",
+      "ctb_branch": "sys/firebase-workbench",
+      "barton_id": "04.04.01",
+      "unique_id": "CTB-0239BE62",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\factory\\ui\\dev.js",
+      "ctb_branch": "sys/factory",
+      "barton_id": "04.04.19",
+      "unique_id": "CTB-F706ECE4",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\factory\\ui\\init.sh",
+      "ctb_branch": "sys/factory",
+      "barton_id": "04.04.19",
+      "unique_id": "CTB-1FCE6E61",
+      "enforcement": "None"
+    },
+    {
+      "path": "sys\\api\\blueprints\\ids.py",
+      "ctb_branch": "sys/api",
+      "barton_id": "04.04.12",
+      "unique_id": "CTB-D115A4DE",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\api\\blueprints\\versioning.py",
+      "ctb_branch": "sys/api",
+      "barton_id": "04.04.12",
+      "unique_id": "CTB-270C5815",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\api\\blueprints\\__init__.py",
+      "ctb_branch": "sys/api",
+      "barton_id": "04.04.12",
+      "unique_id": "CTB-D53D83DD",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\api\\imo\\llm-before-doctrine.js",
+      "ctb_branch": "sys/api",
+      "barton_id": "04.04.12",
+      "unique_id": "CTB-8CC47B45",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\api\\imo\\llm.js",
+      "ctb_branch": "sys/api",
+      "barton_id": "04.04.12",
+      "unique_id": "CTB-902CA631",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\api\\infra\\subagents.py",
+      "ctb_branch": "sys/api",
+      "barton_id": "04.04.12",
+      "unique_id": "CTB-1E48B7BE",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "sys\\api\\infra\\__init__.py",
+      "ctb_branch": "sys/api",
+      "barton_id": "04.04.12",
+      "unique_id": "CTB-B03706D5",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\api\\ssot\\save-before-doctrine.js",
+      "ctb_branch": "sys/api",
+      "barton_id": "04.04.12",
+      "unique_id": "CTB-48491AC5",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\api\\ssot\\save.js",
+      "ctb_branch": "sys/api",
+      "barton_id": "04.04.12",
+      "unique_id": "CTB-60DB78D4",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\api\\imo\\manifest\\[id]-before-doctrine.js",
+      "ctb_branch": "sys/api",
+      "barton_id": "04.04.12",
+      "unique_id": "CTB-660C27FE",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "sys\\api\\imo\\manifest\\[id].js",
+      "ctb_branch": "sys/api",
+      "barton_id": "04.04.12",
+      "unique_id": "CTB-5F11BBCC",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "meta\\global-config\\CTB_DOCTRINE.md",
+      "ctb_branch": "meta/global-config",
+      "barton_id": "08.01.01",
+      "unique_id": "CTB-2E6194BA",
+      "enforcement": "None"
+    },
+    {
+      "path": "meta\\global-config\\QUICK_REFERENCE.md",
+      "ctb_branch": "meta/global-config",
+      "barton_id": "08.01.01",
+      "unique_id": "CTB-141FBCD1",
+      "enforcement": "None"
+    },
+    {
+      "path": "meta\\global-config\\scripts\\ctb_check_version.sh",
+      "ctb_branch": "meta/global-config",
+      "barton_id": "08.01.01",
+      "unique_id": "CTB-D09F1F28",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "meta\\global-config\\scripts\\ctb_enforce.sh",
+      "ctb_branch": "meta/global-config",
+      "barton_id": "08.01.01",
+      "unique_id": "CTB-6814805E",
+      "enforcement": "None"
+    },
+    {
+      "path": "meta\\global-config\\scripts\\ctb_init.sh",
+      "ctb_branch": "meta/global-config",
+      "barton_id": "08.01.01",
+      "unique_id": "CTB-3A78D277",
+      "enforcement": "None"
+    },
+    {
+      "path": "meta\\global-config\\scripts\\ctb_scaffold_new_repo.sh",
+      "ctb_branch": "meta/global-config",
+      "barton_id": "08.01.01",
+      "unique_id": "CTB-9A3736F9",
+      "enforcement": "None"
+    },
+    {
+      "path": "meta\\global-config\\scripts\\ctb_verify.sh",
+      "ctb_branch": "meta/global-config",
+      "barton_id": "08.01.01",
+      "unique_id": "CTB-F9BA6CDD",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "meta\\global-config\\scripts\\dev_setup.sh",
+      "ctb_branch": "meta/global-config",
+      "barton_id": "08.01.01",
+      "unique_id": "CTB-3DDCA96A",
+      "enforcement": "None"
+    },
+    {
+      "path": "meta\\global-config\\scripts\\security_lockdown.sh",
+      "ctb_branch": "meta/global-config",
+      "barton_id": "08.01.01",
+      "unique_id": "CTB-FEFA50D5",
+      "enforcement": "None"
+    },
+    {
+      "path": "meta\\global-config\\scripts\\update_from_imo_creator.sh",
+      "ctb_branch": "meta/global-config",
+      "barton_id": "08.01.01",
+      "unique_id": "CTB-0BD10A74",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\analysis\\APIFY_COST_GOVERNANCE.md",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-C61F5689",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\analysis\\APIFY_COST_GOVERNANCE_AUDIT_REPORT.md",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-BF6C0B3B",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "docs\\analysis\\APIFY_DISCOVERY_COMPLETE.md",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-5E9AB896",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\analysis\\apify_inventory_report.md",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-CE751F65",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\analysis\\audit_apify_cost_governance.js",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-4D75E3CC",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "docs\\analysis\\AUDIT_SUMMARY_04_04_07.md",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-722F1638",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "docs\\analysis\\BIT_PLE_PRODUCTION_READINESS_REPORT.md",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-C6A1FCB9",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\analysis\\COMPOSIO_MCP_GLOBAL_POLICY.md",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-8AB8B485",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\analysis\\DATABASE_SCHEMA_VISUALIZATION.md",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-25C21A70",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\analysis\\DATA_FLOW_GUIDE.md",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-0B875F56",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\analysis\\discover_apify.sh",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-7E0EBDE0",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\analysis\\discover_apify_actors.js",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-8FCD3F43",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\analysis\\discover_apify_actors.py",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-2AB7250E",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\analysis\\discover_neon_schema.js",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-05F465D8",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\analysis\\ENRICHMENT_DATA_SCHEMA.md",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-1F80109A",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\analysis\\enrichment_process_audit.md",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-96D74246",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "docs\\analysis\\ENRICHMENT_TRIAL_READY.md",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-84C3D006",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\analysis\\execute_apify_list_via_composio.js",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-C2603BB4",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\analysis\\EXECUTIVE_SUMMARY_PRODUCTION_READINESS.md",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-6227E895",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\analysis\\FINAL_COLUMN_COMPLIANCE_REPORT.md",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-2DF06A60",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\analysis\\FINAL_PRE_FLIGHT_AUDIT_OUTREACH_CORE.md",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-20F72060",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "docs\\analysis\\FINAL_SCHEMA_COMPLIANCE_REPORT.md",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-34716E7A",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\analysis\\find_leads_finder_actor.js",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-076E14D9",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\analysis\\get_leads_finder_schema.js",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-3812106D",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\analysis\\INTELLIGENCE_MIGRATION_GUIDE.md",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-F2B5E2E6",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\analysis\\LEADS_FINDER_GUIDE.md",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-23417E1E",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\analysis\\LINKEDIN_REFRESH_DOCTRINE.md",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-88685886",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\analysis\\list_apify_actors_via_composio.js",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-E5BF2B18",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\analysis\\list_companies_for_enrichment.js",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-364247A9",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\analysis\\OUTREACH_CORE_FULL_PROCESS_VERIFICATION.md",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-4A43F15D",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\analysis\\pre_flight_validation.js",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-48AA2030",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\analysis\\PRE_FLIGHT_VALIDATION_REPORT.md",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-E3FD978D",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\analysis\\query_apify_via_composio.js",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-D67EE977",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\analysis\\run_intelligence_migrations.js",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-47A7D164",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\analysis\\run_schema_compliance_audit.js",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-B2CD4AB0",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "docs\\analysis\\SCHEMA_COMPLIANCE_AUDIT.md",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-D1036161",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "docs\\analysis\\setup_master_tables.js",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-2BC526EE",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\analysis\\test_leads_finder.js",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-8072BD56",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "docs\\analysis\\validate_neon_schema.js",
+      "ctb_branch": "docs/analysis",
+      "barton_id": "06.01.01",
+      "unique_id": "CTB-E3DA0571",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\examples\\mcp_server_demo.py",
+      "ctb_branch": "docs/examples",
+      "barton_id": "06.01.03",
+      "unique_id": "CTB-19A2A811",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\pages\\05000-execution.md",
+      "ctb_branch": "docs/pages",
+      "barton_id": "06.01.07",
+      "unique_id": "CTB-3E539503",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\pages\\10000-specialization.md",
+      "ctb_branch": "docs/pages",
+      "barton_id": "06.01.07",
+      "unique_id": "CTB-F3740AF0",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "docs\\pages\\20000-categories.md",
+      "ctb_branch": "docs/pages",
+      "barton_id": "06.01.07",
+      "unique_id": "CTB-E8D00525",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\pages\\30000-vision.md",
+      "ctb_branch": "docs/pages",
+      "barton_id": "06.01.07",
+      "unique_id": "CTB-E5440AF0",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\scripts\\add-anchor-columns.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-4740B271",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\scripts\\add-columns-to-intake-company-raw.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-2E1707D6",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\scripts\\add-company-raw-intake-columns.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-60AFC587",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\scripts\\add-monitoring-views.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-F02F86AB",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\scripts\\add-profile-queue-view.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-6DF0D9C3",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\scripts\\add-refresh-procedures.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-CB1E984D",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\scripts\\add-url-queue-view.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-09E2918A",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\scripts\\apply-last-mile-patch.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-968062AF",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\scripts\\check-and-fix-company-columns.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-CBF42DEC",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "docs\\scripts\\check-existing-views.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-7ADFF490",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "docs\\scripts\\check-intake-table-data.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-4EA56BF1",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "docs\\scripts\\check-marketing-db.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-6B9030E2",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "docs\\scripts\\complete-compliance-via-composio.ts",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-36EF88D9",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\scripts\\execute-migration.cjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-FC0EEA99",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\scripts\\execute-people-ddl.js",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-3E25687D",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\scripts\\execute-people-extension.js",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-C18F20C5",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\scripts\\fix-company-raw-intake-table.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-02C5DC7A",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\scripts\\fix-email-constraint.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-5C1923C8",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\scripts\\fix-ingest-function.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-E0B8509E",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\scripts\\fix-monitoring-views.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-89B0D20F",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\scripts\\gen-wiki.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-8417C85E",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\scripts\\install-pre-commit-hook.sh",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-507E6796",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\scripts\\install-pre-push-hook.sh",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-03160285",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\scripts\\list-marketing-tables.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-8F4818E2",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\scripts\\run_migrations.cjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-24AD239A",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\scripts\\run_post_fix_verification.cjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-3D40B5F1",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\scripts\\run_post_fix_verification_via_composio.cjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-F69C9427",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\scripts\\setup-company-views.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-3A29B540",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\scripts\\setup-lean-company-fixed.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-B54B8A7F",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\scripts\\setup-slot-functions.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-5B4BB35A",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\scripts\\simple-health-test.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-3A8EA361",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "docs\\scripts\\test-apollo-ingest.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-23049768",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "docs\\scripts\\test-complete-pipeline.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-1181D53D",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "docs\\scripts\\test-improvements.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-3FBB10E6",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "docs\\scripts\\test-promotion-fixed.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-2C55E384",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "docs\\scripts\\test-scraper-integration.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-EB70A040",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "docs\\scripts\\test-simple-scraper.mjs",
+      "ctb_branch": "docs/scripts",
+      "barton_id": "06.01.04",
+      "unique_id": "CTB-5CAE1B80",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "docs\\wiki\\branches\\README.md",
+      "ctb_branch": "docs/wiki",
+      "barton_id": "06.01.10",
+      "unique_id": "CTB-B5A92020",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\wiki\\branches\\Barton Outreach Core-main\\index.md",
+      "ctb_branch": "docs/wiki",
+      "barton_id": "06.01.10",
+      "unique_id": "CTB-64DF0291",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\wiki\\branches\\Barton Outreach Core-main\\README.md",
+      "ctb_branch": "docs/wiki",
+      "barton_id": "06.01.10",
+      "unique_id": "CTB-4B6CAA32",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\blueprints\\ui\\app.js",
+      "ctb_branch": "docs/blueprints",
+      "barton_id": "06.01.06",
+      "unique_id": "CTB-9CF42C40",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\blueprints\\ui\\style.css",
+      "ctb_branch": "docs/blueprints",
+      "barton_id": "06.01.06",
+      "unique_id": "CTB-313C1B42",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\archive\\render-legacy\\mcp-render-endpoint-before-doctrine.js",
+      "ctb_branch": "docs/archive",
+      "barton_id": "06.01.05",
+      "unique_id": "CTB-6502016C",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\archive\\render-legacy\\mcp-render-endpoint.js",
+      "ctb_branch": "docs/archive",
+      "barton_id": "06.01.05",
+      "unique_id": "CTB-4D838BE7",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "docs\\archive\\render-legacy\\README.md",
+      "ctb_branch": "docs/archive",
+      "barton_id": "06.01.05",
+      "unique_id": "CTB-85647DA7",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\archive\\render-legacy\\server-before-doctrine.js",
+      "ctb_branch": "docs/archive",
+      "barton_id": "06.01.05",
+      "unique_id": "CTB-301FCC10",
+      "enforcement": "None"
+    },
+    {
+      "path": "docs\\archive\\render-legacy\\nodes\\RENDER_DEPENDENCY.md",
+      "ctb_branch": "docs/archive",
+      "barton_id": "06.01.05",
+      "unique_id": "CTB-D3E34F96",
+      "enforcement": "None"
+    },
+    {
+      "path": "data\\infra\\2025-10-20_create_shq_error_log.sql",
+      "ctb_branch": "data/infra",
+      "barton_id": "05.01.01",
+      "unique_id": "CTB-CDF89EF3",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "data\\infra\\cold-outreach-schema-before-doctrine.sql",
+      "ctb_branch": "data/infra",
+      "barton_id": "05.01.01",
+      "unique_id": "CTB-2151A325",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "data\\infra\\cold-outreach-schema.sql",
+      "ctb_branch": "data/infra",
+      "barton_id": "05.01.01",
+      "unique_id": "CTB-0DE738D8",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "data\\infra\\lean-outreach-schema-before-doctrine.sql",
+      "ctb_branch": "data/infra",
+      "barton_id": "05.01.01",
+      "unique_id": "CTB-F95C2D47",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "data\\infra\\lean-outreach-schema.sql",
+      "ctb_branch": "data/infra",
+      "barton_id": "05.01.01",
+      "unique_id": "CTB-B8B6F95B",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "data\\infra\\neon-before-doctrine.sql",
+      "ctb_branch": "data/infra",
+      "barton_id": "05.01.01",
+      "unique_id": "CTB-EFD49ECA",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "data\\infra\\neon-company-schema-before-doctrine.sql",
+      "ctb_branch": "data/infra",
+      "barton_id": "05.01.01",
+      "unique_id": "CTB-D4D9F511",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "data\\infra\\neon-company-schema.sql",
+      "ctb_branch": "data/infra",
+      "barton_id": "05.01.01",
+      "unique_id": "CTB-61D466E7",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "data\\infra\\neon-user-setup-before-doctrine.sql",
+      "ctb_branch": "data/infra",
+      "barton_id": "05.01.01",
+      "unique_id": "CTB-CF442E46",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "data\\infra\\neon-user-setup.sql",
+      "ctb_branch": "data/infra",
+      "barton_id": "05.01.01",
+      "unique_id": "CTB-434F422E",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "data\\infra\\neon.sql",
+      "ctb_branch": "data/infra",
+      "barton_id": "05.01.01",
+      "unique_id": "CTB-D7EE1CA8",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "data\\infra\\your-original-schema-before-doctrine.sql",
+      "ctb_branch": "data/infra",
+      "barton_id": "05.01.01",
+      "unique_id": "CTB-C96B8504",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "data\\infra\\your-original-schema.sql",
+      "ctb_branch": "data/infra",
+      "barton_id": "05.01.01",
+      "unique_id": "CTB-10CC8A84",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "data\\migrations\\create-people-schema.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-E85B1B92",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "data\\migrations\\create_company_history.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-3FCA4296",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "data\\migrations\\create_people_schema-before-doctrine.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-53560FBA",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "data\\migrations\\create_people_schema.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-586472A1",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "data\\migrations\\create_people_tables-before-doctrine.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-B55D532D",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "data\\migrations\\create_people_tables.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-0533CA43",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "data\\migrations\\create_person_history.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-4FF7AE20",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "data\\migrations\\extend-people-schema.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-3DE29B35",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "data\\migrations\\last-mile-patch.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-39ECE9EB",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "data\\migrations\\production-improvements.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-5E26B5B8",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\2025-10-22_create_marketing_company_intelligence.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-DE068968",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\2025-10-22_create_marketing_people_intelligence.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-CC25CF9D",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\2025-10-22_create_outreach_history_view.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-0EF9232B",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\2025-10-22_move_audit_and_validation_views.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-436390A0",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\2025-10-23_create_linkedin_refresh_jobs.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-B05E2432",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\2025-10-23_create_people_intelligence_trigger.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-EDC631D9",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\2025-10-23_create_upsert_people_intelligence_changes.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-C5C41D83",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\2025-10-23_fix_company_slot_fk.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-7E729623",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\2025-10-23_fix_marketing_company_slot_duplicates.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-303218DD",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\2025-10-23_fix_people_master_column_naming.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-DB22D044",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\2025-10-23_verify_shq_views.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-7AA19FEB",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\2025-10-24_create_actor_usage_log.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-1275A1D2",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\apify_data_preparation.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-ED84A94D",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\apify_integration_helpers-before-doctrine.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-140143CF",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\apify_integration_helpers.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-F7FA1664",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\apify_validation_helpers.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-1FAE3CEC",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\create_attribution_tables-before-doctrine.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-A4C47F43",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\create_attribution_tables.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-EA10BD24",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\create_campaign_tables-before-doctrine.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-62C6000A",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\create_campaign_tables.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-19E924F1",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\create_company_master-before-doctrine.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-AD560B12",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\create_company_master.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-403D78FB",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\create_company_slot-before-doctrine.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-C3C51C32",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\create_company_slot.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-F3AECC74",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\create_company_tables-before-doctrine.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-42E4AED3",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\create_company_tables.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-57D757BA",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\create_dashboard_views.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-4C099B20",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\create_enrichment_audit_log-before-doctrine.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-3BA70079",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\create_enrichment_audit_log.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-3CC709FE",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\create_enrichment_tables-before-doctrine.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-8509FF04",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\create_enrichment_tables.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-39ACAC56",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\create_feedback_reports.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-37380424",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\create_people_master-before-doctrine.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-23646548",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\create_people_master.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-1E26ED46",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\create_people_tables-before-doctrine.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-97397B7D",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\create_people_tables.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-69E223A7",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\create_schema_registry-before-doctrine.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-CEA9A2D8",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\create_schema_registry.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-F5FF28EB",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\create_scoring_tables-before-doctrine.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-C881105E",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\create_scoring_tables.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-78A6F4D2",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\create_unified_audit_log.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-F93DF3D2",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\fixes\\2025-10-23_create_shq_views.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-A4DA88F1",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\fixes\\2025-10-23_fix_company_slot_fk.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-B46A6414",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\fixes\\2025-10-23_fix_marketing_company_slot_duplicates.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-2BAD79A1",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "data\\migrations\\outreach-process-manager\\fixes\\2025-10-23_fix_people_master_column_alias.sql",
+      "ctb_branch": "data/migrations",
+      "barton_id": "05.01.02",
+      "unique_id": "CTB-1CD524F5",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\garage-bay\\garage_bay.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-BBACBD92",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\README.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-997C88DC",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\simple_garage_bay.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-283E51F7",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\test_registry.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-BECE1706",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\scripts\\add-doctrine-headers.js",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-EE825D28",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\scripts\\check-composio-apps.js",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-83353E49",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\scripts\\check-schema.mjs",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-8A9A55C7",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\scripts\\debug-neon-promotion.mjs",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-BAA77407",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\scripts\\deploy-vercel.js",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-C19B72C7",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\scripts\\deploy-via-composio.js",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-9AC5DEAE",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\scripts\\deploy-via-mcp.js",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-6E2051DC",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\scripts\\fix-contact-schema.mjs",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-C55CBE61",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\scripts\\fix-mcp-violations.js",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-C20BBC87",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\scripts\\fix-migrations.js",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-B685626E",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\scripts\\fixed-composio-deploy.js",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-05891196",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\scripts\\generate-schema-diagram.mjs",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-4BA9BAC2",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\scripts\\generate-schema-overview.mjs",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-3CA5AAE7",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\scripts\\get-company-schema.mjs",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-A099FDBC",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\scripts\\get-neon-schema.mjs",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-3C4D1938",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\scripts\\heir-drop-in-esm.js",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-E50F70B4",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\scripts\\inspect-existing-people-schema.js",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-49CAEE73",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\scripts\\refresh-schema-map.ts",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-9472695C",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\scripts\\setup-bit-schema.mjs",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-93DF21F7",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\scripts\\setup-cold-outreach-schema.mjs",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-FC637F8C",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\scripts\\setup-lean-company-schema.mjs",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-D1825C62",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\scripts\\setup-lean-outreach-schema-v2.mjs",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-AF7F6388",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\scripts\\setup-lean-outreach-schema.mjs",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-74559F4A",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\scripts\\setup-marketing-schema.mjs",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-75013A91",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\scripts\\setup-neon-functions.mjs",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-4ECA8E59",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\scripts\\setup-original-schema.mjs",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-AD15770F",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\scripts\\sync-composio-config.js",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-DE18FB9E",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\scripts\\sync-errors-to-firebase.ts",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-EF831C06",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\scripts\\test-all-composio-tools.cjs",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-5032DA18",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\scripts\\test_neon_composio.js",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-C0E4F47B",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\scripts\\update-contact-schema.mjs",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-EFFCCC36",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\scripts\\validate-complete-schema.mjs",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-58877AE6",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\scripts\\vercel-mcp-deploy.js",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-28AD9685",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\scripts\\verify-schema-status.mjs",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-6CE83E75",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\scripts\\verify-schema.mjs",
+      "ctb_branch": "ai/scripts",
+      "barton_id": "03.01.04",
+      "unique_id": "CTB-0CC8D651",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\testing\\final-people-schema-verification.js",
+      "ctb_branch": "ai/testing",
+      "barton_id": "03.01.03",
+      "unique_id": "CTB-74E16C6F",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\testing\\simple-verification.js",
+      "ctb_branch": "ai/testing",
+      "barton_id": "03.01.03",
+      "unique_id": "CTB-FD8A856E",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\testing\\test-all-mcp-integrations.js",
+      "ctb_branch": "ai/testing",
+      "barton_id": "03.01.03",
+      "unique_id": "CTB-2B181B4F",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\testing\\test-composio-endpoints.js",
+      "ctb_branch": "ai/testing",
+      "barton_id": "03.01.03",
+      "unique_id": "CTB-A16D7FF0",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\testing\\test-composio-integrations.js",
+      "ctb_branch": "ai/testing",
+      "barton_id": "03.01.03",
+      "unique_id": "CTB-24B62C3C",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\testing\\test-composio-v3-endpoints.js",
+      "ctb_branch": "ai/testing",
+      "barton_id": "03.01.03",
+      "unique_id": "CTB-8C3C83B0",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\testing\\test-correct-composio-endpoints.js",
+      "ctb_branch": "ai/testing",
+      "barton_id": "03.01.03",
+      "unique_id": "CTB-DEAF42CF",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\testing\\test-final-composio-execution.js",
+      "ctb_branch": "ai/testing",
+      "barton_id": "03.01.03",
+      "unique_id": "CTB-864CB4F4",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\testing\\test-people-migration.js",
+      "ctb_branch": "ai/testing",
+      "barton_id": "03.01.03",
+      "unique_id": "CTB-BC65C0BC",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\testing\\test-people-schema-verification.js",
+      "ctb_branch": "ai/testing",
+      "barton_id": "03.01.03",
+      "unique_id": "CTB-C30E7B9D",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\testing\\test-simple-people-creation.js",
+      "ctb_branch": "ai/testing",
+      "barton_id": "03.01.03",
+      "unique_id": "CTB-0837743A",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\testing\\test-working-composio-execution.js",
+      "ctb_branch": "ai/testing",
+      "barton_id": "03.01.03",
+      "unique_id": "CTB-FF0B7323",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\tools\\repo_mcp_orchestrator.py",
+      "ctb_branch": "ai/tools",
+      "barton_id": "03.01.05",
+      "unique_id": "CTB-6167989C",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\CLAUDE_SETUP.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-940EF7D0",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\ids.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-E697DA95",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\scripts\\id_tools.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-531584F2",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\scripts\\list_global_agents.sh",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-230C3BA4",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\garage-bay\\scripts\\validate_plan.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-2E61E3D0",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\src\\index.ts",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-BAAA7DF5",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\tests\\fakes\\fake_backend_driver.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-0BD8F477",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\garage-bay\\tests\\fakes\\fake_db_driver.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-77D57E9E",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\garage-bay\\tests\\fakes\\fake_frontend_driver.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-FFA04FB1",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\garage-bay\\tests\\modules\\test_adapters_backend.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-D33AAE9D",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\garage-bay\\tests\\modules\\test_adapters_db.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-2BB6EDEF",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\garage-bay\\tests\\modules\\test_adapters_frontend.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-A8B073E7",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\garage-bay\\tests\\modules\\test_core_fs.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-8B528782",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\garage-bay\\tests\\modules\\test_core_git.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-CAF7EC3B",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\garage-bay\\tests\\modules\\test_domains_db.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-D7D1DF93",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\garage-bay\\tests\\modules\\test_heir_module.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-49487665",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\garage-bay\\tests\\modules\\test_intake_ingest.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-D832EB81",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\main.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-5231E06A",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\sidecar\\main.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-A6C25BDE",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\adapters\\backend_adapter.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-D30D805D",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\adapters\\data_adapter.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-C251B9AA",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\adapters\\db_adapter.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-E3E50E4C",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\adapters\\frontend_adapter.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-1A05C9B1",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\adapters\\sidecar_client.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-8BA4C8B5",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\drivers\\base_driver.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-2AC18151",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\modules\\auto_documenter.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-184A66A8",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\modules\\error_sink.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-E578DF8F",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\modules\\fix_pipeline.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-30256F92",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\modules\\mcp_orchestrator.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-DCAE5541",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\modules\\orchestra.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-16E48C25",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\modules\\orchestra_runner.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-702B2A9F",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\modules\\subagent_delegator.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-CD89C382",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\modules\\core\\exec.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-D68C1A74",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\modules\\core\\fs.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-01E79D66",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\modules\\core\\git.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-81E23E17",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\modules\\core\\heir.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-9DF7EA4D",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\modules\\core\\registry.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-41EE553E",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\modules\\core\\sidecar.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-8FC4FBB1",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\modules\\domains\\backend.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-531F3758",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\modules\\domains\\data.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-3AAB398A",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\modules\\domains\\db.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-AB4934C5",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\modules\\domains\\frontend.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-BB0CFB5E",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\modules\\intake\\ingest.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-7713A983",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\modules\\intake\\mapping.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-93DE06E9",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\drivers\\backend\\flyio.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-A177D4A7",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\drivers\\backend\\render.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-876932A1",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\drivers\\db\\bigquery.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-6E0905C4",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\drivers\\db\\firebase.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-95DA22BC",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\drivers\\db\\neon.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-6DCED8F8",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\drivers\\db\\postgres_local.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-4D8014EC",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\drivers\\db\\supabase.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-C0A4CB10",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\drivers\\frontend\\netlify.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-6EB87586",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\drivers\\frontend\\vercel.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-B3B08B15",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\drivers\\reference\\composio.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-ADE25625",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\drivers\\reference\\reftools.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-AEF9BE4A",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\services\\mcp\\drivers\\reference\\__init__.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-49EDD7A6",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\packages\\heir\\checks.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-6537ABD1",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\garage-bay\\packages\\heir\\__init__.py",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-C0D3820C",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\packages\\sql\\2025-08-19_create_shq_master_error_log-before-doctrine.sql",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-B3C8F139",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\packages\\sql\\2025-08-19_create_shq_master_error_log.sql",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-8C304379",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\packages\\sql\\2025-08-19_ids-before-doctrine.sql",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-56CF5D53",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\packages\\sql\\2025-08-19_ids.sql",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-A622849F",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\domains_backend_cron_schedule.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-C7B7706E",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\domains_backend_deploy.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-B295E608",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\domains_backend_lint.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-1ABC07CE",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\domains_backend_scaffold.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-603A448C",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\domains_backend_test.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-96085F73",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\domains_db_backup.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-9D1B2E5E",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\domains_db_migrate.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-4D68CA45",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\domains_db_restore.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-898941AC",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\domains_db_seed.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-A6499408",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\domains_db_snapshot.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-D3661FEE",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\domains_db_upgrade.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-01461B8A",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\domains_frontend_deploy.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-1A60A623",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\domains_frontend_preview.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-C9829465",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\domains_frontend_routes_sync.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-958DA140",
+      "enforcement": "ORBT"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\domains_frontend_scaffold.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-3A8F4331",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\drivers.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-6D570A44",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\exec_run.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-D3A7F915",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\fs_read.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-F018981A",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\fs_write.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-2B623FB3",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\git_commit.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-77232939",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\git_diff.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-B749A755",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\heir_check.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-95C8CC19",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\intake_ingest_extract.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-5E0A2B7F",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\intake_ingest_parse.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-F23D0B79",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\intake_ingest_snapshot.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-F4A44A0B",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\intake_ingest_upload.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-53437C65",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\intake_mapping_align_to_master.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-D2F95D5A",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\intake_mapping_diff.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-4B4F7764",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\intake_mapping_normalize.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-3959A696",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\intake_mapping_validate.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-2982ACF7",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\sidecar_event.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-B0584DE6",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\garage-bay\\docs\\tools\\sidecar_health.md",
+      "ctb_branch": "ai/garage-bay",
+      "barton_id": "03.01.02",
+      "unique_id": "CTB-C1D4A788",
+      "enforcement": "None"
+    },
+    {
+      "path": "ai\\agents\\specialists\\apifyRunner.js",
+      "ctb_branch": "ai/agents",
+      "barton_id": "03.01.01",
+      "unique_id": "CTB-72AA7720",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\agents\\specialists\\millionVerifyRunner.js",
+      "ctb_branch": "ai/agents",
+      "barton_id": "03.01.01",
+      "unique_id": "CTB-3914F483",
+      "enforcement": "HEIR"
+    },
+    {
+      "path": "ai\\agents\\specialists\\outreachRunner.js",
+      "ctb_branch": "ai/agents",
+      "barton_id": "03.01.01",
+      "unique_id": "CTB-AE5F8B9E",
+      "enforcement": "HEIR"
+    }
+  ]
+}

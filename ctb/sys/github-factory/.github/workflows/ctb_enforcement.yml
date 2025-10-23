@@ -1,0 +1,76 @@
+name: CTB Doctrine Enforcement
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    # Run weekly on Sundays at midnight
+    - cron: '0 0 * * 0'
+
+jobs:
+  ctb-compliance:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Run CTB Audit
+      id: audit
+      run: |
+        cd ctb/sys/github-factory/scripts
+        python ctb_audit_generator.py ../../../../ctb/ -o audit_output.md
+
+        # Extract score
+        score=$(grep "Overall: " audit_output.md | head -1 | grep -oP '\d+')
+        echo "CTB Compliance Score: $score/100"
+        echo "score=$score" >> $GITHUB_OUTPUT
+
+    - name: Check Compliance Threshold
+      run: |
+        score=${{ steps.audit.outputs.score }}
+        if [ "$score" -lt 90 ]; then
+          echo "❌ CTB Compliance Score ($score/100) is below threshold (90)"
+          echo "Please run remediation: python ctb/sys/github-factory/scripts/ctb_remediation.py ctb/"
+          exit 1
+        else
+          echo "✅ CTB Compliance Score ($score/100) meets threshold"
+        fi
+
+    - name: Upload Audit Report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: ctb-audit-report
+        path: ctb/sys/github-factory/scripts/audit_output.md
+
+    - name: Comment on PR
+      if: github.event_name == 'pull_request' && always()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const score = ${{ steps.audit.outputs.score }};
+          const status = score >= 90 ? '✅' : '❌';
+          const grade = score >= 90 ? 'EXCELLENT' : score >= 75 ? 'GOOD' : score >= 60 ? 'FAIR' : 'NEEDS WORK';
+
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `## ${status} CTB Doctrine Compliance
+
+**Score**: ${score}/100
+**Grade**: ${grade}
+
+${score >= 90 ? 'All CTB compliance checks passed!' : 'Some compliance issues detected. Please review the audit report.'}
+
+[View Full Audit Report](../actions/runs/${{ github.run_id }})
+`
+          })
