@@ -56,7 +56,7 @@
       "output": "ctb/data/infra/NEON_SCHEMA_MANIFEST.yaml",
       "description": "Extract live Neon schema and generate doctrine manifest",
       "depends_on": ["apply_shq_views", "alias_people_master"],
-      "status": "file_missing",
+      "status": "file_ready",
       "execution": {
         "command": "node",
         "args": ["ctb/ai/scripts/introspect_neon_to_manifest.cjs"],
@@ -76,7 +76,7 @@
       "output": "ctb/data/infra/SCHEMA_DRIFT_REPORT.md",
       "description": "Compare live Neon schema vs manifest and report drift",
       "depends_on": ["introspect_schema"],
-      "status": "file_missing",
+      "status": "file_ready",
       "execution": {
         "command": "node",
         "args": ["ctb/ai/scripts/verify_schema_alignment.cjs"],
@@ -96,7 +96,7 @@
       "output": "ctb/data/infra/FIRESTORE_SCHEMA.json",
       "description": "Generate Firestore schema mirror from Neon manifest",
       "depends_on": ["introspect_schema"],
-      "status": "file_missing",
+      "status": "file_ready",
       "execution": {
         "command": "node",
         "args": ["ctb/ai/scripts/generate_firestore_schema.js"],
@@ -115,7 +115,7 @@
       "output": "ctb/data/infra/AMPLIFY_TYPES.graphql",
       "description": "Generate Amplify GraphQL types from Neon manifest",
       "depends_on": ["introspect_schema"],
-      "status": "file_missing",
+      "status": "file_ready",
       "execution": {
         "command": "node",
         "args": ["ctb/ai/scripts/neon_to_amplify_schema.js"],
@@ -137,7 +137,7 @@
         "generate_firestore_schema",
         "generate_amplify_schema"
       ],
-      "status": "file_missing",
+      "status": "file_ready",
       "execution": {
         "command": "node",
         "args": ["ctb/ai/scripts/run_post_fix_verification.cjs"],
@@ -179,17 +179,20 @@
       "2025-10-23_fix_people_master_column_alias.sql": "exists"
     },
     "scripts": {
-      "introspect_neon_to_manifest.cjs": "needs_creation",
-      "verify_schema_alignment.cjs": "needs_creation",
-      "generate_firestore_schema.js": "needs_creation",
-      "neon_to_amplify_schema.js": "needs_creation",
-      "run_post_fix_verification.cjs": "needs_creation"
+      "introspect_neon_to_manifest.cjs": "created_ready",
+      "verify_schema_alignment.cjs": "created_ready",
+      "generate_firestore_schema.js": "created_ready",
+      "neon_to_amplify_schema.js": "created_ready",
+      "run_post_fix_verification.cjs": "created_ready"
     }
   },
   "next_steps": [
-    "Create missing scripts in ctb/ai/scripts/",
-    "Test individual task execution via Composio CLI",
-    "Run full task chain with dependency resolution",
-    "Generate final compliance report"
+    "All scripts created and ready for execution",
+    "Install dependencies: npm install pg yaml",
+    "Set DATABASE_URL environment variable",
+    "Execute scripts in order: introspect → verify → generate schemas",
+    "Run post-fix verification to validate all outputs",
+    "Review generated files in ctb/data/infra/",
+    "Optional: Setup Composio for automated task chain execution"
   ]
 }
