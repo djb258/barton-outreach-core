@@ -5,6 +5,9 @@ One-page cheat sheet for common operations.
 ## 🏃 Quick Start Commands
 
 ```bash
+# FIRST: Install CTB enforcement hooks (one-time)
+cd .githooks && ./setup-hooks.sh  # or .bat on Windows
+
 # API Server
 cd ctb/sys/api && node server.js
 
@@ -264,6 +267,31 @@ node verify-schema.mjs
 # CTB compliance audit
 cd ctb/sys/github-factory/scripts
 python ctb_audit_generator.py ../../
+```
+
+---
+
+## 🛡️ CTB Enforcement
+
+```bash
+# Install enforcement hooks (one-time after clone)
+cd .githooks && ./setup-hooks.sh  # or .bat on Windows
+
+# Check compliance manually
+cd ctb/sys/github-factory/scripts
+python ctb_audit_generator.py ../../../../ctb/
+
+# Fix compliance issues
+python ctb_remediation.py ../../../../ctb/
+
+# Tag new file manually
+python ctb_metadata_tagger.py path/to/file.js
+
+# Bypass pre-commit hook (NOT RECOMMENDED)
+git commit --no-verify
+
+# View enforcement status
+git config core.hooksPath  # Should show .githooks
 ```
 
 ---

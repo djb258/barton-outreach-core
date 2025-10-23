@@ -319,6 +319,33 @@ python ctb_audit_generator.py ../../
 # If score < 70, run: python ctb_remediation.py ../../
 ```
 
+## 🛡️ CTB Enforcement System
+
+**IMPORTANT**: After cloning, run the setup script to enable automatic CTB enforcement:
+
+### One-Time Setup
+
+```bash
+# Linux/Mac
+cd .githooks && ./setup-hooks.sh
+
+# Windows
+cd .githooks && setup-hooks.bat
+```
+
+**What this does**:
+- Installs pre-commit hook that validates every commit
+- Auto-tags new files with Barton IDs
+- Blocks commits with compliance < 70/100
+- Ensures zero exceptions to CTB structure
+
+**Enforcement Layers**:
+1. **Pre-commit Hook** - Validates locally before commit
+2. **GitHub Actions** - Validates in CI on every PR
+3. **Scheduled Audits** - Weekly compliance checks
+
+For full details, see: [CTB_ENFORCEMENT.md](CTB_ENFORCEMENT.md)
+
 ## 📞 Support
 
 - **Docs**: Browse `ctb/docs/`
