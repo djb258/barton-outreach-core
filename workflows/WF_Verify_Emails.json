@@ -1,0 +1,14 @@
+{
+  "name": "WF_Verify_Emails",
+  "nodes": [
+    {"parameters": {"httpMethod": "POST", "path": "verify-emails"}, "name": "Webhook", "type": "n8n-nodes-base.webhook", "typeVersion": 1, "position": [250, 300]},
+    {"parameters": {"functionCode": "const eventData = $input.first().json;\nreturn {json: {workflow_name: 'Verify_Emails', status: 'ok', triggered_by: 'neon_event', record_id: eventData.payload?.id || eventData.id, event_type: eventData.event_type}};"}, "name": "Process Event", "type": "n8n-nodes-base.function", "typeVersion": 1, "position": [450, 300]},
+    {"parameters": {"operation": "executeQuery", "query": "-- TODO: Email verification logic (MillionVerifier integration)\nINSERT INTO marketing.email_verification(\n  enrichment_id,\n  email,\n  verification_status,\n  created_at\n)\nSELECT\n  id as enrichment_id,\n  email,\n  'pending' as verification_status,\n  NOW() as created_at\nFROM marketing.contact_enrichment\nWHERE id = {{ $json.record_id }}\n  AND email IS NOT NULL\nON CONFLICT (enrichment_id) DO UPDATE\nSET verification_status = 'pending',\n    created_at = NOW()\nRETURNING *;"}, "name": "Verify Email", "type": "n8n-nodes-base.postgres", "typeVersion": 2, "position": [650, 300], "credentials": {"postgres": {"id": "1", "name": "Neon Marketing DB"}}},
+    {"parameters": {"url": "={{ $env.N8N_API_URL }}/webhook/log-to-neon", "sendBody": true, "bodyParameters": {"parameters": [{"name": "workflowName", "value": "Verify_Emails"}, {"name": "status", "value": "ok"}]}}, "name": "Log Success", "type": "n8n-nodes-base.httpRequest", "typeVersion": 3, "position": [850, 300]}
+  ],
+  "connections": {
+    "Webhook": {"main": [[{"node": "Process Event"}]]},
+    "Process Event": {"main": [[{"node": "Verify Email"}]]},
+    "Verify Email": {"main": [[{"node": "Log Success"}]]}
+  }
+}

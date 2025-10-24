@@ -1,0 +1,201 @@
+{
+  "name": "Apify Enrichment",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 60
+            }
+          ]
+        }
+      },
+      "name": "Poll Every 60 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT company_unique_id, website_url FROM marketing.company_master WHERE company_unique_id NOT IN (SELECT DISTINCT company_unique_id FROM marketing.people_master WHERE company_unique_id IS NOT NULL) ORDER BY created_at DESC LIMIT 25",
+        "options": {}
+      },
+      "name": "Get Companies Needing Enrichment",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [450, 300],
+      "credentials": {
+        "postgres": {
+          "id": "{{NEON_CREDENTIAL_ID}}",
+          "name": "Neon Marketing DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Batch Controller - Process 25 items at a time\nconst batchSize = 25;\nconst items = $input.all();\n\nif (items.length === 0) {\n  return [];\n}\n\n// Take first batch of 25\nconst batch = items.slice(0, batchSize);\n\n// Add batch metadata\nreturn batch.map((item, index) => ({\n  json: {\n    ...item.json,\n    batch_number: 1,\n    batch_size: batch.length,\n    item_index: index + 1,\n    total_items: items.length\n  }\n}));"
+      },
+      "name": "Batch Controller",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.apify.com/v2/actor-tasks/code_crafter~leads-finder/run-sync-get-dataset-items?token={{$env.APIFY_TOKEN}}&maxItems=25",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"companyUrl\": \"{{$json.website_url}}\",\n  \"company_unique_id\": \"{{$json.company_unique_id}}\"\n}",
+        "options": {
+          "timeout": 120000,
+          "retry": {
+            "maxRetries": 3,
+            "waitBetweenRetries": 60000
+          }
+        }
+      },
+      "name": "Call Apify Actor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [850, 300],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      },
+      "name": "Throttle Delay (5s)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [1050, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$json.statusCode}}",
+              "operation": "largerEqual",
+              "value2": 429
+            }
+          ]
+        }
+      },
+      "name": "Check for Rate Limit",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1050, 400]
+    },
+    {
+      "parameters": {
+        "amount": 60,
+        "unit": "seconds"
+      },
+      "name": "Wait 60s on Error",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [1250, 500]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO marketing.company_missing (company_unique_id, reason, created_at) VALUES ('{{$json.company_unique_id}}', 'Apify API error: Rate limit or network error', NOW()) ON CONFLICT (company_unique_id) DO UPDATE SET reason = EXCLUDED.reason, created_at = NOW()",
+        "options": {}
+      },
+      "name": "Log Failed Companies",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1450, 500],
+      "credentials": {
+        "postgres": {
+          "id": "{{NEON_CREDENTIAL_ID}}",
+          "name": "Neon Marketing DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Parse Apify results and prepare for database insert\nconst apifyData = $input.all();\nconst results = [];\n\nfor (const item of apifyData) {\n  const people = item.json.dataset || [];\n  \n  for (const person of people) {\n    results.push({\n      json: {\n        company_unique_id: item.json.company_unique_id,\n        full_name: person.name || null,\n        title: person.title || null,\n        email: person.email || null,\n        linkedin_url: person.linkedin_url || null,\n        source: 'apify-enrichment',\n        enriched_at: new Date().toISOString()\n      }\n    });\n  }\n}\n\nreturn results;"
+      },
+      "name": "Parse Apify Results",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1250, 200]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO marketing.people_master (company_unique_id, full_name, title, email, linkedin_url, source, created_at) VALUES ('{{$json.company_unique_id}}', '{{$json.full_name}}', '{{$json.title}}', '{{$json.email}}', '{{$json.linkedin_url}}', '{{$json.source}}', NOW()) ON CONFLICT (email) DO NOTHING",
+        "options": {}
+      },
+      "name": "Insert People Data",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1450, 200],
+      "credentials": {
+        "postgres": {
+          "id": "{{NEON_CREDENTIAL_ID}}",
+          "name": "Neon Marketing DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO shq_validation_log (workflow_id, workflow_name, execution_time, record_count, status) VALUES ('euSD6SOXPrqnsFxc', 'Apify Enrichment', NOW(), {{$json.batch_size}}, 'completed')",
+        "options": {}
+      },
+      "name": "Log Execution",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1650, 200],
+      "credentials": {
+        "postgres": {
+          "id": "{{NEON_CREDENTIAL_ID}}",
+          "name": "Neon Marketing DB"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Poll Every 60 Minutes": {
+      "main": [[{"node": "Get Companies Needing Enrichment", "type": "main", "index": 0}]]
+    },
+    "Get Companies Needing Enrichment": {
+      "main": [[{"node": "Batch Controller", "type": "main", "index": 0}]]
+    },
+    "Batch Controller": {
+      "main": [[{"node": "Call Apify Actor", "type": "main", "index": 0}]]
+    },
+    "Call Apify Actor": {
+      "main": [[{"node": "Throttle Delay (5s)", "type": "main", "index": 0}]],
+      "error": [[{"node": "Check for Rate Limit", "type": "main", "index": 0}]]
+    },
+    "Throttle Delay (5s)": {
+      "main": [[{"node": "Parse Apify Results", "type": "main", "index": 0}]]
+    },
+    "Check for Rate Limit": {
+      "main": [
+        [{"node": "Wait 60s on Error", "type": "main", "index": 0}],
+        [{"node": "Log Failed Companies", "type": "main", "index": 0}]
+      ]
+    },
+    "Wait 60s on Error": {
+      "main": [[{"node": "Log Failed Companies", "type": "main", "index": 0}]]
+    },
+    "Parse Apify Results": {
+      "main": [[{"node": "Insert People Data", "type": "main", "index": 0}]]
+    },
+    "Insert People Data": {
+      "main": [[{"node": "Log Execution", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,21 +1,21 @@
 # 🏛️ CTB Doctrine Audit Report
 
 **Repository**: barton-outreach-core
-**Audit Date**: 2025-10-23T11:30:47.897055
-**CTB Compliance Score**: 72/100 ⚠️
+**Audit Date**: 2025-10-23T14:31:58.265868
+**CTB Compliance Score**: 71/100 ⚠️
 **Grade**: ⚠️ FAIR
 
 ---
 
 ## 📊 Executive Summary
 
-### Overall Compliance Score: 72/100
+### Overall Compliance Score: 71/100
 
 | Category | Score | Weight | Status |
 |----------|-------|--------|--------|
 | Metadata Coverage | 10/30 | 30% | ❌ |
 | Barton ID Completeness | 20/20 | 20% | ✅ |
-| Enforcement Classification | 12/20 | 20% | ⚠️ |
+| Enforcement Classification | 11/20 | 20% | ❌ |
 | Branch Organization | 15/15 | 15% | ✅ |
 | Blueprint Coverage | 15/15 | 15% | ✅ |
 
@@ -25,27 +25,27 @@
 
 ### File Coverage
 
-- **Total Files**: 22,052
+- **Total Files**: 21,981
 - **Skipped Files**: 20,596 (binaries, node_modules, etc.)
-- **Taggable Files**: 1,456
-- **Tagged Files**: 496 (34.1%)
-- **Untagged Files**: 960 (65.9%)
+- **Taggable Files**: 1,385
+- **Tagged Files**: 465 (33.6%)
+- **Untagged Files**: 920 (66.4%)
 
 ### Metadata Completeness
 
-- **Files with Barton ID**: 496 of 496
-- **Files with Valid Barton ID**: 496 (excluding 00.00.00)
-- **Files with Unique ID**: 496 of 496
-- **Files with Enforcement**: 306 of 496
-- **Files with Blueprint Hash**: 496 of 496
+- **Files with Barton ID**: 465 of 465
+- **Files with Valid Barton ID**: 465 (excluding 00.00.00)
+- **Files with Unique ID**: 465 of 465
+- **Files with Enforcement**: 276 of 465
+- **Files with Blueprint Hash**: 465 of 465
 
 ### Enforcement Distribution
 
 | Enforcement Type | Count | Percentage |
 |------------------|-------|-----------|
-| ✅ HEIR | 148 | 29.8% |
-| ✅ ORBT | 158 | 31.9% |
-| ✅ None | 190 | 38.3% |
+| ✅ HEIR | 134 | 28.8% |
+| ✅ ORBT | 142 | 30.5% |
+| ✅ None | 189 | 40.6% |
 
 ---
 
@@ -53,36 +53,37 @@
 
 | CTB Branch | Files | Tagged | Untagged | Missing Barton ID | HEIR | ORBT | None | Status |
 |------------|-------|--------|----------|-------------------|------|------|------|--------|
-| **ui/apps** | 702 | 0 | 702 | 0 | 0 | 0 | 0 | ❌ No Tags |
-| **ai/garage-bay** | 136 | 98 | 38 | 0 | 19 | 43 | 36 | ✅ Good |
+| **ui/apps** | 643 | 0 | 643 | 0 | 0 | 0 | 0 | ❌ No Tags |
+| **ai/garage-bay** | 135 | 96 | 39 | 0 | 19 | 41 | 36 | ✅ Good |
 | **ui/src** | 101 | 0 | 101 | 0 | 0 | 0 | 0 | ❌ No Tags |
-| **data/migrations** | 55 | 55 | 0 | 0 | 45 | 10 | 0 | ✅ Good |
 | **docs/analysis** | 47 | 39 | 8 | 0 | 8 | 17 | 14 | ✅ Good |
 | **sys/firebase-workbench** | 44 | 43 | 1 | 0 | 16 | 17 | 10 | ✅ Good |
+| **data/migrations** | 41 | 41 | 0 | 0 | 33 | 8 | 0 | ✅ Good |
+| **ai/scripts** | 40 | 35 | 5 | 0 | 7 | 21 | 7 | ✅ Good |
 | **docs/scripts** | 37 | 37 | 0 | 0 | 11 | 2 | 24 | ✅ Good |
-| **ai/scripts** | 35 | 35 | 0 | 0 | 7 | 21 | 7 | ✅ Good |
-| **sys/api** | 23 | 23 | 0 | 0 | 6 | 17 | 0 | ✅ Good |
 | **ui/packages** | 22 | 0 | 22 | 0 | 0 | 0 | 0 | ❌ No Tags |
+| **sys/api** | 18 | 16 | 2 | 0 | 4 | 12 | 0 | ✅ Good |
 | **docs/blueprints** | 18 | 2 | 16 | 0 | 0 | 0 | 2 | ⚠️ Low Coverage |
 | **sys/tools** | 14 | 12 | 2 | 0 | 2 | 1 | 9 | ✅ Good |
 | **sys/nodes** | 13 | 9 | 4 | 0 | 0 | 2 | 7 | ✅ Good |
 | **meta/global-config** | 13 | 10 | 3 | 0 | 2 | 0 | 8 | ✅ Good |
-| **data/infra** | 13 | 13 | 0 | 0 | 0 | 13 | 0 | ✅ Good |
 | **ai/testing** | 12 | 12 | 0 | 0 | 12 | 0 | 0 | ✅ Good |
 | **ui/templates** | 10 | 0 | 10 | 0 | 0 | 0 | 0 | ❌ No Tags |
 | **sys/github-factory** | 10 | 9 | 1 | 0 | 3 | 2 | 4 | ✅ Good |
 | **sys/libs** | 7 | 7 | 0 | 0 | 0 | 1 | 6 | ✅ Good |
+| **data/infra** | 7 | 7 | 0 | 0 | 0 | 7 | 0 | ✅ Good |
 | **sys/tests** | 5 | 5 | 0 | 0 | 5 | 0 | 0 | ✅ Good |
 | **sys/ops** | 5 | 5 | 0 | 0 | 1 | 0 | 4 | ✅ Good |
 | **docs/pages** | 5 | 4 | 1 | 0 | 1 | 0 | 3 | ✅ Good |
-| **docs/archive** | 5 | 5 | 0 | 0 | 0 | 2 | 3 | ✅ Good |
 | **sys/composio-mcp** | 4 | 3 | 1 | 0 | 0 | 0 | 3 | ✅ Good |
 | **sys/security-audit** | 4 | 1 | 3 | 0 | 1 | 0 | 0 | ⚠️ Low Coverage |
 | **sys/modules** | 4 | 4 | 0 | 0 | 0 | 0 | 4 | ✅ Good |
 | **docs/diagrams** | 4 | 0 | 4 | 0 | 0 | 0 | 0 | ❌ No Tags |
+| **ai/mcp-tasks** | 4 | 0 | 4 | 0 | 0 | 0 | 0 | ❌ No Tags |
 | **sys/cli** | 3 | 3 | 0 | 0 | 0 | 0 | 3 | ✅ Good |
 | **docs/branches** | 3 | 0 | 3 | 0 | 0 | 0 | 0 | ❌ No Tags |
 | **docs/wiki** | 3 | 3 | 0 | 0 | 0 | 0 | 3 | ✅ Good |
+| **docs/archive** | 3 | 3 | 0 | 0 | 0 | 1 | 2 | ✅ Good |
 | **ai/agents** | 3 | 3 | 0 | 0 | 3 | 0 | 0 | ✅ Good |
 | **ui/public** | 2 | 0 | 2 | 0 | 0 | 0 | 0 | ❌ No Tags |
 | **sys/chartdb** | 2 | 1 | 1 | 0 | 0 | 0 | 1 | ✅ Good |
@@ -91,11 +92,15 @@
 | **meta/config** | 2 | 0 | 2 | 0 | 0 | 0 | 0 | ❌ No Tags |
 | **ai/AGENT_GUIDE.md** | 1 | 1 | 0 | 0 | 1 | 0 | 0 | ✅ Good |
 | **ai/heir.doctrine.yaml** | 1 | 0 | 1 | 0 | 0 | 0 | 0 | ❌ No Tags |
+| **ai/README.md** | 1 | 0 | 1 | 0 | 0 | 0 | 0 | ❌ No Tags |
 | **ai/render_start.py** | 1 | 1 | 0 | 0 | 0 | 0 | 1 | ✅ Good |
+| **data/README.md** | 1 | 0 | 1 | 0 | 0 | 0 | 0 | ❌ No Tags |
+| **data/SCHEMA.md** | 1 | 0 | 1 | 0 | 0 | 0 | 0 | ❌ No Tags |
 | **docs/40k_star.md** | 1 | 1 | 0 | 0 | 0 | 0 | 1 | ✅ Good |
 | **docs/AGENT_ARCHITECTURE.md** | 1 | 1 | 0 | 0 | 1 | 0 | 0 | ✅ Good |
 | **docs/APOLLO_INGEST_INTEGRATION.md** | 1 | 1 | 0 | 0 | 0 | 0 | 1 | ✅ Good |
 | **docs/ARCHITECTURE.md** | 1 | 1 | 0 | 0 | 0 | 0 | 1 | ✅ Good |
+| **docs/ARCHITECTURE_DIAGRAM.md** | 1 | 0 | 1 | 0 | 0 | 0 | 0 | ❌ No Tags |
 | **docs/audit_report.md** | 1 | 1 | 0 | 0 | 1 | 0 | 0 | ✅ Good |
 | **docs/CLAUDE.md** | 1 | 1 | 0 | 0 | 0 | 0 | 1 | ✅ Good |
 | **docs/COMPLETE_DEPLOYMENT.md** | 1 | 1 | 0 | 0 | 0 | 1 | 0 | ✅ Good |
@@ -151,6 +156,7 @@
 | **meta/Procfile** | 1 | 0 | 1 | 0 | 0 | 0 | 0 | ❌ No Tags |
 | **meta/pyproject.toml** | 1 | 0 | 1 | 0 | 0 | 0 | 0 | ❌ No Tags |
 | **meta/pytest.ini** | 1 | 0 | 1 | 0 | 0 | 0 | 0 | ❌ No Tags |
+| **meta/README.md** | 1 | 0 | 1 | 0 | 0 | 0 | 0 | ❌ No Tags |
 | **meta/render.yaml** | 1 | 0 | 1 | 0 | 0 | 0 | 0 | ❌ No Tags |
 | **meta/requirements.txt** | 1 | 0 | 1 | 0 | 0 | 0 | 0 | ❌ No Tags |
 | **meta/tailwind.config.ts** | 1 | 1 | 0 | 0 | 0 | 0 | 1 | ✅ Good |
@@ -158,8 +164,10 @@
 | **meta/tsconfig.json** | 1 | 0 | 1 | 0 | 0 | 0 | 0 | ❌ No Tags |
 | **meta/tsconfig.node.json** | 1 | 0 | 1 | 0 | 0 | 0 | 0 | ❌ No Tags |
 | **meta/vercel.json** | 1 | 0 | 1 | 0 | 0 | 0 | 0 | ❌ No Tags |
+| **sys/README.md** | 1 | 0 | 1 | 0 | 0 | 0 | 0 | ❌ No Tags |
 | **ui/components.json** | 1 | 0 | 1 | 0 | 0 | 0 | 0 | ❌ No Tags |
 | **ui/index.html** | 1 | 0 | 1 | 0 | 0 | 0 | 0 | ❌ No Tags |
+| **ui/README.md** | 1 | 0 | 1 | 0 | 0 | 0 | 0 | ❌ No Tags |
 | **ui/vite.config.ts** | 1 | 0 | 1 | 0 | 0 | 0 | 0 | ❌ No Tags |
 | **ui/lovable** | 1 | 0 | 1 | 0 | 0 | 0 | 0 | ❌ No Tags |
 | **ui/placeholders** | 1 | 0 | 1 | 0 | 0 | 0 | 0 | ❌ No Tags |
@@ -184,27 +192,27 @@
 
 **Purpose**: Frontend applications
 
-- Total Files: 702
+- Total Files: 643
 - Tagged: 0 (0.0%)
-- Untagged: 702
+- Untagged: 643
 - Missing Barton ID: 0
-- Top File Types: .jsx(119), .js(116), .tsx(105), .py(89), .ts(86)
+- Top File Types: .jsx(119), .tsx(105), .py(89), .js(87), .ts(69)
 
 **Recommendations**:
-- ⚠️ Tag 702 remaining files
+- ⚠️ Tag 643 remaining files
 
 ### ai/garage-bay
 
 **Purpose**: Garage Bay Python tools
 
-- Total Files: 136
-- Tagged: 98 (72.1%)
-- Untagged: 38
+- Total Files: 135
+- Tagged: 96 (71.1%)
+- Untagged: 39
 - Missing Barton ID: 0
-- Top File Types: .py(73), .md(35), .json(10), .toml(7), .sql(4)
+- Top File Types: .py(73), .md(35), .json(10), .toml(7), .txt(3)
 
 **Recommendations**:
-- ⚠️ Tag 38 remaining files
+- ⚠️ Tag 39 remaining files
 
 ### ui/src
 
@@ -218,19 +226,6 @@
 
 **Recommendations**:
 - ⚠️ Tag 101 remaining files
-
-### data/migrations
-
-**Purpose**: SQL migration scripts
-
-- Total Files: 55
-- Tagged: 55 (100.0%)
-- Untagged: 0
-- Missing Barton ID: 0
-- Top File Types: .sql(55)
-
-**Recommendations**:
-- ✅ Excellent coverage - maintain compliance
 
 ### docs/analysis
 
@@ -259,6 +254,32 @@
 - ⚠️ Tag 1 remaining files
 - ✅ Excellent coverage - maintain compliance
 
+### data/migrations
+
+**Purpose**: SQL migration scripts
+
+- Total Files: 41
+- Tagged: 41 (100.0%)
+- Untagged: 0
+- Missing Barton ID: 0
+- Top File Types: .sql(41)
+
+**Recommendations**:
+- ✅ Excellent coverage - maintain compliance
+
+### ai/scripts
+
+**Purpose**: AI automation scripts
+
+- Total Files: 40
+- Tagged: 35 (87.5%)
+- Untagged: 5
+- Missing Barton ID: 0
+- Top File Types: .mjs(19), .js(15), .cjs(4), .ts(2)
+
+**Recommendations**:
+- ⚠️ Tag 5 remaining files
+
 ### docs/scripts
 
 **Purpose**: Documentation generation scripts
@@ -268,32 +289,6 @@
 - Untagged: 0
 - Missing Barton ID: 0
 - Top File Types: .mjs(28), .cjs(4), .js(2), .sh(2), .ts(1)
-
-**Recommendations**:
-- ✅ Excellent coverage - maintain compliance
-
-### ai/scripts
-
-**Purpose**: AI automation scripts
-
-- Total Files: 35
-- Tagged: 35 (100.0%)
-- Untagged: 0
-- Missing Barton ID: 0
-- Top File Types: .mjs(19), .js(13), .ts(2), .cjs(1)
-
-**Recommendations**:
-- ✅ Excellent coverage - maintain compliance
-
-### sys/api
-
-**Purpose**: API services and endpoints
-
-- Total Files: 23
-- Tagged: 23 (100.0%)
-- Untagged: 0
-- Missing Barton ID: 0
-- Top File Types: .js(14), .py(6), .ts(3)
 
 **Recommendations**:
 - ✅ Excellent coverage - maintain compliance
@@ -311,13 +306,26 @@
 **Recommendations**:
 - ⚠️ Tag 22 remaining files
 
+### sys/api
+
+**Purpose**: API services and endpoints
+
+- Total Files: 18
+- Tagged: 16 (88.9%)
+- Untagged: 2
+- Missing Barton ID: 0
+- Top File Types: .js(7), .py(6), .ts(3), .example(1), .md(1)
+
+**Recommendations**:
+- ⚠️ Tag 2 remaining files
+
 ---
 
 ## ⚠️ Issues & Gaps
 
 ### High Number of Untagged Files
 
-960 files remain untagged. Consider running the tagger on additional directories or file types.
+920 files remain untagged. Consider running the tagger on additional directories or file types.
 
 ### Underutilized CTB Branches
 
@@ -325,11 +333,15 @@ The following branches have fewer than 3 files:
 
 - `ai/AGENT_GUIDE.md`: 1 files
 - `ai/heir.doctrine.yaml`: 1 files
+- `ai/README.md`: 1 files
 - `ai/render_start.py`: 1 files
+- `data/README.md`: 1 files
+- `data/SCHEMA.md`: 1 files
 - `docs/40k_star.md`: 1 files
 - `docs/AGENT_ARCHITECTURE.md`: 1 files
 - `docs/APOLLO_INGEST_INTEGRATION.md`: 1 files
 - `docs/ARCHITECTURE.md`: 1 files
+- `docs/ARCHITECTURE_DIAGRAM.md`: 1 files
 - `docs/audit_report.md`: 1 files
 - `docs/CLAUDE.md`: 1 files
 - `docs/COMPLETE_DEPLOYMENT.md`: 1 files
@@ -385,6 +397,7 @@ The following branches have fewer than 3 files:
 - `meta/Procfile`: 1 files
 - `meta/pyproject.toml`: 1 files
 - `meta/pytest.ini`: 1 files
+- `meta/README.md`: 1 files
 - `meta/render.yaml`: 1 files
 - `meta/requirements.txt`: 1 files
 - `meta/tailwind.config.ts`: 1 files
@@ -392,8 +405,10 @@ The following branches have fewer than 3 files:
 - `meta/tsconfig.json`: 1 files
 - `meta/tsconfig.node.json`: 1 files
 - `meta/vercel.json`: 1 files
+- `sys/README.md`: 1 files
 - `ui/components.json`: 1 files
 - `ui/index.html`: 1 files
+- `ui/README.md`: 1 files
 - `ui/vite.config.ts`: 1 files
 - `ui/lovable`: 1 files
 - `ui/placeholders`: 1 files
@@ -443,19 +458,19 @@ The following branches have fewer than 3 files:
 
 ### High Priority
 
-- [ ] Tag 960 remaining untagged files
+- [ ] Tag 920 remaining untagged files
 - [ ] Set up GitHub Actions for automated compliance
 
 ### Medium Priority
 
-- [ ] Classify 190 files with missing enforcement types
+- [ ] Classify 189 files with missing enforcement types
 
 ### Low Priority
 
 - [ ] Create blueprint registry documentation
 - [ ] Add git integration to tagger for automatic Last Updated
 - [ ] Generate metadata index for fast searching
-- [ ] Review and populate 91 underutilized branches
+- [ ] Review and populate 98 underutilized branches
 
 ---
 
@@ -469,13 +484,13 @@ python ctb/sys/github-factory/scripts/ctb_audit_generator.py ctb/
 ```
 
 **Target Next Audit**:
-- Current Score: 72/100
-- Target Score: 82/100
+- Current Score: 71/100
+- Target Score: 81/100
 - Focus Areas: metadata_coverage, enforcement_classified, blueprint_coverage
 
 ---
 
-**Report Generated**: 2025-10-23T11:30:47.897055
+**Report Generated**: 2025-10-23T14:31:58.265868
 **Tool**: ctb_audit_generator.py
 **Version**: 1.0
 **CTB Compliance**: ⚠️ FAIR

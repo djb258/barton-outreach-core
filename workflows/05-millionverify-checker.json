@@ -1,0 +1,118 @@
+{
+  "name": "MillionVerify Checker",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT unique_id, email FROM marketing.people_master WHERE email IS NOT NULL AND email_verified = FALSE LIMIT 50",
+        "options": {}
+      },
+      "name": "Get Unverified Emails",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [450, 300],
+      "credentials": {
+        "postgres": {
+          "id": "{{NEON_CREDENTIAL_ID}}",
+          "name": "Neon Marketing DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.millionverifier.com/api/v3/?api={{$env.MILLIONVERIFY_API_KEY}}&email={{$json[\"email\"]}}",
+        "options": {}
+      },
+      "name": "Verify Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"result\"]}}",
+              "operation": "equals",
+              "value2": "ok"
+            }
+          ]
+        }
+      },
+      "name": "Check Result",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE marketing.people_master SET email_verified = TRUE, updated_at = NOW() WHERE unique_id = '{{$json[\"unique_id\"]}}'",
+        "options": {}
+      },
+      "name": "Mark as Verified",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1050, 200],
+      "credentials": {
+        "postgres": {
+          "id": "{{NEON_CREDENTIAL_ID}}",
+          "name": "Neon Marketing DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE marketing.people_master SET email_verified = FALSE, updated_at = NOW() WHERE unique_id = '{{$json[\"unique_id\"]}}'",
+        "options": {}
+      },
+      "name": "Mark as Invalid",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1050, 400],
+      "credentials": {
+        "postgres": {
+          "id": "{{NEON_CREDENTIAL_ID}}",
+          "name": "Neon Marketing DB"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [[{"node": "Get Unverified Emails", "type": "main", "index": 0}]]
+    },
+    "Get Unverified Emails": {
+      "main": [[{"node": "Verify Email", "type": "main", "index": 0}]]
+    },
+    "Verify Email": {
+      "main": [[{"node": "Check Result", "type": "main", "index": 0}]]
+    },
+    "Check Result": {
+      "main": [
+        [{"node": "Mark as Verified", "type": "main", "index": 0}],
+        [{"node": "Mark as Invalid", "type": "main", "index": 0}]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "instanceId": "n8n-bootstrap"
+  },
+  "id": "millionverify-checker",
+  "tags": []
+}

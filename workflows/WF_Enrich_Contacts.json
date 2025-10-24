@@ -1,0 +1,48 @@
+{
+  "name": "WF_Enrich_Contacts",
+  "nodes": [
+    {
+      "parameters": {"httpMethod": "POST", "path": "enrich-contacts", "responseMode": "responseNode"},
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const eventData = $input.first().json;\nreturn {json: {workflow_name: 'Enrich_Contacts', status: 'ok', triggered_by: 'neon_event', record_id: eventData.payload?.id || eventData.id, event_type: eventData.event_type}};"
+      },
+      "name": "Process Event",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- TODO: Contact enrichment logic\n-- Placeholder: Mark slot as enrichment pending\nINSERT INTO marketing.contact_enrichment(\n  company_slot_unique_id,\n  enrichment_status,\n  enrichment_source,\n  created_at\n)\nSELECT\n  company_slot_unique_id,\n  'pending' as enrichment_status,\n  'apify' as enrichment_source,\n  NOW() as created_at\nFROM marketing.company_slots\nWHERE id = {{ $json.record_id }}\nON CONFLICT (company_slot_unique_id) DO UPDATE\nSET enrichment_status = 'pending',\n    created_at = NOW()\nRETURNING *;"
+      },
+      "name": "Enrich Contact",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [650, 300],
+      "credentials": {"postgres": {"id": "1", "name": "Neon Marketing DB"}}
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.N8N_API_URL }}/webhook/log-to-neon",
+        "sendBody": true,
+        "bodyParameters": {"parameters": [{"name": "workflowName", "value": "Enrich_Contacts"}, {"name": "status", "value": "ok"}]}
+      },
+      "name": "Log Success",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [850, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {"main": [[{"node": "Process Event"}]]},
+    "Process Event": {"main": [[{"node": "Enrich Contact"}]]},
+    "Enrich Contact": {"main": [[{"node": "Log Success"}]]}
+  }
+}

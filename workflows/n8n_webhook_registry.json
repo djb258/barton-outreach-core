@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "n8n Webhook Registry",
+  "description": "Maps pipeline event types to n8n webhook URLs for event-driven automation",
+  "version": "1.0.0",
+  "updated": "2025-10-24",
+
+  "webhooks": {
+    "company_created": {
+      "url": "https://dbarton.app.n8n.cloud/webhook/validate-company",
+      "method": "POST",
+      "description": "Triggered when new company is inserted into intake.company_raw_intake",
+      "workflow_name": "Validation Gatekeeper",
+      "expected_payload": {
+        "record_id": "integer",
+        "company_name": "string",
+        "website": "string",
+        "batch_id": "string",
+        "trigger_time": "timestamp"
+      },
+      "actions": [
+        "Validate company name and website",
+        "Update validated=TRUE/FALSE",
+        "Trigger next event (company_validated)"
+      ]
+    },
+
+    "company_validated": {
+      "url": "https://dbarton.app.n8n.cloud/webhook/promote-company",
+      "method": "POST",
+      "description": "Triggered when company.validated is set to TRUE",
+      "workflow_name": "Promotion Runner",
+      "expected_payload": {
+        "record_id": "integer",
+        "company_name": "string",
+        "website": "string",
+        "batch_id": "string",
+        "validated_by": "string",
+        "trigger_time": "timestamp"
+      },
+      "actions": [
+        "Generate Barton ID (04.04.01.84.XXXXX.001)",
+        "Insert into marketing.company_master",
+        "Trigger next event (company_promoted)"
+      ]
+    },
+
+    "company_promoted": {
+      "url": "https://dbarton.app.n8n.cloud/webhook/create-slots",
+      "method": "POST",
+      "description": "Triggered when company is inserted into marketing.company_master",
+      "workflow_name": "Slot Creator",
+      "expected_payload": {
+        "company_unique_id": "string",
+        "company_name": "string",
+        "website_url": "string",
+        "batch_id": "string",
+        "trigger_time": "timestamp"
+      },
+      "actions": [
+        "Create 3 slots (CEO, CFO, HR Director)",
+        "Insert into marketing.company_slots",
+        "Trigger next event (slots_created) for each slot"
+      ]
+    },
+
+    "slots_created": {
+      "url": "https://dbarton.app.n8n.cloud/webhook/enrich-contact",
+      "method": "POST",
+      "description": "Triggered when slot is inserted into marketing.company_slots",
+      "workflow_name": "Apify Enrichment",
+      "expected_payload": {
+        "slot_id": "string",
+        "company_id": "string",
+        "slot_type": "string",
+        "slot_label": "string",
+        "trigger_time": "timestamp"
+      },
+      "actions": [
+        "Call Apify API for LinkedIn enrichment",
+        "Extract contact name, email, phone",
+        "Insert into marketing.contact_enrichment",
+        "Update enrichment_status=completed",
+        "Trigger next event (contact_enriched)"
+      ],
+      "throttling": {
+        "batch_size": 25,
+        "delay_seconds": 5,
+        "max_retries": 3
+      }
+    },
+
+    "contact_enriched": {
+      "url": "https://dbarton.app.n8n.cloud/webhook/verify-email",
+      "method": "POST",
+      "description": "Triggered when contact_enrichment.enrichment_status is set to 'completed'",
+      "workflow_name": "MillionVerify Checker",
+      "expected_payload": {
+        "slot_id": "string",
+        "linkedin_url": "string",
+        "full_name": "string",
+        "email": "string",
+        "trigger_time": "timestamp"
+      },
+      "actions": [
+        "Call MillionVerify API",
+        "Insert verification result into marketing.email_verification",
+        "Update verification_status (valid/invalid/risky)",
+        "Mark contact as ready for outreach"
+      ],
+      "throttling": {
+        "batch_size": 10,
+        "delay_seconds": 10,
+        "max_retries": 2
+      }
+    },
+
+    "email_verified": {
+      "url": "https://dbarton.app.n8n.cloud/webhook/ready-for-outreach",
+      "method": "POST",
+      "description": "Triggered when email is verified as valid",
+      "workflow_name": "Outreach Campaign Trigger",
+      "expected_payload": {
+        "slot_id": "string",
+        "email": "string",
+        "verification_status": "string",
+        "full_name": "string",
+        "company_name": "string"
+      },
+      "actions": [
+        "Queue contact for outreach campaign",
+        "Send to CRM/email automation platform",
+        "Track outreach status"
+      ],
+      "status": "planned"
+    }
+  },
+
+  "configuration": {
+    "n8n_cloud_url": "https://dbarton.app.n8n.cloud",
+    "authentication": {
+      "type": "webhook",
+      "note": "Webhooks are publicly accessible but use unique UUIDs for security"
+    },
+    "event_queue_table": "marketing.pipeline_events",
+    "error_log_table": "marketing.pipeline_errors",
+    "monitoring": {
+      "pg_notify_channel": "pipeline_event",
+      "listen_command": "LISTEN pipeline_event;"
+    }
+  },
+
+  "implementation_notes": [
+    "Each n8n workflow must start with a Webhook Trigger node",
+    "Webhook URLs use unique UUIDs generated by n8n",
+    "Update these URLs after deploying workflows to n8n cloud",
+    "Each workflow should call marketing.mark_event_processed(event_id) on success",
+    "Each workflow should call marketing.log_pipeline_error(...) on failure",
+    "Use n8n's built-in retry and error handling features"
+  ],
+
+  "testing": {
+    "test_webhook_url": "https://dbarton.app.n8n.cloud/webhook-test/pipeline-test",
+    "sample_payload": {
+      "event_type": "company_created",
+      "payload": {
+        "record_id": 999,
+        "company_name": "Test Company Inc",
+        "website": "https://testcompany.com",
+        "batch_id": "TEST-001",
+        "trigger_time": "2025-10-24T10:00:00Z"
+      }
+    }
+  }
+}

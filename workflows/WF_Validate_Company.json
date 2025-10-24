@@ -1,0 +1,136 @@
+{
+  "name": "WF_Validate_Company",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "validate-company",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "validate-company"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Extract event data\nconst eventData = $input.first().json;\n\nreturn {\n  json: {\n    workflow_name: 'Validate_Company',\n    status: 'ok',\n    triggered_by: 'neon_event',\n    record_id: eventData.payload?.id || eventData.id,\n    event_type: eventData.event_type,\n    company_name: eventData.payload?.company || 'Unknown',\n    website: eventData.payload?.website || ''\n  }\n};"
+      },
+      "name": "Process Event",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Validation logic\n-- Check if company and website are present\nUPDATE intake.company_raw_intake\nSET \n  validated = CASE \n    WHEN company IS NOT NULL \n      AND TRIM(company) != '' \n      AND website IS NOT NULL \n      AND TRIM(website) != '' \n    THEN TRUE \n    ELSE FALSE \n  END,\n  validated_at = NOW(),\n  validated_by = 'WF_Validate_Company',\n  validation_notes = CASE\n    WHEN company IS NULL OR TRIM(company) = '' THEN 'Missing company name'\n    WHEN website IS NULL OR TRIM(website) = '' THEN 'Missing website'\n    ELSE 'Passed validation'\n  END\nWHERE id = {{ $json.record_id }}\nRETURNING *;",
+        "options": {}
+      },
+      "name": "Validate Company",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [650, 300],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Neon Marketing DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.N8N_API_URL }}/webhook/log-to-neon",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "workflowName",
+              "value": "={{ $json.workflow_name }}"
+            },
+            {
+              "name": "status",
+              "value": "={{ $json.status }}"
+            },
+            {
+              "name": "triggerSource",
+              "value": "neon_event"
+            },
+            {
+              "name": "recordId",
+              "value": "={{ $json.record_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Log Success",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO marketing.pipeline_errors(event_type, record_id, error_message, created_at)\nVALUES (\n  '{{ $json.event_type }}',\n  '{{ $json.record_id }}',\n  '{{ $json.error?.message || \"Unknown error\" }}',\n  NOW()\n);",
+        "options": {}
+      },
+      "name": "Log Error",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [650, 500],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Neon Marketing DB"
+        }
+      },
+      "onError": "continueErrorOutput"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Event": {
+      "main": [
+        [
+          {
+            "node": "Validate Company",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Company": {
+      "main": [
+        [
+          {
+            "node": "Log Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-10-24T12:00:00.000Z",
+  "versionId": "1"
+}

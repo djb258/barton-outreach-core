@@ -1,0 +1,107 @@
+{
+  "name": "Validation Gatekeeper",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, company, website, validated FROM intake.company_raw_intake WHERE validated IS NULL OR validated = FALSE LIMIT 10",
+        "options": {}
+      },
+      "name": "Get Unvalidated Companies",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [450, 300],
+      "credentials": {
+        "postgres": {
+          "id": "{{NEON_CREDENTIAL_ID}}",
+          "name": "Neon Marketing DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"website\"]}}",
+              "operation": "isNotEmpty"
+            },
+            {
+              "value1": "={{$json[\"company\"]}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "name": "Validation Rules",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE intake.company_raw_intake SET validated = TRUE, validated_at = NOW(), validated_by = 'n8n-gatekeeper', validation_notes = 'Passed automated validation' WHERE id = {{$json[\"id\"]}}",
+        "options": {}
+      },
+      "name": "Mark as Validated",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [850, 200],
+      "credentials": {
+        "postgres": {
+          "id": "{{NEON_CREDENTIAL_ID}}",
+          "name": "Neon Marketing DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE intake.company_raw_intake SET validated = FALSE, validated_at = NOW(), validated_by = 'n8n-gatekeeper', validation_notes = 'Failed: Missing required fields' WHERE id = {{$json[\"id\"]}}",
+        "options": {}
+      },
+      "name": "Mark as Failed",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [850, 400],
+      "credentials": {
+        "postgres": {
+          "id": "{{NEON_CREDENTIAL_ID}}",
+          "name": "Neon Marketing DB"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [[{"node": "Get Unvalidated Companies", "type": "main", "index": 0}]]
+    },
+    "Get Unvalidated Companies": {
+      "main": [[{"node": "Validation Rules", "type": "main", "index": 0}]]
+    },
+    "Validation Rules": {
+      "main": [
+        [{"node": "Mark as Validated", "type": "main", "index": 0}],
+        [{"node": "Mark as Failed", "type": "main", "index": 0}]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "instanceId": "n8n-bootstrap"
+  },
+  "id": "validation-gatekeeper",
+  "tags": []
+}

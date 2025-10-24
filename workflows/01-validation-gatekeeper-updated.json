@@ -1,0 +1,132 @@
+{
+  "name": "Validation Gatekeeper",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "name": "Poll Every 15 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, company, website, validated, import_batch_id FROM intake.company_raw_intake WHERE (validated IS NULL OR validated = FALSE) ORDER BY created_at DESC LIMIT 10",
+        "options": {}
+      },
+      "name": "Get Unvalidated Companies",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [450, 300],
+      "credentials": {
+        "postgres": {
+          "id": "{{NEON_CREDENTIAL_ID}}",
+          "name": "Neon Marketing DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"website\"]}}",
+              "operation": "isNotEmpty"
+            },
+            {
+              "value1": "={{$json[\"company\"]}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "name": "Validation Rules",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE intake.company_raw_intake SET validated = TRUE, validated_at = NOW(), validated_by = 'n8n-auto-validator', validation_notes = 'Passed automated validation' WHERE id = {{$json[\"id\"]}}",
+        "options": {}
+      },
+      "name": "Mark as Validated",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [850, 200],
+      "credentials": {
+        "postgres": {
+          "id": "{{NEON_CREDENTIAL_ID}}",
+          "name": "Neon Marketing DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE intake.company_raw_intake SET validated = FALSE, validated_at = NOW(), validated_by = 'n8n-auto-validator', validation_notes = 'Failed: Missing required fields' WHERE id = {{$json[\"id\"]}}",
+        "options": {}
+      },
+      "name": "Mark as Failed",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [850, 400],
+      "credentials": {
+        "postgres": {
+          "id": "{{NEON_CREDENTIAL_ID}}",
+          "name": "Neon Marketing DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO shq_validation_log (workflow_id, workflow_name, execution_time, record_count, status) VALUES ('qvKf2iqxEZrCYPoI', 'Validation Gatekeeper', NOW(), 1, 'completed')",
+        "options": {}
+      },
+      "name": "Log Execution",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1050, 300],
+      "credentials": {
+        "postgres": {
+          "id": "{{NEON_CREDENTIAL_ID}}",
+          "name": "Neon Marketing DB"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Poll Every 15 Minutes": {
+      "main": [[{"node": "Get Unvalidated Companies", "type": "main", "index": 0}]]
+    },
+    "Get Unvalidated Companies": {
+      "main": [[{"node": "Validation Rules", "type": "main", "index": 0}]]
+    },
+    "Validation Rules": {
+      "main": [
+        [{"node": "Mark as Validated", "type": "main", "index": 0}],
+        [{"node": "Mark as Failed", "type": "main", "index": 0}]
+      ]
+    },
+    "Mark as Validated": {
+      "main": [[{"node": "Log Execution", "type": "main", "index": 0}]]
+    },
+    "Mark as Failed": {
+      "main": [[{"node": "Log Execution", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "WF_Monitor_LogToNeon",
+  "nodes": [
+    {"parameters": {"rule": {"interval": [{"field": "hours", "hoursInterval": 1}]}}, "name": "Schedule Hourly", "type": "n8n-nodes-base.scheduleTrigger", "typeVersion": 1, "position": [250, 300]},
+    {"parameters": {"operation": "executeQuery", "query": "SELECT\n  workflow_name,\n  COUNT(*) AS total_runs,\n  SUM(CASE WHEN status='error' THEN 1 ELSE 0 END) AS total_errors,\n  ROUND(AVG(duration_seconds), 2) AS avg_duration,\n  MAX(created_at) as last_run\nFROM marketing.workflow_stats\nWHERE created_at > NOW() - INTERVAL '1 hour'\nGROUP BY workflow_name\nORDER BY total_errors DESC, total_runs DESC;"}, "name": "Get Hourly Stats", "type": "n8n-nodes-base.postgres", "typeVersion": 2, "position": [450, 300], "credentials": {"postgres": {"id": "1", "name": "Neon Marketing DB"}}},
+    {"parameters": {"functionCode": "const stats = $input.all().map(item => item.json);\n\nlet summary = '📊 Hourly Outreach Stats Summary\\n\\n';\nstats.forEach(s => {\n  const errorRate = s.total_runs > 0 ? ((s.total_errors / s.total_runs) * 100).toFixed(1) : 0;\n  summary += `• ${s.workflow_name}: ${s.total_runs} runs, ${s.total_errors} errors (${errorRate}%), avg ${s.avg_duration}s\\n`;\n});\n\nreturn {json: {text: summary}};"}, "name": "Format Summary", "type": "n8n-nodes-base.function", "typeVersion": 1, "position": [650, 300]},
+    {"parameters": {"url": "# Optional Slack/Discord webhook URL here", "sendBody": true, "bodyParameters": {"parameters": [{"name": "text", "value": "={{ $json.text }}"}]}, "options": {}}, "name": "Send Notification", "type": "n8n-nodes-base.httpRequest", "typeVersion": 3, "position": [850, 300], "disabled": true}
+  ],
+  "connections": {
+    "Schedule Hourly": {"main": [[{"node": "Get Hourly Stats"}]]},
+    "Get Hourly Stats": {"main": [[{"node": "Format Summary"}]]},
+    "Format Summary": {"main": [[{"node": "Send Notification"}]]}
+  }
+}

@@ -64,3 +64,17 @@ ENV/
 # Misc
 .cache/
 .parcel-cache/
+
+# n8n & Outreach Pipeline
+migrations/N8N_CREDENTIALS.txt
+workflows/.env
+workflows/*_backup.json
+workflows/*_export_*.json
+*.n8n.bak
+n8n-data/
+.n8n/
+
+# Sensitive credentials
+*_CREDENTIALS.txt
+*_API_KEY.txt
+NEON_*.txt

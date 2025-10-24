@@ -1,0 +1,82 @@
+{
+  "name": "Apify Enrichment",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT cm.company_unique_id, cm.company_name, cm.website_url, cm.linkedin_url, cs.company_slot_unique_id FROM marketing.company_master cm JOIN marketing.company_slots cs ON cm.company_unique_id = cs.company_unique_id WHERE cm.company_unique_id NOT IN (SELECT DISTINCT company_unique_id FROM marketing.people_master WHERE company_unique_id IS NOT NULL) LIMIT 10",
+        "options": {}
+      },
+      "name": "Get Companies Needing Enrichment",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [450, 300],
+      "credentials": {
+        "postgres": {
+          "id": "{{NEON_CREDENTIAL_ID}}",
+          "name": "Neon Marketing DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/apify~linkedin-people-scraper/runs",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "apifyApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "companyUrl",
+              "value": "={{$json[\"linkedin_url\"]}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Trigger Apify Scraper",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "amount": 30,
+        "unit": "seconds"
+      },
+      "name": "Wait for Results",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [850, 300]
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [[{"node": "Get Companies Needing Enrichment", "type": "main", "index": 0}]]
+    },
+    "Get Companies Needing Enrichment": {
+      "main": [[{"node": "Trigger Apify Scraper", "type": "main", "index": 0}]]
+    },
+    "Trigger Apify Scraper": {
+      "main": [[{"node": "Wait for Results", "type": "main", "index": 0}]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "instanceId": "n8n-bootstrap"
+  },
+  "id": "apify-enrichment",
+  "tags": []
+}
