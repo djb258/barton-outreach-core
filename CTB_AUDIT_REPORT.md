@@ -1,7 +1,7 @@
 # 🏛️ CTB Doctrine Audit Report
 
 **Repository**: barton-outreach-core
-**Audit Date**: 2025-10-24T15:17:34.708274
+**Audit Date**: 2025-11-03T14:55:32.301768
 **CTB Compliance Score**: 70/100 ⚠️
 **Grade**: ⚠️ FAIR
 
@@ -25,11 +25,11 @@
 
 ### File Coverage
 
-- **Total Files**: 21,994
-- **Skipped Files**: 20,596 (binaries, node_modules, etc.)
-- **Taggable Files**: 1,398
-- **Tagged Files**: 465 (33.3%)
-- **Untagged Files**: 933 (66.7%)
+- **Total Files**: 115,401
+- **Skipped Files**: 114,000 (binaries, node_modules, etc.)
+- **Taggable Files**: 1,401
+- **Tagged Files**: 465 (33.2%)
+- **Untagged Files**: 936 (66.8%)
 
 ### Metadata Completeness
 
@@ -53,7 +53,7 @@
 
 | CTB Branch | Files | Tagged | Untagged | Missing Barton ID | HEIR | ORBT | None | Status |
 |------------|-------|--------|----------|-------------------|------|------|------|--------|
-| **ui/apps** | 643 | 0 | 643 | 0 | 0 | 0 | 0 | ❌ No Tags |
+| **ui/apps** | 646 | 0 | 646 | 0 | 0 | 0 | 0 | ❌ No Tags |
 | **ai/garage-bay** | 135 | 96 | 39 | 0 | 19 | 41 | 36 | ✅ Good |
 | **ui/src** | 101 | 0 | 101 | 0 | 0 | 0 | 0 | ❌ No Tags |
 | **ai/scripts** | 53 | 35 | 18 | 0 | 7 | 21 | 7 | ✅ Good |
@@ -192,14 +192,14 @@
 
 **Purpose**: Frontend applications
 
-- Total Files: 643
+- Total Files: 646
 - Tagged: 0 (0.0%)
-- Untagged: 643
+- Untagged: 646
 - Missing Barton ID: 0
 - Top File Types: .jsx(119), .tsx(105), .py(89), .js(87), .ts(69)
 
 **Recommendations**:
-- ⚠️ Tag 643 remaining files
+- ⚠️ Tag 646 remaining files
 
 ### ai/garage-bay
 
@@ -325,7 +325,7 @@
 
 ### High Number of Untagged Files
 
-933 files remain untagged. Consider running the tagger on additional directories or file types.
+936 files remain untagged. Consider running the tagger on additional directories or file types.
 
 ### Underutilized CTB Branches
 
@@ -458,7 +458,7 @@ The following branches have fewer than 3 files:
 
 ### High Priority
 
-- [ ] Tag 933 remaining untagged files
+- [ ] Tag 936 remaining untagged files
 - [ ] Set up GitHub Actions for automated compliance
 
 ### Medium Priority
@@ -490,7 +490,7 @@ python ctb/sys/github-factory/scripts/ctb_audit_generator.py ctb/
 
 ---
 
-**Report Generated**: 2025-10-24T15:17:34.708274
+**Report Generated**: 2025-11-03T14:55:32.301768
 **Tool**: ctb_audit_generator.py
 **Version**: 1.0
 **CTB Compliance**: ⚠️ FAIR

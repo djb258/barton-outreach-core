@@ -1,0 +1,140 @@
+{
+  "name": "07 - Send Messages via HeyReach",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Schedule Every 20 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "id": "schedule-trigger"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  pm.unique_id,\n  pm.full_name,\n  pm.email,\n  pm.first_name,\n  pm.last_name,\n  pm.linkedin_url,\n  cm.company_name,\n  cs.slot_type,\n  mkr.message_key,\n  mkr.subject_line,\n  mkr.preview_text,\n  mkr.vibeos_template_id\nFROM marketing.people_master pm\nJOIN marketing.company_master cm ON pm.company_unique_id = cm.company_unique_id\nJOIN marketing.company_slots cs ON pm.company_slot_unique_id = cs.company_slot_unique_id\nJOIN marketing.message_key_reference mkr ON pm.message_key_scheduled = mkr.message_key\nWHERE mkr.message_channel IN ('linkedin', 'both')\n  AND mkr.active = TRUE\n  AND pm.linkedin_url IS NOT NULL\nLIMIT 30;"
+      },
+      "name": "Get Contacts Ready for LinkedIn",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [450, 300],
+      "id": "get-contacts",
+      "credentials": {
+        "postgres": {
+          "id": "neon-marketing-db",
+          "name": "Neon Marketing DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.heyreach.io/api/v1/send-message",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "30l4vmMccKZvGnjsCgMdUb6W4m1qpgt6oSBjwrASV+c="
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "linkedin_url",
+              "value": "={{ $json.linkedin_url }}"
+            },
+            {
+              "name": "message_template",
+              "value": "={{ $json.vibeos_template_id }}"
+            },
+            {
+              "name": "variables",
+              "value": {
+                "first_name": "={{ $json.first_name }}",
+                "company_name": "={{ $json.company_name }}",
+                "role": "={{ $json.slot_type }}",
+                "neon_id": "={{ $json.unique_id }}"
+              }
+            },
+            {
+              "name": "campaign_name",
+              "value": "WV_LINKEDIN_OUTREACH_2025"
+            }
+          ]
+        }
+      },
+      "name": "Send to HeyReach",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [650, 300],
+      "id": "send-heyreach"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE marketing.people_master\nSET message_key_scheduled = NULL,\n    updated_at = NOW()\nWHERE unique_id = '{{ $json.unique_id }}';\n\nINSERT INTO marketing.pipeline_events (event_type, payload, status)\nVALUES ('message_sent', \n  '{\"contact_id\": \"{{ $json.unique_id }}\", \"message_key\": \"{{ $json.message_key }}\", \"channel\": \"heyreach_linkedin\"}',\n  'success');"
+      },
+      "name": "Update Message Status",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [850, 300],
+      "id": "update-status",
+      "credentials": {
+        "postgres": {
+          "id": "neon-marketing-db",
+          "name": "Neon Marketing DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO bit.bit_signal (company_unique_id, contact_unique_id, signal_type, signal_strength, source)\nSELECT \n  company_unique_id,\n  unique_id,\n  'linkedin_message_sent',\n  2,\n  'heyreach'\nFROM marketing.people_master\nWHERE unique_id = '{{ $json.unique_id }}';"
+      },
+      "name": "Track BIT Signal",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [1050, 300],
+      "id": "track-signal",
+      "credentials": {
+        "postgres": {
+          "id": "neon-marketing-db",
+          "name": "Neon Marketing DB"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Every 20 Minutes": {
+      "main": [[{"node": "Get Contacts Ready for LinkedIn", "type": "main", "index": 0}]]
+    },
+    "Get Contacts Ready for LinkedIn": {
+      "main": [[{"node": "Send to HeyReach", "type": "main", "index": 0}]]
+    },
+    "Send to HeyReach": {
+      "main": [[{"node": "Update Message Status", "type": "main", "index": 0}]]
+    },
+    "Update Message Status": {
+      "main": [[{"node": "Track BIT Signal", "type": "main", "index": 0}]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "instanceId": "barton-outreach-core"
+  },
+  "tags": [
+    {"name": "messaging"},
+    {"name": "heyreach"},
+    {"name": "linkedin"}
+  ]
+}
+
