@@ -25,6 +25,8 @@
   "dependencies": {
     "@barton/data-router": "file:../../packages/data-router",
     "@barton/mcp-clients": "file:../../packages/mcp-clients",
+    "@builder.io/react": "^3.2.12",
+    "@builder.io/sdk": "^2.2.9",
     "@hookform/resolvers": "^3.10.0",
     "@neondatabase/serverless": "^0.10.0",
     "@radix-ui/react-accordion": "^1.2.11",

@@ -1,19 +1,19 @@
 # 🏛️ CTB Doctrine Audit Report
 
 **Repository**: barton-outreach-core
-**Audit Date**: 2025-10-23T14:31:58.265868
-**CTB Compliance Score**: 71/100 ⚠️
+**Audit Date**: 2025-10-24T15:17:34.708274
+**CTB Compliance Score**: 70/100 ⚠️
 **Grade**: ⚠️ FAIR
 
 ---
 
 ## 📊 Executive Summary
 
-### Overall Compliance Score: 71/100
+### Overall Compliance Score: 70/100
 
 | Category | Score | Weight | Status |
 |----------|-------|--------|--------|
-| Metadata Coverage | 10/30 | 30% | ❌ |
+| Metadata Coverage | 9/30 | 30% | ❌ |
 | Barton ID Completeness | 20/20 | 20% | ✅ |
 | Enforcement Classification | 11/20 | 20% | ❌ |
 | Branch Organization | 15/15 | 15% | ✅ |
@@ -25,11 +25,11 @@
 
 ### File Coverage
 
-- **Total Files**: 21,981
+- **Total Files**: 21,994
 - **Skipped Files**: 20,596 (binaries, node_modules, etc.)
-- **Taggable Files**: 1,385
-- **Tagged Files**: 465 (33.6%)
-- **Untagged Files**: 920 (66.4%)
+- **Taggable Files**: 1,398
+- **Tagged Files**: 465 (33.3%)
+- **Untagged Files**: 933 (66.7%)
 
 ### Metadata Completeness
 
@@ -56,10 +56,10 @@
 | **ui/apps** | 643 | 0 | 643 | 0 | 0 | 0 | 0 | ❌ No Tags |
 | **ai/garage-bay** | 135 | 96 | 39 | 0 | 19 | 41 | 36 | ✅ Good |
 | **ui/src** | 101 | 0 | 101 | 0 | 0 | 0 | 0 | ❌ No Tags |
+| **ai/scripts** | 53 | 35 | 18 | 0 | 7 | 21 | 7 | ✅ Good |
 | **docs/analysis** | 47 | 39 | 8 | 0 | 8 | 17 | 14 | ✅ Good |
 | **sys/firebase-workbench** | 44 | 43 | 1 | 0 | 16 | 17 | 10 | ✅ Good |
 | **data/migrations** | 41 | 41 | 0 | 0 | 33 | 8 | 0 | ✅ Good |
-| **ai/scripts** | 40 | 35 | 5 | 0 | 7 | 21 | 7 | ✅ Good |
 | **docs/scripts** | 37 | 37 | 0 | 0 | 11 | 2 | 24 | ✅ Good |
 | **ui/packages** | 22 | 0 | 22 | 0 | 0 | 0 | 0 | ❌ No Tags |
 | **sys/api** | 18 | 16 | 2 | 0 | 4 | 12 | 0 | ✅ Good |
@@ -227,6 +227,19 @@
 **Recommendations**:
 - ⚠️ Tag 101 remaining files
 
+### ai/scripts
+
+**Purpose**: AI automation scripts
+
+- Total Files: 53
+- Tagged: 35 (66.0%)
+- Untagged: 18
+- Missing Barton ID: 0
+- Top File Types: .mjs(28), .js(15), .cjs(8), .ts(2)
+
+**Recommendations**:
+- ⚠️ Tag 18 remaining files
+
 ### docs/analysis
 
 **Purpose**: Analysis and production readiness docs
@@ -266,19 +279,6 @@
 
 **Recommendations**:
 - ✅ Excellent coverage - maintain compliance
-
-### ai/scripts
-
-**Purpose**: AI automation scripts
-
-- Total Files: 40
-- Tagged: 35 (87.5%)
-- Untagged: 5
-- Missing Barton ID: 0
-- Top File Types: .mjs(19), .js(15), .cjs(4), .ts(2)
-
-**Recommendations**:
-- ⚠️ Tag 5 remaining files
 
 ### docs/scripts
 
@@ -325,7 +325,7 @@
 
 ### High Number of Untagged Files
 
-920 files remain untagged. Consider running the tagger on additional directories or file types.
+933 files remain untagged. Consider running the tagger on additional directories or file types.
 
 ### Underutilized CTB Branches
 
@@ -458,7 +458,7 @@ The following branches have fewer than 3 files:
 
 ### High Priority
 
-- [ ] Tag 920 remaining untagged files
+- [ ] Tag 933 remaining untagged files
 - [ ] Set up GitHub Actions for automated compliance
 
 ### Medium Priority
@@ -484,13 +484,13 @@ python ctb/sys/github-factory/scripts/ctb_audit_generator.py ctb/
 ```
 
 **Target Next Audit**:
-- Current Score: 71/100
-- Target Score: 81/100
+- Current Score: 70/100
+- Target Score: 80/100
 - Focus Areas: metadata_coverage, enforcement_classified, blueprint_coverage
 
 ---
 
-**Report Generated**: 2025-10-23T14:31:58.265868
+**Report Generated**: 2025-10-24T15:17:34.708274
 **Tool**: ctb_audit_generator.py
 **Version**: 1.0
 **CTB Compliance**: ⚠️ FAIR
