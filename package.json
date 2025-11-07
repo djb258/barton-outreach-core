@@ -13,7 +13,9 @@
     "dev:amplify": "cd ctb/ui/apps/amplify-client && npm install && npm run dev",
     "dev:outreach-ui": "cd ctb/ui/apps/outreach-ui && npm install && npm run dev",
     "sync:svg-ple": "bash infra/scripts/auto-sync-svg-ple-github.sh --once",
-    "sync:svg-ple:watch": "bash infra/scripts/auto-sync-svg-ple-github.sh --watch"
+    "sync:svg-ple:watch": "bash infra/scripts/auto-sync-svg-ple-github.sh --watch",
+    "schema:export": "python ctb/ops/scripts/export-neon-schema.py",
+    "schema:view": "cat ctb/docs/schema_map.json | jq ."
   },
   "keywords": [
     "marketing",
