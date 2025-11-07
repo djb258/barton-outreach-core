@@ -15,7 +15,10 @@
     "sync:svg-ple": "bash infra/scripts/auto-sync-svg-ple-github.sh --once",
     "sync:svg-ple:watch": "bash infra/scripts/auto-sync-svg-ple-github.sh --watch",
     "schema:export": "python ctb/ops/scripts/export-neon-schema.py",
-    "schema:view": "cat ctb/docs/schema_map.json | jq ."
+    "schema:view": "cat ctb/docs/schema_map.json | jq .",
+    "tools:install": "ctb/ops/scripts/setup-required-tools.bat",
+    "tools:watch": "powershell -ExecutionPolicy Bypass -File ctb/ops/scripts/watch-and-sync.ps1",
+    "tools:watch:batch": "ctb/ops/scripts/watch-and-sync.bat"
   },
   "keywords": [
     "marketing",

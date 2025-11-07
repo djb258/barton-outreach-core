@@ -1,0 +1,209 @@
+name: Auto-Sync Tools (Obsidian, GitKraken, GitHub Projects)
+
+on:
+  push:
+    branches: [main, feature/**]
+  pull_request:
+    types: [opened, closed, reopened]
+  issues:
+    types: [opened, closed, reopened, labeled]
+  workflow_dispatch:  # Manual trigger
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+
+jobs:
+  sync-github-projects:
+    name: Sync GitHub Projects
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up GitHub CLI
+        run: |
+          gh --version
+
+      - name: Authenticate GitHub CLI
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "$GH_TOKEN" | gh auth login --with-token
+
+      - name: Sync SVG-PLE Todo to GitHub Projects
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f "infra/scripts/sync-svg-ple-to-github-projects.sh" ]; then
+            chmod +x infra/scripts/sync-svg-ple-to-github-projects.sh
+            bash infra/scripts/sync-svg-ple-to-github-projects.sh
+          else
+            echo "Sync script not found, skipping..."
+          fi
+
+      - name: Update GitHub Projects with Recent Commits
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get recent commits
+          COMMITS=$(git log --oneline -n 5 --pretty=format:"%h - %s")
+          echo "Recent commits:"
+          echo "$COMMITS"
+
+          # List projects (for verification)
+          gh project list --owner ${{ github.repository_owner }} || echo "No projects found"
+
+  auto-commit-obsidian:
+    name: Auto-commit Obsidian Changes
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for Obsidian vault changes
+        id: check_changes
+        run: |
+          if git diff --quiet HEAD -- ctb/docs/obsidian-vault/; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit Obsidian changes
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          git config --global user.name "Obsidian Bot"
+          git config --global user.email "obsidian-bot@barton-outreach.local"
+          git add ctb/docs/obsidian-vault/
+          git commit -m "docs(obsidian): auto-sync vault changes
+
+          🤖 Automated commit from GitHub Actions
+
+          Co-Authored-By: GitHub Actions <actions@github.com>"
+          git push
+
+  refresh-schema:
+    name: Refresh Database Schema
+    runs-on: ubuntu-latest
+    if: |
+      contains(github.event.head_commit.message, 'migration') ||
+      contains(github.event.head_commit.message, 'schema') ||
+      github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install psycopg2-binary python-dotenv
+
+      - name: Export schema
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -f "ctb/ops/scripts/export-neon-schema.py" ]; then
+            python ctb/ops/scripts/export-neon-schema.py
+          else
+            echo "Schema export script not found"
+          fi
+
+      - name: Commit schema changes
+        run: |
+          git config --global user.name "Schema Bot"
+          git config --global user.email "schema-bot@barton-outreach.local"
+          git add ctb/docs/schema_map.json ctb/data/SCHEMA_REFERENCE.md
+          if git diff --staged --quiet; then
+            echo "No schema changes to commit"
+          else
+            git commit -m "chore(schema): auto-refresh database schema
+
+            🤖 Automated schema export from Neon PostgreSQL
+
+            Co-Authored-By: GitHub Actions <actions@github.com>"
+            git push
+          fi
+
+  update-documentation:
+    name: Update Documentation Timestamps
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Update timestamps in documentation
+        run: |
+          # Update last modified dates in key docs
+          CURRENT_DATE=$(date +%Y-%m-%d)
+
+          # Update CLAUDE.md if it exists
+          if [ -f "CLAUDE.md" ]; then
+            sed -i "s/Last Updated: .*/Last Updated: $CURRENT_DATE/" CLAUDE.md
+          fi
+
+          # Update CTB README
+          if [ -f "ctb/README.md" ]; then
+            sed -i "s/Last Updated: .*/Last Updated: $CURRENT_DATE/" ctb/README.md
+          fi
+
+      - name: Commit timestamp updates
+        run: |
+          git config --global user.name "Docs Bot"
+          git config --global user.email "docs-bot@barton-outreach.local"
+          git add -A
+          if git diff --staged --quiet; then
+            echo "No timestamp changes to commit"
+          else
+            git commit -m "docs: auto-update documentation timestamps
+
+            🤖 Automated timestamp refresh
+
+            Co-Authored-By: GitHub Actions <actions@github.com>"
+            git push
+          fi
+
+  notify-completion:
+    name: Notify Sync Completion
+    runs-on: ubuntu-latest
+    needs: [sync-github-projects, auto-commit-obsidian, refresh-schema, update-documentation]
+    if: always()
+
+    steps:
+      - name: Summary
+        run: |
+          echo "## 🤖 Tool Sync Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Trigger**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Jobs Status" >> $GITHUB_STEP_SUMMARY
+          echo "- GitHub Projects Sync: ${{ needs.sync-github-projects.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Obsidian Auto-commit: ${{ needs.auto-commit-obsidian.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Schema Refresh: ${{ needs.refresh-schema.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Documentation Update: ${{ needs.update-documentation.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Tool sync workflow completed!" >> $GITHUB_STEP_SUMMARY

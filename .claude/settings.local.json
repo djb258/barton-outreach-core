@@ -47,7 +47,9 @@
       "Bash(git push:*)",
       "Bash(git commit:*)",
       "Bash(python:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(find:*)",
+      "Bash(psql:*)"
     ],
     "deny": [],
     "ask": []
