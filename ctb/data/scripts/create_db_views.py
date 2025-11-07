@@ -14,7 +14,7 @@ if sys.platform == 'win32':
 project_root = Path(__file__).resolve()
 while not (project_root / ".git").exists() and project_root != project_root.parent:
     project_root = project_root.parent
-env_path = project_root / "ctb" / "sys" / "security-audit" / ".env"
+env_path = project_root / ".env"
 load_dotenv(env_path)
 
 DATABASE_URL = os.getenv('NEON_DATABASE_URL') or os.getenv('DATABASE_URL')

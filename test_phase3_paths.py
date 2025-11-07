@@ -23,7 +23,7 @@ def test_project_root_detection(script_path):
     while not (project_root / ".git").exists() and project_root != project_root.parent:
         project_root = project_root.parent
 
-    env_path = project_root / "ctb" / "sys" / "security-audit" / ".env"
+    env_path = project_root / ".env"
 
     return {
         "script": script_path,
@@ -65,7 +65,7 @@ if all_passed:
     print("✅ ALL TESTS PASSED - Path resolution working correctly!")
 else:
     print("❌ SOME TESTS FAILED - Check .env file location")
-    print("Expected: ctb/sys/security-audit/.env")
+    print("Expected: .env (at project root)")
 print("="*80 + "\n")
 
 sys.exit(0 if all_passed else 1)
