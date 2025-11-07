@@ -6,7 +6,7 @@ CTB Branch: docs/wiki
 Barton ID: 06.01.10
 Unique ID: CTB-64DF0291
 Blueprint Hash:
-Last Updated: 2025-10-23
+Last Updated: 2025-11-07
 Enforcement: None
 ─────────────────────────────────────────────
 -->

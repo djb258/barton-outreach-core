@@ -6,352 +6,337 @@ CTB Branch: docs
 Barton ID: 06.01.00
 Unique ID: CTB-10793FD3
 Blueprint Hash:
-Last Updated: 2025-10-23
+Last Updated: 2025-11-07
 Enforcement: ORBT
 ─────────────────────────────────────────────
 -->
 
 # Database Schema Diagram
 
+**Database**: Marketing DB (Neon PostgreSQL)
+**Last Exported**: 2025-11-07
+**Total Schemas**: 11
+**Total Tables**: 64
+
+---
+
+## Primary Production Schema (marketing)
+
 ```mermaid
 erDiagram
+    company_master ||--o{ company_slots : has
+    company_master ||--o{ pipeline_events : generates
+    company_slots }o--|| people_master : "filled by"
+    people_master ||--o{ people_resolution_queue : "may have duplicates"
+    people_master ||--o{ contact_enrichment : "enriched via"
+    people_master ||--o{ email_verification : "verified via"
 
-    bit_signal {
-        bigint NOT_NULL PK signal_id
-        bigint company_id
-        text NOT_NULL reason
-        jsonb payload
-        timestamp with time zone created_at
-        timestamp with time zone processed_at
-    }
-
-    company_company {
-        bigint NOT_NULL PK company_id
+    company_master {
+        text company_unique_id PK "Barton ID"
         text company_name
-        text ein
-        text website_url
+        text industry
+        integer employee_count
+        decimal revenue
+        text website
         text linkedin_url
-        text news_url
-        text address_line1
-        text address_line2
+        text phone
+        text address
         text city
         text state
         text postal_code
-        text country
-        smallint renewal_month
-        integer renewal_notice_window_days
-        timestamp with time zone last_site_checked_at
-        timestamp with time zone last_linkedin_checked_at
-        timestamp with time zone last_news_checked_at
+        timestamp created_at
+        timestamp updated_at
     }
 
-    company_company_slot {
-        bigint NOT_NULL PK company_slot_id
-        bigint NOT_NULL company_id
-        text NOT_NULL role_code
-        bigint contact_id
+    company_slots {
+        text slot_unique_id PK "Barton ID"
+        text company_unique_id FK
+        text person_unique_id FK
+        text slot_type "CEO/CFO/HR"
+        boolean is_filled
+        timestamp filled_at
+        timestamp last_refreshed_at
     }
 
-    company_next_company_urls_30d {
-        bigint company_id
-        text url_type
-        text url
-        timestamp with time zone last_checked_at
-    }
-
-    company_vw_anchor_staleness {
-        bigint company_id
-        text company_name
-        text website_url
-        text website_status
-        text linkedin_url
-        text linkedin_status
-        text news_url
-        text news_status
-        text overall_status
-    }
-
-    company_vw_company_slots {
-        bigint company_id
-        text company_name
-        bigint company_slot_id
-        text role_code
-        bigint contact_id
+    people_master {
+        text unique_id PK "Barton ID"
         text full_name
-        text title
         text email
-        text phone
-        text profile_source_url
-        text email_status
-        timestamp with time zone email_checked_at
-        text website_url
         text linkedin_url
-        text news_url
-    }
-
-    company_vw_due_renewals_ready {
-        bigint company_id
-        text company_name
-        date next_renewal_date
-        date campaign_window_start
-        boolean has_green_contact
-    }
-
-    company_vw_next_renewal {
-        bigint company_id
-        text company_name
-        smallint renewal_month
-        integer notice_days
-        date next_renewal_date
-        date campaign_window_start
-    }
-
-    marketing_ac_handoff {
-        bigint NOT_NULL PK ac_handoff_id
-        bigint booking_event_id
-        timestamp with time zone created_at
-    }
-
-    marketing_booking_event {
-        bigint NOT_NULL PK booking_event_id
-        bigint company_id
-        bigint contact_id
-        text calley_ref
-        timestamp with time zone created_at
-    }
-
-    marketing_campaign {
-        bigint NOT_NULL PK campaign_id
-        text name
-        timestamp with time zone created_at
-    }
-
-    marketing_campaign_contact {
-        bigint NOT_NULL PK campaign_contact_id
-        bigint campaign_id
-        bigint contact_id
-        timestamp with time zone created_at
-    }
-
-    marketing_company_raw_intake {
-        bigint NOT_NULL PK intake_id
-        text company
-        text company_name_for_emails
-        text account
-        text lists
-        integer num_employees
-        text industry
-        text account_owner
-        text website
-        text company_linkedin_url
-        text facebook_url
-        text twitter_url
-        text company_street
-        text company_city
-        text company_state
-        text company_country
-        text company_postal_code
-        text company_address
-        text company_phone
-        text technologies
-        text total_funding
-        text latest_funding
-        numeric latest_funding_amount
-        date last_raised_at
-        text annual_revenue
-        integer number_of_retail_locations
-        text apollo_account_id
-        text sic_codes
-        text naics_codes
-        integer founded_year
-        text logo_url
-        text subsidiary_of
-        text short_description
-        text keywords
-        text primary_intent_topic
-        numeric primary_intent_score
-        text secondary_intent_topic
-        numeric secondary_intent_score
-        text batch_id
+        text title
+        text phone
+        text company_unique_id FK
         text source
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    people_resolution_queue {
+        text resolution_id PK
+        text person_unique_id_primary FK
+        text person_unique_id_duplicate FK
+        text resolution_status
+        text conflict_type
+        timestamp created_at
+    }
+
+    contact_enrichment {
+        text enrichment_id PK
+        text person_unique_id FK
+        text agent_name "Apify/Abacus/Firecrawl"
+        text enrichment_type
         text status
-        timestamp with time zone created_at
-        timestamp with time zone updated_at
-        timestamp with time zone processed_at
+        timestamp started_at
+        timestamp completed_at
+    }
+
+    email_verification {
+        text verification_id PK
+        text person_unique_id FK
+        text email_status "valid/invalid/risky"
+        text provider "MillionVerifier"
+        timestamp verified_at
+    }
+
+    pipeline_events {
+        text event_id PK
+        text company_unique_id FK
+        text event_type
+        jsonb payload
+        timestamp created_at
+    }
+
+    pipeline_errors {
+        text error_id PK
+        text error_code
         text error_message
+        text severity
+        text component
+        timestamp created_at
     }
-
-    marketing_message_log {
-        bigint NOT_NULL PK message_id
-        bigint campaign_id
-        bigint contact_id
-        text status
-        timestamp with time zone created_at
-    }
-
-    people_company_role_slots {
-        uuid NOT_NULL id
-        uuid NOT_NULL company_id
-        text NOT_NULL role_type
-        integer target_count
-        integer priority_level
-        text slot_status
-        integer filled_count
-        ARRAY seniority_requirements
-        ARRAY department_preferences
-        ARRAY title_keywords
-        text process_id
-        text unique_id
-        text blueprint_version_hash
-        timestamp without time zone created_at
-        timestamp without time zone updated_at
-        text created_by
-    }
-
-    people_contact {
-        bigint NOT_NULL PK contact_id
-        text full_name
-        text title
-        text email
-        text phone
-        timestamp with time zone created_at
-        timestamp with time zone updated_at
-        text profile_source_url
-        timestamp with time zone last_profile_checked_at
-    }
-
-    people_contact_history {
-        uuid NOT_NULL id
-        uuid NOT_NULL person_id
-        text NOT_NULL change_type
-        jsonb old_values
-        jsonb new_values
-        ARRAY changed_fields
-        text source_system
-        text source_session_id
-        text initiated_by
-        text process_id
-        text unique_id
-        text blueprint_version_hash
-        timestamp without time zone created_at
-        text notes
-    }
-
-    people_contact_verification {
-        bigint NOT_NULL contact_id
-        text email_status
-        timestamp with time zone email_checked_at
-        integer email_confidence
-        text email_source_url
-    }
-
-    people_due_email_recheck_30d {
-        bigint contact_id
-        text full_name
-        text title
-        text email
-        text email_status
-        timestamp with time zone email_checked_at
-        timestamp with time zone last_checked_at
-    }
-
-    people_next_profile_urls_30d {
-        bigint contact_id
-        text url
-        timestamp with time zone last_checked_at
-    }
-
-    people_slot_history {
-        uuid NOT_NULL id
-        uuid NOT_NULL slot_id
-        uuid person_id
-        text NOT_NULL action_type
-        text old_status
-        text new_status
-        text source_system
-        text scrape_session_id
-        text process_id
-        text unique_id
-        text blueprint_version_hash
-        timestamp without time zone created_at
-        text initiated_by
-        text notes
-    }
-
-    people_validation_status {
-        uuid NOT_NULL id
-        uuid NOT_NULL person_id
-        text NOT_NULL email
-        text NOT_NULL validation_provider
-        text NOT_NULL validation_status
-        numeric validation_score
-        text validation_reason
-        jsonb provider_response
-        timestamp without time zone validated_at
-        numeric validation_cost
-        text process_id
-        text unique_id
-        text blueprint_version_hash
-    }
-
-    people_vw_profile_monitoring {
-        bigint contact_id
-        text full_name
-        text email
-        text profile_source_url
-        timestamp with time zone last_profile_checked_at
-        text email_status
-        timestamp with time zone email_checked_at
-        text profile_status
-        text email_verification_status
-        text assignment_status
-    }
-
-    people_vw_profile_staleness {
-        bigint contact_id
-        text full_name
-        text email
-        text profile_source_url
-        text email_source_url
-        text profile_status
-        text email_status
-    }
-
-    company_company_slot }|--|| company_company : "belongs to"
-    marketing_ac_handoff }|--|| marketing_booking_event : "belongs to"
-    marketing_campaign_contact }|--|| marketing_campaign : "belongs to"
-    marketing_message_log }|--|| marketing_campaign : "belongs to"
-    people_contact_verification }|--|| people_contact : "belongs to"
-
 ```
 
-## Schema Relationships Summary
+---
 
-### Core Tables
-- **company.company**: Central company repository
-- **company.company_slot**: Role-based contact slots (CEO, CFO, HR)
-- **people.contact**: Contact information
-- **people.contact_verification**: Email verification status
+## Buyer Intent Tracking Schema (bit)
 
-### Marketing Tables
-- **marketing.campaign**: Campaign definitions
-- **marketing.campaign_contact**: Campaign participants
-- **marketing.message_log**: Communication tracking
-- **marketing.booking_event**: Meeting bookings
-- **marketing.ac_handoff**: Account handoffs
+```mermaid
+erDiagram
+    bit_signal ||--o{ bit_company_score : aggregates
+    bit_signal ||--o{ bit_contact_score : aggregates
 
-### Intent Tracking
-- **bit.signal**: Buyer intent signals
+    bit_signal {
+        text signal_id PK
+        text company_unique_id FK
+        text signal_type "website/linkedin/hiring"
+        text signal_data jsonb
+        integer signal_strength
+        timestamp detected_at
+    }
 
-### Key Relationships
-1. Each company has exactly 3 slots (CEO, CFO, HR)
-2. Each slot can have one contact assigned
-3. Each contact has one verification record
-4. Contacts can participate in multiple campaigns
-5. All communications are logged in message_log
+    bit_company_score {
+        text score_id PK
+        text company_unique_id FK
+        integer total_score
+        jsonb signal_breakdown
+        timestamp calculated_at
+    }
 
-### Queue Views (Auto-Generated)
-- `company.next_company_urls_30d` - URLs due for scraping
-- `people.next_profile_urls_30d` - Profiles due for scraping  
-- `people.due_email_recheck_30d` - Emails due for verification
-- `company.vw_due_renewals_ready` - Companies ready for renewal campaigns
+    bit_contact_score {
+        text score_id PK
+        text person_unique_id FK
+        integer engagement_score
+        jsonb activity_breakdown
+        timestamp calculated_at
+    }
+```
+
+---
+
+## Product-Led Enrichment Schema (ple)
+
+```mermaid
+erDiagram
+    ple_cycle ||--o{ ple_step : contains
+    ple_step ||--o{ ple_log : logs
+
+    ple_cycle {
+        text cycle_id PK
+        text cycle_name
+        text status "pending/running/completed"
+        timestamp started_at
+        timestamp completed_at
+    }
+
+    ple_step {
+        text step_id PK
+        text cycle_id FK
+        text step_name
+        text step_type
+        text status
+        timestamp executed_at
+    }
+
+    ple_log {
+        text log_id PK
+        text step_id FK
+        text log_level
+        text message
+        timestamp logged_at
+    }
+```
+
+---
+
+## Data Ingestion Schema (intake)
+
+```mermaid
+erDiagram
+    company_raw_intake
+
+    company_raw_intake {
+        text intake_id PK
+        text company_name
+        text industry
+        text website
+        text validation_status
+        text promoted_to_unique_id
+        timestamp uploaded_at
+        timestamp validated_at
+    }
+```
+
+---
+
+## Key Relationships & Data Flows
+
+### 1. Company Ingestion Flow
+```
+intake.company_raw_intake (453 rows)
+    ↓ [validation & promotion]
+marketing.company_master (453 rows)
+    ↓ [slot generation: 3 per company]
+marketing.company_slots (1,359 rows)
+```
+
+### 2. Executive Position Tracking
+```
+marketing.company_slots (1,359 slots)
+    ↓ [filled with executives]
+marketing.people_master (170 people)
+    ↓ [~12.5% fill rate]
+Unfilled slots: ~1,189 (87.5%)
+```
+
+### 3. Enrichment Pipeline
+```
+marketing.people_master (170 contacts)
+    ↓ [enrichment needed]
+marketing.contact_enrichment (job tracking)
+    ↓ [external APIs: Apify, Abacus, Firecrawl]
+marketing.people_master (updated with enriched data)
+```
+
+### 4. Duplicate Resolution
+```
+marketing.people_master (170 contacts)
+    ↓ [duplicate detection]
+marketing.people_resolution_queue (1,206 duplicates)
+    ↓ [manual/auto resolution]
+marketing.people_master (de-duplicated)
+```
+
+### 5. Intent Signal Tracking
+```
+bit.bit_signal (detected signals)
+    ↓ [aggregation by company]
+bit.bit_company_score (company-level scores)
+    ↓ [aggregation by contact]
+bit.bit_contact_score (contact-level scores)
+```
+
+---
+
+## Current Data Volumes
+
+| Schema | Table | Rows | Status |
+|--------|-------|------|--------|
+| **marketing** | company_master | 453 | ✅ Active |
+| **marketing** | company_slots | 1,359 | ✅ Active |
+| **marketing** | people_master | 170 | ✅ Active |
+| **marketing** | people_resolution_queue | 1,206 | ⚠️ Needs resolution |
+| **marketing** | pipeline_events | 1,890 | ✅ Active logging |
+| **marketing** | pipeline_errors | 0 | ✅ No errors |
+| **marketing** | contact_enrichment | 0 | 🔄 Ready |
+| **marketing** | email_verification | 0 | 🔄 Ready |
+| **intake** | company_raw_intake | 453 | ✅ Active staging |
+| **bit** | bit_signal | 0 | 🔄 Ready |
+| **bit** | bit_company_score | 0 | 🔄 Ready |
+| **bit** | bit_contact_score | 0 | 🔄 Ready |
+| **ple** | ple_cycle | 0 | 🔄 Ready |
+| **ple** | ple_step | 0 | 🔄 Ready |
+| **ple** | ple_log | 0 | 🔄 Ready |
+
+---
+
+## Schema Design Notes
+
+### Barton ID Format
+All primary keys use Barton Doctrine format: `NN.NN.NN.NN.NNNNN.NNN`
+
+**Examples**:
+- Company Master: `04.04.02.04.30000.###`
+- Company Slots: `04.04.02.04.10000.###`
+- People Master: `04.04.02.04.20000.###`
+- Error Log: `04.04.02.04.40000.###`
+
+### Indexes
+- **Total indexes across database**: 200+
+- **Most indexed table**: people_master (10 indexes)
+- All foreign keys have supporting indexes
+- Timestamps indexed for time-based queries
+
+### Foreign Keys
+- Proper referential integrity enforced
+- Cascade deletes where appropriate
+- On-update cascade for ID changes
+
+---
+
+## Visualization Tools
+
+### Generate Fresh Diagram
+```bash
+# Export latest schema
+npm run schema:export
+
+# View schema map
+npm run schema:view
+```
+
+### View Complete Schema Details
+```bash
+# Read human-friendly reference
+cat ctb/data/SCHEMA_REFERENCE.md
+
+# View JSON schema map
+cat ctb/docs/schema_map.json | jq .
+```
+
+---
+
+## Related Documentation
+
+- **Complete Schema Reference**: `ctb/data/SCHEMA_REFERENCE.md`
+- **Schema Map JSON**: `ctb/docs/schema_map.json`
+- **SQL Schema Files**: `ctb/data/infra/*.sql`
+- **Migrations**: `ctb/data/infra/migrations/*.sql`
+- **Export Script**: `ctb/ops/scripts/export-neon-schema.py`
+
+---
+
+**Last Schema Export**: 2025-11-07
+**Database**: Marketing DB (Neon PostgreSQL)
+**Schemas**: 11 | **Tables**: 64 | **Rows**: ~53,000+
+
+*This diagram is auto-generated from live database. Run `npm run schema:export` to refresh.*
