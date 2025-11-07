@@ -1,0 +1,388 @@
+{
+  "name": "Generic Validation & Promotion Pipeline",
+  "nodes": [
+    {
+      "id": "trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "*/30 * * * *"
+            }
+          ]
+        }
+      },
+      "notes": "Triggers validation every 30 minutes. Adjust cron expression as needed."
+    },
+    {
+      "id": "fetch_neon",
+      "name": "Fetch from Neon",
+      "type": "n8n-nodes-base.postgres",
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM {{$node['Set Entity'].json.source_table}} WHERE processed_at IS NULL LIMIT {{$node['Set Entity'].json.batch_size}}",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "neon_credentials",
+          "name": "Neon Database"
+        }
+      },
+      "notes": "Fetches unprocessed records from Neon source table"
+    },
+    {
+      "id": "load_supabase",
+      "name": "Load to Supabase",
+      "type": "n8n-nodes-base.postgres",
+      "parameters": {
+        "operation": "insert",
+        "table": "={{$node['Set Entity'].json.workspace_table}}",
+        "columns": "unique_id,payload,validation_status",
+        "options": {
+          "onConflict": "DO UPDATE"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "supabase_credentials",
+          "name": "Supabase Database"
+        }
+      },
+      "notes": "Inserts records into Supabase workspace for validation"
+    },
+    {
+      "id": "run_validator",
+      "name": "Run Python Validator",
+      "type": "n8n-nodes-base.executeCommand",
+      "parameters": {
+        "command": "python",
+        "arguments": "/path/to/validator.py --entity={{$node['Set Entity'].json.entity}} --batch-size={{$node['Set Entity'].json.batch_size}}"
+      },
+      "notes": "Runs Python validation script. Alternative: use Docker container or HTTP Request to validator API"
+    },
+    {
+      "id": "check_results",
+      "name": "Check Validation Results",
+      "type": "n8n-nodes-base.postgres",
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT unique_id, validation_status, validation_errors FROM {{$node['Set Entity'].json.workspace_table}} WHERE validation_status IN ('PASSED', 'FAILED') AND last_validated_at > now() - INTERVAL '5 minutes'",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "supabase_credentials",
+          "name": "Supabase Database"
+        }
+      },
+      "notes": "Fetch validation results from Supabase"
+    },
+    {
+      "id": "split_results",
+      "name": "Split by Status",
+      "type": "n8n-nodes-base.switch",
+      "parameters": {
+        "dataPropertyName": "validation_status",
+        "rules": {
+          "rules": [
+            {
+              "value": "PASSED"
+            },
+            {
+              "value": "FAILED"
+            }
+          ]
+        }
+      },
+      "notes": "Routes records based on validation status"
+    },
+    {
+      "id": "promote_neon",
+      "name": "Promote to Neon Master",
+      "type": "n8n-nodes-base.postgres",
+      "parameters": {
+        "operation": "insert",
+        "table": "={{$node['Set Entity'].json.target_table}}",
+        "options": {
+          "onConflict": "DO UPDATE"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "neon_credentials",
+          "name": "Neon Database"
+        }
+      },
+      "notes": "Promotes PASSED records to Neon master table"
+    },
+    {
+      "id": "flag_enrichment",
+      "name": "Flag for Enrichment",
+      "type": "n8n-nodes-base.postgres",
+      "parameters": {
+        "operation": "update",
+        "table": "={{$node['Set Entity'].json.workspace_table}}",
+        "updateKey": "unique_id",
+        "columns": "enrichment_status",
+        "values": "pending"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "supabase_credentials",
+          "name": "Supabase Database"
+        }
+      },
+      "notes": "Marks FAILED records for enrichment"
+    },
+    {
+      "id": "mark_processed",
+      "name": "Mark as Processed",
+      "type": "n8n-nodes-base.postgres",
+      "parameters": {
+        "operation": "update",
+        "table": "={{$node['Set Entity'].json.source_table}}",
+        "updateKey": "unique_id",
+        "columns": "processed_at",
+        "values": "now()"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "neon_credentials",
+          "name": "Neon Database"
+        }
+      },
+      "notes": "Marks source records as processed in Neon"
+    },
+    {
+      "id": "notify_lovable",
+      "name": "Notify Dashboard",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.LOVABLE_WEBHOOK_URL}}",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "={\n  \"entity\": \"{{$node['Set Entity'].json.entity}}\",\n  \"passed\": {{$node['Aggregate Stats'].json.passed}},\n  \"failed\": {{$node['Aggregate Stats'].json.failed}},\n  \"timestamp\": \"{{$now}}\"\n}"
+      },
+      "notes": "Sends results to Lovable.dev dashboard"
+    },
+    {
+      "id": "set_entity",
+      "name": "Set Entity Config",
+      "type": "n8n-nodes-base.set",
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "entity",
+              "value": "company"
+            },
+            {
+              "name": "source_table",
+              "value": "intake.company_raw_intake"
+            },
+            {
+              "name": "target_table",
+              "value": "marketing.company_master"
+            },
+            {
+              "name": "workspace_table",
+              "value": "company_needs_enrichment"
+            },
+            {
+              "name": "batch_size",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "notes": "Configure entity-specific parameters. Change 'company' to 'person' or other entities."
+    },
+    {
+      "id": "aggregate_stats",
+      "name": "Aggregate Stats",
+      "type": "n8n-nodes-base.aggregate",
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "validation_status",
+              "renameField": true,
+              "outputFieldName": "status_counts",
+              "aggregation": "countUnique"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "notes": "Calculates statistics for notification"
+    }
+  ],
+  "connections": {
+    "trigger": {
+      "main": [
+        [
+          {
+            "node": "set_entity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set_entity": {
+      "main": [
+        [
+          {
+            "node": "fetch_neon",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "fetch_neon": {
+      "main": [
+        [
+          {
+            "node": "load_supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "load_supabase": {
+      "main": [
+        [
+          {
+            "node": "run_validator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "run_validator": {
+      "main": [
+        [
+          {
+            "node": "check_results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "check_results": {
+      "main": [
+        [
+          {
+            "node": "split_results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "split_results": {
+      "main": [
+        [
+          {
+            "node": "promote_neon",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "mark_processed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "flag_enrichment",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "mark_processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "promote_neon": {
+      "main": [
+        [
+          {
+            "node": "aggregate_stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "flag_enrichment": {
+      "main": [
+        [
+          {
+            "node": "aggregate_stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "aggregate_stats": {
+      "main": [
+        [
+          {
+            "node": "notify_lovable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "America/New_York",
+    "executionTimeout": 3600
+  },
+  "notes": [
+    "Generic Validation & Promotion Pipeline",
+    "",
+    "This workflow implements the complete Neon → Supabase → Validation → Promotion flow.",
+    "",
+    "**Setup Instructions:**",
+    "1. Import this JSON into n8n",
+    "2. Configure credentials for Neon and Supabase",
+    "3. Update 'Set Entity Config' node with your entity",
+    "4. Test with manual execution",
+    "5. Enable schedule trigger for automation",
+    "",
+    "**Customization:**",
+    "- Change cron schedule in trigger node",
+    "- Adjust batch_size in 'Set Entity Config'",
+    "- Add error handling nodes as needed",
+    "- Configure webhook notifications",
+    "",
+    "**Alternative to Python Validator:**",
+    "Instead of 'Execute Command', you can:",
+    "- Use HTTP Request to validator API",
+    "- Use Docker container node",
+    "- Implement validation logic in n8n (code node)"
+  ]
+}
