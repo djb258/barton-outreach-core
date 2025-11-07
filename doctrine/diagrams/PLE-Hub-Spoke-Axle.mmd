@@ -1,0 +1,190 @@
+%% ═══════════════════════════════════════════════════════════════════════════
+%% PLE Hub-Spoke-Axle-Wheel Architecture Diagram
+%% ═══════════════════════════════════════════════════════════════════════════
+%%
+%% Document: PLE-Doctrine.md (doctrine/ple/PLE-Doctrine.md)
+%% Version: 1.0.0
+%% Last Updated: 2025-11-07
+%% Color Coding:
+%%   - Hub = Blue (#4A90E2)
+%%   - Axle (BIT) = Gold (#FFD700)
+%%   - Spokes = Crimson (#DC143C)
+%%   - Wheel Rim = Teal (#20B2AA)
+%%
+%% Purpose:
+%%   Visual representation of the Perpetual Lead Engine (PLE) showing the
+%%   Hub-Spoke-Axle-Wheel architecture and data flow between components.
+%%
+%% ═══════════════════════════════════════════════════════════════════════════
+
+graph TB
+    %% ═══════════════════════════════════════════════════════════════════
+    %% STYLE DEFINITIONS
+    %% ═══════════════════════════════════════════════════════════════════
+
+    classDef hubStyle fill:#4A90E2,stroke:#2E5C8A,stroke-width:3px,color:#fff
+    classDef axleStyle fill:#FFD700,stroke:#DAA520,stroke-width:4px,color:#000
+    classDef spokeStyle fill:#DC143C,stroke:#8B0000,stroke-width:2px,color:#fff
+    classDef rimStyle fill:#20B2AA,stroke:#008B8B,stroke-width:2px,color:#fff
+    classDef futureStyle fill:#999,stroke:#666,stroke-width:1px,color:#fff,stroke-dasharray: 5 5
+
+    %% ═══════════════════════════════════════════════════════════════════
+    %% LAYER 1: WHEEL RIM (Outreach Layer) - TEAL
+    %% ═══════════════════════════════════════════════════════════════════
+
+    RIM["🔵 WHEEL RIM<br/>Outreach Layer<br/>────────────<br/>Email Campaigns<br/>Sales Alerts<br/>CRM Updates"]:::rimStyle
+
+    %% Outreach Components
+    EMAIL["📧 Email Sequences<br/>Hot: Immediate<br/>Warm: 14-day nurture<br/>Cold: Monthly check"]:::rimStyle
+    CRM["💼 Salesforce Sync<br/>Lead scores<br/>Tasks<br/>Opportunities"]:::rimStyle
+    SLACK["💬 Slack Alerts<br/>Hot leads: Real-time<br/>Warm leads: Daily digest"]:::rimStyle
+    GRAFANA["📊 Grafana Dashboards<br/>Score distribution<br/>Agent performance<br/>Pipeline metrics"]:::rimStyle
+
+    %% ═══════════════════════════════════════════════════════════════════
+    %% LAYER 2: SPOKES (Intelligence Gathering) - CRIMSON
+    %% ═══════════════════════════════════════════════════════════════════
+
+    SPOKES["🔴 SPOKES<br/>Intelligence Gathering<br/>────────────<br/>Event Detection<br/>Classification<br/>Confidence Scoring"]:::spokeStyle
+
+    %% Active Spokes
+    SPOKE1["📍 SPOKE 1: Talent Flow<br/>────────────<br/>Executive Movements<br/>Hires / Departures<br/>Promotions / Transfers<br/>────────────<br/>ID: 01.04.02.04.20000<br/>Status: ✅ Active"]:::spokeStyle
+
+    SPOKE2["📍 SPOKE 2: Renewal Intelligence<br/>────────────<br/>Contract Tracking<br/>120d / 90d / 60d / 30d Windows<br/>Expiration Alerts<br/>────────────<br/>ID: 01.04.02.04.21000<br/>Status: 📅 Planned"]:::futureStyle
+
+    SPOKE3["📍 SPOKE 3: Compliance Monitor<br/>────────────<br/>DOL Violations<br/>OSHA Citations<br/>EEOC Complaints<br/>────────────<br/>ID: 01.04.02.04.22000<br/>Status: 📅 Planned"]:::futureStyle
+
+    SPOKE4["📍 SPOKE 4: Tech Stack<br/>────────────<br/>Infrastructure Changes<br/>HR Software Adoption<br/>Cloud Migrations<br/>────────────<br/>ID: 01.04.02.04.23000<br/>Status: 🔮 Future"]:::futureStyle
+
+    SPOKE5["📍 SPOKE 5: Funding Rounds<br/>────────────<br/>Venture Capital<br/>M&A Events<br/>IPOs<br/>────────────<br/>ID: 01.04.02.04.24000<br/>Status: 🔮 Future"]:::futureStyle
+
+    %% ═══════════════════════════════════════════════════════════════════
+    %% LAYER 3: AXLE (BIT Scoring Engine) - GOLD
+    %% ═══════════════════════════════════════════════════════════════════
+
+    AXLE["🟡 AXLE: BIT<br/>Buyer Intent Tool<br/>────────────<br/>Event Aggregation<br/>Score Calculation<br/>Decay & Quality Factors<br/>────────────<br/>ID: 01.04.03.04.10000<br/>Status: ✅ Active"]:::axleStyle
+
+    %% BIT Components
+    RULES["📋 Rule Reference<br/>10 Standard Rules<br/>Weights: 0-100<br/>Decay: 30-365 days"]:::axleStyle
+
+    EVENTS["📝 BIT Events<br/>Individual Signals<br/>Quality Scores<br/>Timestamps"]:::axleStyle
+
+    SCORES["📊 BIT Scores (VIEW)<br/>🔥 Hot: 80-100<br/>🔶 Warm: 50-79<br/>🔵 Cold: 0-49"]:::axleStyle
+
+    %% ═══════════════════════════════════════════════════════════════════
+    %% LAYER 4: HUB (Core Data Lake) - BLUE
+    %% ═══════════════════════════════════════════════════════════════════
+
+    HUB["🔵 HUB<br/>Core Data Lake<br/>────────────<br/>Neon PostgreSQL<br/>Single Source of Truth<br/>Barton ID Compliance"]:::hubStyle
+
+    %% Hub Components
+    COMPANIES["🏢 Company Master<br/>company_master<br/>ID: 04.04.02.04.30000.###<br/>200-500 target companies"]:::hubStyle
+
+    PEOPLE["👤 People Contact<br/>people.contact<br/>Individual records<br/>Employment history"]:::hubStyle
+
+    SLOTS["💼 Company Slots<br/>company_slot<br/>CFO / CEO / HR Director<br/>Enrichment targets<br/>ID: 04.04.02.04.10000.###"]:::hubStyle
+
+    ENRICHMENT["📥 Enrichment Log<br/>data_enrichment_log<br/>Agent results<br/>Movement detection"]:::hubStyle
+
+    %% ═══════════════════════════════════════════════════════════════════
+    %% ENRICHMENT AGENTS (External Data Sources)
+    %% ═══════════════════════════════════════════════════════════════════
+
+    APIFY["🔍 Apify<br/>LinkedIn Scraper<br/>Confidence: 85-95%<br/>Cost: Medium"]:::spokeStyle
+
+    ABACUS["🔍 Abacus<br/>Executive Database<br/>Confidence: 90-100%<br/>Cost: High"]:::spokeStyle
+
+    FIRECRAWL["🔍 Firecrawl<br/>Web Scraping<br/>Confidence: 70-85%<br/>Cost: Low"]:::spokeStyle
+
+    %% ═══════════════════════════════════════════════════════════════════
+    %% DATA FLOW CONNECTIONS
+    %% ═══════════════════════════════════════════════════════════════════
+
+    %% Enrichment Agents → Enrichment Log
+    APIFY -->|"LinkedIn profiles<br/>Title changes"| ENRICHMENT
+    ABACUS -->|"C-Suite movements<br/>Real-time webhook"| ENRICHMENT
+    FIRECRAWL -->|"Press releases<br/>Announcements"| ENRICHMENT
+
+    %% Hub Internal Connections
+    ENRICHMENT -->|"movement_detected=TRUE"| SPOKE1
+    COMPANIES -.->|"Target companies"| SLOTS
+    PEOPLE -.->|"Employment history"| COMPANIES
+
+    %% Spokes → Hub (Event Logging)
+    SPOKE1 -->|"talent_flow.movements<br/>hire/departure/promotion"| HUB
+    SPOKE2 -.->|"renewal.contract_windows<br/>120d/90d/60d/30d"| HUB
+    SPOKE3 -.->|"compliance.violations<br/>DOL/OSHA/EEOC"| HUB
+
+    %% Hub → Axle (BIT Event Creation)
+    SPOKE1 -->|"Trigger:<br/>create_bit_event_from_movement()"| EVENTS
+    SPOKE2 -.->|"Trigger:<br/>create_bit_event_from_renewal()"| EVENTS
+    SPOKE3 -.->|"Trigger:<br/>create_bit_event_from_violation()"| EVENTS
+
+    %% Axle Internal Flow
+    RULES -->|"Weight + Decay rules"| EVENTS
+    EVENTS -->|"Aggregate + Calculate"| SCORES
+
+    %% Axle → Wheel Rim (Outreach Triggers)
+    SCORES -->|"Score >= 80<br/>(Hot)"| EMAIL
+    SCORES -->|"Score >= 50<br/>(Warm)"| EMAIL
+    SCORES -->|"All scores"| CRM
+    SCORES -->|"Hot leads"| SLACK
+    SCORES -->|"Real-time metrics"| GRAFANA
+
+    %% Wheel Rim Internal Connections
+    EMAIL -.->|"Campaign results"| CRM
+    SLACK -.->|"Alert acknowledgment"| CRM
+
+    %% Feedback Loop (Rim → Hub)
+    CRM -.->|"Closed deals<br/>Response rates<br/>Outcome data"| COMPANIES
+
+    %% ═══════════════════════════════════════════════════════════════════
+    %% GROUPED SECTIONS (Visual Organization)
+    %% ═══════════════════════════════════════════════════════════════════
+
+    subgraph WHEEL[" "]
+        RIM
+        EMAIL
+        CRM
+        SLACK
+        GRAFANA
+    end
+
+    subgraph INTELLIGENCE[" "]
+        SPOKES
+        SPOKE1
+        SPOKE2
+        SPOKE3
+        SPOKE4
+        SPOKE5
+    end
+
+    subgraph SCORING[" "]
+        AXLE
+        RULES
+        EVENTS
+        SCORES
+    end
+
+    subgraph DATA[" "]
+        HUB
+        COMPANIES
+        PEOPLE
+        SLOTS
+        ENRICHMENT
+    end
+
+    subgraph AGENTS[" "]
+        APIFY
+        ABACUS
+        FIRECRAWL
+    end
+
+    %% ═══════════════════════════════════════════════════════════════════
+    %% ANNOTATIONS
+    %% ═══════════════════════════════════════════════════════════════════
+
+    %% Title and Legend
+    %% Note: These are displayed as comments in the diagram
+
+    %%{init: {'theme':'base', 'themeVariables': { 'fontSize':'14px'}}}%%
+

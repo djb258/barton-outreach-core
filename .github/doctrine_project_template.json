@@ -1,0 +1,78 @@
+{
+  "name": "Doctrine Pipeline",
+  "description": "Automated doctrine workflow board for SVG-PLE — tracks BIT, Talent Flow, and PLE updates end-to-end.",
+  "columns": [
+    {
+      "name": "🧭 Doctrine",
+      "purpose": "Concept and design stage",
+      "auto_add_labels": ["doctrine"],
+      "notes": "New doctrine or amendment ideas appear here."
+    },
+    {
+      "name": "🧱 Schema",
+      "purpose": "Schema + SQL work in progress",
+      "auto_add_labels": ["schema"]
+    },
+    {
+      "name": "⚙️ Enrichment",
+      "purpose": "Agent integration (Apify, Abacus, Firecrawl)",
+      "auto_add_labels": ["enrichment"]
+    },
+    {
+      "name": "📊 Grafana",
+      "purpose": "Dashboard + analytics tasks",
+      "auto_add_labels": ["grafana"]
+    },
+    {
+      "name": "🤖 Agents",
+      "purpose": "Automation and n8n/Composio flows",
+      "auto_add_labels": ["agent"]
+    },
+    {
+      "name": "✅ Done",
+      "purpose": "Completed, merged, or deployed doctrine items",
+      "auto_close_issues": true
+    }
+  ],
+  "labels": [
+    { "name": "doctrine", "color": "#1F77B4", "description": "Doctrine or markdown change" },
+    { "name": "schema", "color": "#2CA02C", "description": "Schema / SQL migration work" },
+    { "name": "enrichment", "color": "#FF7F0E", "description": "Data enrichment agents" },
+    { "name": "grafana", "color": "#9467BD", "description": "Visualization or dashboard tasks" },
+    { "name": "agent", "color": "#17BECF", "description": "Automation agents / MCP / n8n" },
+    { "name": "auto-sync", "color": "#BCBD22", "description": "Auto-created by doctrine sync workflow" }
+  ],
+  "automation_rules": [
+    {
+      "trigger": "label_added:doctrine",
+      "action": "move_card",
+      "destination_column": "🧭 Doctrine"
+    },
+    {
+      "trigger": "label_added:schema",
+      "action": "move_card",
+      "destination_column": "🧱 Schema"
+    },
+    {
+      "trigger": "label_added:enrichment",
+      "action": "move_card",
+      "destination_column": "⚙️ Enrichment"
+    },
+    {
+      "trigger": "label_added:grafana",
+      "action": "move_card",
+      "destination_column": "📊 Grafana"
+    },
+    {
+      "trigger": "label_added:agent",
+      "action": "move_card",
+      "destination_column": "🤖 Agents"
+    },
+    {
+      "trigger": "issue_closed",
+      "action": "move_card",
+      "destination_column": "✅ Done"
+    }
+  ],
+  "visibility": "private"
+}

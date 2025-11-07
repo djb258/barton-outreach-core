@@ -1,0 +1,255 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# Doctrine Pipeline Sync - GitHub Actions Workflow
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# Purpose:
+#   Automatically creates or updates GitHub Issues when doctrine files change,
+#   adding them to the "Doctrine Pipeline" project board for tracking.
+#
+# Triggers:
+#   - Any push to doctrine/ directory files (.md, .sql, .mmd)
+#
+# What It Does:
+#   ✅ Detects changed doctrine files
+#   ✅ Creates GitHub Issue with change summary
+#   ✅ Adds labels (doctrine, auto-sync)
+#   ✅ Places issue in "Doctrine Pipeline" project board
+#   ✅ Provides visual Kanban of doctrine changes
+#
+# Setup Requirements:
+#   1. Create GitHub Project board named "Doctrine Pipeline"
+#   2. Ensure GITHUB_TOKEN has issues:write and projects:write permissions
+#   3. Optionally customize labels or project name below
+#
+# Last Updated: 2025-11-07
+# Maintained By: Barton Outreach Team
+#
+# ═══════════════════════════════════════════════════════════════════════════
+
+name: Doctrine Pipeline Sync
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+    paths:
+      - 'doctrine/**/*.md'
+      - 'doctrine/**/*.sql'
+      - 'doctrine/**/*.mmd'
+
+jobs:
+  sync-doctrine:
+    name: Sync Doctrine Changes to Project Board
+    runs-on: ubuntu-latest
+
+    permissions:
+      issues: write
+      contents: read
+      pull-requests: write
+
+    steps:
+      # ─────────────────────────────────────────────────────────────────────
+      # STEP 1: Checkout Repository
+      # ─────────────────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Need at least 2 commits to diff
+
+      # ─────────────────────────────────────────────────────────────────────
+      # STEP 2: Get Changed Doctrine Files
+      # ─────────────────────────────────────────────────────────────────────
+      - name: Get changed doctrine files
+        id: changes
+        run: |
+          echo "Detecting changed doctrine files..."
+
+          # Get list of changed files
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD | grep '^doctrine/' || echo "")
+
+          # Count files
+          FILE_COUNT=$(echo "$CHANGED_FILES" | grep -v '^$' | wc -l)
+
+          # Save to output
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "count=$FILE_COUNT" >> $GITHUB_OUTPUT
+
+          # Print to log
+          echo "Changed files count: $FILE_COUNT"
+          if [ -n "$CHANGED_FILES" ]; then
+            echo "Changed files:"
+            echo "$CHANGED_FILES"
+          fi
+
+      # ─────────────────────────────────────────────────────────────────────
+      # STEP 3: Generate Change Summary
+      # ─────────────────────────────────────────────────────────────────────
+      - name: Generate change summary
+        if: steps.changes.outputs.count > 0
+        id: summary
+        run: |
+          # Create temporary directory
+          mkdir -p .github/temp
+
+          # Generate summary markdown
+          SUMMARY_FILE=".github/temp/DOCTRINE_CHANGE_SUMMARY.md"
+
+          echo "# 📘 Doctrine Update Detected" > "$SUMMARY_FILE"
+          echo "" >> "$SUMMARY_FILE"
+          echo "**Workflow Run:** #${{ github.run_number }}" >> "$SUMMARY_FILE"
+          echo "**Triggered by:** @${{ github.actor }}" >> "$SUMMARY_FILE"
+          echo "**Branch:** \`${{ github.ref_name }}\`" >> "$SUMMARY_FILE"
+          echo "**Commit:** [\`${GITHUB_SHA:0:7}\`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})" >> "$SUMMARY_FILE"
+          echo "" >> "$SUMMARY_FILE"
+          echo "---" >> "$SUMMARY_FILE"
+          echo "" >> "$SUMMARY_FILE"
+          echo "## 📁 Files Changed (${{ steps.changes.outputs.count }})" >> "$SUMMARY_FILE"
+          echo "" >> "$SUMMARY_FILE"
+
+          # List changed files with links
+          while IFS= read -r file; do
+            if [ -n "$file" ]; then
+              filename=$(basename "$file")
+              echo "- [\`$file\`](${{ github.server_url }}/${{ github.repository }}/blob/${{ github.sha }}/$file)" >> "$SUMMARY_FILE"
+            fi
+          done <<< "${{ steps.changes.outputs.files }}"
+
+          echo "" >> "$SUMMARY_FILE"
+          echo "---" >> "$SUMMARY_FILE"
+          echo "" >> "$SUMMARY_FILE"
+          echo "## 📋 Next Steps" >> "$SUMMARY_FILE"
+          echo "" >> "$SUMMARY_FILE"
+          echo "- [ ] Review doctrine changes in Obsidian" >> "$SUMMARY_FILE"
+          echo "- [ ] Verify Barton ID compliance" >> "$SUMMARY_FILE"
+          echo "- [ ] Update related documentation if needed" >> "$SUMMARY_FILE"
+          echo "- [ ] Test schema changes in Neon (if SQL modified)" >> "$SUMMARY_FILE"
+          echo "- [ ] Update Grafana dashboards (if metrics changed)" >> "$SUMMARY_FILE"
+          echo "" >> "$SUMMARY_FILE"
+          echo "---" >> "$SUMMARY_FILE"
+          echo "" >> "$SUMMARY_FILE"
+          echo "## 🔗 Related Resources" >> "$SUMMARY_FILE"
+          echo "" >> "$SUMMARY_FILE"
+          echo "- [Doctrine Dashboard](https://github.com/${{ github.repository }}/blob/main/doctrine/DOCTRINE_DASHBOARD.md)" >> "$SUMMARY_FILE"
+          echo "- [Doctrine README](https://github.com/${{ github.repository }}/blob/main/doctrine/README.md)" >> "$SUMMARY_FILE"
+          echo "- [PLE Doctrine](https://github.com/${{ github.repository }}/blob/main/doctrine/ple/PLE-Doctrine.md)" >> "$SUMMARY_FILE"
+          echo "- [Grafana Dashboards](https://dbarton.grafana.net)" >> "$SUMMARY_FILE"
+          echo "" >> "$SUMMARY_FILE"
+          echo "---" >> "$SUMMARY_FILE"
+          echo "" >> "$SUMMARY_FILE"
+          echo "_🤖 Auto-generated by Doctrine Pipeline Sync workflow_" >> "$SUMMARY_FILE"
+
+          # Save file path to output
+          echo "file=$SUMMARY_FILE" >> $GITHUB_OUTPUT
+
+          # Print summary to workflow log
+          echo "Generated summary:"
+          cat "$SUMMARY_FILE"
+
+      # ─────────────────────────────────────────────────────────────────────
+      # STEP 4: Create GitHub Issue
+      # ─────────────────────────────────────────────────────────────────────
+      - name: Create doctrine tracking issue
+        if: steps.changes.outputs.count > 0
+        id: create_issue
+        uses: peter-evans/create-issue-from-file@v5
+        with:
+          title: "Doctrine Update #${{ github.run_number }} – ${{ steps.changes.outputs.count }} file(s) changed"
+          content-filepath: ${{ steps.summary.outputs.file }}
+          labels: |
+            doctrine
+            auto-sync
+            documentation
+          assignees: ${{ github.actor }}
+
+      # ─────────────────────────────────────────────────────────────────────
+      # STEP 5: Add Issue to Project Board
+      # ─────────────────────────────────────────────────────────────────────
+      - name: Add issue to Doctrine Pipeline project
+        if: steps.create_issue.outputs.issue-number
+        uses: actions/add-to-project@v0.5.0
+        with:
+          project-url: https://github.com/orgs/${{ github.repository_owner }}/projects/1
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          labeled: doctrine
+
+      # ─────────────────────────────────────────────────────────────────────
+      # STEP 6: Comment with Additional Context
+      # ─────────────────────────────────────────────────────────────────────
+      - name: Add context comment
+        if: steps.create_issue.outputs.issue-number
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ steps.create_issue.outputs.issue-number }}
+          body: |
+            ## 📊 Commit Details
+
+            **Full Commit Message:**
+            ```
+            ${{ github.event.head_commit.message }}
+            ```
+
+            **Files Modified:**
+            ${{ steps.changes.outputs.count }} file(s) in `doctrine/` directory
+
+            **View Diff:**
+            [Compare changes](${{ github.server_url }}/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }})
+
+            ---
+
+            ## 🧭 Workflow Integration
+
+            This issue was automatically created by the **Doctrine Pipeline Sync** workflow.
+
+            **Integration Status:**
+            - ✅ Obsidian: Changes will sync via Obsidian Git plugin
+            - ✅ GitKraken: Commit visible in visual history
+            - ✅ GitHub Projects: Issue added to "Doctrine Pipeline" board
+            - ✅ Grafana: Dashboards reflect latest doctrine metrics
+
+            **Next Sync:**
+            - This issue will auto-update if more doctrine changes are pushed
+            - Manual review recommended within 24 hours
+            - Close issue after verification complete
+
+      # ─────────────────────────────────────────────────────────────────────
+      # STEP 7: Workflow Summary
+      # ─────────────────────────────────────────────────────────────────────
+      - name: Generate workflow summary
+        if: always()
+        run: |
+          echo "# Doctrine Pipeline Sync Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.changes.outputs.count }}" -gt 0 ]; then
+            echo "✅ **Status:** Doctrine changes detected and tracked" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Files Changed:** ${{ steps.changes.outputs.count }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Issue Created:** #${{ steps.create_issue.outputs.issue-number }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Issue URL:** ${{ steps.create_issue.outputs.issue-url }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "ℹ️ **Status:** No doctrine changes detected" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "This workflow monitors changes to files in the `doctrine/` directory." >> $GITHUB_STEP_SUMMARY
+            echo "No action taken for this commit." >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by:** @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** [\`${GITHUB_SHA:0:7}\`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})" >> $GITHUB_STEP_SUMMARY
+
+      # ─────────────────────────────────────────────────────────────────────
+      # STEP 8: Cleanup Temporary Files
+      # ─────────────────────────────────────────────────────────────────────
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -rf .github/temp
+          echo "Temporary files cleaned up"

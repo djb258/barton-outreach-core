@@ -1,0 +1,61 @@
+name: Sync SVG-PLE To-Do with GitHub Projects
+
+on:
+  push:
+    paths:
+      - 'infra/docs/svg-ple-todo.md'
+    branches:
+      - main
+      - master
+  pull_request:
+    paths:
+      - 'infra/docs/svg-ple-todo.md'
+  schedule:
+    # Run daily at 8am UTC
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+    # Allow manual trigger from GitHub UI
+
+jobs:
+  sync-todo:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+      projects: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Setup GitHub CLI
+        run: |
+          type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update
+          sudo apt install gh -y
+
+      - name: Verify GitHub CLI
+        run: gh --version
+
+      - name: Make script executable
+        run: chmod +x infra/scripts/auto-sync-svg-ple-github.sh
+
+      - name: Run auto-sync (once mode)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./infra/scripts/auto-sync-svg-ple-github.sh --once
+
+      - name: Summary
+        run: |
+          echo "✅ SVG-PLE To-Do sync completed successfully"
+          echo "📊 Project: SVG-PLE Doctrine Alignment"
+          echo "📝 File: infra/docs/svg-ple-todo.md"

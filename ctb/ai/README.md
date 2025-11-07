@@ -1,98 +1,36 @@
-# AI & Agents (ai/)
-
-**Barton ID Range**: 03.01.*
-**Enforcement**: HEIR (Hierarchical Execution Intelligence & Repair)
+# AI Configuration - Barton Outreach Core
 
 ## Purpose
-AI agents, orchestration tools, automation scripts, and testing frameworks for intelligent system operation.
 
-## Key Directories
+AI model configuration and prompt management, per IMO Creator global config.
 
-### `garage-bay/` - MCP Orchestration System
-- **Entry Point**: `services/mcp/main.py` - MCP server
-- **Purpose**: Multi-domain orchestration (backend, frontend, database)
-- **Drivers**: Backend (Render, Fly.io), DB (Neon, Firebase), Frontend (Vercel, Netlify)
-- **Modules**:
-  - `modules/domains/` - Domain-specific orchestration
-  - `modules/intake/` - Data ingestion & mapping
-  - `modules/core/` - Git, FS, HEIR operations
-- **Run**: `cd garage-bay && python services/mcp/main.py`
+## Configuration
 
-### `agents/specialists/` - Specialized Runners
-- `apifyRunner.js` - Apify actor execution
-- `millionVerifyRunner.js` - Email verification
-- `outreachRunner.js` - Outreach campaign automation
+From `global-config.yaml`:
+- **Providers**: Gemini, OpenAI, Anthropic
+- **Prompts Directory**: `ctb/ai/prompts/`
+- **Models Directory**: `ctb/ai/models/`
+- **Default Provider**: Anthropic (Claude)
 
-### `scripts/` - Automation & Deployment
-- Database migrations runners
-- Vercel/Render deployment scripts
-- Schema validation & sync tools
-- Composio integration helpers
+## Enrichment Agents
 
-### `testing/` - Integration Tests
-- MCP integration tests
-- Composio endpoint verification
-- People/company schema validation
+Configured enrichment agents:
+- **Apify** - LinkedIn scraping, profile enrichment
+- **Abacus** - Data validation, enrichment
+- **Firecrawl** - Web scraping, company data
 
-### `tools/` - Utility Scripts
-- `repo_mcp_orchestrator.py` - Repository-level orchestration
+### Agent Performance Monitoring
 
-## Common Tasks
+- **Tracking Table**: `marketing.data_enrichment_log`
+- **Metrics**: Success rate, duration, cost per success
+- **Timeout**: 10 minutes per job
+- **Retry**: Failed jobs are automatically retried
 
-### Run Garage Bay MCP Server
-```bash
-cd ctb/ai/garage-bay
-pip install -r requirements.txt
-python services/mcp/main.py
-```
+## Status
 
-### Run Apify Actor
-```bash
-cd ctb/ai/agents/specialists
-node apifyRunner.js --actor leads-finder --input companies.json
-```
-
-### Deploy to Vercel
-```bash
-cd ctb/ai/scripts
-node vercel-mcp-deploy.js --app amplify-client
-```
-
-### Run Tests
-```bash
-cd ctb/ai/testing
-node test-all-mcp-integrations.js
-```
-
-## Environment Variables
-```bash
-COMPOSIO_API_KEY=<your-key>
-APIFY_API_KEY=<your-key>
-DATABASE_URL=<neon-connection-string>
-```
-
-## Dependencies
-- **Upstream**: `ctb/sys/api/` for API endpoints
-- **Upstream**: `ctb/data/` for database schemas
-- **Downstream**: None (top of execution hierarchy)
-
-## Key Patterns
-
-### HEIR Enforcement
-Files in ai/ enforce system correctness through:
-- Validators (schema compliance)
-- Tests (integration checks)
-- Agents (autonomous repair)
-- Orchestrators (multi-service coordination)
-
-### MCP Protocol
-Garage Bay implements Model Context Protocol for:
-- Tool registration
-- Function calling
-- Resource management
-- Prompt handling
-
-## Owners
-- AI Agents: AI/ML team
-- Garage Bay: Platform team
-- Testing: QA team
+- **Providers Configured**: Anthropic, OpenAI, Gemini ✅
+- **Default Provider**: Anthropic ✅
+- **Enrichment Agents**: Apify, Abacus, Firecrawl ✅
+- **Performance Monitoring**: Enabled ✅
+- **Prompts Directory**: Created ✅
+- **Models Directory**: Created ✅

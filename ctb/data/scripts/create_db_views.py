@@ -10,7 +10,11 @@ import psycopg2
 if sys.platform == 'win32':
     sys.stdout.reconfigure(encoding='utf-8')
 
-env_path = Path(__file__).parent / "ctb" / "sys" / "security-audit" / ".env"
+# Find project root by looking for .git directory
+project_root = Path(__file__).resolve()
+while not (project_root / ".git").exists() and project_root != project_root.parent:
+    project_root = project_root.parent
+env_path = project_root / "ctb" / "sys" / "security-audit" / ".env"
 load_dotenv(env_path)
 
 DATABASE_URL = os.getenv('NEON_DATABASE_URL') or os.getenv('DATABASE_URL')

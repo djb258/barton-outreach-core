@@ -1,0 +1,86 @@
+═══════════════════════════════════════════════════════════
+  🚀 RESTART GRAFANA TO REMOVE LOGIN
+═══════════════════════════════════════════════════════════
+
+The configuration is ready, but you need to restart Grafana
+for the no-login changes to take effect.
+
+═══════════════════════════════════════════════════════════
+  ⚡ RESTART NOW (CHOOSE ONE METHOD)
+═══════════════════════════════════════════════════════════
+
+METHOD 1: Windows - Use Batch File
+───────────────────────────────────
+1. Find this file: RESTART_GRAFANA.bat
+2. Double-click it
+3. Wait for it to finish
+4. Go to http://localhost:3000 (no login!)
+
+METHOD 2: PowerShell/Command Prompt
+────────────────────────────────────
+Open PowerShell or Command Prompt, then run:
+
+cd "C:\Users\CUSTOM PC\Desktop\Cursor Builds\barton-outreach-core"
+docker compose restart grafana
+
+Wait 30 seconds, then go to:
+http://localhost:3000
+
+METHOD 3: Docker Desktop
+────────────────────────
+1. Open Docker Desktop
+2. Find container: barton-outreach-grafana
+3. Click the "Restart" button (circular arrow icon)
+4. Wait for status to show "Running"
+5. Go to http://localhost:3000
+
+METHOD 4: Full Restart (if others fail)
+────────────────────────────────────────
+cd "C:\Users\CUSTOM PC\Desktop\Cursor Builds\barton-outreach-core"
+docker compose down
+docker compose up -d
+
+Wait 30 seconds, then go to:
+http://localhost:3000
+
+═══════════════════════════════════════════════════════════
+  🔍 VERIFY IT WORKED
+═══════════════════════════════════════════════════════════
+
+After restarting:
+
+1. Open browser (or refresh existing tab)
+2. Go to: http://localhost:3000
+3. You should see dashboards immediately - NO LOGIN!
+
+If you still see login:
+- Clear browser cache (Ctrl+Shift+Delete)
+- Or use incognito/private window (Ctrl+Shift+N)
+- Or try a different browser
+
+═══════════════════════════════════════════════════════════
+  🆘 TROUBLESHOOTING
+═══════════════════════════════════════════════════════════
+
+If you get "docker: command not found":
+────────────────────────────────────────
+1. Open Docker Desktop application
+2. Make sure it's running (whale icon in system tray)
+3. Wait for it to fully start
+4. Try the restart command again
+
+If restart fails:
+──────────────────
+Try using Docker Desktop GUI (METHOD 3 above)
+
+If still seeing login after restart:
+─────────────────────────────────────
+1. Close ALL browser tabs with localhost:3000
+2. Clear browser cache
+3. Open new tab
+4. Go to http://localhost:3000
+
+═══════════════════════════════════════════════════════════
+
+READY TO RESTART? Use METHOD 1 (easiest):
+Double-click: RESTART_GRAFANA.bat

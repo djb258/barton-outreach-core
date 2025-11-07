@@ -17,8 +17,11 @@ if sys.platform == 'win32':
     sys.stdout.reconfigure(line_buffering=True)  # Enable line buffering
     sys.stderr.reconfigure(line_buffering=True)
 
-# Load environment
-env_path = Path(__file__).parent / "ctb" / "sys" / "security-audit" / ".env"
+# Load environment - find project root by looking for .git directory
+project_root = Path(__file__).resolve()
+while not (project_root / ".git").exists() and project_root != project_root.parent:
+    project_root = project_root.parent
+env_path = project_root / "ctb" / "sys" / "security-audit" / ".env"
 load_dotenv(env_path)
 print("[DEBUG] Environment loaded", flush=True)
 
