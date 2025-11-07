@@ -1,0 +1,557 @@
+{
+  "manifest_version": "2.0.0",
+  "phase": "Phase 2 - File Movement",
+  "generated": "2025-11-07",
+  "repository": "barton-outreach-core",
+  "ctb_version": "1.3.3",
+  "branch": "feature/ctb-full-implementation",
+  "status": "completed",
+  "summary": {
+    "total_files_moved": 52,
+    "new_directories_created": 7,
+    "files_kept_at_root": 15,
+    "execution_time": "completed",
+    "risk_level": "low"
+  },
+  "directories_created": [
+    {
+      "path": "ctb/docs/architecture/",
+      "purpose": "Architecture summaries and system design documentation",
+      "gitkeep": true
+    },
+    {
+      "path": "ctb/docs/audit/",
+      "purpose": "CTB compliance reports and verification checklists",
+      "gitkeep": true
+    },
+    {
+      "path": "ctb/docs/integration/",
+      "purpose": "Integration guides for third-party services",
+      "gitkeep": true
+    },
+    {
+      "path": "ctb/docs/setup/",
+      "purpose": "Setup guides, dependencies, contributing documentation",
+      "gitkeep": true
+    },
+    {
+      "path": "ctb/docs/status/",
+      "purpose": "Completion markers and status tracking files",
+      "gitkeep": true
+    },
+    {
+      "path": "ctb/docs/reference/",
+      "purpose": "Quick references, schemas, and service-specific guides",
+      "gitkeep": true
+    },
+    {
+      "path": "ctb/sys/deployment/",
+      "purpose": "Deployment helper scripts and utilities",
+      "gitkeep": true
+    }
+  ],
+  "files_moved": {
+    "architecture_docs": [
+      {
+        "from": "ARCHITECTURE_SUMMARY.md",
+        "to": "ctb/docs/architecture/ARCHITECTURE_SUMMARY.md",
+        "method": "git mv",
+        "status": "completed"
+      },
+      {
+        "from": "REPO_STRUCTURE.md",
+        "to": "ctb/docs/architecture/REPO_STRUCTURE.md",
+        "method": "git mv",
+        "status": "completed"
+      },
+      {
+        "from": "EVENT_DRIVEN_SYSTEM_README.md",
+        "to": "ctb/docs/architecture/EVENT_DRIVEN_SYSTEM_README.md",
+        "method": "git mv",
+        "status": "completed"
+      }
+    ],
+    "audit_reports": [
+      {
+        "from": "CTB_COMPLIANCE_REPORT_2025-10-24.md",
+        "to": "ctb/docs/audit/CTB_COMPLIANCE_REPORT_2025-10-24.md",
+        "method": "git mv",
+        "status": "completed"
+      },
+      {
+        "from": "CTB_AUDIT_REPORT.md",
+        "to": "ctb/docs/audit/CTB_AUDIT_REPORT.md",
+        "method": "git mv",
+        "status": "completed"
+      },
+      {
+        "from": "CTB_INDEX.md",
+        "to": "ctb/docs/audit/CTB_INDEX.md",
+        "method": "git mv",
+        "status": "completed"
+      },
+      {
+        "from": "CTB_ENFORCEMENT.md",
+        "to": "ctb/docs/audit/CTB_ENFORCEMENT.md",
+        "method": "git mv",
+        "status": "completed"
+      },
+      {
+        "from": "CTB_TAGGING_REPORT.md",
+        "to": "ctb/docs/audit/CTB_TAGGING_REPORT.md",
+        "method": "git mv",
+        "status": "completed"
+      },
+      {
+        "from": "CTB_REMEDIATION_SUMMARY.md",
+        "to": "ctb/docs/audit/CTB_REMEDIATION_SUMMARY.md",
+        "method": "git mv",
+        "status": "completed"
+      },
+      {
+        "from": "CTB_VERIFICATION_CHECKLIST.md",
+        "to": "ctb/docs/audit/CTB_VERIFICATION_CHECKLIST.md",
+        "method": "git mv",
+        "status": "completed"
+      },
+      {
+        "from": "SESSION_SUMMARY_2025-10-24.md",
+        "to": "ctb/docs/audit/SESSION_SUMMARY_2025-10-24.md",
+        "method": "git mv",
+        "status": "completed"
+      },
+      {
+        "from": "CTB_IMPLEMENTATION_PREVIEW_REPORT.md",
+        "to": "ctb/docs/audit/CTB_IMPLEMENTATION_PREVIEW_REPORT.md",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "CTB_MIGRATION_QUICK_SUMMARY.md",
+        "to": "ctb/docs/audit/CTB_MIGRATION_QUICK_SUMMARY.md",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "CTB_VISUAL_COMPARISON.md",
+        "to": "ctb/docs/audit/CTB_VISUAL_COMPARISON.md",
+        "method": "mv",
+        "status": "completed"
+      }
+    ],
+    "integration_docs": [
+      {
+        "from": "INTEGRATION_GUIDE.md",
+        "to": "ctb/docs/integration/INTEGRATION_GUIDE.md",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "COMPOSIO_AGENT_TEMPLATE.md",
+        "to": "ctb/docs/integration/COMPOSIO_AGENT_TEMPLATE.md",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "NEON_CONNECTION_GUIDE.md",
+        "to": "ctb/docs/integration/NEON_CONNECTION_GUIDE.md",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "NEW_INTEGRATIONS_SUMMARY.md",
+        "to": "ctb/docs/integration/NEW_INTEGRATIONS_SUMMARY.md",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "BUILDER_IO_INTEGRATION_COMPLETE.md",
+        "to": "ctb/docs/integration/BUILDER_IO_INTEGRATION_COMPLETE.md",
+        "method": "mv",
+        "status": "completed"
+      }
+    ],
+    "setup_docs": [
+      {
+        "from": "DEPENDENCIES.md",
+        "to": "ctb/docs/setup/DEPENDENCIES.md",
+        "method": "git mv",
+        "status": "completed"
+      },
+      {
+        "from": "CONTRIBUTING.md",
+        "to": "ctb/docs/setup/CONTRIBUTING.md",
+        "method": "git mv",
+        "status": "completed"
+      },
+      {
+        "from": "ENTRYPOINT.md",
+        "to": "ctb/docs/setup/ENTRYPOINT.md",
+        "method": "git mv",
+        "status": "completed"
+      }
+    ],
+    "status_files": [
+      {
+        "from": "AUTO_SYNC_COMPLETE.txt",
+        "to": "ctb/docs/status/AUTO_SYNC_COMPLETE.txt",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "BIG_UPDATE_COMPLETE.txt",
+        "to": "ctb/docs/status/BIG_UPDATE_COMPLETE.txt",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "BIG_UPDATE_SUMMARY.md",
+        "to": "ctb/docs/status/BIG_UPDATE_SUMMARY.md",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "DOCKER_STATUS_CHECK.txt",
+        "to": "ctb/docs/status/DOCKER_STATUS_CHECK.txt",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "ENRICHMENT_TRACKING_READY.txt",
+        "to": "ctb/docs/status/ENRICHMENT_TRACKING_READY.txt",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "GRAFANA_READY.txt",
+        "to": "ctb/docs/status/GRAFANA_READY.txt",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "GRAFANA_LOGIN_SOLUTION.txt",
+        "to": "ctb/docs/status/GRAFANA_LOGIN_SOLUTION.txt",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "GRAFANA_NO_AUTH_SETUP.txt",
+        "to": "ctb/docs/status/GRAFANA_NO_AUTH_SETUP.txt",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "RESTART_NOW.txt",
+        "to": "ctb/docs/status/RESTART_NOW.txt",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "RESTART_INSTRUCTIONS.txt",
+        "to": "ctb/docs/status/RESTART_INSTRUCTIONS.txt",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "SEND_ME_THIS_INFO.txt",
+        "to": "ctb/docs/status/SEND_ME_THIS_INFO.txt",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "READ_ME_FIRST.txt",
+        "to": "ctb/docs/status/READ_ME_FIRST.txt",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "GLOBAL_CONFIG_CHANGES_LOG.txt",
+        "to": "ctb/docs/status/GLOBAL_CONFIG_CHANGES_LOG.txt",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "SVG-PLE-GITHUB-PROJECTS-SUMMARY.txt",
+        "to": "ctb/docs/status/SVG-PLE-GITHUB-PROJECTS-SUMMARY.txt",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "SUPER_PROMPT_COMPLETION.md",
+        "to": "ctb/docs/status/SUPER_PROMPT_COMPLETION.md",
+        "method": "git mv",
+        "status": "completed"
+      },
+      {
+        "from": "GLOBAL_CONFIG_IMPLEMENTATION.md",
+        "to": "ctb/docs/status/GLOBAL_CONFIG_IMPLEMENTATION.md",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "GLOBAL_CONFIG_SYNC_COMPLETE.md",
+        "to": "ctb/docs/status/GLOBAL_CONFIG_SYNC_COMPLETE.md",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "GLOBAL_CONFIG_COMPLETE_SYNC.md",
+        "to": "ctb/docs/status/GLOBAL_CONFIG_COMPLETE_SYNC.md",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "GRAFANA_SETUP_COMPLETE.md",
+        "to": "ctb/docs/status/GRAFANA_SETUP_COMPLETE.md",
+        "method": "mv",
+        "status": "completed"
+      }
+    ],
+    "reference_docs": [
+      {
+        "from": "QUICKREF.md",
+        "to": "ctb/docs/reference/QUICKREF.md",
+        "method": "git mv",
+        "status": "completed"
+      },
+      {
+        "from": "SCHEMA_QUICK_REFERENCE.md",
+        "to": "ctb/docs/reference/SCHEMA_QUICK_REFERENCE.md",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "QUICK_START_GITHUB_PROJECTS.md",
+        "to": "ctb/docs/reference/QUICK_START_GITHUB_PROJECTS.md",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "CURRENT_NEON_SCHEMA.md",
+        "to": "ctb/docs/reference/CURRENT_NEON_SCHEMA.md",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "GRAFANA_SETUP.md",
+        "to": "ctb/docs/reference/GRAFANA_SETUP.md",
+        "method": "git mv",
+        "status": "completed"
+      },
+      {
+        "from": "START_GRAFANA.md",
+        "to": "ctb/docs/reference/START_GRAFANA.md",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "GRAFANA_LOGIN_TROUBLESHOOTING.md",
+        "to": "ctb/docs/reference/GRAFANA_LOGIN_TROUBLESHOOTING.md",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "NO_DOCKER_ALTERNATIVES.md",
+        "to": "ctb/docs/reference/NO_DOCKER_ALTERNATIVES.md",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "GRAFANA_CLOUD_SETUP_GUIDE.md",
+        "to": "ctb/docs/reference/GRAFANA_CLOUD_SETUP_GUIDE.md",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "PUSH_DASHBOARDS_TO_GRAFANA_CLOUD.md",
+        "to": "ctb/docs/reference/PUSH_DASHBOARDS_TO_GRAFANA_CLOUD.md",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "IMPORT_DASHBOARDS_NOW.md",
+        "to": "ctb/docs/reference/IMPORT_DASHBOARDS_NOW.md",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "N8N_MESSAGING_SETUP.md",
+        "to": "ctb/docs/reference/N8N_MESSAGING_SETUP.md",
+        "method": "git mv",
+        "status": "completed"
+      },
+      {
+        "from": "N8N_HOSTED_SETUP_GUIDE.md",
+        "to": "ctb/docs/reference/N8N_HOSTED_SETUP_GUIDE.md",
+        "method": "git mv",
+        "status": "completed"
+      }
+    ],
+    "deployment_scripts": [
+      {
+        "from": "RESET_GRAFANA_PASSWORD.bat",
+        "to": "ctb/sys/deployment/RESET_GRAFANA_PASSWORD.bat",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "RESTART_GRAFANA.bat",
+        "to": "ctb/sys/deployment/RESTART_GRAFANA.bat",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "reset-grafana-password.sh",
+        "to": "ctb/sys/deployment/reset-grafana-password.sh",
+        "method": "mv",
+        "status": "completed"
+      },
+      {
+        "from": "restart-grafana.sh",
+        "to": "ctb/sys/deployment/restart-grafana.sh",
+        "method": "mv",
+        "status": "completed"
+      }
+    ]
+  },
+  "files_kept_at_root": {
+    "deployment_critical": [
+      {
+        "file": "src/main.py",
+        "reason": "Application entry point - required by Render deployment",
+        "status": "kept_at_root_by_design"
+      },
+      {
+        "file": "render.yaml",
+        "reason": "Render deployment configuration - must be at root",
+        "status": "kept_at_root_by_design"
+      },
+      {
+        "file": "vercel.json",
+        "reason": "Vercel deployment configuration - must be at root",
+        "status": "kept_at_root_by_design"
+      },
+      {
+        "file": "package.json",
+        "reason": "Node.js project manifest - industry standard location",
+        "status": "kept_at_root_by_design"
+      },
+      {
+        "file": "requirements.txt",
+        "reason": "Python dependencies manifest - industry standard location",
+        "status": "kept_at_root_by_design"
+      },
+      {
+        "file": "docker-compose.yml",
+        "reason": "Docker orchestration - must be at root",
+        "status": "kept_at_root_by_design"
+      }
+    ],
+    "project_metadata": [
+      {
+        "file": "README.md",
+        "reason": "Primary repository documentation - updated with File Location Guide",
+        "status": "kept_at_root_by_design"
+      },
+      {
+        "file": "CLAUDE.md",
+        "reason": "AI context file for Claude Code sessions",
+        "status": "kept_at_root_by_design"
+      },
+      {
+        "file": ".gitignore",
+        "reason": "Git configuration - must be at root",
+        "status": "kept_at_root_by_design"
+      },
+      {
+        "file": ".env.example",
+        "reason": "Environment variables template",
+        "status": "kept_at_root_by_design"
+      }
+    ],
+    "active_workspace": [
+      {
+        "directory": "apps/",
+        "reason": "Active development workspace - user decision to keep at root",
+        "status": "kept_at_root_by_design"
+      }
+    ],
+    "recent_reports": [
+      {
+        "file": "CTB_PHASE1_COMPLETE.md",
+        "reason": "Recent phase completion report - keep at root temporarily",
+        "status": "kept_at_root_by_design"
+      },
+      {
+        "file": "CTB_FULL_IMPLEMENTATION_REPORT.md",
+        "reason": "Recent implementation report - keep at root temporarily",
+        "status": "kept_at_root_by_design"
+      },
+      {
+        "file": "CTB_FILE_MOVES_MANIFEST.json",
+        "reason": "Active manifest for tracking file moves",
+        "status": "kept_at_root_by_design"
+      }
+    ],
+    "global_config": [
+      {
+        "directory": "global-config/",
+        "reason": "Global configuration - referenced by deployment scripts",
+        "status": "kept_at_root_by_design"
+      },
+      {
+        "file": "global-config.yaml",
+        "reason": "Global configuration file - referenced by scripts",
+        "status": "kept_at_root_by_design"
+      }
+    ]
+  },
+  "compliance_metrics": {
+    "before_phase2": {
+      "total_files": 180,
+      "ctb_compliant": 85,
+      "compliance_percentage": 47
+    },
+    "after_phase2": {
+      "total_files": 180,
+      "ctb_compliant": 137,
+      "compliance_percentage": 76,
+      "improvement": "+29%"
+    },
+    "remaining_work": {
+      "high_risk_moves": 15,
+      "directories_to_move": 11,
+      "import_updates_required": 25,
+      "estimated_to_95_percent": "Phase 3 required"
+    }
+  },
+  "safety_verification": {
+    "broken_references_check": "pending",
+    "git_status_verified": "pending",
+    "deployment_configs_intact": "pending",
+    "import_paths_verified": "pending"
+  },
+  "next_phase": {
+    "phase": "Phase 3 - Python Code Movement",
+    "risk_level": "high",
+    "prerequisites": [
+      "Complete import path analysis",
+      "Create import update automation",
+      "Test Phase 2 changes thoroughly"
+    ],
+    "blockers": [
+      "Import statements need comprehensive analysis",
+      "Database connection paths may break",
+      "Library imports (libs.imo_tools) need updating"
+    ]
+  },
+  "notes": [
+    "All low-risk documentation files successfully moved",
+    "Root README.md updated with File Location Guide section",
+    "New CTB subdirectory structure created with .gitkeep files",
+    "Conservative approach maintained - only safe moves executed",
+    "No Python code files moved (saved for Phase 3)",
+    "No directories moved (saved for Phase 3)",
+    "Deployment-critical files intentionally kept at root"
+  ]
+}

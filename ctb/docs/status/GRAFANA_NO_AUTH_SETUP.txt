@@ -1,0 +1,153 @@
+═══════════════════════════════════════════════════════════
+  ✅ GRAFANA AUTHENTICATION DISABLED
+═══════════════════════════════════════════════════════════
+
+Status: No login required (local development mode)
+Access: Just go to http://localhost:3000
+
+═══════════════════════════════════════════════════════════
+  🚀 APPLY CHANGES (2 STEPS)
+═══════════════════════════════════════════════════════════
+
+Step 1: Restart Grafana Container
+──────────────────────────────────
+Open PowerShell/Terminal and run:
+
+  docker compose restart grafana
+
+Or if that doesn't work:
+
+  docker compose down
+  docker compose up -d
+
+Step 2: Access Grafana (No Login!)
+──────────────────────────────────
+Just open your browser and go to:
+
+  http://localhost:3000
+
+You'll be automatically logged in as Admin!
+No username or password needed.
+
+═══════════════════════════════════════════════════════════
+  🎯 WHAT WAS CHANGED
+═══════════════════════════════════════════════════════════
+
+Modified: docker-compose.yml
+
+Changed from:
+  - GF_SECURITY_ADMIN_USER=admin
+  - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-changeme}
+
+Changed to:
+  - GF_AUTH_ANONYMOUS_ENABLED=true
+  - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+  - GF_AUTH_DISABLE_LOGIN_FORM=true
+  - GF_AUTH_BASIC_ENABLED=false
+  - GF_SECURITY_ALLOW_EMBEDDING=true
+
+Effect:
+✅ No login screen
+✅ Direct access with admin permissions
+✅ Perfect for local development
+✅ No password to remember
+
+═══════════════════════════════════════════════════════════
+  📊 ACCESS YOUR DASHBOARDS
+═══════════════════════════════════════════════════════════
+
+Overview Dashboard:
+  http://localhost:3000/d/barton-outreach-overview
+
+Or just go to:
+  http://localhost:3000
+
+Then click Dashboards → Barton Outreach — Overview Dashboard
+
+Expected Panels:
+  🏢 Total Companies
+  👥 Total Contacts
+  ✅ Filled Slots
+  ⚠️ Unresolved Errors
+  📊 Filled Slots by Role
+  🏆 Top 20 Companies
+  🚨 Resolution Queue
+  📈 Company Growth (30 days)
+  👤 Contact Growth (30 days)
+
+═══════════════════════════════════════════════════════════
+  🔒 SECURITY NOTE
+═══════════════════════════════════════════════════════════
+
+⚠️  This configuration is ONLY for local development
+
+Do NOT use this in production or on a public server!
+
+For local use on localhost:3000 = Perfectly safe ✅
+For production/public access = Enable auth! 🔐
+
+If you ever need to re-enable authentication, see:
+  GRAFANA_LOGIN_TROUBLESHOOTING.md
+
+═══════════════════════════════════════════════════════════
+  🆘 TROUBLESHOOTING
+═══════════════════════════════════════════════════════════
+
+Issue: Still seeing login screen after restart
+───────────────────────────────────────────────
+Solution: Clear browser cache or use incognito mode
+  Ctrl+Shift+N (Chrome)
+  Ctrl+Shift+P (Firefox)
+
+Or try:
+  docker compose down
+  docker compose up -d
+
+Issue: Can't access Grafana
+────────────────────────────
+Check if running:
+  docker ps | grep grafana
+
+Start if not running:
+  docker compose up -d
+
+Issue: Dashboard shows "No Data"
+─────────────────────────────────
+Check Neon datasource:
+  1. Go to http://localhost:3000
+  2. Menu → Connections → Data sources
+  3. Click "Neon PostgreSQL"
+  4. Click "Save & test"
+  5. Should see: "Database Connection OK"
+
+If connection fails:
+  - Check .env file has correct Neon credentials
+  - Check grafana/provisioning/datasources/neon.yml exists
+
+═══════════════════════════════════════════════════════════
+  ⚡ QUICK COMMANDS
+═══════════════════════════════════════════════════════════
+
+Restart Grafana:
+  docker compose restart grafana
+
+Stop Grafana:
+  docker compose down
+
+Start Grafana:
+  docker compose up -d
+
+View logs:
+  docker compose logs grafana --tail=50
+
+Check if running:
+  docker ps | grep grafana
+
+Access Grafana:
+  http://localhost:3000
+
+═══════════════════════════════════════════════════════════
+
+CREATED: 2025-11-06
+STATUS: Authentication disabled - direct access enabled
+NEXT: Run: docker compose restart grafana

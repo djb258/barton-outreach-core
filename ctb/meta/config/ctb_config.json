@@ -1,0 +1,195 @@
+{
+  "ctb_version": "1.3.3",
+  "repository": "barton-outreach-core",
+  "doctrine_id": "SHQ.001",
+  "hive": "shq",
+  "last_restructure": "2025-11-07",
+  "compliance_level": "implementing",
+  "branches": {
+    "sys": {
+      "altitude": "40k",
+      "description": "System infrastructure",
+      "subdirectories": [
+        "api",
+        "composio-mcp",
+        "neon-vault",
+        "firebase-workbench",
+        "bigquery-warehouse",
+        "github-factory",
+        "builder-bridge",
+        "security-audit",
+        "chartdb",
+        "activepieces",
+        "windmill",
+        "claude-skills",
+        "deepwiki",
+        "grafana",
+        "n8n",
+        "libs",
+        "services",
+        "tools",
+        "tests",
+        "ops",
+        "modules",
+        "nodes",
+        "cli",
+        "factory",
+        "firebase",
+        "global-factory",
+        "mechanic"
+      ],
+      "status": "active"
+    },
+    "ai": {
+      "altitude": "20k",
+      "description": "AI and agent layer",
+      "subdirectories": [
+        "agents",
+        "prompts",
+        "models",
+        "scripts",
+        "garage-bay",
+        "mcp-tasks",
+        "testing",
+        "tools"
+      ],
+      "status": "active"
+    },
+    "data": {
+      "altitude": "20k",
+      "description": "Data schemas and migrations",
+      "subdirectories": [
+        "infra",
+        "migrations",
+        "schemas"
+      ],
+      "status": "active"
+    },
+    "docs": {
+      "altitude": "10k",
+      "description": "Documentation",
+      "subdirectories": [
+        "analysis",
+        "archive",
+        "audit",
+        "blueprints",
+        "branches",
+        "config",
+        "diagrams",
+        "examples",
+        "obsidian-vault",
+        "pages",
+        "scripts",
+        "toolbox",
+        "wiki",
+        "architecture",
+        "guides",
+        "integration",
+        "changelog",
+        "sessions"
+      ],
+      "status": "active"
+    },
+    "ui": {
+      "altitude": "10k",
+      "description": "User interface components",
+      "subdirectories": [
+        "apps",
+        "components",
+        "lovable",
+        "packages",
+        "pages",
+        "placeholders",
+        "public",
+        "src",
+        "templates",
+        "specs"
+      ],
+      "status": "active"
+    },
+    "meta": {
+      "altitude": "40k",
+      "description": "Meta-configuration and CTB doctrine",
+      "subdirectories": [
+        ".devcontainer",
+        ".gitingest",
+        "config",
+        "global-config",
+        "doctrine",
+        "ids"
+      ],
+      "status": "active"
+    },
+    "ops": {
+      "altitude": "5k",
+      "description": "Operations and automation",
+      "subdirectories": [
+        "docker",
+        "scripts",
+        "ci-cd"
+      ],
+      "status": "active"
+    }
+  },
+  "required_files": {
+    "root": [
+      "README.md",
+      "CLAUDE.md",
+      "LLM_ONBOARDING.md",
+      ".env.example",
+      ".gitignore",
+      "LICENSE",
+      "package.json",
+      "requirements.txt"
+    ],
+    "ctb": [
+      "ctb/README.md",
+      "ctb/sys/README.md",
+      "ctb/ai/README.md",
+      "ctb/data/README.md",
+      "ctb/docs/README.md",
+      "ctb/ui/README.md",
+      "ctb/meta/README.md",
+      "ctb/ops/README.md"
+    ],
+    "config": [
+      "ctb/meta/config/ctb_config.json",
+      "ctb/meta/config/mcp_registry.json",
+      "global-config/CTB_DOCTRINE.md",
+      "global-config/ctb.branchmap.yaml",
+      "global-config/repo_organization_standard.yaml"
+    ]
+  },
+  "integrations": {
+    "composio_mcp": {
+      "port": 3001,
+      "status": "active",
+      "tools_count": 100
+    },
+    "neon_postgresql": {
+      "status": "active",
+      "schemas": ["company", "people", "marketing", "bit", "ple"]
+    },
+    "firebase": {
+      "status": "active",
+      "project": "barton-outreach"
+    },
+    "github_factory": {
+      "status": "active",
+      "workflows": ["doctrine_sync", "ctb_health", "audit"]
+    }
+  },
+  "enforcement": {
+    "branch_protection": true,
+    "security_lockdown": true,
+    "doctrine_compliance": true,
+    "automated_checks": true
+  },
+  "metadata": {
+    "created": "2025-11-07",
+    "last_updated": "2025-11-07",
+    "maintainer": "Barton Enterprises DevOps Team",
+    "source_repo": "imo-creator",
+    "sync_frequency": "monthly"
+  }
+}

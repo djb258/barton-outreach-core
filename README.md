@@ -26,6 +26,80 @@ npm run compliance:complete -- --dry-run
 
 ---
 
+## 🌲 CTB Structure - Centralized Template Base
+
+This repository follows the **CTB (Centralized Template Base) Doctrine v1.3.3**, organizing all code into seven altitude-based branches:
+
+### CTB Branches
+
+- **[ctb/sys/](ctb/sys/README.md)** - System Infrastructure (40k ft)
+  - APIs, databases, integrations, CI/CD, deployment tools
+  - Includes: Composio MCP, Neon PostgreSQL, Firebase, GitHub Factory, DeepWiki, BigQuery, Builder Bridge
+
+- **[ctb/ai/](ctb/ai/README.md)** - AI & Agent Layer (20k ft)
+  - AI model configuration, prompts, agents, machine learning workflows
+  - Providers: Anthropic (Claude), OpenAI, Google Gemini
+
+- **[ctb/data/](ctb/data/README.md)** - Data Layer (20k ft)
+  - Database schemas, migrations, master data management
+  - Schemas: company, people, marketing, bit, ple
+
+- **[ctb/docs/](ctb/docs/README.md)** - Documentation (10k ft)
+  - Architecture, guides, API docs, audit reports, knowledge base
+
+- **[ctb/ui/](ctb/ui/README.md)** - User Interface (10k ft)
+  - React components, pages, templates, Lovable.dev integration
+
+- **[ctb/meta/](ctb/meta/README.md)** - Meta Configuration (40k ft)
+  - CTB metadata, global configuration, doctrine enforcement
+
+- **[ctb/ops/](ctb/ops/README.md)** - Operations (5k ft)
+  - Docker, automation scripts, CI/CD pipelines, deployment
+
+See [ctb/README.md](ctb/README.md) for complete CTB documentation and navigation guide.
+
+### File Location Guide
+
+**Root Level (Deployment Critical)**
+- `src/main.py`, `start_server.py` - Application entry points (required by Render)
+- `render.yaml`, `vercel.json` - Deployment configs (required at root)
+- `package.json`, `requirements.txt` - Dependency manifests
+- `docker-compose.yml` - Container orchestration
+- `apps/` - Active development workspace
+
+**CTB Structure**
+- `ctb/docs/architecture/` - Architecture summaries and system design
+- `ctb/docs/audit/` - CTB compliance reports and verification checklists
+- `ctb/docs/integration/` - Integration guides for Composio, Neon, Builder.io
+- `ctb/docs/setup/` - Dependency management, contributing guides, entry points
+- `ctb/docs/status/` - Completion markers and status files
+- `ctb/docs/reference/` - Quick references, schemas, Grafana/N8N guides
+- `ctb/sys/` - System integrations (Firebase, Neon, Composio, etc.)
+- `ctb/sys/deployment/` - Deployment helper scripts (Grafana, Docker utilities)
+- `ctb/ai/` - AI models and prompts
+- `ctb/data/` - Database schemas and migrations
+- `ctb/ui/` - User interface components
+- `ctb/ops/` - Operations and deployment scripts
+- `ctb/meta/` - Configuration and metadata
+
+### CTB Quick Commands
+
+```bash
+# Verify CTB compliance
+bash global-config/scripts/ctb_verify.sh
+
+# Start API server
+cd ctb/sys/api && npm install && node server.js
+
+# Run database migration
+psql $DATABASE_URL -f ctb/data/migrations/latest.sql
+
+# Deploy to staging
+bash ctb/ops/scripts/deploy-staging.sh
+```
+
+---
+
 ## Marketing > Outreach Doctrine (Barton)
 
 Modular, altitude-based pages for Doctrine Tracker interactive drill-down:

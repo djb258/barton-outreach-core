@@ -48,6 +48,7 @@ class FixPipeline:
         # Template paths in IMO Creator
         self.template_paths = {
             "github_actions_ci": ".github/workflows/ci.yml",
+            "copilot_instructions": ".github/copilot-instructions.md",
             "vercel_config": "vercel.json",
             "license": "LICENSE",
             "contributing": "CONTRIBUTING.md",
@@ -98,6 +99,15 @@ class FixPipeline:
                     action_type="copy_template",
                     target_path=".github/workflows/ci.yml",
                     description="Add GitHub Actions CI workflow",
+                    priority=1
+                ))
+            
+            elif "missing_copilot_instructions" in issue or "missing_ai_instructions" in issue:
+                fixes.append(FixAction(
+                    action_id=generate_process_id("fix-copilot-instructions"),
+                    action_type="copy_template",
+                    target_path=".github/copilot-instructions.md",
+                    description="Add AI coding agent instructions",
                     priority=1
                 ))
             
@@ -356,6 +366,8 @@ if __name__ == "__main__":
             template_source = None
             if target_path == ".github/workflows/ci.yml":
                 template_source = self.imo_creator_path / ".github/workflows/ci.yml"
+            elif target_path == ".github/copilot-instructions.md":
+                template_source = self.imo_creator_path / ".github/copilot-instructions.md"
             elif target_path == "vercel.json":
                 template_source = self.imo_creator_path / "vercel.json"
             elif target_path == "LICENSE":

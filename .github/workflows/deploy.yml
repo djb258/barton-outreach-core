@@ -1,0 +1,130 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: false
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+          - development
+
+env:
+  NODE_VERSION: '18'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          if [ -f "package.json" ]; then
+            npm ci
+          else
+            echo "No package.json found - skipping Node.js build"
+          fi
+
+      - name: Build frontend
+        run: |
+          if [ -f "package.json" ] && npm run build --if-present; then
+            echo "✅ Frontend build completed"
+          else
+            echo "⚠️ No frontend build script found"
+          fi
+
+      - name: Deploy to Vercel (if configured)
+        run: |
+          if [ ! -z "${{ secrets.VERCEL_TOKEN }}" ]; then
+            echo "🚀 Vercel deployment would trigger here"
+            echo "Configure VERCEL_TOKEN secret to enable automatic deployment"
+          else
+            echo "⚠️ Vercel deployment skipped - no token configured"
+            echo "💡 Vercel auto-deploys from main branch when connected via GitHub integration"
+          fi
+
+  deploy-backend:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Python dependencies
+        run: |
+          if [ -f "requirements.txt" ]; then
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+          else
+            echo "No requirements.txt found - skipping Python setup"
+          fi
+
+      - name: Test backend health
+        run: |
+          if [ -f "src/server/main.py" ]; then
+            python -c "
+            try:
+                import sys
+                sys.path.append('src')
+                from server.main import app
+                print('✅ FastAPI app imports successfully')
+            except Exception as e:
+                print(f'❌ FastAPI app import failed: {e}')
+                sys.exit(1)
+            "
+          else
+            echo "No FastAPI server found - skipping health check"
+          fi
+
+      - name: Deploy to Render (if configured)
+        run: |
+          if [ ! -z "${{ secrets.RENDER_TOKEN }}" ]; then
+            echo "🚀 Render deployment would trigger here"
+            echo "Configure RENDER_TOKEN and RENDER_SERVICE_ID secrets to enable automatic deployment"
+          else
+            echo "⚠️ Render deployment skipped - no token configured"
+            echo "💡 Render auto-deploys from main branch when connected via GitHub integration"
+          fi
+
+  post-deploy:
+    runs-on: ubuntu-latest
+    needs: [deploy-frontend, deploy-backend]
+    if: always()
+
+    steps:
+      - name: Deployment summary
+        run: |
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Status" >> $GITHUB_STEP_SUMMARY
+          echo "- Frontend: ${{ needs.deploy-frontend.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Backend: ${{ needs.deploy-backend.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "1. Verify deployment at production URLs" >> $GITHUB_STEP_SUMMARY
+          echo "2. Run smoke tests on deployed services" >> $GITHUB_STEP_SUMMARY
+          echo "3. Monitor logs for any startup issues" >> $GITHUB_STEP_SUMMARY

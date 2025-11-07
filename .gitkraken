@@ -1,0 +1,46 @@
+{
+  "name": "barton-outreach-core",
+  "profile": "default",
+  "remote": {
+    "origin": "https://github.com/djb258/barton-outreach-core.git"
+  },
+  "settings": {
+    "gitflow": {
+      "enabled": true,
+      "mainBranch": "main",
+      "developBranch": "develop",
+      "featurePrefix": "feature/",
+      "releasePrefix": "release/",
+      "hotfixPrefix": "hotfix/"
+    },
+    "commitTemplate": {
+      "enabled": true,
+      "template": "<type>(<scope>): <subject>\n\n<body>\n\n<footer>",
+      "types": [
+        "feat",
+        "fix",
+        "docs",
+        "style",
+        "refactor",
+        "test",
+        "chore",
+        "perf"
+      ]
+    },
+    "pullRequest": {
+      "autoCreateOnPush": false,
+      "template": "## Summary\n\n## Changes\n\n## Testing\n\n## Checklist\n- [ ] Tests pass\n- [ ] Documentation updated\n- [ ] No breaking changes"
+    }
+  },
+  "integrations": {
+    "github": {
+      "enabled": true,
+      "projects": true,
+      "issues": true
+    }
+  },
+  "ctb": {
+    "doctrine_id": "04.04.13",
+    "branch": "sys/gitkraken"
+  }
+}

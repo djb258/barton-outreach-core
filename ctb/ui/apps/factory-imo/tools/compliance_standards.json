@@ -27,7 +27,8 @@
           "requirements": {
             "has_readme": "README.md file",
             "has_license": "LICENSE file",
-            "has_contributing": "CONTRIBUTING.md file"
+            "has_contributing": "CONTRIBUTING.md file",
+            "has_ai_instructions": ".github/copilot-instructions.md for AI agents"
           }
         },
         "ci_cd": {
@@ -90,6 +91,7 @@
   "templates": {
     "quick_fixes": {
       "add_github_actions": ".github/workflows/ci.yml",
+      "add_copilot_instructions": ".github/copilot-instructions.md",
       "add_vercel_config": "vercel.json", 
       "add_requirements": "requirements.txt",
       "add_license": "LICENSE",

@@ -13,8 +13,8 @@
       "Version tracking ensures compatibility across distributed repos"
     ]
   },
-  "engine_version": "1.3.0",
-  "last_updated": "2025-10-18T00:00:00Z",
+  "engine_version": "1.4.0",
+  "last_updated": "2025-11-06T00:00:00Z",
   "production_urls": {
     "frontend": "https://imo-creator.vercel.app",
     "backend": "http://localhost:3001/tool",
@@ -225,6 +225,237 @@
         "ANTHROPIC_MODEL"
       ],
       "description": "Anthropic Claude Skills AI/SHQ reasoning layer - extended context, multi-step reasoning, and autonomous workflow execution"
+    },
+    {
+      "tool": "Grafana",
+      "type": "MCP",
+      "endpoint": "http://localhost:3000",
+      "doctrine_id": "04.04.11",
+      "status": "active",
+      "ctb_branch": "sys/grafana",
+      "toolkit_tools": [
+        "CREATE_DASHBOARD", "UPDATE_DASHBOARD", "DELETE_DASHBOARD",
+        "CREATE_PANEL", "UPDATE_PANEL", "GET_METRICS",
+        "CREATE_ALERT", "UPDATE_ALERT", "GET_DATASOURCES",
+        "CREATE_DATASOURCE", "UPDATE_DATASOURCE", "GET_ANNOTATIONS",
+        "EXPORT_DASHBOARD", "IMPORT_DASHBOARD", "SHARE_DASHBOARD"
+      ],
+      "capabilities": [
+        "metrics_visualization",
+        "dashboard_creation",
+        "real_time_monitoring",
+        "alerting",
+        "datasource_management",
+        "data_exploration",
+        "reporting"
+      ],
+      "datasources": [
+        "PostgreSQL (Neon)",
+        "Prometheus",
+        "InfluxDB",
+        "CloudWatch",
+        "Elasticsearch"
+      ],
+      "docker": {
+        "image": "grafana/grafana:latest",
+        "port": 3000,
+        "container_name": "barton-grafana"
+      },
+      "authentication": {
+        "default_user": "admin",
+        "anonymous_access": true,
+        "org_role": "Viewer"
+      },
+      "description": "Grafana monitoring and observability platform - create dashboards, visualize metrics, and monitor Neon database and application performance"
+    },
+    {
+      "tool": "Obsidian",
+      "type": "Knowledge Base",
+      "endpoint": "obsidian://vault",
+      "doctrine_id": "04.04.12",
+      "status": "active",
+      "ctb_branch": "sys/obsidian",
+      "toolkit_tools": [
+        "CREATE_NOTE", "UPDATE_NOTE", "DELETE_NOTE",
+        "LINK_NOTES", "SEARCH_VAULT", "GET_BACKLINKS",
+        "CREATE_TAG", "GET_GRAPH", "SYNC_VAULT",
+        "EXPORT_NOTE", "PUBLISH_NOTE", "GET_DAILY_NOTE"
+      ],
+      "capabilities": [
+        "knowledge_management",
+        "markdown_notes",
+        "bidirectional_linking",
+        "graph_visualization",
+        "local_first",
+        "plugin_ecosystem",
+        "vault_sync"
+      ],
+      "vault_config": {
+        "vault_path": "./ctb/docs/obsidian-vault",
+        "auto_sync": true,
+        "sync_interval": "5m",
+        "git_integration": true
+      },
+      "plugins": [
+        "obsidian-git",
+        "dataview",
+        "templater",
+        "advanced-tables",
+        "kanban"
+      ],
+      "integration_patterns": {
+        "documentation": "Auto-generate notes from code comments and README files",
+        "meetings": "Daily notes for standups and retrospectives",
+        "architecture": "Link system diagrams to implementation details",
+        "research": "Capture and organize investigation findings"
+      },
+      "description": "Obsidian knowledge management system - organize documentation, link concepts, and create a knowledge graph for the project"
+    },
+    {
+      "tool": "GitKraken",
+      "type": "Git Client",
+      "endpoint": "gitkraken://",
+      "doctrine_id": "04.04.13",
+      "status": "active",
+      "ctb_branch": "sys/gitkraken",
+      "toolkit_tools": [
+        "OPEN_REPO", "CREATE_BRANCH", "SWITCH_BRANCH",
+        "MERGE_BRANCH", "REBASE_BRANCH", "CHERRY_PICK",
+        "CREATE_PR", "REVIEW_PR", "RESOLVE_CONFLICT",
+        "VIEW_HISTORY", "COMPARE_BRANCHES", "STASH_CHANGES",
+        "TAG_COMMIT", "PUSH_FORCE", "INTERACTIVE_REBASE"
+      ],
+      "capabilities": [
+        "visual_git_interface",
+        "commit_graph",
+        "merge_conflict_resolution",
+        "pr_management",
+        "team_collaboration",
+        "git_flow_support",
+        "interactive_rebase"
+      ],
+      "integrations": [
+        "GitHub",
+        "GitLab",
+        "Bitbucket",
+        "Azure DevOps"
+      ],
+      "features": {
+        "visual_commit_graph": true,
+        "built_in_merge_tool": true,
+        "git_flow": true,
+        "git_lfs": true,
+        "submodules": true
+      },
+      "cli_integration": {
+        "gk": "GitKraken CLI for terminal operations",
+        "commands": [
+          "gk open",
+          "gk pr create",
+          "gk pr list",
+          "gk branch checkout"
+        ]
+      },
+      "description": "GitKraken Git GUI client - visual Git operations, merge conflict resolution, and team collaboration for the repository"
+    },
+    {
+      "tool": "GitHub_Projects",
+      "type": "MCP",
+      "endpoint": "composio://github",
+      "doctrine_id": "04.04.14",
+      "status": "active",
+      "ctb_branch": "sys/github-projects",
+      "toolkit_tools": [
+        "CREATE_PROJECT", "UPDATE_PROJECT", "DELETE_PROJECT",
+        "ADD_ITEM", "UPDATE_ITEM", "MOVE_ITEM",
+        "CREATE_VIEW", "UPDATE_VIEW", "GET_PROJECT_ITEMS",
+        "LINK_ISSUE", "LINK_PR", "ADD_FIELD",
+        "UPDATE_FIELD_VALUE", "ARCHIVE_ITEM", "GET_PROJECT_INSIGHTS"
+      ],
+      "capabilities": [
+        "project_management",
+        "kanban_boards",
+        "roadmap_planning",
+        "sprint_tracking",
+        "custom_fields",
+        "automation_rules",
+        "project_insights"
+      ],
+      "github_integration": {
+        "projects_v2": true,
+        "graphql_api": true,
+        "automation": true
+      },
+      "project_templates": [
+        "Feature Roadmap",
+        "Bug Triage",
+        "Sprint Planning",
+        "Release Management",
+        "Documentation Tasks"
+      ],
+      "automation_rules": {
+        "auto_add_issues": "Automatically add new issues to project",
+        "auto_move_pr": "Move items when PR is created/merged",
+        "auto_archive": "Archive completed items after 30 days"
+      },
+      "required_env_vars": [
+        "GITHUB_TOKEN",
+        "GITHUB_PROJECT_ID"
+      ],
+      "description": "GitHub Projects v2 integration - manage sprints, track features, and visualize project progress with custom fields and automation"
+    },
+    {
+      "tool": "Eraser.io",
+      "type": "Diagram as Code",
+      "endpoint": "https://app.eraser.io",
+      "doctrine_id": "04.04.15",
+      "status": "active",
+      "ctb_branch": "sys/eraser",
+      "toolkit_tools": [
+        "CREATE_DIAGRAM", "UPDATE_DIAGRAM", "DELETE_DIAGRAM",
+        "EXPORT_SVG", "EXPORT_PNG", "EXPORT_PDF",
+        "SHARE_DIAGRAM", "GET_DIAGRAM_LINK", "VERSION_DIAGRAM",
+        "CREATE_FROM_CODE", "GENERATE_CODE", "SYNC_WITH_REPO"
+      ],
+      "capabilities": [
+        "diagram_as_code",
+        "architecture_diagrams",
+        "sequence_diagrams",
+        "flowcharts",
+        "entity_relationship_diagrams",
+        "version_control",
+        "collaborative_editing",
+        "code_generation"
+      ],
+      "diagram_types": [
+        "architecture",
+        "sequence",
+        "flowchart",
+        "entity-relationship",
+        "cloud-architecture",
+        "network-diagram"
+      ],
+      "export_formats": [
+        "svg",
+        "png",
+        "pdf",
+        "code"
+      ],
+      "file_extension": ".eraser",
+      "syntax": "eraser-diagram-syntax",
+      "integrations": {
+        "github": true,
+        "confluence": true,
+        "notion": true,
+        "markdown": true
+      },
+      "workspace_config": {
+        "workspace_path": "./ctb/docs/diagrams",
+        "auto_export": true,
+        "export_formats": ["svg", "png"],
+        "git_tracking": true
+      },
+      "description": "Eraser.io diagram-as-code platform - create and maintain architecture diagrams, sequence flows, and system designs with version control"
     }
   ],
   "repo_usage": {
