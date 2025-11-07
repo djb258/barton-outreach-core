@@ -1,0 +1,40 @@
+{
+  "name": "barton-outreach-core",
+  "version": "1.0.0",
+  "description": "Marketing intelligence & executive enrichment platform with CTB organization",
+  "main": "start_server.py",
+  "scripts": {
+    "validate": "bash ctb/ops/scripts/validate-ctb.sh",
+    "test": "python -m pytest",
+    "test:python": "python -m pytest",
+    "lint": "echo 'Linting not configured - add your linter here'",
+    "format": "echo 'Formatting not configured - add your formatter here'",
+    "dev:factory-imo": "cd ctb/ui/apps/factory-imo && npm install && npm run dev",
+    "dev:amplify": "cd ctb/ui/apps/amplify-client && npm install && npm run dev",
+    "dev:outreach-ui": "cd ctb/ui/apps/outreach-ui && npm install && npm run dev",
+    "sync:svg-ple": "bash infra/scripts/auto-sync-svg-ple-github.sh --once",
+    "sync:svg-ple:watch": "bash infra/scripts/auto-sync-svg-ple-github.sh --watch"
+  },
+  "keywords": [
+    "marketing",
+    "intelligence",
+    "enrichment",
+    "ctb",
+    "outreach",
+    "neon",
+    "grafana",
+    "executive-enrichment"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/djb258/barton-outreach-core.git"
+  },
+  "author": "David Barton",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "devDependencies": {},
+  "dependencies": {}
+}

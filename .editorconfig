@@ -1,0 +1,45 @@
+# EditorConfig - Consistent coding styles across editors
+# https://editorconfig.org
+
+root = true
+
+# All files - default settings
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# JavaScript, TypeScript, JSON, YAML, Markdown
+[*.{js,ts,jsx,tsx,json,yml,yaml,md}]
+indent_style = space
+indent_size = 2
+
+# Python
+[*.py]
+indent_style = space
+indent_size = 4
+max_line_length = 120
+
+# Shell scripts
+[*.sh]
+indent_style = space
+indent_size = 2
+end_of_line = lf  # Shell scripts should always use LF
+
+# SQL
+[*.sql]
+indent_style = space
+indent_size = 2
+
+# Makefiles require tabs
+[Makefile]
+indent_style = tab
+
+# Markdown - preserve trailing whitespace (needed for line breaks)
+[*.md]
+trim_trailing_whitespace = false
+
+# Batch files (Windows)
+[*.{bat,cmd}]
+end_of_line = crlf

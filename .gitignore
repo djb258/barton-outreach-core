@@ -122,3 +122,76 @@ HEIR-AGENT-SYSTEM/
 
 # Apps workspace (build artifacts only - no source files)
 apps/
+
+# === Additional Patterns (Post-CTB Cleanup) ===
+
+# Windows specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# JetBrains IDEs (WebStorm, PyCharm, IntelliJ)
+.idea/
+*.iml
+*.iws
+
+# Python virtual environments (additional variants)
+.virtualenv/
+.pipenv/
+poetry.lock
+Pipfile.lock
+
+# Python test coverage
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+*.cover
+
+# Jupyter notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# Log files (additional patterns)
+*.log.*
+*.log.gz
+*.log.zip
+
+# Environment file backups
+.env.backup
+.env.*.local
+.env.production
+
+# Build artifacts (comprehensive)
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+wheels/
+*.whl
+
+# Package manager lockfiles (if not tracking)
+# Uncomment these if you want to ignore lockfiles
+# package-lock.json
+# pnpm-lock.yaml
+# yarn.lock
+
+# Editor backups and swap files
+*~
+*.swp
+*.swo
+*.bak
+*.orig
+
+# Documentation builds
+_build/
+.doctrees/
+
+# CTB-specific ignores
+ctb/**/*.map
+ctb/**/dist/
+ctb/**/*.tsbuildinfo
