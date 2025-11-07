@@ -111,3 +111,14 @@ ctb/data/migrations/*_rollback.sql
 # Sensitive integration configs
 ctb/sys/github-factory/github-token.json
 ctb/sys/global-factory/*credentials*.json
+
+# IDE and Editor Configurations (Phase 6)
+.claude/
+.gitkraken
+.python-version
+
+# External Systems (Phase 6)
+HEIR-AGENT-SYSTEM/
+
+# Apps workspace (build artifacts only - no source files)
+apps/
