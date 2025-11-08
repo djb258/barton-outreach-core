@@ -1,0 +1,3 @@
+[submodule "enrichment-hub"]
+	path = enrichment-hub
+	url = https://github.com/djb258/enricha-vision.git

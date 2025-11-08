@@ -14,15 +14,16 @@ echo   BARTON OUTREACH CORE - REQUIRED TOOLS INSTALLER
 echo ============================================================================
 echo.
 echo This script will install the following tools:
-echo   1. Obsidian      - Documentation and knowledge management
-echo   2. GitKraken     - Visual Git client for CTB navigation
-echo   3. GitHub CLI    - Command-line GitHub Projects integration
+echo   1. Obsidian       - Documentation and knowledge management
+echo   2. GitKraken      - Visual Git client for CTB navigation
+echo   3. Git Extensions - Advanced Git GUI with visual diff/merge
+echo   4. GitHub CLI     - Command-line GitHub Projects integration
 echo.
 echo Press any key to continue or Ctrl+C to cancel...
 pause >nul
 
 echo.
-echo [1/4] Checking if winget is available...
+echo [1/5] Checking if winget is available...
 where winget >nul 2>&1
 if %ERRORLEVEL% neq 0 (
     echo [ERROR] winget not found!
@@ -34,7 +35,7 @@ if %ERRORLEVEL% neq 0 (
 echo [OK] winget is available
 
 echo.
-echo [2/4] Installing Obsidian...
+echo [2/5] Installing Obsidian...
 winget install --id Obsidian.Obsidian --silent --accept-package-agreements --accept-source-agreements
 if %ERRORLEVEL% equ 0 (
     echo [OK] Obsidian installed successfully
@@ -44,7 +45,7 @@ if %ERRORLEVEL% equ 0 (
 )
 
 echo.
-echo [3/4] Installing GitKraken...
+echo [3/5] Installing GitKraken...
 winget install --id Axosoft.GitKraken --silent --accept-package-agreements --accept-source-agreements
 if %ERRORLEVEL% equ 0 (
     echo [OK] GitKraken installed successfully
@@ -54,7 +55,17 @@ if %ERRORLEVEL% equ 0 (
 )
 
 echo.
-echo [4/4] Installing GitHub CLI...
+echo [4/5] Installing Git Extensions...
+winget install --id GitExtensionsTeam.GitExtensions --silent --accept-package-agreements --accept-source-agreements
+if %ERRORLEVEL% equ 0 (
+    echo [OK] Git Extensions installed successfully
+) else (
+    echo [WARNING] Git Extensions installation returned code %ERRORLEVEL%
+    echo This may mean it's already installed or needs manual intervention
+)
+
+echo.
+echo [5/5] Installing GitHub CLI...
 winget install --id GitHub.cli --silent --accept-package-agreements --accept-source-agreements
 if %ERRORLEVEL% equ 0 (
     echo [OK] GitHub CLI installed successfully
