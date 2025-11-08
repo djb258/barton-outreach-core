@@ -49,7 +49,8 @@
       "Bash(python:*)",
       "Bash(git reset:*)",
       "Bash(find:*)",
-      "Bash(psql:*)"
+      "Bash(psql:*)",
+      "Bash(ctb/ops/scripts/setup-required-tools.bat)"
     ],
     "deny": [],
     "ask": []
