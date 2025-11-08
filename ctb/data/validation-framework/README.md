@@ -4,6 +4,23 @@
 
 ---
 
+## 🔗 Quick Links for Neon ↔ Supabase Sync
+
+**NEW**: Complete two-way sync pipeline for enriching invalid records:
+
+- **📄 [SYNC_README.md](./SYNC_README.md)** - Quick reference for other repos
+- **📋 [NEON_SUPABASE_SYNC_GUIDE.md](./NEON_SUPABASE_SYNC_GUIDE.md)** - Complete human-readable guide
+- **🔧 [sync_manifest.json](./sync_manifest.json)** - Machine-readable specs (124 records ready)
+
+**What's Ready**:
+- 119 companies in `marketing.company_invalid` (missing websites)
+- 5 people in `marketing.people_invalid`
+- Complete schemas, field mappings, and workflow specs
+
+**Status**: Ready for Supabase credentials to begin enrichment pipeline
+
+---
+
 ## 📋 Overview
 
 This framework provides a **completely generic, reusable system** for validating and promoting data between Neon PostgreSQL (vault) and Supabase (workspace).

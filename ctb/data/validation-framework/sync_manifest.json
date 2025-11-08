@@ -1,0 +1,568 @@
+{
+  "pipeline": "Neon to Supabase Two-Way Sync",
+  "version": "1.0.0",
+  "created": "2025-11-07",
+  "total_records": 124,
+  "neon_database": {
+    "host": "ep-ancient-waterfall-a42vy0du-pooler.us-east-1.aws.neon.tech",
+    "database": "Marketing DB",
+    "port": 5432,
+    "ssl_mode": "require",
+    "note": "Credentials in .env file (NEON_DATABASE_URL)"
+  },
+  "source_tables": {
+    "company_invalid": {
+      "schema": "marketing",
+      "table": "company_invalid",
+      "full_name": "marketing.company_invalid",
+      "record_count": 119,
+      "primary_key": "company_unique_id",
+      "primary_failure_reason": "EMPTY_WEBSITE",
+      "batch_ids": [
+        "INTAKE-20251107-163209-b26be042"
+      ],
+      "fields": [
+        {
+          "name": "id",
+          "type": "BIGSERIAL",
+          "description": "Auto-increment ID"
+        },
+        {
+          "name": "company_unique_id",
+          "type": "TEXT",
+          "description": "Barton ID format: 04.04.01.XX.XXXXX.XXX",
+          "required": true,
+          "unique": true
+        },
+        {
+          "name": "company_name",
+          "type": "TEXT",
+          "description": "Company name"
+        },
+        {
+          "name": "domain",
+          "type": "TEXT",
+          "description": "Domain extracted from website"
+        },
+        {
+          "name": "industry",
+          "type": "TEXT",
+          "description": "Industry classification"
+        },
+        {
+          "name": "employee_count",
+          "type": "INTEGER",
+          "description": "Number of employees"
+        },
+        {
+          "name": "website",
+          "type": "TEXT",
+          "description": "Website URL - MOSTLY NULL (needs enrichment)",
+          "enrichment_priority": "HIGH"
+        },
+        {
+          "name": "phone",
+          "type": "TEXT",
+          "description": "Phone number"
+        },
+        {
+          "name": "address",
+          "type": "TEXT",
+          "description": "Street address"
+        },
+        {
+          "name": "city",
+          "type": "TEXT",
+          "description": "City"
+        },
+        {
+          "name": "state",
+          "type": "TEXT",
+          "description": "State"
+        },
+        {
+          "name": "zip",
+          "type": "TEXT",
+          "description": "ZIP code"
+        },
+        {
+          "name": "validation_status",
+          "type": "TEXT",
+          "description": "Always 'FAILED' in this table",
+          "default": "FAILED"
+        },
+        {
+          "name": "reason_code",
+          "type": "TEXT",
+          "description": "Validation failure reason (e.g., EMPTY_WEBSITE)",
+          "required": true
+        },
+        {
+          "name": "validation_errors",
+          "type": "JSONB",
+          "description": "Detailed validation errors",
+          "example": "{\"website\": \"empty or blank\"}",
+          "required": true
+        },
+        {
+          "name": "validation_warnings",
+          "type": "JSONB",
+          "description": "Non-critical warnings",
+          "example": "{\"industry\": \"missing\", \"employee_count\": \"zero or missing\"}"
+        },
+        {
+          "name": "failed_at",
+          "type": "TIMESTAMP",
+          "description": "When validation failed",
+          "default": "now()"
+        },
+        {
+          "name": "reviewed",
+          "type": "BOOLEAN",
+          "description": "Manual review flag",
+          "default": false
+        },
+        {
+          "name": "batch_id",
+          "type": "TEXT",
+          "description": "Validation batch identifier"
+        },
+        {
+          "name": "source_table",
+          "type": "TEXT",
+          "description": "Original source table",
+          "default": "marketing.company_raw_wv"
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "TIMESTAMP",
+          "default": "now()"
+        }
+      ]
+    },
+    "people_invalid": {
+      "schema": "marketing",
+      "table": "people_invalid",
+      "full_name": "marketing.people_invalid",
+      "record_count": 5,
+      "primary_key": "unique_id",
+      "batch_ids": [
+        "PEOPLE-20251107-163853-f0949a2b"
+      ],
+      "fields": [
+        {
+          "name": "id",
+          "type": "BIGSERIAL",
+          "description": "Auto-increment ID"
+        },
+        {
+          "name": "unique_id",
+          "type": "TEXT",
+          "description": "Barton ID format: 04.04.02.XX.XXXXX.XXX",
+          "required": true,
+          "unique": true
+        },
+        {
+          "name": "full_name",
+          "type": "TEXT",
+          "description": "Full name"
+        },
+        {
+          "name": "first_name",
+          "type": "TEXT",
+          "description": "First name"
+        },
+        {
+          "name": "last_name",
+          "type": "TEXT",
+          "description": "Last name"
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "description": "Email address",
+          "enrichment_priority": "HIGH"
+        },
+        {
+          "name": "phone",
+          "type": "TEXT",
+          "description": "Phone number"
+        },
+        {
+          "name": "title",
+          "type": "TEXT",
+          "description": "Job title"
+        },
+        {
+          "name": "company_name",
+          "type": "TEXT",
+          "description": "Associated company name"
+        },
+        {
+          "name": "company_unique_id",
+          "type": "TEXT",
+          "description": "Foreign key to company_master"
+        },
+        {
+          "name": "linkedin_url",
+          "type": "TEXT",
+          "description": "LinkedIn profile URL",
+          "enrichment_priority": "MEDIUM"
+        },
+        {
+          "name": "city",
+          "type": "TEXT",
+          "description": "City"
+        },
+        {
+          "name": "state",
+          "type": "TEXT",
+          "description": "State"
+        },
+        {
+          "name": "validation_status",
+          "type": "TEXT",
+          "description": "Always 'FAILED' in this table",
+          "default": "FAILED"
+        },
+        {
+          "name": "reason_code",
+          "type": "TEXT",
+          "description": "Validation failure reason",
+          "required": true
+        },
+        {
+          "name": "validation_errors",
+          "type": "JSONB",
+          "description": "Detailed validation errors",
+          "required": true
+        },
+        {
+          "name": "validation_warnings",
+          "type": "JSONB",
+          "description": "Non-critical warnings"
+        },
+        {
+          "name": "failed_at",
+          "type": "TIMESTAMP",
+          "default": "now()"
+        },
+        {
+          "name": "reviewed",
+          "type": "BOOLEAN",
+          "default": false
+        },
+        {
+          "name": "batch_id",
+          "type": "TEXT",
+          "description": "Validation batch identifier"
+        },
+        {
+          "name": "source_table",
+          "type": "TEXT",
+          "default": "marketing.people_raw_wv"
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "TIMESTAMP",
+          "default": "now()"
+        }
+      ]
+    }
+  },
+  "target_tables": {
+    "company_needs_enrichment": {
+      "description": "Supabase workspace for enriching company records",
+      "source_mapping": "marketing.company_invalid",
+      "fields_to_add": [
+        {
+          "name": "neon_id",
+          "type": "BIGINT",
+          "description": "Reference to original Neon id"
+        },
+        {
+          "name": "enrichment_status",
+          "type": "TEXT",
+          "description": "Workflow status",
+          "default": "pending",
+          "values": ["pending", "in_progress", "complete", "failed"]
+        },
+        {
+          "name": "enrichment_notes",
+          "type": "TEXT",
+          "description": "Manual enrichment notes"
+        },
+        {
+          "name": "enriched_by",
+          "type": "TEXT",
+          "description": "Who performed enrichment"
+        },
+        {
+          "name": "enriched_at",
+          "type": "TIMESTAMP",
+          "description": "When enrichment was completed"
+        },
+        {
+          "name": "pulled_from_neon_at",
+          "type": "TIMESTAMP",
+          "description": "When pulled from Neon",
+          "default": "now()"
+        },
+        {
+          "name": "pushed_to_neon_at",
+          "type": "TIMESTAMP",
+          "description": "When pushed back to Neon"
+        },
+        {
+          "name": "last_sync_hash",
+          "type": "TEXT",
+          "description": "MD5 hash for change detection"
+        }
+      ]
+    },
+    "people_needs_enrichment": {
+      "description": "Supabase workspace for enriching people records",
+      "source_mapping": "marketing.people_invalid",
+      "fields_to_add": [
+        {
+          "name": "neon_id",
+          "type": "BIGINT",
+          "description": "Reference to original Neon id"
+        },
+        {
+          "name": "enrichment_status",
+          "type": "TEXT",
+          "default": "pending",
+          "values": ["pending", "in_progress", "complete", "failed"]
+        },
+        {
+          "name": "enrichment_notes",
+          "type": "TEXT"
+        },
+        {
+          "name": "enriched_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "enriched_at",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "pulled_from_neon_at",
+          "type": "TIMESTAMP",
+          "default": "now()"
+        },
+        {
+          "name": "pushed_to_neon_at",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "last_sync_hash",
+          "type": "TEXT"
+        }
+      ]
+    }
+  },
+  "field_mappings": {
+    "company_invalid_to_company_needs_enrichment": {
+      "id": "neon_id",
+      "company_unique_id": "company_unique_id",
+      "company_name": "company_name",
+      "domain": "domain",
+      "industry": "industry",
+      "employee_count": "employee_count",
+      "website": "website",
+      "phone": "phone",
+      "address": "address",
+      "city": "city",
+      "state": "state",
+      "zip": "zip",
+      "validation_errors": "original_validation_errors",
+      "validation_warnings": "original_validation_warnings",
+      "reason_code": "reason_code",
+      "batch_id": "source_batch_id",
+      "created_at": "created_at",
+      "updated_at": "updated_at"
+    },
+    "people_invalid_to_people_needs_enrichment": {
+      "id": "neon_id",
+      "unique_id": "unique_id",
+      "full_name": "full_name",
+      "first_name": "first_name",
+      "last_name": "last_name",
+      "email": "email",
+      "phone": "phone",
+      "title": "title",
+      "company_name": "company_name",
+      "company_unique_id": "company_unique_id",
+      "linkedin_url": "linkedin_url",
+      "city": "city",
+      "state": "state",
+      "validation_errors": "original_validation_errors",
+      "validation_warnings": "original_validation_warnings",
+      "reason_code": "reason_code",
+      "batch_id": "source_batch_id",
+      "created_at": "created_at",
+      "updated_at": "updated_at"
+    }
+  },
+  "push_back_fields": {
+    "company": [
+      "website",
+      "phone",
+      "industry",
+      "employee_count",
+      "domain",
+      "validation_errors",
+      "validation_warnings"
+    ],
+    "people": [
+      "email",
+      "phone",
+      "linkedin_url",
+      "title",
+      "validation_errors",
+      "validation_warnings"
+    ]
+  },
+  "workflow_stages": [
+    {
+      "stage": 1,
+      "name": "Pull to Workspace",
+      "action": "Copy Neon invalid tables to Supabase",
+      "script": "pull-invalid-to-supabase.py",
+      "trigger": "Manual or scheduled (n8n)",
+      "status_before": "N/A",
+      "status_after": "enrichment_status = 'pending'"
+    },
+    {
+      "stage": 2,
+      "name": "Manual Enrichment",
+      "action": "Fill missing data in Supabase",
+      "script": "Manual (Supabase UI)",
+      "trigger": "User action",
+      "status_before": "enrichment_status = 'pending'",
+      "status_after": "enrichment_status = 'complete'"
+    },
+    {
+      "stage": 3,
+      "name": "Push Enriched Back",
+      "action": "Update Neon invalid tables with enriched data",
+      "script": "push-enriched-to-neon.py",
+      "trigger": "When enrichment_status = 'complete'",
+      "status_before": "enrichment_status = 'complete'",
+      "status_after": "pushed_to_neon_at IS NOT NULL"
+    },
+    {
+      "stage": 4,
+      "name": "Re-Validate",
+      "action": "Run validation rules on enriched records",
+      "script": "revalidate-enriched.py",
+      "trigger": "After push back",
+      "status_before": "enrichment_status = 'complete' in Neon",
+      "status_after": "PASSED or FAILED classification"
+    },
+    {
+      "stage": 5,
+      "name": "Promote to Master",
+      "action": "Move PASSED to master, keep FAILED in invalid",
+      "script": "promote-validated.py",
+      "trigger": "After re-validation",
+      "status_before": "Validation complete",
+      "status_after": "PASSED → company_master, FAILED → stay in invalid"
+    }
+  ],
+  "enrichment_priorities": {
+    "high": [
+      "website",
+      "email"
+    ],
+    "medium": [
+      "phone",
+      "linkedin_url",
+      "industry"
+    ],
+    "low": [
+      "employee_count",
+      "domain"
+    ]
+  },
+  "validation_rules": {
+    "company": {
+      "company_name": {
+        "rule": "Minimum 2 characters, no placeholders",
+        "placeholders": ["test", "example", "n/a", "none", "null"]
+      },
+      "website": {
+        "rule": "Not empty or blank, not placeholder",
+        "placeholders": ["test.com", "example.com", "n/a"]
+      }
+    },
+    "people": {
+      "full_name": {
+        "rule": "Minimum 3 characters, no placeholders"
+      },
+      "email": {
+        "rule": "RFC 5322 format, not placeholder",
+        "placeholders": ["test@test.com", "example@example.com"]
+      }
+    }
+  },
+  "scripts": {
+    "pull-invalid-to-supabase.py": {
+      "description": "Pull invalid records from Neon to Supabase",
+      "location": "ctb/data/validation-framework/scripts/python/",
+      "inputs": ["Neon connection", "Supabase connection"],
+      "outputs": ["Records in Supabase workspace"],
+      "status": "TO BE BUILT"
+    },
+    "push-enriched-to-neon.py": {
+      "description": "Push enriched records back to Neon",
+      "location": "ctb/data/validation-framework/scripts/python/",
+      "inputs": ["Supabase enriched records", "Neon connection"],
+      "outputs": ["Updated Neon invalid tables"],
+      "status": "TO BE BUILT"
+    },
+    "revalidate-enriched.py": {
+      "description": "Re-run validation on enriched records",
+      "location": "ctb/data/validation-framework/scripts/python/",
+      "inputs": ["Neon invalid records with enrichment_status = 'complete'"],
+      "outputs": ["Lists of PASSED and FAILED record IDs"],
+      "status": "TO BE BUILT"
+    },
+    "promote-validated.py": {
+      "description": "Move validated records to master tables",
+      "location": "ctb/data/validation-framework/scripts/python/",
+      "inputs": ["List of PASSED record IDs"],
+      "outputs": ["Records in company_master, removed from company_invalid"],
+      "status": "TO BE BUILT"
+    }
+  },
+  "documentation": {
+    "main_guide": "ctb/data/validation-framework/NEON_SUPABASE_SYNC_GUIDE.md",
+    "validation_summary": "ctb/data/validation-framework/docs/VALIDATION_COMPLETE_SUMMARY.md",
+    "quick_wins": "ctb/data/validation-framework/docs/QUICK_WINS_CHECKLIST.md",
+    "sql_schema": "ctb/data/validation-framework/sql/create_invalid_tables.sql",
+    "n8n_workflow": "ctb/data/validation-framework/n8n/workflow_spec.json"
+  },
+  "repository": {
+    "name": "barton-outreach-core",
+    "url": "https://github.com/yourusername/barton-outreach-core",
+    "sync_manifest_url": "https://raw.githubusercontent.com/yourusername/barton-outreach-core/main/ctb/data/validation-framework/sync_manifest.json"
+  },
+  "contact": {
+    "owner": "David Barton",
+    "email": "david@svg.agency",
+    "notes": "This manifest provides all information needed for the Supabase enrichment repo to pull and push data"
+  }
+}
