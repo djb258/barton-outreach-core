@@ -50,7 +50,13 @@
       "Bash(git reset:*)",
       "Bash(find:*)",
       "Bash(psql:*)",
-      "Bash(ctb/ops/scripts/setup-required-tools.bat)"
+      "Bash(ctb/ops/scripts/setup-required-tools.bat)",
+      "Bash(winget install:*)",
+      "Bash(winget search:*)",
+      "Bash(nul)",
+      "Bash(powershell -ExecutionPolicy Bypass -File auto-sync.ps1 -Force)",
+      "Bash(cmd.exe /c \"cd enrichment-hub && powershell -ExecutionPolicy Bypass -File auto-sync.ps1 -Force\")",
+      "Bash(/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -ExecutionPolicy Bypass -File auto-sync.ps1 -Force)"
     ],
     "deny": [],
     "ask": []
