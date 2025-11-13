@@ -1,0 +1,288 @@
+{
+  "version": "1.0.0",
+  "base_url": "https://n8n.barton.com",
+  "last_updated": "2025-11-13",
+  "description": "N8N webhook endpoints for Barton Toolbox Hub integration",
+  "endpoints": [
+    {
+      "tool_id": "router",
+      "tool_name": "Router (Messy Logic)",
+      "barton_id": "04.04.02.04.10000.001",
+      "webhook_path": "/hooks/messyflow-router",
+      "full_url": "https://n8n.barton.com/hooks/messyflow-router",
+      "method": "POST",
+      "auth_type": "bearer_token",
+      "headers": {
+        "Content-Type": "application/json",
+        "X-Barton-ID": "04.04.02.04.10000.001",
+        "X-Blueprint-ID": "04.svg.marketing.outreach.v1"
+      },
+      "event_types": [
+        {
+          "event": "validation.failed",
+          "description": "Triggered when validation fails and data needs manual review",
+          "payload_example": {
+            "event_type": "validation.failed",
+            "company_unique_id": "04.04.02.04.30000.001",
+            "error_type": "missing_ceo",
+            "error_message": "CEO slot is empty",
+            "heir_id": "HEIR-2025-11-VALIDATION-001",
+            "process_id": "PRC-VALIDATION-001",
+            "orbt_layer": 2,
+            "timestamp": "2025-11-13T17:00:00Z"
+          }
+        },
+        {
+          "event": "duplicate.detected",
+          "description": "Triggered when duplicate company record is detected",
+          "payload_example": {
+            "event_type": "duplicate.detected",
+            "company_unique_id": "04.04.02.04.30000.001",
+            "duplicate_id": "04.04.02.04.30000.002",
+            "confidence_score": 0.95,
+            "heir_id": "HEIR-2025-11-DUPLICATE-001",
+            "timestamp": "2025-11-13T17:00:00Z"
+          }
+        },
+        {
+          "event": "enrichment.invalid",
+          "description": "Triggered when enrichment data fails validation",
+          "payload_example": {
+            "event_type": "enrichment.invalid",
+            "enrichment_id": 12345,
+            "agent_name": "Apify",
+            "error_message": "Invalid LinkedIn URL format",
+            "timestamp": "2025-11-13T17:00:00Z"
+          }
+        }
+      ]
+    },
+    {
+      "tool_id": "validator",
+      "tool_name": "Validator (Neon Agent)",
+      "barton_id": "04.04.02.04.10000.002",
+      "webhook_path": "/hooks/validator",
+      "full_url": "https://n8n.barton.com/hooks/validator",
+      "method": "POST",
+      "auth_type": "bearer_token",
+      "headers": {
+        "Content-Type": "application/json",
+        "X-Barton-ID": "04.04.02.04.10000.002",
+        "X-Blueprint-ID": "04.svg.marketing.outreach.v1"
+      },
+      "event_types": [
+        {
+          "event": "validation.requested",
+          "description": "Triggered when validation is requested for a record",
+          "payload_example": {
+            "event_type": "validation.requested",
+            "table_name": "company_master",
+            "record_id": "04.04.02.04.30000.001",
+            "validation_rules": ["field_required", "field_format"],
+            "heir_id": "HEIR-2025-11-VALIDATE-001",
+            "timestamp": "2025-11-13T17:00:00Z"
+          }
+        },
+        {
+          "event": "validation.completed",
+          "description": "Triggered when validation completes",
+          "payload_example": {
+            "event_type": "validation.completed",
+            "record_id": "04.04.02.04.30000.001",
+            "validation_passed": true,
+            "failures_count": 0,
+            "timestamp": "2025-11-13T17:00:00Z"
+          }
+        },
+        {
+          "event": "validation.failed",
+          "description": "Triggered when validation fails",
+          "payload_example": {
+            "event_type": "validation.failed",
+            "record_id": "04.04.02.04.30000.001",
+            "failures": [
+              {
+                "rule": "email_format",
+                "field": "email",
+                "message": "Invalid email format"
+              }
+            ],
+            "timestamp": "2025-11-13T17:00:00Z"
+          }
+        }
+      ]
+    },
+    {
+      "tool_id": "mapper",
+      "tool_name": "Mapper",
+      "barton_id": "04.04.02.04.10000.003",
+      "webhook_path": "/hooks/mapper",
+      "full_url": "https://n8n.barton.com/hooks/mapper",
+      "method": "POST",
+      "auth_type": "bearer_token",
+      "headers": {
+        "Content-Type": "application/json",
+        "X-Barton-ID": "04.04.02.04.10000.003"
+      },
+      "event_types": [
+        {
+          "event": "mapping.requested",
+          "description": "Triggered when field mapping is requested",
+          "payload_example": {
+            "event_type": "mapping.requested",
+            "source_format": "csv",
+            "record_count": 100,
+            "mapping_profile": "standard_company",
+            "timestamp": "2025-11-13T17:00:00Z"
+          }
+        },
+        {
+          "event": "mapping.completed",
+          "description": "Triggered when mapping completes",
+          "payload_example": {
+            "event_type": "mapping.completed",
+            "records_mapped": 98,
+            "records_failed": 2,
+            "timestamp": "2025-11-13T17:00:00Z"
+          }
+        }
+      ]
+    },
+    {
+      "tool_id": "parser",
+      "tool_name": "Parser",
+      "barton_id": "04.04.02.04.10000.004",
+      "webhook_path": "/hooks/parser",
+      "full_url": "https://n8n.barton.com/hooks/parser",
+      "method": "POST",
+      "auth_type": "bearer_token",
+      "headers": {
+        "Content-Type": "application/json",
+        "X-Barton-ID": "04.04.02.04.10000.004"
+      },
+      "event_types": [
+        {
+          "event": "parse.requested",
+          "description": "Triggered when document parsing is requested",
+          "payload_example": {
+            "event_type": "parse.requested",
+            "file_path": "/uploads/company_data.pdf",
+            "file_type": "pdf",
+            "timestamp": "2025-11-13T17:00:00Z"
+          }
+        },
+        {
+          "event": "parse.completed",
+          "description": "Triggered when parsing completes",
+          "payload_example": {
+            "event_type": "parse.completed",
+            "file_path": "/uploads/company_data.pdf",
+            "records_extracted": 25,
+            "timestamp": "2025-11-13T17:00:00Z"
+          }
+        }
+      ]
+    },
+    {
+      "tool_id": "docfiller",
+      "tool_name": "Doc Filler",
+      "barton_id": "04.04.02.04.10000.005",
+      "webhook_path": "/hooks/doc-filler",
+      "full_url": "https://n8n.barton.com/hooks/doc-filler",
+      "method": "POST",
+      "auth_type": "bearer_token",
+      "headers": {
+        "Content-Type": "application/json",
+        "X-Barton-ID": "04.04.02.04.10000.005"
+      },
+      "event_types": [
+        {
+          "event": "docfill.requested",
+          "description": "Triggered when document filling is requested",
+          "payload_example": {
+            "event_type": "docfill.requested",
+            "template_id": "outreach_letter_v1",
+            "company_id": "04.04.02.04.30000.001",
+            "timestamp": "2025-11-13T17:00:00Z"
+          }
+        },
+        {
+          "event": "docfill.completed",
+          "description": "Triggered when document filling completes",
+          "payload_example": {
+            "event_type": "docfill.completed",
+            "template_id": "outreach_letter_v1",
+            "output_url": "https://docs.google.com/document/d/abc123",
+            "timestamp": "2025-11-13T17:00:00Z"
+          }
+        }
+      ]
+    },
+    {
+      "tool_id": "logger",
+      "tool_name": "Logger / Monitor",
+      "barton_id": "04.04.02.04.10000.006",
+      "webhook_path": "/hooks/logger",
+      "full_url": "https://n8n.barton.com/hooks/logger",
+      "method": "POST",
+      "auth_type": "bearer_token",
+      "headers": {
+        "Content-Type": "application/json",
+        "X-Barton-ID": "04.04.02.04.10000.006"
+      },
+      "event_types": [
+        {
+          "event": "log.created",
+          "description": "Triggered when a log entry is created",
+          "payload_example": {
+            "event_type": "log.created",
+            "log_level": "INFO",
+            "message": "System health check completed",
+            "timestamp": "2025-11-13T17:00:00Z"
+          }
+        },
+        {
+          "event": "error.logged",
+          "description": "Triggered when an error is logged",
+          "payload_example": {
+            "event_type": "error.logged",
+            "severity": "error",
+            "error_code": "DB_CONNECTION_FAILED",
+            "error_message": "Failed to connect to Neon database",
+            "timestamp": "2025-11-13T17:00:00Z"
+          }
+        },
+        {
+          "event": "audit.created",
+          "description": "Triggered when an audit entry is created",
+          "payload_example": {
+            "event_type": "audit.created",
+            "action": "company.created",
+            "user_id": "system",
+            "details": {"company_id": "04.04.02.04.30000.001"},
+            "timestamp": "2025-11-13T17:00:00Z"
+          }
+        }
+      ]
+    }
+  ],
+  "global_configuration": {
+    "timeout_ms": 30000,
+    "retry_attempts": 3,
+    "retry_delay_ms": 1000,
+    "auth_header_name": "Authorization",
+    "auth_header_value": "Bearer ${N8N_API_KEY}",
+    "response_format": "heir_orbt",
+    "log_all_webhooks": true
+  },
+  "heir_orbt_response_format": {
+    "heir_id": "Unique identifier for this process instance",
+    "process_id": "Process identifier",
+    "orbt_layer": "Layer number (1-7)",
+    "blueprint_version": "Blueprint version (e.g., 1.0)",
+    "status": "success|error|pending",
+    "message": "Human-readable status message",
+    "data": "Response payload",
+    "timestamp": "ISO 8601 timestamp"
+  }
+}

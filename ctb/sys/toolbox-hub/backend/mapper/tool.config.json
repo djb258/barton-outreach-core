@@ -1,0 +1,36 @@
+{
+  "tool_id": "mapper",
+  "name": "Mapper",
+  "blueprint_id": "04.svg.marketing.outreach.v1",
+  "barton_id": "04.04.02.04.10000.003",
+  "altitude": 16000,
+  "version": "1.0.0",
+  "description": "Field mapping tool for CSV/API → STAMPED schema",
+  "neon_tables": {
+    "input": "intake.company_raw_intake",
+    "output": "marketing.company_master",
+    "mappings": "config.field_mappings",
+    "audit": "shq.audit_log",
+    "error": "shq.error_master"
+  },
+  "dependencies": {
+    "neon_db": "required",
+    "pandas": "required"
+  },
+  "kill_switch": {
+    "enabled": true,
+    "condition": "mapping_errors > 50",
+    "action": "halt_and_notify"
+  },
+  "environment_variables": ["NEON_CONNECTION_STRING"],
+  "api_endpoints": {
+    "map": "/api/mapper/map",
+    "mappings": "/api/mapper/mappings",
+    "health": "/api/mapper/health"
+  },
+  "n8n_integration": {
+    "webhook_url": "/hooks/mapper",
+    "event_types": ["mapping.requested", "mapping.completed"],
+    "response_format": "heir_orbt"
+  }
+}
