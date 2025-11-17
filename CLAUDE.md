@@ -595,6 +595,142 @@ psql -c "SELECT agent_name, COUNT(*) total, ROUND(100.0 * COUNT(*) FILTER (WHERE
 
 ---
 
+## 📊 OUTREACH PHASE REGISTRY
+
+### What is the Phase Registry?
+
+The **Outreach Phase Registry** (`ctb/sys/toolbox-hub/backend/outreach_phase_registry.py`) is a central catalog that maps each phase of the outreach pipeline to callable functions. This enables:
+- **Error Handling & Retries:** "Retry Phase 2 for company XYZ"
+- **Phase-Based Execution:** Track which phase a company/person is in
+- **Automated Workflows:** Execute phases in sequence
+- **Claude Code Integration:** Direct function calls from phase_id
+
+### 7 Pipeline Phases
+
+```
+Phase 0: Intake Load
+    ↓
+Phase 1: Company Validation ✅ IMPLEMENTED
+    ↓
+Phase 2: Person Validation ✅ IMPLEMENTED
+    ↓
+Phase 3: Outreach Readiness Evaluation ✅ IMPLEMENTED
+    ↓
+Phase 4: BIT Trigger Check (planned)
+    ↓
+Phase 5: BIT Score Calculation (planned)
+    ↓
+Phase 6: Promotion to Outreach Log (planned)
+```
+
+**Current Completion:** 42.86% (3/7 phases implemented)
+
+### Using the Phase Registry
+
+```python
+from backend.outreach_phase_registry import get_phase_entry, execute_phase
+
+# Get phase details
+phase = get_phase_entry(2)  # Person Validation
+print(f"Phase: {phase['phase_name']}")
+print(f"File: {phase['file']}")
+print(f"Function: {phase['function']}")
+
+# Execute phase function
+result = execute_phase(2, person_record, valid_company_ids)
+print(f"Valid: {result['valid']}")
+
+# Get all implemented phases
+from backend.outreach_phase_registry import get_implemented_phases
+for phase in get_implemented_phases():
+    print(f"✅ Phase {phase['phase_id']}: {phase['phase_name']}")
+```
+
+### Phase Details Reference
+
+| Phase ID | Name | Status | File | Function |
+|----------|------|--------|------|----------|
+| 0 | Intake Load | Planned | `backend/intake/load_intake_data.py` | `load_raw_records` |
+| 1 | Company Validation | ✅ Implemented | `backend/validator/validation_rules.py` | `validate_company` |
+| 2 | Person Validation | ✅ Implemented | `backend/validator/validation_rules.py` | `validate_person` |
+| 3 | Outreach Readiness | ✅ Implemented | `backend/enrichment/evaluate_outreach_readiness.py` | `evaluate_company_readiness` |
+| 4 | BIT Trigger Check | Planned | `backend/bit_engine/bit_trigger.py` | `check_bit_trigger_conditions` |
+| 5 | BIT Score Calculation | Planned | `backend/bit_engine/bit_score.py` | `calculate_bit_score` |
+| 6 | Promotion to Outreach Log | Planned | `backend/outreach/promote_to_log.py` | `promote_contact_to_outreach` |
+
+### Integration Points
+
+**Database Tables:**
+- `shq.error_master.phase_id` - Error tracking by phase
+- `marketing.pipeline_events.phase_id` - Event logging by phase
+- `marketing.company_manual_override` - Manual override table
+
+**Doctrine Entry:**
+```json
+{
+  "doctrine_id": "04.04.02.04.ple.validation_pipeline",
+  "description": "Outreach validation and enrichment lifecycle",
+  "phases": [0, 1, 2, 3, 4, 5, 6],
+  "barton_id_format": "04.04.02.04.XXXXX.###"
+}
+```
+
+### Helper Functions
+
+```python
+# Get phase by name
+phase = get_phase_by_name("Person Validation")
+
+# Get phase dependencies
+deps = get_phase_dependencies(3)  # Returns [Phase 1, Phase 2]
+
+# Get next phase
+next_phase = get_next_phase(2)  # Returns Phase 3
+
+# Validate phase sequence
+is_valid = validate_phase_sequence([1, 2, 3])  # True
+
+# Get completion status
+summary = get_phase_status_summary()
+# {'total': 7, 'implemented': 3, 'planned': 4, 'completion_pct': 42.86}
+```
+
+### Claude Code Usage Pattern
+
+When asked to retry or execute a phase:
+
+```python
+# Example: "Retry Phase 2 for company XYZ"
+
+# 1. Get phase details
+from backend.outreach_phase_registry import get_phase_entry, get_phase_function
+
+phase = get_phase_entry(2)  # Person Validation
+print(f"Executing Phase {phase['phase_id']}: {phase['phase_name']}")
+
+# 2. Get the function
+validate_person = get_phase_function(2)
+
+# 3. Load data
+person = load_person_by_company("company_xyz")
+valid_company_ids = load_valid_company_ids()
+
+# 4. Execute
+result = validate_person(person, valid_company_ids)
+
+# 5. Log to pipeline_events
+log_pipeline_event("person_validation_check", {
+    "person_id": person["person_id"],
+    "valid": result["valid"],
+    "reason": result["reason"],
+    "phase_id": 2
+})
+```
+
+**See:** `ctb/sys/toolbox-hub/backend/outreach_phase_registry.py` for complete API
+
+---
+
 ## 🔄 TYPICAL WORKFLOWS
 
 ### Development Session Start
