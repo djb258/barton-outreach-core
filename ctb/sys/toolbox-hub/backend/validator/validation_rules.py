@@ -117,10 +117,10 @@ class CompanyValidator:
         return None
 
     @staticmethod
-    def validate_employee_count(record: Dict) -> Optional[ValidationFailure]:
+    def validate_employee_count(record: Dict, minimum: int = 50) -> Optional[ValidationFailure]:
         """
         Validate employee_count field
-        Rule: Must be > 0
+        Rule: Must be > minimum (default: 50 for Phase 1)
         """
         employee_count = record.get("employee_count")
 
@@ -129,7 +129,7 @@ class CompanyValidator:
                 field="employee_count",
                 rule="employee_count_required",
                 message="Employee count is required",
-                severity=ValidationSeverity.WARNING
+                severity=ValidationSeverity.ERROR
             )
             failure.current_value = employee_count
             return failure
@@ -157,7 +157,104 @@ class CompanyValidator:
             failure.current_value = employee_count
             return failure
 
+        # Phase 1 requirement: > 50 employees
+        if employee_count <= minimum:
+            failure = ValidationFailure(
+                field="employee_count",
+                rule="employee_count_minimum",
+                message=f"Employee count must be greater than {minimum} (current: {employee_count})",
+                severity=ValidationSeverity.ERROR
+            )
+            failure.current_value = employee_count
+            return failure
+
         return None
+
+    @staticmethod
+    def validate_linkedin_url(record: Dict) -> Optional[ValidationFailure]:
+        """
+        Validate linkedin_url field
+        Rule: Must include "linkedin.com/company/"
+        """
+        linkedin_url = record.get("linkedin_url", "")
+
+        if not linkedin_url or len(linkedin_url.strip()) == 0:
+            failure = ValidationFailure(
+                field="linkedin_url",
+                rule="linkedin_url_required",
+                message="LinkedIn URL is required",
+                severity=ValidationSeverity.ERROR
+            )
+            failure.current_value = linkedin_url
+            return failure
+
+        linkedin_url = linkedin_url.strip()
+
+        # Must include linkedin.com/company/
+        if "linkedin.com/company/" not in linkedin_url.lower():
+            failure = ValidationFailure(
+                field="linkedin_url",
+                rule="linkedin_url_format",
+                message="LinkedIn URL must include 'linkedin.com/company/'",
+                severity=ValidationSeverity.ERROR
+            )
+            failure.current_value = linkedin_url
+            return failure
+
+        return None
+
+    @staticmethod
+    def validate_company_unique_id(record: Dict) -> Optional[ValidationFailure]:
+        """
+        Validate company_unique_id field
+        Rule: Must not be null
+        """
+        company_id = record.get("company_unique_id")
+
+        if not company_id or len(str(company_id).strip()) == 0:
+            failure = ValidationFailure(
+                field="company_unique_id",
+                rule="company_unique_id_required",
+                message="Company unique ID is required",
+                severity=ValidationSeverity.CRITICAL
+            )
+            failure.current_value = company_id
+            return failure
+
+        return None
+
+    @staticmethod
+    def validate_slots_presence(record: Dict, slot_rows: List[Dict]) -> List[ValidationFailure]:
+        """
+        Validate slot presence for company
+        Rule: Must have CEO, CFO, and HR slots (filled or unfilled)
+
+        Args:
+            record: Company record
+            slot_rows: List of company_slot rows for this company
+
+        Returns:
+            List of ValidationFailure objects (empty if all slots present)
+        """
+        failures = []
+        required_slots = ["CEO", "CFO", "HR"]
+
+        # Get set of existing slot types
+        existing_slot_types = {slot.get("slot_type", "").upper() for slot in slot_rows}
+
+        # Check each required slot
+        for slot_type in required_slots:
+            if slot_type not in existing_slot_types:
+                failure = ValidationFailure(
+                    field="company_slots",
+                    rule=f"slot_{slot_type.lower()}_missing",
+                    message=f"Missing {slot_type} slot (slot must exist, even if unfilled)",
+                    severity=ValidationSeverity.ERROR
+                )
+                failure.current_value = f"Existing slots: {', '.join(existing_slot_types) if existing_slot_types else 'None'}"
+                failures.append(failure)
+
+        return failures
 
     @staticmethod
     def validate_postal_code(record: Dict, state: str = "WV") -> Optional[ValidationFailure]:
@@ -207,7 +304,7 @@ class CompanyValidator:
     @staticmethod
     def validate_all(record: Dict, state: str = "WV") -> Tuple[bool, List[ValidationFailure]]:
         """
-        Run all company validation rules
+        Run all company validation rules (basic fields only)
 
         Returns: (is_valid, list_of_failures)
         """
@@ -233,6 +330,87 @@ class CompanyValidator:
         )
 
         return is_valid, failures
+
+    @staticmethod
+    def validate_phase1(record: Dict, slot_rows: List[Dict]) -> Tuple[bool, List[ValidationFailure], Dict]:
+        """
+        Run Phase 1 company validation rules (structure + slot presence)
+
+        Phase 1 validates:
+        - Company structure (name, website, employee_count, linkedin_url, unique_id)
+        - Slot presence (CEO, CFO, HR slots must exist - not necessarily filled)
+
+        Args:
+            record: Company record from company_master
+            slot_rows: List of company_slot rows for this company
+
+        Returns:
+            (is_valid, list_of_failures, validation_result_dict)
+        """
+        failures = []
+
+        # Required fields for Phase 1
+        required_fields = [
+            "company_unique_id",
+            "company_name",
+            "website",
+            "employee_count",
+            "linkedin_url"
+        ]
+
+        # Run structural validation rules
+        structural_rules = [
+            CompanyValidator.validate_company_unique_id(record),
+            CompanyValidator.validate_company_name(record),
+            CompanyValidator.validate_website(record),
+            CompanyValidator.validate_employee_count(record, minimum=50),  # Phase 1: > 50 employees
+            CompanyValidator.validate_linkedin_url(record)
+        ]
+
+        # Collect structural failures
+        for failure in structural_rules:
+            if failure is not None:
+                failures.append(failure)
+
+        # Run slot presence validation
+        slot_failures = CompanyValidator.validate_slots_presence(record, slot_rows)
+        failures.extend(slot_failures)
+
+        # Determine missing fields
+        missing_fields = []
+        for field in required_fields:
+            value = record.get(field)
+            if value is None or (isinstance(value, str) and len(value.strip()) == 0):
+                missing_fields.append(field)
+
+        # Build reason code
+        if failures:
+            reason_parts = []
+            for failure in failures:
+                reason_parts.append(f"{failure.field}: {failure.message}")
+            reason = "; ".join(reason_parts)
+        else:
+            reason = "Valid"
+
+        # Record is valid if no CRITICAL or ERROR failures
+        is_valid = not any(
+            f.severity in [ValidationSeverity.CRITICAL, ValidationSeverity.ERROR]
+            for f in failures
+        )
+
+        # Build validation result
+        validation_result = {
+            "valid": is_valid,
+            "reason": reason,
+            "required_fields": required_fields,
+            "missing_fields": missing_fields,
+            "failures": [f.to_dict() for f in failures],
+            "slots_checked": ["CEO", "CFO", "HR"],
+            "slots_present": [slot.get("slot_type") for slot in slot_rows],
+            "phase": "Phase 1 - Structure + Slot Presence"
+        }
+
+        return is_valid, failures, validation_result
 
 
 class PersonValidator:
@@ -405,12 +583,56 @@ class PersonValidator:
 # Convenience functions
 def validate_company(record: Dict, state: str = "WV") -> Tuple[bool, List[Dict]]:
     """
-    Validate a company record
+    Validate a company record (basic fields only)
 
     Returns: (is_valid, list_of_failure_dicts)
     """
     is_valid, failures = CompanyValidator.validate_all(record, state)
     return is_valid, [f.to_dict() for f in failures]
+
+
+def validate_company_phase1(record: Dict, slot_rows: List[Dict]) -> Dict:
+    """
+    Validate a company record for Phase 1 (structure + slot presence)
+
+    Phase 1 Validation:
+    - Company structure (name, website, employee_count > 50, linkedin_url, unique_id)
+    - Slot presence (CEO, CFO, HR slots must exist - not necessarily filled)
+
+    Args:
+        record: Company record from marketing.company_master
+        slot_rows: List of company_slot rows for this company (from marketing.company_slot)
+
+    Returns:
+        {
+            "valid": True/False,
+            "reason": "Missing CFO slot; employee_count: Employee count must be greater than 50",
+            "required_fields": ["company_unique_id", "company_name", ...],
+            "missing_fields": ["linkedin_url"],
+            "failures": [{"field": "...", "rule": "...", "message": "...", "severity": "..."}],
+            "slots_checked": ["CEO", "CFO", "HR"],
+            "slots_present": ["CEO", "HR"],
+            "phase": "Phase 1 - Structure + Slot Presence"
+        }
+
+    Usage:
+        # Load company and its slots from database
+        company = {...}  # From marketing.company_master
+        slots = [...]    # From marketing.company_slot WHERE company_unique_id = company['company_unique_id']
+
+        # Validate
+        result = validate_company_phase1(company, slots)
+
+        if result['valid']:
+            print(f"Company {company['company_name']} passed Phase 1")
+        else:
+            print(f"Company {company['company_name']} failed Phase 1:")
+            print(f"  Reason: {result['reason']}")
+            for failure in result['failures']:
+                print(f"    - {failure['field']}: {failure['message']}")
+    """
+    is_valid, failures, validation_result = CompanyValidator.validate_phase1(record, slot_rows)
+    return validation_result
 
 
 def validate_person(record: Dict, valid_company_ids: set = None) -> Tuple[bool, List[Dict]]:
@@ -507,6 +729,67 @@ if __name__ == "__main__":
         for f in failures:
             print(f"  - {f['field']}: {f['message']}")
 
+    # Test Phase 1 company validation (structure + slots)
     print("\n" + "="*60)
-    print("✅ Validation rules tested successfully")
+    print("Phase 1 Company Validation Tests:")
+    print("-"*60)
+
+    # Test valid company with all slots
+    phase1_company = {
+        "company_unique_id": "04.04.02.04.30000.001",
+        "company_name": "Acme Corporation",
+        "website": "https://acme.com",
+        "employee_count": 250,
+        "linkedin_url": "https://linkedin.com/company/acme-corp"
+    }
+
+    # All slots present
+    phase1_slots = [
+        {"slot_type": "CEO", "is_filled": True},
+        {"slot_type": "CFO", "is_filled": True},
+        {"slot_type": "HR", "is_filled": False}  # Unfilled is OK for Phase 1
+    ]
+
+    result = validate_company_phase1(phase1_company, phase1_slots)
+    print(f"Test Company (Phase 1): {phase1_company['company_name']}")
+    print(f"Valid: {result['valid']}")
+    print(f"Reason: {result['reason']}")
+    print(f"Slots Checked: {result['slots_checked']}")
+    print(f"Slots Present: {result['slots_present']}")
+    if result['failures']:
+        print("Failures:")
+        for f in result['failures']:
+            print(f"  - {f['field']}: {f['message']}")
+
+    # Test invalid company (missing CFO slot, employee_count too low)
+    print("\n")
+    invalid_phase1_company = {
+        "company_unique_id": "04.04.02.04.30000.002",
+        "company_name": "Small Corp",
+        "website": "https://smallcorp.com",
+        "employee_count": 30,  # Too low (< 50)
+        "linkedin_url": ""  # Missing
+    }
+
+    # Missing CFO slot
+    invalid_phase1_slots = [
+        {"slot_type": "CEO", "is_filled": True},
+        {"slot_type": "HR", "is_filled": False}
+        # CFO missing!
+    ]
+
+    result = validate_company_phase1(invalid_phase1_company, invalid_phase1_slots)
+    print(f"Invalid Company (Phase 1): {invalid_phase1_company['company_name']}")
+    print(f"Valid: {result['valid']}")
+    print(f"Reason: {result['reason']}")
+    print(f"Missing Fields: {result['missing_fields']}")
+    print(f"Slots Checked: {result['slots_checked']}")
+    print(f"Slots Present: {result['slots_present']}")
+    if result['failures']:
+        print("Failures:")
+        for f in result['failures']:
+            print(f"  - {f['field']}: {f['message']}")
+
+    print("\n" + "="*60)
+    print("✅ All validation rules tested successfully")
     print("="*60)
