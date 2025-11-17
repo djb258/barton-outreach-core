@@ -123,13 +123,14 @@ OUTREACH_PHASES = [
         "description": "Evaluates if outreach-ready contacts meet BIT signal thresholds",
         "file": "backend/bit_engine/bit_trigger.py",
         "function": "check_bit_trigger_conditions",
-        "status": "planned",
+        "status": "implemented",
         "input_table": "marketing.company_master (outreach_ready = true)",
         "output_table": "bit.events",
         "error_routing": "shq.error_master",
         "dependencies": [3],  # Requires Phase 3 (Outreach Readiness)
         "estimated_duration_seconds": 3,
-        "signal_types": ["Movement", "Funding", "Hiring", "Tech Stack Change", "Leadership Change"]
+        "signal_types": ["Executive Movement", "Funding Round", "Hiring Spree", "Tech Stack Change", "Leadership Change"],
+        "doctrine_id": "4.svg.marketing.ple.bit_trigger_check"
     },
     {
         "phase_id": 5,
@@ -137,7 +138,7 @@ OUTREACH_PHASES = [
         "description": "Assigns score based on context, timing, and movement patterns",
         "file": "backend/bit_engine/bit_score.py",
         "function": "calculate_bit_score",
-        "status": "planned",
+        "status": "implemented",
         "input_table": "bit.events",
         "output_table": "bit.company_scores",
         "error_routing": "shq.error_master",
@@ -148,7 +149,8 @@ OUTREACH_PHASES = [
             "hot": 75,
             "warm": 50,
             "cold": 25
-        }
+        },
+        "doctrine_id": "4.svg.marketing.ple.bit_score_calc"
     },
     {
         "phase_id": 6,
@@ -156,13 +158,14 @@ OUTREACH_PHASES = [
         "description": "Moves ready contacts into outreach queue with campaign metadata",
         "file": "backend/outreach/promote_to_log.py",
         "function": "promote_contact_to_outreach",
-        "status": "planned",
+        "status": "implemented",
         "input_table": "bit.company_scores (score >= 50)",
         "output_table": "marketing.outreach_log",
         "error_routing": "shq.error_master",
         "dependencies": [5],  # Requires Phase 5 (BIT Score Calculation)
         "estimated_duration_seconds": 2,
-        "campaign_metadata": ["campaign_id", "sequence_id", "personalization_template", "send_date"]
+        "campaign_metadata": ["campaign_id", "sequence_id", "personalization_template", "send_date"],
+        "doctrine_id": "4.svg.marketing.ple.outreach_promotion"
     }
 ]
 
@@ -428,6 +431,135 @@ def execute_phase(phase_id: int, *args, **kwargs):
     return func(*args, **kwargs)
 
 
+def execute_all_phases(state: str, dry_run: bool = False) -> Dict:
+    """
+    Execute all implemented phases sequentially for a given state
+
+    This function:
+    - Retrieves all implemented phases from the registry
+    - Executes them in order (sorted by phase_id)
+    - Collects results and errors for each phase
+    - Returns summary of all phase executions
+
+    Args:
+        state: State code (e.g., "WV", "CA")
+        dry_run: If True, execute in dry-run mode (no database writes)
+
+    Returns:
+        {
+            "state": "WV",
+            "dry_run": True,
+            "total_phases": 7,
+            "successful": 6,
+            "failed": 1,
+            "phases": [
+                {
+                    "phase_id": 0,
+                    "phase_name": "Company Structure Validation",
+                    "statistics": {...}
+                },
+                {
+                    "phase_id": 1,
+                    "phase_name": "Phase 1: Outreach Readiness Evaluator",
+                    "error": "Database connection failed"
+                },
+                ...
+            ]
+        }
+
+    Example:
+        >>> # Execute all phases for West Virginia
+        >>> result = execute_all_phases(state="WV", dry_run=True)
+        >>> print(f"Executed {result['total_phases']} phases")
+        >>> print(f"Success: {result['successful']}, Failed: {result['failed']}")
+
+        >>> # Production run
+        >>> result = execute_all_phases(state="CA", dry_run=False)
+    """
+    print("=" * 70)
+    print(f"EXECUTING ALL PHASES FOR STATE: {state}")
+    print(f"Dry-run: {dry_run}")
+    print("=" * 70)
+    print()
+
+    results = []
+    successful = 0
+    failed = 0
+
+    # Get all implemented phases, sorted by phase_id
+    implemented_phases = sorted(get_implemented_phases(), key=lambda p: p["phase_id"])
+
+    for phase in implemented_phases:
+        phase_id = phase["phase_id"]
+        phase_name = phase["phase_name"]
+
+        try:
+            print(f"🔁 Executing Phase {phase_id}: {phase_name}")
+
+            # Get the phase function
+            func = get_phase_function(phase_id)
+
+            # Prepare arguments (all phases accept state and dry_run)
+            args = {"state": state, "dry_run": dry_run}
+
+            # Execute the phase
+            result = func(**args)
+
+            # Extract statistics from result
+            statistics = result.get("statistics", {})
+
+            results.append({
+                "phase_id": phase_id,
+                "phase_name": phase_name,
+                "status": "success",
+                "statistics": statistics
+            })
+
+            successful += 1
+            print(f"✅ Phase {phase_id} completed successfully")
+
+            # Print key statistics if available
+            if statistics:
+                for key, value in list(statistics.items())[:3]:  # Show first 3 stats
+                    print(f"   {key}: {value}")
+
+            print()
+
+        except Exception as e:
+            error_msg = str(e)
+            print(f"❌ Error in Phase {phase_id}: {error_msg}")
+            print()
+
+            results.append({
+                "phase_id": phase_id,
+                "phase_name": phase_name,
+                "status": "failed",
+                "error": error_msg
+            })
+
+            failed += 1
+
+    # Summary
+    print("=" * 70)
+    print("EXECUTION SUMMARY")
+    print("=" * 70)
+    print(f"State:           {state}")
+    print(f"Dry-run:         {dry_run}")
+    print(f"Total Phases:    {len(results)}")
+    print(f"Successful:      {successful}")
+    print(f"Failed:          {failed}")
+    print("=" * 70)
+
+    return {
+        "state": state,
+        "dry_run": dry_run,
+        "total_phases": len(results),
+        "successful": successful,
+        "failed": failed,
+        "phases": results
+    }
+
+
 # ============================================================================
 # DOCTRINE INTEGRATION
 # ============================================================================
@@ -493,82 +625,105 @@ def get_doctrine_entry() -> Dict:
 if __name__ == "__main__":
     import sys
     import io
+    import argparse
+    import json
 
     # Set UTF-8 encoding for Windows console
     if sys.platform == "win32":
         sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
-    print("=" * 70)
-    print("OUTREACH PHASE REGISTRY - TEST")
-    print("=" * 70)
+    # CLI argument parser
+    parser = argparse.ArgumentParser(
+        description="Outreach Phase Registry - Execute phases or run tests",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Run all implemented phases for West Virginia (dry-run)
+  python outreach_phase_registry.py --state WV --dry-run
 
-    # Test 1: Get all phases
-    print("\n[Test 1] All Phases:")
-    for phase in get_all_phases():
-        status_icon = "✅" if phase["status"] == "implemented" else "📋"
-        print(f"  {status_icon} Phase {phase['phase_id']}: {phase['phase_name']} ({phase['status']})")
+  # Run all implemented phases for California (production)
+  python outreach_phase_registry.py --state CA
 
-    # Test 2: Get phase by ID
-    print("\n[Test 2] Get Phase by ID (phase_id=2):")
-    phase = get_phase_entry(2)
-    print(f"  Phase ID: {phase['phase_id']}")
-    print(f"  Phase Name: {phase['phase_name']}")
-    print(f"  Description: {phase['description']}")
-    print(f"  File: {phase['file']}")
-    print(f"  Function: {phase['function']}")
-    print(f"  Status: {phase['status']}")
+  # Run test suite
+  python outreach_phase_registry.py --test
 
-    # Test 3: Get phase by name
-    print("\n[Test 3] Get Phase by Name ('Phase 1b: People Validation Trigger'):")
-    phase = get_phase_by_name("Phase 1b: People Validation Trigger")
-    print(f"  Phase ID: {phase['phase_id']}")
-    print(f"  File: {phase['file']}")
-    print(f"  Function: {phase['function']}")
-    print(f"  Doctrine ID: {phase.get('doctrine_id', 'N/A')}")
+  # Get JSON output
+  python outreach_phase_registry.py --state WV --dry-run --json
+        """
+    )
 
-    # Test 4: Get implemented phases
-    print("\n[Test 4] Implemented Phases:")
-    for phase in get_implemented_phases():
-        print(f"  ✅ Phase {phase['phase_id']}: {phase['phase_name']}")
+    parser.add_argument(
+        "--state",
+        type=str,
+        help="State code to process (e.g., WV, CA)"
+    )
 
-    # Test 5: Get planned phases
-    print("\n[Test 5] Planned Phases:")
-    for phase in get_planned_phases():
-        print(f"  📋 Phase {phase['phase_id']}: {phase['phase_name']}")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Run in dry-run mode (no database writes)"
+    )
 
-    # Test 6: Get phase dependencies
-    print("\n[Test 6] Dependencies for Phase 3 (Outreach Readiness):")
-    deps = get_phase_dependencies(3)
-    for dep in deps:
-        print(f"  → Phase {dep['phase_id']}: {dep['phase_name']}")
+    parser.add_argument(
+        "--test",
+        action="store_true",
+        help="Run test suite instead of executing phases"
+    )
 
-    # Test 7: Get next phase
-    print("\n[Test 7] Next Phase after Phase 2:")
-    next_phase = get_next_phase(2)
-    print(f"  → Phase {next_phase['phase_id']}: {next_phase['phase_name']}")
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output results as JSON"
+    )
 
-    # Test 8: Validate phase sequence
-    print("\n[Test 8] Validate Phase Sequences:")
-    valid_seq = [1, 2, 3]
-    invalid_seq = [3, 1, 2]
-    print(f"  [1, 2, 3] is valid: {validate_phase_sequence(valid_seq)}")
-    print(f"  [3, 1, 2] is valid: {validate_phase_sequence(invalid_seq)}")
+    args = parser.parse_args()
 
-    # Test 9: Get phase status summary
-    print("\n[Test 9] Phase Status Summary:")
-    summary = get_phase_status_summary()
-    print(f"  Total Phases: {summary['total']}")
-    print(f"  Implemented: {summary['implemented']}")
-    print(f"  Planned: {summary['planned']}")
-    print(f"  Completion: {summary['completion_pct']}%")
+    # Run test suite if --test flag is provided
+    if args.test:
+        print("=" * 70)
+        print("OUTREACH PHASE REGISTRY - TEST SUITE")
+        print("=" * 70)
 
-    # Test 10: Get doctrine entry
-    print("\n[Test 10] Doctrine Entry:")
-    doctrine = get_doctrine_entry()
-    print(f"  Doctrine ID: {doctrine['doctrine_id']}")
-    print(f"  Description: {doctrine['description']}")
-    print(f"  Phases: {doctrine['phases']}")
+        # Test 1: Get all phases
+        print("\n[Test 1] All Phases:")
+        for phase in get_all_phases():
+            status_icon = "✅" if phase["status"] == "implemented" else "📋"
+            print(f"  {status_icon} Phase {phase['phase_id']}: {phase['phase_name']} ({phase['status']})")
 
-    print("\n" + "=" * 70)
-    print("✅ All tests complete!")
-    print("=" * 70)
+        # Test 2: Get implemented phases
+        print("\n[Test 2] Implemented Phases:")
+        for phase in get_implemented_phases():
+            print(f"  ✅ Phase {phase['phase_id']}: {phase['phase_name']}")
+            if phase.get('doctrine_id'):
+                print(f"     Doctrine ID: {phase['doctrine_id']}")
+
+        # Test 3: Get phase status summary
+        print("\n[Test 3] Phase Status Summary:")
+        summary = get_phase_status_summary()
+        print(f"  Total Phases: {summary['total']}")
+        print(f"  Implemented: {summary['implemented']}")
+        print(f"  Planned: {summary['planned']}")
+        print(f"  Completion: {summary['completion_pct']}%")
+
+        # Test 4: Get doctrine entry
+        print("\n[Test 4] Doctrine Entry:")
+        doctrine = get_doctrine_entry()
+        print(f"  Doctrine ID: {doctrine['doctrine_id']}")
+        print(f"  Description: {doctrine['description']}")
+        print(f"  Phases: {doctrine['phases']}")
+
+        print("\n" + "=" * 70)
+        print("✅ All tests complete!")
+        print("=" * 70)
+
+    # Execute all phases if state is provided
+    elif args.state:
+        result = execute_all_phases(state=args.state, dry_run=args.dry_run)
+
+        # Output as JSON if --json flag is provided
+        if args.json:
+            print(json.dumps(result, indent=2))
+
+    # Show help if no arguments provided
+    else:
+        parser.print_help()
