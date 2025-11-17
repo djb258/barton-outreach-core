@@ -485,7 +485,7 @@ class PersonValidator:
     def validate_title(record: Dict) -> Optional[ValidationFailure]:
         """
         Validate title field
-        Rule: Must include "HR", "CFO", or "CEO"
+        Rule: Must include "CEO", "CFO", or HR-related keywords
         """
         title = record.get("title", "")
 
@@ -499,21 +499,30 @@ class PersonValidator:
             failure.current_value = title
             return failure
 
-        title = title.strip().upper()
+        title_upper = title.strip().upper()
 
-        # Must include one of the target titles
-        valid_titles = ["HR", "CFO", "CEO"]
-        if not any(target in title for target in valid_titles):
-            failure = ValidationFailure(
-                field="title",
-                rule="title_executive",
-                message="Title must include HR, CFO, or CEO",
-                severity=ValidationSeverity.ERROR
-            )
-            failure.current_value = record.get("title", "")
-            return failure
+        # Check for CEO
+        if "CEO" in title_upper or "CHIEF EXECUTIVE" in title_upper:
+            return None
 
-        return None
+        # Check for CFO
+        if "CFO" in title_upper or "CHIEF FINANCIAL" in title_upper:
+            return None
+
+        # Check for HR (multiple variations)
+        hr_keywords = ["HR", "HUMAN RESOURCES", "PEOPLE", "TALENT"]
+        if any(keyword in title_upper for keyword in hr_keywords):
+            return None
+
+        # No match found
+        failure = ValidationFailure(
+            field="title",
+            rule="title_executive",
+            message="Title must include CEO, CFO, or HR-related keywords (HR, Human Resources, People, Talent)",
+            severity=ValidationSeverity.ERROR
+        )
+        failure.current_value = record.get("title", "")
+        return failure
 
     @staticmethod
     def validate_company_link(record: Dict, valid_company_ids: set) -> Optional[ValidationFailure]:
@@ -547,6 +556,79 @@ class PersonValidator:
         return None
 
     @staticmethod
+    def validate_person_id(record: Dict) -> Optional[ValidationFailure]:
+        """
+        Validate person_id field
+        Rule: Must not be null
+        """
+        person_id = record.get("person_id") or record.get("unique_id")
+
+        if not person_id or len(str(person_id).strip()) == 0:
+            failure = ValidationFailure(
+                field="person_id",
+                rule="person_id_required",
+                message="Person ID is required",
+                severity=ValidationSeverity.CRITICAL
+            )
+            failure.current_value = person_id
+            return failure
+
+        return None
+
+    @staticmethod
+    def validate_linkedin_url(record: Dict) -> Optional[ValidationFailure]:
+        """
+        Validate linkedin_url field
+        Rule: Must include "linkedin.com/in/"
+        """
+        linkedin_url = record.get("linkedin_url", "")
+
+        if not linkedin_url or len(linkedin_url.strip()) == 0:
+            failure = ValidationFailure(
+                field="linkedin_url",
+                rule="linkedin_url_required",
+                message="LinkedIn URL is required",
+                severity=ValidationSeverity.ERROR
+            )
+            failure.current_value = linkedin_url
+            return failure
+
+        linkedin_url = linkedin_url.strip().lower()
+
+        # Must include "linkedin.com/in/"
+        if "linkedin.com/in/" not in linkedin_url:
+            failure = ValidationFailure(
+                field="linkedin_url",
+                rule="linkedin_url_format",
+                message="LinkedIn URL must include 'linkedin.com/in/'",
+                severity=ValidationSeverity.ERROR
+            )
+            failure.current_value = record.get("linkedin_url", "")
+            return failure
+
+        return None
+
+    @staticmethod
+    def validate_timestamp_last_updated(record: Dict) -> Optional[ValidationFailure]:
+        """
+        Validate timestamp_last_updated field
+        Rule: Must be present
+        """
+        timestamp = record.get("timestamp_last_updated") or record.get("updated_at")
+
+        if not timestamp:
+            failure = ValidationFailure(
+                field="timestamp_last_updated",
+                rule="timestamp_required",
+                message="Last updated timestamp is required",
+                severity=ValidationSeverity.WARNING
+            )
+            failure.current_value = timestamp
+            return failure
+
+        return None
+
+    @staticmethod
     def validate_all(record: Dict, valid_company_ids: set = None) -> Tuple[bool, List[ValidationFailure]]:
         """
         Run all person validation rules
@@ -557,9 +639,12 @@ class PersonValidator:
 
         # Run all validation rules
         rules = [
+            PersonValidator.validate_person_id(record),
             PersonValidator.validate_full_name(record),
             PersonValidator.validate_email(record),
-            PersonValidator.validate_title(record)
+            PersonValidator.validate_title(record),
+            PersonValidator.validate_linkedin_url(record),
+            PersonValidator.validate_timestamp_last_updated(record)
         ]
 
         # Add company link validation if valid_company_ids provided
@@ -742,14 +827,96 @@ def validate_company_phase1(record: Dict, slot_rows: List[Dict]) -> Dict:
     return validation_result
 
 
-def validate_person(record: Dict, valid_company_ids: set = None) -> Tuple[bool, List[Dict]]:
+def validate_person(row: Dict, valid_company_ids: set = None) -> Dict:
     """
-    Validate a person record
+    Validate a person record for Phase 1 outreach validation
 
-    Returns: (is_valid, list_of_failure_dicts)
+    Validation Rules:
+    1. person_id (or unique_id) is not null (CRITICAL)
+    2. full_name is at least 3 characters (CRITICAL)
+    3. email is present and passes basic format check (ERROR)
+    4. title must include "CEO", "CFO", or "HR" (case-insensitive) (ERROR)
+    5. company_unique_id is present AND exists in marketing.company_master (CRITICAL)
+    6. linkedin_url must include "linkedin.com/in/" (ERROR)
+    7. timestamp_last_updated must be present (WARNING)
+
+    Args:
+        row: Dictionary from marketing.people_master
+        valid_company_ids: Set of valid company IDs from company_master (optional)
+
+    Returns:
+        {
+            "valid": True/False,
+            "reason": "Missing CEO title; LinkedIn URL is invalid",
+            "failures": [
+                {"field": "title", "message": "Does not match CEO/CFO/HR"},
+                {"field": "linkedin_url", "message": "Missing linkedin.com/in/ link"}
+            ],
+            "person_id": "abc-123",
+            "company_unique_id": "xyz-456",
+            "full_name": "Jane Smith",
+            "email": "jane@acme.com",
+            "title": "Finance Manager",
+            "linkedin_url": "",
+            "validation_status": "invalid"
+        }
+
+    Example:
+        person = {
+            "person_id": "04.04.02.04.20000.001",
+            "full_name": "John Doe",
+            "email": "john@acme.com",
+            "title": "Chief Executive Officer",
+            "company_unique_id": "04.04.02.04.30000.001",
+            "linkedin_url": "https://linkedin.com/in/johndoe",
+            "timestamp_last_updated": "2025-11-17"
+        }
+
+        valid_companies = {"04.04.02.04.30000.001", "04.04.02.04.30000.002"}
+        result = validate_person(person, valid_companies)
+        # Returns: {"valid": True, "reason": None, "failures": [], ...}
     """
-    is_valid, failures = PersonValidator.validate_all(record, valid_company_ids)
-    return is_valid, [f.to_dict() for f in failures]
+    # Run all validation rules
+    is_valid, failure_objects = PersonValidator.validate_all(row, valid_company_ids)
+
+    # Convert to requested format
+    failures = []
+    reason_parts = []
+
+    for failure_obj in failure_objects:
+        # Add to failures list
+        failures.append({
+            "field": failure_obj.field,
+            "message": failure_obj.message
+        })
+
+        # Add to reason if CRITICAL or ERROR
+        if failure_obj.severity in [ValidationSeverity.CRITICAL, ValidationSeverity.ERROR]:
+            reason_parts.append(f"{failure_obj.field}: {failure_obj.message}")
+
+    # Build reason string (semicolon-separated list of failures)
+    reason = "; ".join(reason_parts) if reason_parts else None
+
+    # Extract key fields for return
+    person_id = row.get("person_id") or row.get("unique_id") or ""
+    company_unique_id = row.get("company_unique_id") or ""
+    full_name = row.get("full_name") or ""
+    email = row.get("email") or ""
+    title = row.get("title") or ""
+    linkedin_url = row.get("linkedin_url") or ""
+
+    return {
+        "valid": is_valid,
+        "reason": reason,
+        "failures": failures,
+        "person_id": person_id,
+        "company_unique_id": company_unique_id,
+        "full_name": full_name,
+        "email": email,
+        "title": title,
+        "linkedin_url": linkedin_url,
+        "validation_status": "valid" if is_valid else "invalid"
+    }
 
 
 if __name__ == "__main__":
@@ -761,46 +928,6 @@ if __name__ == "__main__":
     # Note: Basic company validation tests removed
     # Now using validate_company(row, slot_rows) for retroactive pipeline
     # See "Retroactive Pipeline Company Validation Tests" section below
-
-    # Test person validation
-    print("\n" + "="*60)
-    print("Person Validation Tests:")
-    print("-"*60)
-
-    test_person = {
-        "full_name": "John Doe",
-        "email": "john.doe@acme.com",
-        "title": "Chief Financial Officer (CFO)",
-        "company_unique_id": "04.04.02.04.30000.001"
-    }
-
-    valid_companies = {"04.04.02.04.30000.001"}
-    is_valid, failures = validate_person(test_person, valid_companies)
-    print(f"Test Person: {test_person['full_name']}")
-    print(f"Valid: {is_valid}")
-    if failures:
-        print("Failures:")
-        for f in failures:
-            print(f"  - {f['field']}: {f['message']}")
-    else:
-        print("No failures")
-
-    # Test invalid person
-    print("\n")
-    invalid_person = {
-        "full_name": "John",  # No last name
-        "email": "invalid-email",  # Bad format
-        "title": "Manager",  # Not HR/CFO/CEO
-        "company_unique_id": "invalid-id"  # Doesn't exist
-    }
-
-    is_valid, failures = validate_person(invalid_person, valid_companies)
-    print(f"Invalid Person: {invalid_person['full_name']}")
-    print(f"Valid: {is_valid}")
-    if failures:
-        print("Failures:")
-        for f in failures:
-            print(f"  - {f['field']}: {f['message']}")
 
     # Test Phase 1 company validation (structure + slots)
     print("\n" + "="*60)
@@ -951,6 +1078,69 @@ if __name__ == "__main__":
     print(f"  Reason: {result['reason']}")
     print(f"  Severity: {result['severity']}")
     print(f"  Missing Fields: {result['missing_fields']}")
+
+    print("\n" + "="*60)
+    print("Phase 1 Person Validation Tests:")
+    print("="*60)
+
+    # Test 1: Valid person with all fields
+    print("\n[Test 1] Valid Person:")
+    valid_person = {
+        "person_id": "04.04.02.04.20000.001",
+        "full_name": "John Doe",
+        "email": "john@acme.com",
+        "title": "Chief Executive Officer",
+        "company_unique_id": "04.04.02.04.30000.001",
+        "linkedin_url": "https://linkedin.com/in/johndoe",
+        "timestamp_last_updated": "2025-11-17"
+    }
+
+    valid_companies = {"04.04.02.04.30000.001", "04.04.02.04.30000.002"}
+    result = validate_person(valid_person, valid_companies)
+    print(f"  Person: {result['full_name']}")
+    print(f"  Valid: {result['valid']}")
+    print(f"  Reason: {result['reason']}")
+    print(f"  Validation Status: {result['validation_status']}")
+    print(f"  Failures: {len(result['failures'])}")
+
+    # Test 2: Invalid person with multiple failures
+    print("\n[Test 2] Invalid Person (Multiple Failures):")
+    invalid_person = {
+        "person_id": "",  # Missing (CRITICAL)
+        "full_name": "Jane",  # No last name (ERROR)
+        "email": "invalid-email",  # Bad format (ERROR)
+        "title": "Finance Manager",  # Not CEO/CFO/HR (ERROR)
+        "company_unique_id": "invalid-company-id",  # Not in valid set (CRITICAL)
+        "linkedin_url": "https://twitter.com/jane",  # Not LinkedIn (ERROR)
+        "timestamp_last_updated": None  # Missing (WARNING)
+    }
+
+    result = validate_person(invalid_person, valid_companies)
+    print(f"  Person: {result['full_name']}")
+    print(f"  Valid: {result['valid']}")
+    print(f"  Reason: {result['reason']}")
+    print(f"  Validation Status: {result['validation_status']}")
+    print(f"  Failures ({len(result['failures'])}):")
+    for failure in result['failures']:
+        print(f"    - {failure['field']}: {failure['message']}")
+
+    # Test 3: Person with HR title variant
+    print("\n[Test 3] Valid Person (HR Title Variant):")
+    hr_person = {
+        "person_id": "04.04.02.04.20000.003",
+        "full_name": "Sarah Johnson",
+        "email": "sarah@acme.com",
+        "title": "Director of Human Resources",  # Contains "HR"
+        "company_unique_id": "04.04.02.04.30000.001",
+        "linkedin_url": "https://linkedin.com/in/sarahjohnson",
+        "timestamp_last_updated": "2025-11-17"
+    }
+
+    result = validate_person(hr_person, valid_companies)
+    print(f"  Person: {result['full_name']}")
+    print(f"  Title: {result['title']}")
+    print(f"  Valid: {result['valid']}")
+    print(f"  Reason: {result['reason']}")
 
     print("\n" + "="*60)
     print("All validation rules tested successfully")
