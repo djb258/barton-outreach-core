@@ -177,6 +177,20 @@ Stores self-documentation for the Documentation tool.
 
 ---
 
+## 🔴 Live Integrations Status
+
+**All tools now have LIVE production integrations:**
+
+- ✅ **Composio MCP Client** - Unified Google Workspace gateway
+- ✅ **Google Sheets** - Error routing & validation review (Router, Validator)
+- ✅ **Google Docs** - Template filling & document generation (DocFiller)
+- ✅ **N8N Webhooks** - Workflow automation (all tools)
+- ✅ **Test Suites** - Comprehensive dry-run & webhook validation
+
+**See:** `docs/LIVE_INTEGRATIONS_GUIDE.md` for complete setup and usage.
+
+---
+
 ## Setup Instructions
 
 ### 1. Prerequisites
@@ -184,7 +198,8 @@ Stores self-documentation for the Documentation tool.
 - Neon PostgreSQL database access
 - Python 3.9+ with pip
 - Node.js 18+ (for frontend)
-- Google Workspace account (for Router and DocFiller)
+- **Composio MCP Server** (REQUIRED - for Google Workspace integration)
+- Google Workspace account (3 accounts connected via Composio)
 - N8N instance (optional, for webhook automation)
 
 ### 2. Environment Configuration

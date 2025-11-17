@@ -7,6 +7,7 @@ Validation engine powered by Neon-stored rules for company data, executive slots
 """
 
 import os
+import sys
 import json
 import logging
 from datetime import datetime
@@ -15,6 +16,10 @@ from dataclasses import dataclass
 from enum import Enum
 import psycopg2
 from psycopg2.extras import RealDictCursor
+
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from lib.composio_client import ComposioClient, ComposioMCPError
 
 # Configure logging
 logging.basicConfig(
@@ -298,6 +303,7 @@ class Validator:
     def __init__(self, connection_string: str):
         self.db = NeonDatabase(connection_string)
         self.engine = ValidationEngine(self.db)
+        self.composio = ComposioClient()
 
     def initialize(self):
         """Initialize validator and load rules"""
@@ -388,6 +394,91 @@ class Validator:
                 'pending'
             )
             self.db.execute_insert(query, params)
+
+    def export_failures_to_sheet(self, failures_data: List[Dict]) -> Optional[str]:
+        """
+        Export validation failures to Google Sheet for review
+
+        Args:
+            failures_data: List of failure dictionaries with record + failure info
+
+        Returns:
+            Google Sheet ID if successful, None otherwise
+        """
+        if not failures_data:
+            logger.warning(f"[{TOOL_BARTON_ID}] No failures to export")
+            return None
+
+        try:
+            # Prepare sheet data
+            sheet_title = f"Validation Failures - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+
+            headers = [
+                "Company ID",
+                "Company Name",
+                "Rule Name",
+                "Field Name",
+                "Current Value",
+                "Severity",
+                "Error Message",
+                "Status",
+                "Corrected Value"
+            ]
+
+            # Convert failures to rows
+            data = []
+            for item in failures_data:
+                record = item.get('record', {})
+                failure = item.get('failure', {})
+
+                row = [
+                    str(record.get('company_unique_id', '')),
+                    str(record.get('company_name', '')),
+                    str(failure.get('rule_name', '')),
+                    str(failure.get('field_name', '')),
+                    str(failure.get('actual_value', '')),
+                    str(failure.get('severity', '')),
+                    str(failure.get('error_message', '')),
+                    'PENDING REVIEW',
+                    ''  # Empty column for manual correction
+                ]
+                data.append(row)
+
+            # Create sheet via Composio MCP
+            unique_id = f"HEIR-{datetime.now().strftime('%Y%m%d-%H%M%S')}-VALIDATOR-EXPORT"
+
+            sheet_id = self.composio.create_google_sheet(
+                title=sheet_title,
+                data=data,
+                headers=headers,
+                unique_id=unique_id
+            )
+
+            # Log successful export
+            self.db.log_audit("validation.failures_exported", {
+                "barton_id": TOOL_BARTON_ID,
+                "sheet_id": sheet_id,
+                "failures_count": len(failures_data),
+                "sheet_title": sheet_title
+            })
+
+            logger.info(f"[{TOOL_BARTON_ID}] ✅ Exported {len(failures_data)} failure(s) to sheet: {sheet_id}")
+
+            return sheet_id
+
+        except ComposioMCPError as e:
+            logger.error(f"[{TOOL_BARTON_ID}] Composio MCP error: {e}")
+            self.db.log_error("composio_mcp_failed", str(e), "error", {
+                "action": "export_failures",
+                "failures_count": len(failures_data)
+            })
+            return None
+        except Exception as e:
+            logger.error(f"[{TOOL_BARTON_ID}] Unexpected error: {e}")
+            self.db.log_error("sheet_export_failed", str(e), "error", {
+                "failures_count": len(failures_data)
+            })
+            return None
 
 
 def main():

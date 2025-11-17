@@ -7,6 +7,7 @@ Routes invalid data to Google Sheets for manual review and sync back to pipeline
 """
 
 import os
+import sys
 import json
 import logging
 from datetime import datetime
@@ -14,6 +15,10 @@ from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 import psycopg2
 from psycopg2.extras import RealDictCursor
+
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from lib.composio_client import ComposioClient, ComposioMCPError
 
 # Configure logging
 logging.basicConfig(
@@ -129,6 +134,7 @@ class MessyFlowRouter:
     def __init__(self, config: RouterConfig):
         self.config = config
         self.db = NeonDatabase(config.neon_connection_string)
+        self.composio = ComposioClient()
         self.error_count = 0
         self.success_count = 0
 
@@ -189,24 +195,67 @@ class MessyFlowRouter:
         Returns sheet_id if successful, None otherwise
         """
         try:
-            # TODO: Implement Google Sheets API integration via Composio MCP
-            # For now, log the routing action
+            # Prepare sheet data
+            sheet_title = f"Error Review - {error_record.get('error_type', 'Unknown')} - {datetime.now().strftime('%Y-%m-%d')}"
 
-            sheet_id = f"SHEET_{error_record['error_id']}"
+            headers = [
+                "Error ID",
+                "Company ID",
+                "Error Type",
+                "Error Message",
+                "Payload",
+                "Created At",
+                "Status",
+                "Resolution Notes"
+            ]
 
+            # Create single row for this error
+            data = [[
+                str(error_record.get('error_id', '')),
+                str(error_record.get('company_unique_id', '')),
+                str(error_record.get('error_type', '')),
+                str(error_record.get('error_message', '')),
+                json.dumps(error_record.get('error_payload', {})),
+                str(error_record.get('created_at', '')),
+                'PENDING REVIEW',
+                ''  # Empty column for manual notes
+            ]]
+
+            # Create sheet via Composio MCP
+            unique_id = f"HEIR-{datetime.now().strftime('%Y%m%d-%H%M%S')}-ROUTE-{error_record['error_id']}"
+
+            sheet_id = self.composio.create_google_sheet(
+                title=sheet_title,
+                data=data,
+                headers=headers,
+                unique_id=unique_id
+            )
+
+            # Log successful routing
             self.db.log_audit("error.routed_to_sheet", {
                 "error_id": error_record['error_id'],
                 "company_unique_id": error_record.get('company_unique_id'),
                 "sheet_id": sheet_id,
-                "error_type": error_record.get('error_type')
+                "error_type": error_record.get('error_type'),
+                "sheet_title": sheet_title
             })
 
-            logger.info(f"[{TOOL_BARTON_ID}] Routed error {error_record['error_id']} to sheet {sheet_id}")
+            logger.info(f"[{TOOL_BARTON_ID}] ✅ Created sheet for error {error_record['error_id']}: {sheet_id}")
             self.success_count += 1
 
             return sheet_id
 
+        except ComposioMCPError as e:
+            logger.error(f"[{TOOL_BARTON_ID}] Composio MCP error: {e}")
+            self.error_count += 1
+            self.db.log_error(
+                "composio_mcp_failed",
+                str(e),
+                {"error_record": error_record}
+            )
+            return None
         except Exception as e:
+            logger.error(f"[{TOOL_BARTON_ID}] Unexpected error: {e}")
             self.error_count += 1
             self.db.log_error(
                 "sheet_creation_failed",
@@ -227,24 +276,64 @@ class MessyFlowRouter:
         """
         self.db.execute_insert(query, (sheet_id, error_id))
 
-    def sync_from_google_sheet(self, sheet_id: str) -> Optional[Dict]:
+    def sync_from_google_sheet(self, sheet_id: str, tab_name: str = "Sheet1") -> Optional[Dict]:
         """
         Sync cleaned data back from Google Sheet
         Returns cleaned data if successful, None otherwise
         """
         try:
-            # TODO: Implement Google Sheets API sync via Composio MCP
-            # For now, log the sync action
+            # Read data from Google Sheet
+            unique_id = f"HEIR-{datetime.now().strftime('%Y%m%d-%H%M%S')}-SYNC-{sheet_id}"
 
+            sheet_data = self.composio.read_from_sheet(
+                sheet_id=sheet_id,
+                tab_name=tab_name,
+                range_spec="A1:Z1000",
+                unique_id=unique_id
+            )
+
+            if not sheet_data or len(sheet_data) < 2:
+                logger.warning(f"[{TOOL_BARTON_ID}] No data found in sheet {sheet_id}")
+                return None
+
+            # Parse data (first row is headers)
+            headers = sheet_data[0]
+            rows = sheet_data[1:]
+
+            # Convert to list of dictionaries
+            cleaned_records = []
+            for row in rows:
+                record = {}
+                for i, header in enumerate(headers):
+                    record[header] = row[i] if i < len(row) else ""
+                cleaned_records.append(record)
+
+            # Log successful sync
             self.db.log_audit("sheet.synced", {
                 "sheet_id": sheet_id,
-                "action": "data_retrieved"
+                "action": "data_retrieved",
+                "records_count": len(cleaned_records)
             })
 
-            logger.info(f"[{TOOL_BARTON_ID}] Synced data from sheet {sheet_id}")
-            return {}
+            logger.info(f"[{TOOL_BARTON_ID}] ✅ Synced {len(cleaned_records)} record(s) from sheet {sheet_id}")
 
+            return {
+                "sheet_id": sheet_id,
+                "records": cleaned_records,
+                "record_count": len(cleaned_records)
+            }
+
+        except ComposioMCPError as e:
+            logger.error(f"[{TOOL_BARTON_ID}] Composio MCP error during sync: {e}")
+            self.error_count += 1
+            self.db.log_error(
+                "composio_mcp_failed",
+                str(e),
+                {"sheet_id": sheet_id, "action": "sync"}
+            )
+            return None
         except Exception as e:
+            logger.error(f"[{TOOL_BARTON_ID}] Unexpected error during sync: {e}")
             self.error_count += 1
             self.db.log_error(
                 "sheet_sync_failed",
