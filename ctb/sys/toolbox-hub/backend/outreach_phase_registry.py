@@ -67,11 +67,11 @@ OUTREACH_PHASES = [
         "severity_levels": ["CRITICAL", "ERROR", "WARNING"]
     },
     {
-        "phase_id": 2,
-        "phase_name": "Person Validation",
-        "description": "Checks LinkedIn, email, title, and company link",
-        "file": "backend/validator/validation_rules.py",
-        "function": "validate_person",
+        "phase_id": 1.1,
+        "phase_name": "Phase 1b: People Validation Trigger",
+        "description": "Claude-callable orchestrator for people validation. Validates people data for outreach readiness.",
+        "file": "backend/validator/phase1b_people_trigger.py",
+        "function": "run_phase1b_people_validation",
         "status": "implemented",
         "input_table": "marketing.people_master",
         "output_table": "marketing.people_master (validation_status)",
@@ -79,7 +79,28 @@ OUTREACH_PHASES = [
         "dependencies": [1],  # Requires Phase 1 (Company Validation)
         "estimated_duration_seconds": 2,
         "validation_rules": 7,
-        "severity_levels": ["CRITICAL", "ERROR", "WARNING"]
+        "severity_levels": ["CRITICAL", "ERROR", "WARNING"],
+        "doctrine_id": "4.svg.marketing.ple.phase1b_people_validator",
+        "webhook_url": "https://n8n.barton.com/webhook/route-person-failure",
+        "google_sheet_id": "1i9QNWBqMgY825fLg7lblszMs6X6f5tLxCnAP3Qchfeg",
+        "google_sheet_tab": "Invalid_People",
+        "failure_schema": ["title mismatch", "missing email", "no LinkedIn URL", "bad format or missing timestamp", "not linked to company"]
+    },
+    {
+        "phase_id": 2,
+        "phase_name": "Person Validation (Low-Level)",
+        "description": "Low-level function: Checks LinkedIn, email, title, and company link (single person record)",
+        "file": "backend/validator/validation_rules.py",
+        "function": "validate_person",
+        "status": "implemented",
+        "input_table": "marketing.people_master (single record)",
+        "output_table": "Dict result (not database)",
+        "error_routing": "Returns validation result",
+        "dependencies": [1],  # Requires Phase 1 (Company Validation)
+        "estimated_duration_seconds": 0.01,
+        "validation_rules": 7,
+        "severity_levels": ["CRITICAL", "ERROR", "WARNING"],
+        "note": "This is the low-level validation function. Use Phase 1.1 for batch processing."
     },
     {
         "phase_id": 3,
@@ -149,12 +170,12 @@ OUTREACH_PHASES = [
 # HELPER FUNCTIONS
 # ============================================================================
 
-def get_phase_entry(phase_id: int) -> Dict:
+def get_phase_entry(phase_id) -> Dict:
     """
     Get phase entry by phase_id
 
     Args:
-        phase_id: Phase identifier (0-6)
+        phase_id: Phase identifier (int or float, e.g., 0, 1, 1.1, 2, 3, etc.)
 
     Returns:
         Phase entry dictionary
@@ -165,7 +186,11 @@ def get_phase_entry(phase_id: int) -> Dict:
     Example:
         >>> phase = get_phase_entry(2)
         >>> print(phase['phase_name'])
-        'Person Validation'
+        'Person Validation (Low-Level)'
+
+        >>> phase = get_phase_entry(1.1)
+        >>> print(phase['phase_name'])
+        'Phase 1b: People Validation Trigger'
     """
     for phase in OUTREACH_PHASES:
         if phase["phase_id"] == phase_id:
@@ -410,7 +435,7 @@ def execute_phase(phase_id: int, *args, **kwargs):
 DOCTRINE_ENTRY = {
     "doctrine_id": "04.04.02.04.ple.validation_pipeline",
     "description": "Outreach validation and enrichment lifecycle. Each phase represents a callable unit tracked via phase_id for Claude execution and error handling.",
-    "phases": [0, 1, 2, 3, 4, 5, 6],
+    "phases": [0, 1, 1.1, 2, 3, 4, 5, 6],
     "integration_points": {
         "error_log": "shq.error_master.phase_id",
         "event_log": "marketing.pipeline_events.phase_id",
@@ -422,7 +447,27 @@ DOCTRINE_ENTRY = {
     "app": "outreach",
     "layer": "04",
     "schema": "02",
-    "version": "04"
+    "version": "04",
+    "phase1b_doctrine": {
+        "doctrine_id": "4.svg.marketing.ple.phase1b_people_validator",
+        "description": "Validates people data for outreach readiness. Checks full_name, title, email, LinkedIn, company link, and timestamp. Logs to audit + routes to Invalid_People tab.",
+        "trigger_phase": 1.1,
+        "output": {
+            "validation_status": ["valid", "invalid", "warning"],
+            "webhook": "https://n8n.barton.com/webhook/route-person-failure",
+            "sheet": {
+                "id": "1i9QNWBqMgY825fLg7lblszMs6X6f5tLxCnAP3Qchfeg",
+                "tab": "Invalid_People"
+            }
+        },
+        "failure_schema": [
+            "title mismatch",
+            "missing email",
+            "no LinkedIn URL",
+            "bad format or missing timestamp",
+            "not linked to company"
+        ]
+    }
 }
 
 
@@ -474,11 +519,12 @@ if __name__ == "__main__":
     print(f"  Status: {phase['status']}")
 
     # Test 3: Get phase by name
-    print("\n[Test 3] Get Phase by Name ('Person Validation'):")
-    phase = get_phase_by_name("Person Validation")
+    print("\n[Test 3] Get Phase by Name ('Phase 1b: People Validation Trigger'):")
+    phase = get_phase_by_name("Phase 1b: People Validation Trigger")
     print(f"  Phase ID: {phase['phase_id']}")
     print(f"  File: {phase['file']}")
     print(f"  Function: {phase['function']}")
+    print(f"  Doctrine ID: {phase.get('doctrine_id', 'N/A')}")
 
     # Test 4: Get implemented phases
     print("\n[Test 4] Implemented Phases:")
