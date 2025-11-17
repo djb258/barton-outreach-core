@@ -581,14 +581,121 @@ class PersonValidator:
 
 
 # Convenience functions
-def validate_company(record: Dict, state: str = "WV") -> Tuple[bool, List[Dict]]:
+def validate_company(row: Dict, slot_rows: List[Dict]) -> Dict:
     """
-    Validate a company record (basic fields only)
+    Validate a company record for retroactive Neon outreach pipeline
 
-    Returns: (is_valid, list_of_failure_dicts)
+    This function validates company structure and slot presence only.
+    It does NOT validate enrichment, email, or slot fill status.
+
+    Validation Rules:
+    1. company_name must exist and be >= 3 characters
+    2. website must start with "http" and contain domain
+    3. employee_count must be integer > 50
+    4. linkedin_url must contain "linkedin.com/company/"
+    5. All 3 slot types must exist (CEO, CFO, HR) - regardless of is_filled
+
+    Args:
+        row: Dictionary from marketing.company_master
+        slot_rows: List of slot dictionaries from marketing.company_slots
+                   where company_unique_id = row["company_unique_id"]
+
+    Returns:
+        {
+            "valid": True/False,
+            "reason": String (first failure reason or None if valid),
+            "severity": "INFO" | "WARNING" | "ERROR" | "CRITICAL",
+            "missing_fields": List of missing fields or slots
+        }
+
+    Example:
+        company = {
+            "company_name": "Acme Corp",
+            "website": "https://acme.com",
+            "employee_count": 250,
+            "linkedin_url": "https://linkedin.com/company/acme"
+        }
+
+        slots = [
+            {"slot_type": "CEO", "is_filled": True},
+            {"slot_type": "CFO", "is_filled": False},
+            {"slot_type": "HR", "is_filled": True}
+        ]
+
+        result = validate_company(company, slots)
+        # Returns: {"valid": True, "reason": None, "severity": "INFO", "missing_fields": []}
     """
-    is_valid, failures = CompanyValidator.validate_all(record, state)
-    return is_valid, [f.to_dict() for f in failures]
+    missing_fields = []
+    reason = None
+    severity = "INFO"
+
+    # Rule 1: company_name must exist and be >= 3 characters
+    company_name = row.get("company_name", "")
+    if not company_name or len(company_name.strip()) < 3:
+        missing_fields.append("company_name")
+        if not reason:
+            reason = "Company name must be at least 3 characters"
+            severity = "CRITICAL"
+
+    # Rule 2: website must start with "http" and contain domain
+    website = row.get("website", "")
+    if not website or not website.strip().startswith(("http://", "https://")):
+        missing_fields.append("website")
+        if not reason:
+            reason = "Website must start with http:// or https://"
+            severity = "ERROR"
+    elif "." not in website:
+        missing_fields.append("website")
+        if not reason:
+            reason = "Website must contain a valid domain"
+            severity = "ERROR"
+
+    # Rule 3: employee_count must be integer > 50
+    employee_count = row.get("employee_count")
+    try:
+        employee_count_int = int(employee_count) if employee_count is not None else 0
+        if employee_count_int <= 50:
+            missing_fields.append("employee_count")
+            if not reason:
+                reason = f"Employee count must be greater than 50 (current: {employee_count_int})"
+                severity = "ERROR"
+    except (ValueError, TypeError):
+        missing_fields.append("employee_count")
+        if not reason:
+            reason = "Employee count must be a valid integer"
+            severity = "ERROR"
+
+    # Rule 4: linkedin_url must contain "linkedin.com/company/"
+    linkedin_url = row.get("linkedin_url", "")
+    if not linkedin_url or "linkedin.com/company/" not in linkedin_url.lower():
+        missing_fields.append("linkedin_url")
+        if not reason:
+            reason = "LinkedIn URL must contain 'linkedin.com/company/'"
+            severity = "ERROR"
+
+    # Rule 5: All 3 slot types must exist (CEO, CFO, HR)
+    required_slots = {"CEO", "CFO", "HR"}
+    existing_slot_types = {slot.get("slot_type", "").upper() for slot in slot_rows}
+
+    for slot_type in required_slots:
+        if slot_type not in existing_slot_types:
+            missing_fields.append(f"slot_{slot_type}")
+            if not reason:
+                reason = f"Missing {slot_type} slot (slot must exist, even if unfilled)"
+                severity = "ERROR"
+
+    # Determine if valid
+    is_valid = len(missing_fields) == 0
+
+    if is_valid:
+        severity = "INFO"
+
+    return {
+        "valid": is_valid,
+        "reason": reason,
+        "severity": severity,
+        "missing_fields": missing_fields
+    }
 
 
 def validate_company_phase1(record: Dict, slot_rows: List[Dict]) -> Dict:
@@ -651,43 +758,9 @@ if __name__ == "__main__":
     print("Testing Validation Rules")
     print("="*60)
 
-    # Test company validation
-    print("\nCompany Validation Tests:")
-    print("-"*60)
-
-    test_company = {
-        "company_name": "Acme Corp",
-        "website": "https://acme.com",
-        "employee_count": 250,
-        "postal_code": "25301"
-    }
-
-    is_valid, failures = validate_company(test_company, state="WV")
-    print(f"Test Company: {test_company['company_name']}")
-    print(f"Valid: {is_valid}")
-    if failures:
-        print("Failures:")
-        for f in failures:
-            print(f"  - {f['field']}: {f['message']}")
-    else:
-        print("No failures")
-
-    # Test invalid company
-    print("\n")
-    invalid_company = {
-        "company_name": "XY",  # Too short
-        "website": "acme.com",  # Missing http
-        "employee_count": 0,  # Must be > 0
-        "postal_code": "12345"  # Wrong state
-    }
-
-    is_valid, failures = validate_company(invalid_company, state="WV")
-    print(f"Invalid Company: {invalid_company['company_name']}")
-    print(f"Valid: {is_valid}")
-    if failures:
-        print("Failures:")
-        for f in failures:
-            print(f"  - {f['field']}: {f['message']}")
+    # Note: Basic company validation tests removed
+    # Now using validate_company(row, slot_rows) for retroactive pipeline
+    # See "Retroactive Pipeline Company Validation Tests" section below
 
     # Test person validation
     print("\n" + "="*60)
@@ -790,6 +863,95 @@ if __name__ == "__main__":
         for f in result['failures']:
             print(f"  - {f['field']}: {f['message']}")
 
+    # Test validate_company(row, slot_rows) - For Retroactive Pipeline
     print("\n" + "="*60)
-    print("✅ All validation rules tested successfully")
+    print("Retroactive Pipeline Company Validation Tests:")
+    print("-"*60)
+
+    # Test 1: Valid company with all requirements met
+    print("\n[Test 1] Valid Company:")
+    valid_company_row = {
+        "company_name": "Acme Corporation",
+        "website": "https://acme.com",
+        "employee_count": 250,
+        "linkedin_url": "https://linkedin.com/company/acme-corp"
+    }
+
+    valid_slots = [
+        {"slot_type": "CEO", "is_filled": True},
+        {"slot_type": "CFO", "is_filled": False},  # Unfilled OK
+        {"slot_type": "HR", "is_filled": True}
+    ]
+
+    result = validate_company(valid_company_row, valid_slots)
+    print(f"  Company: {valid_company_row['company_name']}")
+    print(f"  Valid: {result['valid']}")
+    print(f"  Reason: {result['reason']}")
+    print(f"  Severity: {result['severity']}")
+    print(f"  Missing Fields: {result['missing_fields']}")
+
+    # Test 2: Invalid company with multiple failures
+    print("\n[Test 2] Invalid Company (Multiple Failures):")
+    invalid_company_row = {
+        "company_name": "XY",  # Too short (< 3)
+        "website": "acme.com",  # Missing http://
+        "employee_count": 30,  # Too low (< 50)
+        "linkedin_url": "https://acme.com"  # Missing "linkedin.com/company/"
+    }
+
+    invalid_slots = [
+        {"slot_type": "CEO", "is_filled": True},
+        {"slot_type": "HR", "is_filled": False}
+        # Missing CFO slot!
+    ]
+
+    result = validate_company(invalid_company_row, invalid_slots)
+    print(f"  Company: {invalid_company_row['company_name']}")
+    print(f"  Valid: {result['valid']}")
+    print(f"  Reason: {result['reason']}")
+    print(f"  Severity: {result['severity']}")
+    print(f"  Missing Fields: {result['missing_fields']}")
+
+    # Test 3: Company with no slots at all
+    print("\n[Test 3] Invalid Company (No Slots):")
+    no_slots_company = {
+        "company_name": "No Slots Corp",
+        "website": "https://noslots.com",
+        "employee_count": 100,
+        "linkedin_url": "https://linkedin.com/company/noslots"
+    }
+
+    no_slots = []  # Empty slots list
+
+    result = validate_company(no_slots_company, no_slots)
+    print(f"  Company: {no_slots_company['company_name']}")
+    print(f"  Valid: {result['valid']}")
+    print(f"  Reason: {result['reason']}")
+    print(f"  Severity: {result['severity']}")
+    print(f"  Missing Fields: {result['missing_fields']}")
+
+    # Test 4: Edge case - employee_count exactly 50 (should fail)
+    print("\n[Test 4] Edge Case (employee_count = 50):")
+    edge_case_company = {
+        "company_name": "Edge Case Corp",
+        "website": "https://edge.com",
+        "employee_count": 50,  # Exactly 50 (must be > 50)
+        "linkedin_url": "https://linkedin.com/company/edge"
+    }
+
+    edge_case_slots = [
+        {"slot_type": "CEO", "is_filled": True},
+        {"slot_type": "CFO", "is_filled": True},
+        {"slot_type": "HR", "is_filled": True}
+    ]
+
+    result = validate_company(edge_case_company, edge_case_slots)
+    print(f"  Company: {edge_case_company['company_name']}")
+    print(f"  Valid: {result['valid']}")
+    print(f"  Reason: {result['reason']}")
+    print(f"  Severity: {result['severity']}")
+    print(f"  Missing Fields: {result['missing_fields']}")
+
+    print("\n" + "="*60)
+    print("All validation rules tested successfully")
     print("="*60)
