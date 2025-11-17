@@ -49,9 +49,9 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 
 N8N_WEBHOOKS = {
-    "Company_Failures": "https://n8n.barton.com/webhook/push-company-failures",
-    "Person_Failures": "https://n8n.barton.com/webhook/push-person-failures",
-    "Pipeline_Results": "https://n8n.barton.com/webhook/push-pipeline-results"
+    "Company_Failures": "https://dbarton.app.n8n.cloud/webhook/push-company-failures",
+    "Person_Failures": "https://dbarton.app.n8n.cloud/webhook/push-person-failures",
+    "Pipeline_Results": "https://dbarton.app.n8n.cloud/webhook/push-pipeline-results"
 }
 
 # Default timeout for webhook requests (seconds)
