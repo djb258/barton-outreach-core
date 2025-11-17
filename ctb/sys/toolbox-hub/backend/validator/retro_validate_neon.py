@@ -348,6 +348,25 @@ class RetroValidator:
         except Exception as e:
             logger.warning(f"⚠️  Failed to update validation_status: {e}")
 
+    def load_company_slots(self, company_unique_id: str) -> List[Dict]:
+        """Load slots for a specific company"""
+        if self.dry_run:
+            return []
+
+        try:
+            query = """
+                SELECT slot_type, is_filled, person_unique_id, filled_at
+                FROM marketing.company_slot
+                WHERE company_unique_id = %s
+                  AND slot_type IN ('CEO', 'CFO', 'HR')
+            """
+            self.cursor.execute(query, (company_unique_id,))
+            slots = self.cursor.fetchall()
+            return [dict(s) for s in slots]
+        except Exception as e:
+            logger.warning(f"⚠️  Failed to load slots for {company_unique_id}: {e}")
+            return []
+
     def validate_companies(self, companies: List[Dict], state: str) -> List[Dict]:
         """Validate all companies and route failures"""
         invalid_companies = []
@@ -361,10 +380,13 @@ class RetroValidator:
             company_id = company.get("company_unique_id", "unknown")
             company_name = company.get("company_name", "Unknown")
 
-            # Validate company
-            is_valid, failures = validate_company(company, state=state)
+            # Load slots for this company
+            slots = self.load_company_slots(company_id)
 
-            if is_valid:
+            # Validate company (new signature: validate_company(row, slot_rows))
+            result = validate_company(company, slots)
+
+            if result["valid"]:
                 self.stats.companies_valid += 1
                 logger.debug(f"✅ {company_name}: VALID")
 
@@ -381,9 +403,19 @@ class RetroValidator:
                 )
             else:
                 self.stats.companies_invalid += 1
-                failure_summary = ", ".join([f"{f['field']}: {f['message']}" for f in failures])
-                logger.warning(f"❌ {company_name}: {len(failures)} failure(s)")
-                logger.warning(f"   Failures: {failure_summary}")
+                logger.warning(f"❌ {company_name}: {len(result['missing_fields'])} failure(s)")
+                logger.warning(f"   Reason: {result['reason']}")
+                logger.warning(f"   Missing: {', '.join(result['missing_fields'])}")
+
+                # Convert to old format for webhook compatibility
+                failures = [
+                    {
+                        "field": field,
+                        "message": result['reason'] if idx == 0 else f"Missing or invalid: {field}",
+                        "severity": result['severity'].lower()
+                    }
+                    for idx, field in enumerate(result['missing_fields'])
+                ]
 
                 invalid_companies.append({
                     "company": company,
@@ -400,7 +432,7 @@ class RetroValidator:
                     record_type="company",
                     record_id=company_id,
                     passed=False,
-                    reason=failure_summary
+                    reason=result['reason']
                 )
 
                 # Route to n8n webhook
