@@ -463,6 +463,10 @@ def main():
         state = company.get('company_state') or company.get('state_abbrev') or 'UNKNOWN'
 
         # Prepare company dict for validator (map field names)
+        # Infer source_type: if apollo_id exists, source is 'apollo', otherwise 'enrichment'
+        has_apollo_id = company.get('apollo_id') is not None and str(company.get('apollo_id')).strip() != ''
+        source_type = 'apollo' if has_apollo_id else 'enrichment'
+
         validator_input = {
             'company_name': company.get('company'),
             'domain': company.get('website'),
@@ -471,6 +475,7 @@ def main():
             'industry': company.get('industry'),
             'location': f"{company.get('company_city', '')}, {company.get('company_state', '')}".strip(', '),
             'apollo_id': company.get('apollo_id'),
+            'source_type': source_type,
             'enrichment_attempt': company.get('enrichment_attempt', 0),
         }
 
