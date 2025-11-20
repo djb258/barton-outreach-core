@@ -1,0 +1,80 @@
+{
+  "trigger_levels": {
+    "cold": {
+      "min_score": 0,
+      "max_score": 49,
+      "action": "ignore",
+      "description": "No engagement detected",
+      "enabled": true,
+      "auto_execute": false
+    },
+    "warm": {
+      "min_score": 50,
+      "max_score": 99,
+      "action": "watch",
+      "description": "Monitor for additional signals",
+      "enabled": true,
+      "auto_execute": false
+    },
+    "engaged": {
+      "min_score": 100,
+      "max_score": 199,
+      "action": "nurture",
+      "description": "Send targeted nurture content",
+      "enabled": true,
+      "auto_execute": true,
+      "nurture_sequence": "standard_drip"
+    },
+    "hot": {
+      "min_score": 200,
+      "max_score": 299,
+      "action": "sdr_escalate",
+      "description": "Escalate to SDR for outreach",
+      "enabled": true,
+      "auto_execute": true,
+      "priority": "high"
+    },
+    "burning": {
+      "min_score": 300,
+      "max_score": null,
+      "action": "auto_meeting",
+      "description": "Auto-schedule meeting or urgent follow-up",
+      "enabled": true,
+      "auto_execute": true,
+      "priority": "urgent",
+      "meeting_priority": "urgent"
+    }
+  },
+
+  "action_rules": {
+    "nurture": {
+      "require_email": true,
+      "skip_if_recent_outreach": true,
+      "recent_outreach_window_days": 14
+    },
+    "sdr_escalate": {
+      "require_email_or_phone": true,
+      "skip_if_already_escalated": true,
+      "create_crm_task": true
+    },
+    "auto_meeting": {
+      "require_email": true,
+      "require_min_signals": 3,
+      "skip_if_meeting_scheduled": true,
+      "create_high_priority_queue": true
+    }
+  },
+
+  "deduplication": {
+    "enabled": true,
+    "window_hours": 72,
+    "check_same_action_type": true,
+    "check_same_person": true
+  },
+
+  "notifications": {
+    "notify_on_hot": true,
+    "notify_on_burning": true,
+    "notification_channels": ["email", "slack"]
+  }
+}
