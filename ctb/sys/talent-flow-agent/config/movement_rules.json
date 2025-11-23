@@ -1,0 +1,92 @@
+{
+  "movement_types": {
+    "hire": {
+      "description": "Person joined a new company",
+      "rules": [
+        {
+          "condition": "company_name_changed AND title_exists",
+          "weight": 1.0
+        },
+        {
+          "condition": "start_date_recent AND company_name_changed",
+          "weight": 0.9
+        },
+        {
+          "condition": "previous_company_null AND current_company_exists",
+          "weight": 0.85
+        }
+      ],
+      "min_confidence": 0.7
+    },
+    "exit": {
+      "description": "Person left their company",
+      "rules": [
+        {
+          "condition": "end_date_exists AND company_name_unchanged",
+          "weight": 1.0
+        },
+        {
+          "condition": "title_null AND previously_had_title",
+          "weight": 0.85
+        },
+        {
+          "condition": "company_name_null AND previously_had_company",
+          "weight": 0.8
+        }
+      ],
+      "min_confidence": 0.75
+    },
+    "promotion": {
+      "description": "Person got promoted within same company",
+      "rules": [
+        {
+          "condition": "title_changed AND company_name_unchanged AND title_level_increased",
+          "weight": 1.0
+        },
+        {
+          "condition": "title_keywords_match_promotion AND company_unchanged",
+          "weight": 0.85
+        },
+        {
+          "condition": "org_layer_increased AND company_unchanged",
+          "weight": 0.9
+        }
+      ],
+      "promotion_keywords": [
+        "VP", "SVP", "Chief", "Director", "Head of", "Senior", "Lead", "Manager"
+      ],
+      "min_confidence": 0.7
+    },
+    "transfer": {
+      "description": "Person moved to different role/department, same company",
+      "rules": [
+        {
+          "condition": "title_changed AND company_name_unchanged AND title_level_same",
+          "weight": 0.8
+        },
+        {
+          "condition": "department_changed AND company_unchanged",
+          "weight": 0.85
+        }
+      ],
+      "min_confidence": 0.65
+    }
+  },
+  "title_levels": {
+    "executive": ["CEO", "COO", "CFO", "CTO", "CMO", "Chief", "President", "EVP"],
+    "senior_management": ["VP", "SVP", "Vice President", "Senior Vice President", "Director", "Senior Director"],
+    "management": ["Manager", "Senior Manager", "Head of", "Lead"],
+    "individual_contributor": ["Engineer", "Analyst", "Specialist", "Coordinator", "Associate"]
+  },
+  "hash_fields": [
+    "full_name",
+    "title",
+    "company_name",
+    "company_unique_id",
+    "start_date",
+    "end_date",
+    "linkedin_url"
+  ],
+  "reprocessing_cooldown_hours": 168,
+  "max_movements_per_person_per_month": 2
+}
