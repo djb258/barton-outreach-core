@@ -1,0 +1,104 @@
+{
+  "audit_timestamp": "2025-11-25T12:49:48.016377",
+  "failed_validation_queue": {
+    "table_name": "marketing.company_invalid",
+    "row_count": 114,
+    "failure_reasons": {
+      "Website URL is empty": 114
+    },
+    "by_state": {
+      "West Virginia": 114
+    },
+    "reviewed_status": {
+      "Not Reviewed": 114
+    },
+    "examples": [
+      {
+        "id": 20,
+        "company_unique_id": "04.04.01.02.00102.102",
+        "company_name": "Mountaineer Casino Resort",
+        "website": "",
+        "employee_count": 280,
+        "reason_code": "Website URL is empty",
+        "failed_at": "2025-11-07T21:32:08.019159",
+        "reviewed": false,
+        "validation_errors": [
+          "Website URL is empty"
+        ]
+      },
+      {
+        "id": 22,
+        "company_unique_id": "04.04.01.04.00104.104",
+        "company_name": "NewForce by Generation West Virginia",
+        "website": "",
+        "employee_count": 48,
+        "reason_code": "Website URL is empty",
+        "failed_at": "2025-11-07T21:32:08.019159",
+        "reviewed": false,
+        "validation_errors": [
+          "Website URL is empty"
+        ]
+      },
+      {
+        "id": 24,
+        "company_unique_id": "04.04.01.06.00106.106",
+        "company_name": "Reverse Mortgage Specialist",
+        "website": "",
+        "employee_count": 30,
+        "reason_code": "Website URL is empty",
+        "failed_at": "2025-11-07T21:32:08.019159",
+        "reviewed": false,
+        "validation_errors": [
+          "Website URL is empty"
+        ]
+      },
+      {
+        "id": 18,
+        "company_unique_id": "04.04.01.01.00201.201",
+        "company_name": "FIRST CHOICE WV PLLC",
+        "website": "",
+        "employee_count": 130,
+        "reason_code": "Website URL is empty",
+        "failed_at": "2025-11-07T21:32:08.019159",
+        "reviewed": false,
+        "validation_errors": [
+          "Website URL is empty"
+        ]
+      },
+      {
+        "id": 17,
+        "company_unique_id": "04.04.01.01.00101.101",
+        "company_name": "MONONGALIA COUNTY",
+        "website": "",
+        "employee_count": 55,
+        "reason_code": "Website URL is empty",
+        "failed_at": "2025-11-07T21:32:08.019159",
+        "reviewed": false,
+        "validation_errors": [
+          "Website URL is empty"
+        ]
+      }
+    ]
+  },
+  "validated_companies": {
+    "total_count": 453,
+    "by_state": {
+      "West Virginia": 453
+    },
+    "slot_stats": {
+      "complete_slots_3of3": 3,
+      "incomplete_slots": 117,
+      "missing_ceo": 378,
+      "missing_cfo": 387,
+      "missing_hr": 440,
+      "no_slots": 333
+    }
+  },
+  "summary": {
+    "total_companies_loaded": 567,
+    "validation_pass_count": 453,
+    "validation_fail_count": 114,
+    "validation_pass_rate": 79.89,
+    "slot_completion_rate": 0.66
+  }
+}
