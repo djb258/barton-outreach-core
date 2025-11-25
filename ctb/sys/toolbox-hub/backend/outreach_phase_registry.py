@@ -4,10 +4,15 @@ Outreach Phase Registry - Barton Toolbox Hub
 Maps each phase of the outreach pipeline to a callable Claude reference.
 Used for error handling, retries, and phase-based execution tracking.
 
-Phase Flow:
-0. Intake Load → 1. Company Validation → 2. Person Validation →
-3. Outreach Readiness → 4. BIT Trigger Check → 5. BIT Score Calculation →
-6. Promotion to Outreach Log
+Phase Flow (Updated 2025-11-25):
+0. Intake Load → 1. Company Validation → 1.1 People Validation →
+1.5 Three-Tier Enrichment Waterfall → 2 Person Validation →
+2.5 3/3 Slot Completion Gate → 3 Outreach Readiness →
+4. BIT Trigger Check → 5. BIT Score Calculation → 6. Promotion to Outreach Log
+
+NEW PHASES ADDED:
+- Phase 1.5: Three-Tier Enrichment Waterfall (Tier 1: $0.20, Tier 2: $1.50, Tier 3: $3.00)
+- Phase 2.5: 3/3 Slot Completion Gate (blocks outreach until CEO+CFO+HR filled)
 
 Usage:
     from backend.outreach_phase_registry import get_phase_entry, OUTREACH_PHASES
@@ -87,6 +92,40 @@ OUTREACH_PHASES = [
         "failure_schema": ["title mismatch", "missing email", "no LinkedIn URL", "bad format or missing timestamp", "not linked to company"]
     },
     {
+        "phase_id": 1.5,
+        "phase_name": "Three-Tier Enrichment Waterfall",
+        "description": "Cost-optimized enrichment through three tiers: Tier 1 ($0.20), Tier 2 ($1.50), Tier 3 ($3.00)",
+        "file": "backend/enrichment/three_tier_waterfall.py",
+        "function": "enrich_entity",
+        "status": "implemented",
+        "input_table": "marketing.company_master / marketing.people_master",
+        "output_table": "marketing.data_enrichment_log",
+        "error_routing": "shq.error_master",
+        "dependencies": [1],  # Requires Phase 1 (Company Validation)
+        "estimated_duration_seconds": 10,
+        "doctrine_id": "04.04.02.04.15000.001",
+        "tiers": {
+            "tier_1": {
+                "name": "Cheap & Wide",
+                "cost": 0.20,
+                "success_rate": 0.80,
+                "providers": ["Firecrawl", "SerpAPI", "Clearbit Lite"]
+            },
+            "tier_2": {
+                "name": "Mid-Cost Selective",
+                "cost": 1.50,
+                "success_rate": 0.15,
+                "providers": ["Abacus.ai", "Clay", "People Data APIs"]
+            },
+            "tier_3": {
+                "name": "Expensive Precision",
+                "cost": 3.00,
+                "success_rate": 0.05,
+                "providers": ["RocketReach", "PDL", "Apify"]
+            }
+        }
+    },
+    {
         "phase_id": 2,
         "phase_name": "Person Validation (Low-Level)",
         "description": "Low-level function: Checks LinkedIn, email, title, and company link (single person record)",
@@ -101,6 +140,28 @@ OUTREACH_PHASES = [
         "validation_rules": 7,
         "severity_levels": ["CRITICAL", "ERROR", "WARNING"],
         "note": "This is the low-level validation function. Use Phase 1.1 for batch processing."
+    },
+    {
+        "phase_id": 2.5,
+        "phase_name": "3/3 Slot Completion Gate",
+        "description": "BLOCKING GATE: Requires all 3 executive slots (CEO, CFO, HR) filled before outreach",
+        "file": "backend/gates/slot_completion_gate.py",
+        "function": "check_slot_completion",
+        "status": "implemented",
+        "input_table": "marketing.company_slot",
+        "output_table": "Gate decision (pass/wait)",
+        "error_routing": "n8n webhook → Google Sheets (Enrichment_Queue)",
+        "dependencies": [1.5, 2],  # Requires Enrichment and Person Validation
+        "estimated_duration_seconds": 1,
+        "doctrine_id": "04.04.02.04.25000.001",
+        "gate_type": "blocking",
+        "required_slots": ["CEO", "CFO", "HR"],
+        "slot_messaging": {
+            "CEO": "Cost/ROI messaging for executive buy-in",
+            "CFO": "Budget/financial justification messaging",
+            "HR": "Service/efficiency messaging for operational support"
+        },
+        "on_fail": "Return to enrichment waterfall for missing slots"
     },
     {
         "phase_id": 3,
