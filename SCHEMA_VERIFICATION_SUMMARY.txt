@@ -1,0 +1,130 @@
+================================================================================
+PLE SCHEMA VERIFICATION - EXECUTIVE SUMMARY
+================================================================================
+Date: 2025-11-26
+Database: Neon PostgreSQL - Marketing DB
+Connection: Verified and operational
+
+--------------------------------------------------------------------------------
+OVERALL STATUS: 50% Complete (3/6 Core Tables Exist)
+--------------------------------------------------------------------------------
+
+EXISTING TABLES (with different column names):
+  [OK] companies          -> marketing.company_master
+  [OK] company_slots      -> marketing.company_slot
+  [OK] people             -> marketing.people_master
+
+MISSING TABLES (need to be created):
+  [!!] person_movement_history - Career tracking & job changes
+  [!!] person_scores           - BIT scores & confidence
+  [!!] company_events          - Company news & events
+
+--------------------------------------------------------------------------------
+CRITICAL MISSING COLUMNS (must be added to existing tables):
+--------------------------------------------------------------------------------
+
+marketing.people_master:
+  - validation_status       (pending/valid/invalid/expired)
+  - last_verified_at        (timestamp of last verification)
+  - last_enrichment_attempt (timestamp of last enrichment)
+
+marketing.company_slot:
+  - vacated_at             (timestamp when person left slot)
+
+--------------------------------------------------------------------------------
+MIGRATION PLAN (4 phases, all low-risk):
+--------------------------------------------------------------------------------
+
+Phase 1: Add Missing Columns
+  Risk: LOW (nullable columns with defaults)
+  Time: < 5 minutes
+  Impact: Extends existing tables for PLE compliance
+
+Phase 2: Create PLE Views
+  Risk: NONE (read-only views)
+  Time: < 5 minutes
+  Impact: Enables PLE-compliant queries without code changes
+
+Phase 3: Create Sidecar Tables
+  Risk: LOW (new tables, no existing data affected)
+  Time: < 10 minutes
+  Impact: Adds movement history, scoring, and event tracking
+
+Phase 4: Add Indexes
+  Risk: NONE (performance improvement only)
+  Time: < 5 minutes
+  Impact: Optimizes query performance
+
+Total Migration Time: ~25 minutes
+
+--------------------------------------------------------------------------------
+FILES GENERATED:
+--------------------------------------------------------------------------------
+
+1. PLE_SCHEMA_VERIFICATION_REPORT.md
+   - Full detailed report (30+ pages)
+   - Complete column-by-column comparison
+   - Integration points and risk assessment
+
+2. ctb/sys/enrichment/ple_schema_migration.sql
+   - Production-ready SQL migration script
+   - All 4 phases with rollback instructions
+   - 500+ lines of tested SQL
+
+3. ctb/sys/enrichment/PLE_SCHEMA_QUICK_REFERENCE.md
+   - One-page quick reference guide
+   - Column name mapping table
+   - Example queries
+
+4. ctb/sys/enrichment/ple_schema_summary.json
+   - Machine-readable summary
+   - For automated tooling and dashboards
+
+5. verify_ple_schema.py
+   - Python verification script
+   - Re-run anytime to check status
+
+--------------------------------------------------------------------------------
+NEXT STEPS:
+--------------------------------------------------------------------------------
+
+1. Review PLE_SCHEMA_VERIFICATION_REPORT.md (detailed analysis)
+2. Execute Phase 1: Add missing columns (5 min)
+3. Execute Phase 2: Create PLE views (5 min)
+4. Execute Phase 3: Create sidecar tables (10 min)
+5. Execute Phase 4: Add indexes (5 min)
+6. Test PLE views with sample queries
+7. Backfill validation_status for existing records
+
+--------------------------------------------------------------------------------
+COMPATIBILITY NOTES:
+--------------------------------------------------------------------------------
+
+After Phase 2 (creating views), you can query using EITHER naming convention:
+
+Old Style (still works):
+  SELECT company_name FROM marketing.company_master;
+
+New Style (PLE-compliant):
+  SELECT name FROM ple.companies;
+
+Both return the same data. No code needs to change immediately.
+
+--------------------------------------------------------------------------------
+RISK ASSESSMENT: LOW
+--------------------------------------------------------------------------------
+
+All operations are:
+  - Additive (no data loss)
+  - Non-breaking (existing code continues to work)
+  - Reversible (rollback script included)
+  - Tested (against PostgreSQL 15+)
+
+Safe to execute in production.
+
+================================================================================
+For questions or issues:
+- See full report: PLE_SCHEMA_VERIFICATION_REPORT.md
+- See migration SQL: ctb/sys/enrichment/ple_schema_migration.sql
+- Re-run verification: python verify_ple_schema.py
+================================================================================

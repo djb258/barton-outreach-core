@@ -1,0 +1,49 @@
+[
+  {
+    "company_name": "Valid Widget Corp",
+    "employee_count": 150,
+    "address_state": "PA",
+    "source_system": "clay",
+    "website_url": "https://widgetcorp.com",
+    "industry": "Manufacturing"
+  },
+  {
+    "company_name": "Valid Tech Solutions",
+    "employee_count": 500,
+    "address_state": "West Virginia",
+    "source_system": "clay",
+    "website_url": "https://techsolutions.com",
+    "industry": "Technology"
+  },
+  {
+    "company_name": "Too Small Inc",
+    "employee_count": 25,
+    "address_state": "PA",
+    "source_system": "clay",
+    "website_url": "https://toosmall.com"
+  },
+  {
+    "company_name": "Wrong State Corp",
+    "employee_count": 200,
+    "address_state": "NY",
+    "source_system": "clay",
+    "website_url": "https://wrongstate.com"
+  },
+  {
+    "company_name": "Missing Employee Count",
+    "address_state": "VA",
+    "source_system": "clay",
+    "website_url": "https://missing.com"
+  },
+  {
+    "company_name": "",
+    "employee_count": 100,
+    "address_state": "OH",
+    "source_system": "clay"
+  },
+  {
+    "company_name": "No Source System",
+    "employee_count": 75,
+    "address_state": "KY"
+  }
+]
