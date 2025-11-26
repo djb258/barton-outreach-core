@@ -3,10 +3,9 @@
 ## 📋 INSTANT REPO OVERVIEW
 
 **Repository Name**: Barton Outreach Core
-**Primary Purpose**: Marketing intelligence & executive enrichment platform with data visualization
+**Primary Purpose**: Marketing intelligence & executive enrichment platform (PLE - Perpetual Lead Engine)
 **Sister Repository**: IMO Creator (AI-powered interface creation with Google Workspace integration)
 **Database**: Neon PostgreSQL (serverless)
-**Visualization**: Grafana Cloud (https://dbarton.grafana.net)
 **Integration Hub**: Composio MCP server (port 3001) managing 100+ services
 
 ---
@@ -28,12 +27,12 @@
      │   Neon     │                          │  Composio  │
      │ PostgreSQL │                          │  MCP :3001 │
      └────────────┘                          └────────────┘
-           │                                        │
-           │                                        │
-     ┌─────▼──────┐                          ┌─────▼──────┐
-     │  Grafana   │                          │   Google   │
-     │   Cloud    │                          │ Workspace  │
-     └────────────┘                          └────────────┘
+                                                   │
+                                                   │
+                                             ┌─────▼──────┐
+                                             │   Google   │
+                                             │ Workspace  │
+                                             └────────────┘
 
 SHARED FOUNDATIONS:
 ├── Barton Doctrine (ID Format: NN.NN.NN.NN.NNNNN.NNN)
@@ -51,10 +50,6 @@ SHARED FOUNDATIONS:
 ```bash
 # Check database connection
 psql postgresql://<NEON_USER>:<NEON_PASSWORD>@<NEON_HOST>:5432/<NEON_DATABASE>?sslmode=require
-
-# Access Grafana Cloud
-open https://dbarton.grafana.net
-# Token: <YOUR_GRAFANA_API_TOKEN>
 
 # Run enrichment sync
 cd infra/scripts
@@ -92,7 +87,6 @@ barton-outreach-core/
 ├── infra/                                # Infrastructure & deployment
 │   ├── docs/
 │   │   ├── ENRICHMENT_TRACKING_QUERIES.sql        # Executive enrichment monitoring
-│   │   ├── ENRICHMENT_TRACKING_DASHBOARD.md       # Grafana dashboard guide
 │   │   ├── svg-ple-todo.md                        # Project tracker (53% complete)
 │   │   ├── AUTO_SYNC_GITHUB_PROJECTS.md           # Auto-sync documentation
 │   │   └── GITHUB_PROJECTS_SETUP.md               # GitHub Projects integration
@@ -106,26 +100,21 @@ barton-outreach-core/
 │   └── migrations/
 │       └── 001_create_shq_error_log.sql           # Error logging table
 │
-├── grafana/                              # Grafana dashboards (local Docker - optional)
-│   └── provisioning/
-│       └── dashboards/
-│           ├── barton-outreach-dashboard.json          # Overview dashboard
-│           ├── executive-enrichment-monitoring.json    # Enrichment tracking
-│           └── svg-ple-dashboard.json                  # BIT + Enrichment
+├── repo-data-diagrams/                   # PLE schema documentation
+│   ├── README.md                         # Central index for schema docs
+│   ├── PLE_SCHEMA_ERD.md                 # Mermaid ERD diagram
+│   ├── PLE_SCHEMA_REFERENCE.md           # Complete column reference
+│   └── ple_schema.json                   # Machine-readable schema
 │
 ├── docs/
-│   ├── schema_map.json                   # Neon database schema (auto-generated)
-│   ├── GRAFANA_CLOUD_SETUP_GUIDE.md      # Grafana Cloud setup
-│   ├── IMPORT_DASHBOARDS_NOW.md          # Dashboard import guide
-│   └── NO_DOCKER_ALTERNATIVES.md         # Non-Docker visualization options
+│   └── schema_map.json                   # Neon database schema (auto-generated)
 │
 ├── .github/
 │   └── workflows/
 │       └── sync-svg-ple-todo.yml         # Auto-sync GitHub Actions
 │
 ├── .env                                  # Environment variables (see below)
-├── package.json                          # Node.js dependencies
-└── docker-compose.yml                    # Optional local Grafana (conflicts with npx)
+└── package.json                          # Node.js dependencies
 ```
 
 ---
@@ -266,44 +255,6 @@ Related (External):
 
 ---
 
-## 📊 GRAFANA CLOUD SETUP
-
-**Instance URL**: https://dbarton.grafana.net
-**API Token**: `<YOUR_GRAFANA_API_TOKEN>`
-**Authentication**: Anonymous access enabled (no login required)
-
-### Existing Dashboards
-
-1. **Barton Outreach Overview**
-   - Total Companies, Contacts, Filled Slots
-   - Unresolved Errors
-   - Filled Slots by Role (CFO/CEO/HR)
-   - Top 20 Companies by Contact Count
-   - Resolution Queue Breakdown
-   - Company & Contact Growth (Last 30 Days)
-
-2. **Executive Enrichment Monitoring**
-   - Pending/Running/Failed Jobs (real-time stats)
-   - Success Rate %, Avg Duration
-   - Executive Slots Pending Enrichment (table)
-   - Enrichment Jobs In Progress (table)
-   - Failed Enrichment Jobs (Last 24h)
-   - Agent Performance (Last 7 Days)
-   - Enrichment Timeline (Last 24h)
-
-3. **SVG-PLE Dashboard (BIT + Enrichment)**
-   - BIT Heatmap — Company Intent Scores
-   - Enrichment ROI — Cost Per Success by Agent
-   - Renewal Pipeline — Next 120 Days
-   - Score Distribution
-   - Hot Companies
-   - Signal Types (Last 30 Days)
-
-**Import Path**: `grafana/provisioning/dashboards/*.json`
-**Import Method**: Grafana UI → New → Import → Upload JSON
-
----
-
 ## ✅ VERIFIED INTEGRATIONS
 
 ### Google Workspace (via Composio MCP - IMO Creator)
@@ -319,7 +270,6 @@ Related (External):
 ### Infrastructure
 
 - **Neon PostgreSQL**: Active (Marketing DB)
-- **Grafana Cloud**: Active (https://dbarton.grafana.net)
 - **Render**: Deployment environment (IMO Creator)
 - **Vercel**: Frontend deployment (IMO Creator)
 - **Firebase**: MCP server ready
@@ -346,19 +296,12 @@ NEON_USER=Marketing DB_owner
 NEON_PASSWORD=<YOUR_NEON_PASSWORD>
 NEON_ENDPOINT_ID=ep-ancient-waterfall-a42vy0du
 
-# Grafana Cloud
-GRAFANA_CLOUD_URL=https://dbarton.grafana.net
-GRAFANA_API_TOKEN=<YOUR_GRAFANA_API_TOKEN>
-
 # Barton Doctrine
 DOCTRINE_SUBHIVE=04
 DOCTRINE_APP=outreach
 DOCTRINE_LAYER=04
 DOCTRINE_SCHEMA=02
 DOCTRINE_VERSION=04
-
-# Optional: Local Grafana (if not using Grafana Cloud)
-GRAFANA_ADMIN_PASSWORD=changeme
 ```
 
 ### IMO Creator (.env)
@@ -447,22 +390,6 @@ WHERE severity IN ('error', 'critical')
 ORDER BY created_at DESC LIMIT 20;
 ```
 
-### Working with Grafana Cloud
-
-```bash
-# Access dashboards
-open https://dbarton.grafana.net
-
-# Import new dashboard
-# 1. Go to Dashboards → New → Import
-# 2. Upload JSON from grafana/provisioning/dashboards/
-# 3. Select Neon PostgreSQL data source
-# 4. Click Import
-
-# Test data source connection
-# Settings → Data Sources → Neon PostgreSQL → Save & Test
-```
-
 ### Working with Google Services (via Composio MCP)
 
 ```bash
@@ -529,21 +456,6 @@ psql -c "\d marketing.company_master"
 psql -c "SELECT count(*) FROM pg_stat_activity;"
 ```
 
-### Grafana Issues
-
-```bash
-# Verify data source connection
-# Go to: https://dbarton.grafana.net/connections/datasources
-# Click your PostgreSQL source → "Save & Test"
-
-# Check if dashboards exist
-# Go to: https://dbarton.grafana.net/dashboards
-
-# Re-import dashboard
-# Dashboards → New → Import → Upload JSON file
-# Select: grafana/provisioning/dashboards/*.json
-```
-
 ### MCP Server Issues (IMO Creator)
 
 ```bash
@@ -579,11 +491,9 @@ psql -c "SELECT agent_name, COUNT(*) total, ROUND(100.0 * COUNT(*) FILTER (WHERE
 1. **OUTREACH_DOCTRINE_A_Z_v1.3.2.md** - Complete system documentation (ALWAYS READ FIRST)
 2. **FINAL_AUDIT_SUMMARY.md** - 100% compliance audit & achievement summary
 3. **infra/docs/ENRICHMENT_TRACKING_QUERIES.sql** - All enrichment monitoring queries
-4. **infra/docs/ENRICHMENT_TRACKING_DASHBOARD.md** - Grafana dashboard usage guide
-5. **infra/docs/svg-ple-todo.md** - Project tracker (53% complete, GitHub Projects synced)
-6. **docs/GRAFANA_CLOUD_SETUP_GUIDE.md** - Grafana Cloud setup instructions
-7. **docs/NO_DOCKER_ALTERNATIVES.md** - Non-Docker visualization options
-8. **docs/schema_map.json** - Auto-generated Neon database schema reference
+4. **infra/docs/svg-ple-todo.md** - Project tracker (53% complete, GitHub Projects synced)
+5. **repo-data-diagrams/** - PLE schema documentation (ERD, reference, JSON)
+6. **docs/schema_map.json** - Auto-generated Neon database schema reference
 
 ### IMO Creator (Sister Repo)
 
@@ -739,17 +649,14 @@ log_pipeline_event("person_validation_check", {
 # 1. Check database connectivity
 psql postgresql://Marketing_DB_owner:endpoint=ep-ancient-waterfall-a42vy0du;npg_OsE4Z2oPCpiT@ep-ancient-waterfall-a42vy0du-pooler.us-east-1.aws.neon.tech:5432/Marketing_DB?sslmode=require -c "SELECT 'DB Connected' as status;"
 
-# 2. Open Grafana Cloud
-open https://dbarton.grafana.net
-
-# 3. Check recent errors
+# 2. Check recent errors
 psql -c "SELECT error_code, error_message, severity, created_at FROM public.shq_error_log WHERE severity IN ('error','critical') ORDER BY created_at DESC LIMIT 10;"
 
-# 4. If using Google services: Start Composio MCP
+# 3. If using Google services: Start Composio MCP
 cd "C:\Users\CUSTOM PC\Desktop\Cursor Builds\scraping-tool\imo-creator\mcp-servers\composio-mcp"
 node server.js &
 
-# 5. Review project status
+# 4. Review project status
 cat infra/docs/svg-ple-todo.md
 ```
 
@@ -779,10 +686,7 @@ curl -X POST http://localhost:8000/api/v1/enrichment/trigger \
   -H "Content-Type: application/json" \
   -d '{"company_unique_id": "04.04.02.04.30000.001", "slot_type": "CEO"}'
 
-# Check enrichment status in Grafana
-open https://dbarton.grafana.net/d/executive-enrichment-monitoring
-
-# Or query directly
+# Check enrichment status
 psql -c "SELECT * FROM marketing.data_enrichment_log WHERE company_unique_id = '04.04.02.04.30000.001' ORDER BY started_at DESC LIMIT 5;"
 ```
 
@@ -819,7 +723,6 @@ git push origin main
 ### For Barton Outreach Core
 
 - **Use Neon Console for quick queries**: https://console.neon.tech
-- **Use Grafana Cloud for monitoring** (not Docker - conflicts with npx)
 - **Use DBeaver for advanced SQL work** (won't conflict with development tools)
 - **Auto-sync GitHub Projects** with watch mode for real-time updates
 - **Batch enrichment jobs** to avoid rate limiting
@@ -850,15 +753,14 @@ git push origin main
 
 - **Barton Outreach Doctrine**: `OUTREACH_DOCTRINE_A_Z_v1.3.2.md`
 - **100% Compliance Audit**: `FINAL_AUDIT_SUMMARY.md`
+- **PLE Schema Reference**: `repo-data-diagrams/`
 - **Composio Docs**: https://docs.composio.dev
 - **MCP Specification**: https://modelcontextprotocol.io
 - **Neon Docs**: https://neon.tech/docs
-- **Grafana Cloud Docs**: https://grafana.com/docs/grafana-cloud
 
 ### Services
 
 - **Neon Console**: https://console.neon.tech
-- **Grafana Cloud**: https://dbarton.grafana.net
 - **Composio Dashboard**: https://app.composio.dev
 - **GitHub Projects**: https://github.com/users/dbarton/projects
 
@@ -868,14 +770,14 @@ git push origin main
 # Database credentials
 cat .env | grep NEON
 
-# Grafana token
-cat .env | grep GRAFANA
-
 # Enrichment queries
 cat infra/docs/ENRICHMENT_TRACKING_QUERIES.sql
 
 # Schema reference
 cat docs/schema_map.json
+
+# PLE ERD
+cat repo-data-diagrams/PLE_SCHEMA_ERD.md
 
 # Project status
 cat infra/docs/svg-ple-todo.md
@@ -898,9 +800,10 @@ psql -c "SELECT * FROM public.shq_error_log ORDER BY created_at DESC LIMIT 20;"
 3. ✅ Numbering System: 222+ occurrences of 6-part Barton IDs
 4. ✅ Error Logging: Database table + sync scripts operational
 5. ✅ Composio Integration: MCP integration complete, legacy archived
-6. ✅ Firebase & Lovable: 11 Firebase widgets + 6 Lovable sections
+6. ✅ Firebase: 11 Firebase widgets configured
 7. ✅ Automation Scripts: schema:refresh, sync:errors, compliance:complete
 8. ✅ Documentation Cross-Links: Section 14 added (162 lines)
+9. ✅ PLE Schema Documentation: ERD, Reference, JSON in repo-data-diagrams/
 
 **In Progress** (🔄):
 - SVG-PLE Implementation: 53% complete (16/30 tasks)
@@ -908,14 +811,7 @@ psql -c "SELECT * FROM public.shq_error_log ORDER BY created_at DESC LIMIT 20;"
   - Phase 2: BIT Infrastructure (100%)
   - Phase 3: Enrichment Spoke (80%)
   - Phase 4: Renewal & PLE Integration (40%)
-  - Phase 5: Grafana Dashboard Build (0% - Next)
   - Phase 6: Verification & QA (17%)
-
-**Grafana Cloud**:
-- Instance active: https://dbarton.grafana.net
-- 3 dashboards ready to import (local JSON files)
-- Anonymous access configured
-- Neon PostgreSQL connected
 
 ### IMO Creator (Sister Repo)
 
@@ -932,10 +828,10 @@ psql -c "SELECT * FROM public.shq_error_log ORDER BY created_at DESC LIMIT 20;"
 
 **For Barton Outreach Core**:
 - ✅ Neon PostgreSQL is your single source of truth
-- ✅ Grafana Cloud (not Docker) for visualization
 - ✅ All enrichment tracking via SQL queries
 - ✅ Barton IDs: `04.04.02.04.#####.###`
 - ✅ Log everything to `shq_error_log`
+- ✅ PLE schema docs in `repo-data-diagrams/`
 
 **For IMO Creator**:
 - ✅ Composio MCP handles ALL external API integrations
@@ -951,8 +847,7 @@ psql -c "SELECT * FROM public.shq_error_log ORDER BY created_at DESC LIMIT 20;"
 
 ---
 
-**Last Updated**: 2025-11-07
+**Last Updated**: 2025-11-26
 **Barton Outreach Core Status**: 100% Compliant, Production Ready
 **IMO Creator Status**: All Systems Operational
-**Grafana Cloud Status**: Active (https://dbarton.grafana.net)
 **Total Achievement**: 1,800+ lines of code/docs, 20+ files, 4 commits, Production-ready monitoring

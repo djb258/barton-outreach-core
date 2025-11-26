@@ -1,0 +1,1107 @@
+{
+  "schema_name": "marketing",
+  "database": "Marketing DB",
+  "host": "ep-ancient-waterfall-a42vy0du-pooler.us-east-1.aws.neon.tech",
+  "version": "1.0.0",
+  "generated_at": "2025-11-26T00:00:00Z",
+  "barton_doctrine": {
+    "subhive": "04",
+    "app": "04",
+    "schemas": {
+      "company": "01",
+      "person": "02",
+      "slot": "05"
+    }
+  },
+  "tables": {
+    "company_master": {
+      "purpose": "Master record for validated companies in the outreach pipeline",
+      "barton_id_format": "04.04.01.XX.XXXXX.XXX",
+      "primary_key": "company_unique_id",
+      "columns": [
+        {
+          "name": "company_unique_id",
+          "type": "text",
+          "required": true,
+          "default": null,
+          "constraints": ["PRIMARY KEY", "Barton ID format"],
+          "description": "Unique company identifier"
+        },
+        {
+          "name": "company_name",
+          "type": "text",
+          "required": true,
+          "default": null,
+          "constraints": [],
+          "description": "Legal or DBA company name"
+        },
+        {
+          "name": "website_url",
+          "type": "text",
+          "required": true,
+          "default": null,
+          "constraints": [],
+          "description": "Primary company website"
+        },
+        {
+          "name": "industry",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Industry classification"
+        },
+        {
+          "name": "employee_count",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "constraints": [">=50", ">=0"],
+          "description": "Number of employees"
+        },
+        {
+          "name": "company_phone",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Main company phone"
+        },
+        {
+          "name": "address_street",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Street address"
+        },
+        {
+          "name": "address_city",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "City"
+        },
+        {
+          "name": "address_state",
+          "type": "text",
+          "required": true,
+          "default": null,
+          "constraints": ["IN (PA, VA, MD, OH, WV, KY)"],
+          "description": "State (full name)"
+        },
+        {
+          "name": "address_zip",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "ZIP code"
+        },
+        {
+          "name": "address_country",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Country"
+        },
+        {
+          "name": "linkedin_url",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "LinkedIn company page"
+        },
+        {
+          "name": "facebook_url",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Facebook page"
+        },
+        {
+          "name": "twitter_url",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Twitter/X handle"
+        },
+        {
+          "name": "sic_codes",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "SIC classification codes"
+        },
+        {
+          "name": "founded_year",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "constraints": [">=1700", "<=CURRENT_YEAR"],
+          "description": "Year founded"
+        },
+        {
+          "name": "keywords",
+          "type": "text[]",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Search/classification keywords"
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Company description"
+        },
+        {
+          "name": "source_system",
+          "type": "text",
+          "required": true,
+          "default": null,
+          "constraints": [],
+          "description": "Source system name"
+        },
+        {
+          "name": "source_record_id",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Source system record ID"
+        },
+        {
+          "name": "promoted_from_intake_at",
+          "type": "timestamptz",
+          "required": true,
+          "default": "now()",
+          "constraints": [],
+          "description": "Promotion timestamp"
+        },
+        {
+          "name": "promotion_audit_log_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Audit log reference"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "required": false,
+          "default": "now()",
+          "constraints": [],
+          "description": "Record creation time"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "required": false,
+          "default": "now()",
+          "constraints": [],
+          "description": "Last update time"
+        },
+        {
+          "name": "state_abbrev",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "State abbreviation (e.g., PA)"
+        },
+        {
+          "name": "import_batch_id",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Batch import identifier"
+        },
+        {
+          "name": "validated_at",
+          "type": "timestamptz",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Validation timestamp"
+        },
+        {
+          "name": "validated_by",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Validator identifier"
+        },
+        {
+          "name": "data_quality_score",
+          "type": "numeric",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Data quality score (0-100)"
+        }
+      ],
+      "foreign_keys": [],
+      "unique_constraints": []
+    },
+    "company_slot": {
+      "purpose": "Tracks executive positions (CEO, CFO, HR) per company",
+      "barton_id_format": "04.04.05.XX.XXXXX.XXX",
+      "primary_key": "company_slot_unique_id",
+      "columns": [
+        {
+          "name": "company_slot_unique_id",
+          "type": "text",
+          "required": true,
+          "default": null,
+          "constraints": ["PRIMARY KEY", "Barton ID format"],
+          "description": "Unique slot identifier"
+        },
+        {
+          "name": "company_unique_id",
+          "type": "text",
+          "required": true,
+          "default": null,
+          "constraints": ["FOREIGN KEY"],
+          "description": "Company reference",
+          "references": {
+            "table": "company_master",
+            "column": "company_unique_id"
+          }
+        },
+        {
+          "name": "person_unique_id",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": ["FOREIGN KEY"],
+          "description": "Person filling slot (nullable)",
+          "references": {
+            "table": "people_master",
+            "column": "unique_id"
+          }
+        },
+        {
+          "name": "slot_type",
+          "type": "text",
+          "required": true,
+          "default": null,
+          "constraints": ["IN (CEO, CFO, HR)"],
+          "description": "Executive role type"
+        },
+        {
+          "name": "is_filled",
+          "type": "boolean",
+          "required": false,
+          "default": "false",
+          "constraints": [],
+          "description": "Whether slot is filled"
+        },
+        {
+          "name": "confidence_score",
+          "type": "numeric",
+          "required": false,
+          "default": null,
+          "constraints": ["0-100"],
+          "description": "Confidence in assignment"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "required": false,
+          "default": "now()",
+          "constraints": [],
+          "description": "Slot creation time"
+        },
+        {
+          "name": "filled_at",
+          "type": "timestamptz",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "When slot was filled"
+        },
+        {
+          "name": "last_refreshed_at",
+          "type": "timestamptz",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Last enrichment refresh"
+        },
+        {
+          "name": "filled_by",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Source that filled slot"
+        },
+        {
+          "name": "source_system",
+          "type": "text",
+          "required": false,
+          "default": "'manual'",
+          "constraints": [],
+          "description": "Source system"
+        },
+        {
+          "name": "enrichment_attempts",
+          "type": "integer",
+          "required": false,
+          "default": "0",
+          "constraints": [],
+          "description": "Number of enrichment attempts"
+        },
+        {
+          "name": "status",
+          "type": "varchar(20)",
+          "required": false,
+          "default": "'open'",
+          "constraints": [],
+          "description": "Slot status (open, filled, vacated)"
+        },
+        {
+          "name": "vacated_at",
+          "type": "timestamp",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "When person left role"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "column": "company_unique_id",
+          "references_table": "company_master",
+          "references_column": "company_unique_id",
+          "constraint_name": "fk_company"
+        },
+        {
+          "column": "person_unique_id",
+          "references_table": "people_master",
+          "references_column": "unique_id",
+          "constraint_name": "fk_person"
+        }
+      ],
+      "unique_constraints": [
+        {
+          "name": "unique_company_slot",
+          "columns": ["company_unique_id", "slot_type"],
+          "description": "One slot per role per company"
+        }
+      ]
+    },
+    "people_master": {
+      "purpose": "Master record for executive contacts in the pipeline",
+      "barton_id_format": "04.04.02.XX.XXXXX.XXX",
+      "primary_key": "unique_id",
+      "columns": [
+        {
+          "name": "unique_id",
+          "type": "text",
+          "required": true,
+          "default": null,
+          "constraints": ["PRIMARY KEY", "Barton ID format"],
+          "description": "Unique person identifier"
+        },
+        {
+          "name": "company_unique_id",
+          "type": "text",
+          "required": true,
+          "default": null,
+          "constraints": ["FOREIGN KEY"],
+          "description": "Current company",
+          "references": {
+            "table": "company_master",
+            "column": "company_unique_id"
+          }
+        },
+        {
+          "name": "company_slot_unique_id",
+          "type": "text",
+          "required": true,
+          "default": null,
+          "constraints": ["FOREIGN KEY"],
+          "description": "Slot being filled",
+          "references": {
+            "table": "company_slot",
+            "column": "company_slot_unique_id"
+          }
+        },
+        {
+          "name": "first_name",
+          "type": "text",
+          "required": true,
+          "default": null,
+          "constraints": [],
+          "description": "First name"
+        },
+        {
+          "name": "last_name",
+          "type": "text",
+          "required": true,
+          "default": null,
+          "constraints": [],
+          "description": "Last name"
+        },
+        {
+          "name": "full_name",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Full name (computed)"
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Job title"
+        },
+        {
+          "name": "seniority",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Seniority level"
+        },
+        {
+          "name": "department",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Department"
+        },
+        {
+          "name": "email",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": ["Valid email format", "email OR linkedin_url required"],
+          "description": "Email address"
+        },
+        {
+          "name": "work_phone_e164",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Work phone (E.164 format)"
+        },
+        {
+          "name": "personal_phone_e164",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Personal phone (E.164)"
+        },
+        {
+          "name": "linkedin_url",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": ["email OR linkedin_url required"],
+          "description": "LinkedIn profile URL"
+        },
+        {
+          "name": "twitter_url",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Twitter/X profile"
+        },
+        {
+          "name": "facebook_url",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Facebook profile"
+        },
+        {
+          "name": "bio",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Professional bio"
+        },
+        {
+          "name": "skills",
+          "type": "text[]",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Skills array"
+        },
+        {
+          "name": "education",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Education history"
+        },
+        {
+          "name": "certifications",
+          "type": "text[]",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Certifications array"
+        },
+        {
+          "name": "source_system",
+          "type": "text",
+          "required": true,
+          "default": null,
+          "constraints": [],
+          "description": "Source system"
+        },
+        {
+          "name": "source_record_id",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Source record ID"
+        },
+        {
+          "name": "promoted_from_intake_at",
+          "type": "timestamptz",
+          "required": true,
+          "default": "now()",
+          "constraints": [],
+          "description": "Promotion timestamp"
+        },
+        {
+          "name": "promotion_audit_log_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Audit log reference"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "required": false,
+          "default": "now()",
+          "constraints": [],
+          "description": "Record creation"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "required": false,
+          "default": "now()",
+          "constraints": [],
+          "description": "Last update"
+        },
+        {
+          "name": "email_verified",
+          "type": "boolean",
+          "required": false,
+          "default": "false",
+          "constraints": [],
+          "description": "Email verification status"
+        },
+        {
+          "name": "message_key_scheduled",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Scheduled message key"
+        },
+        {
+          "name": "email_verification_source",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Verification source"
+        },
+        {
+          "name": "email_verified_at",
+          "type": "timestamptz",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Verification timestamp"
+        },
+        {
+          "name": "validation_status",
+          "type": "varchar",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Validation status"
+        },
+        {
+          "name": "last_verified_at",
+          "type": "timestamp",
+          "required": true,
+          "default": "now()",
+          "constraints": [],
+          "description": "Last verification check"
+        },
+        {
+          "name": "last_enrichment_attempt",
+          "type": "timestamp",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Last enrichment attempt"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "column": "company_unique_id",
+          "references_table": "company_master",
+          "references_column": "company_unique_id",
+          "constraint_name": "people_master_company_barton_id_format"
+        },
+        {
+          "column": "company_slot_unique_id",
+          "references_table": "company_slot",
+          "references_column": "company_slot_unique_id",
+          "constraint_name": "people_master_slot_barton_id_format"
+        }
+      ],
+      "unique_constraints": []
+    },
+    "person_movement_history": {
+      "purpose": "Tracks executive job changes, promotions, and contact loss",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": "auto-increment",
+          "constraints": ["PRIMARY KEY"],
+          "description": "Auto-increment ID"
+        },
+        {
+          "name": "person_unique_id",
+          "type": "text",
+          "required": true,
+          "default": null,
+          "constraints": ["FOREIGN KEY"],
+          "description": "Person being tracked",
+          "references": {
+            "table": "people_master",
+            "column": "unique_id"
+          }
+        },
+        {
+          "name": "linkedin_url",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "LinkedIn URL at detection"
+        },
+        {
+          "name": "company_from_id",
+          "type": "text",
+          "required": true,
+          "default": null,
+          "constraints": ["FOREIGN KEY"],
+          "description": "Source company",
+          "references": {
+            "table": "company_master",
+            "column": "company_unique_id"
+          }
+        },
+        {
+          "name": "company_to_id",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": ["FOREIGN KEY"],
+          "description": "Destination company (null if lost)",
+          "references": {
+            "table": "company_master",
+            "column": "company_unique_id"
+          }
+        },
+        {
+          "name": "title_from",
+          "type": "text",
+          "required": true,
+          "default": null,
+          "constraints": [],
+          "description": "Previous title"
+        },
+        {
+          "name": "title_to",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "New title (null if lost contact)"
+        },
+        {
+          "name": "movement_type",
+          "type": "text",
+          "required": true,
+          "default": null,
+          "constraints": ["IN (company_change, title_change, contact_lost)"],
+          "description": "Type of movement"
+        },
+        {
+          "name": "detected_at",
+          "type": "timestamp",
+          "required": true,
+          "default": "now()",
+          "constraints": [],
+          "description": "Detection timestamp"
+        },
+        {
+          "name": "raw_payload",
+          "type": "jsonb",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Raw enrichment payload"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "required": false,
+          "default": "now()",
+          "constraints": [],
+          "description": "Record creation"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "column": "person_unique_id",
+          "references_table": "people_master",
+          "references_column": "unique_id",
+          "constraint_name": "person_movement_history_person_unique_id_fkey"
+        },
+        {
+          "column": "company_from_id",
+          "references_table": "company_master",
+          "references_column": "company_unique_id",
+          "constraint_name": "person_movement_history_company_from_id_fkey"
+        },
+        {
+          "column": "company_to_id",
+          "references_table": "company_master",
+          "references_column": "company_unique_id",
+          "constraint_name": "person_movement_history_company_to_id_fkey"
+        }
+      ],
+      "unique_constraints": []
+    },
+    "person_scores": {
+      "purpose": "Stores BIT (Buyer Intent Trigger) and confidence scores for contacts",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": "auto-increment",
+          "constraints": ["PRIMARY KEY"],
+          "description": "Auto-increment ID"
+        },
+        {
+          "name": "person_unique_id",
+          "type": "text",
+          "required": true,
+          "default": null,
+          "constraints": ["FOREIGN KEY", "UNIQUE"],
+          "description": "Person being scored",
+          "references": {
+            "table": "people_master",
+            "column": "unique_id"
+          }
+        },
+        {
+          "name": "bit_score",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "constraints": ["0-100"],
+          "description": "Buyer Intent Trigger score"
+        },
+        {
+          "name": "confidence_score",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "constraints": ["0-100"],
+          "description": "Confidence in data quality"
+        },
+        {
+          "name": "calculated_at",
+          "type": "timestamp",
+          "required": true,
+          "default": "now()",
+          "constraints": [],
+          "description": "Score calculation time"
+        },
+        {
+          "name": "score_factors",
+          "type": "jsonb",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Factors contributing to score"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "required": false,
+          "default": "now()",
+          "constraints": [],
+          "description": "Record creation"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "required": false,
+          "default": "now()",
+          "constraints": [],
+          "description": "Last update"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "column": "person_unique_id",
+          "references_table": "people_master",
+          "references_column": "unique_id",
+          "constraint_name": "person_scores_person_unique_id_fkey"
+        }
+      ],
+      "unique_constraints": [
+        {
+          "name": "person_scores_person_unique_id_key",
+          "columns": ["person_unique_id"],
+          "description": "One score record per person"
+        }
+      ]
+    },
+    "company_events": {
+      "purpose": "Tracks significant company events that impact BIT scores",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": "auto-increment",
+          "constraints": ["PRIMARY KEY"],
+          "description": "Auto-increment ID"
+        },
+        {
+          "name": "company_unique_id",
+          "type": "text",
+          "required": true,
+          "default": null,
+          "constraints": ["FOREIGN KEY"],
+          "description": "Company reference",
+          "references": {
+            "table": "company_master",
+            "column": "company_unique_id"
+          }
+        },
+        {
+          "name": "event_type",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": ["IN (funding, acquisition, ipo, layoff, leadership_change, product_launch, office_opening, other)"],
+          "description": "Type of event"
+        },
+        {
+          "name": "event_date",
+          "type": "date",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "When event occurred"
+        },
+        {
+          "name": "source_url",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Source URL for event"
+        },
+        {
+          "name": "summary",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Event summary"
+        },
+        {
+          "name": "detected_at",
+          "type": "timestamp",
+          "required": true,
+          "default": "now()",
+          "constraints": [],
+          "description": "When event was detected"
+        },
+        {
+          "name": "impacts_bit",
+          "type": "boolean",
+          "required": false,
+          "default": "true",
+          "constraints": [],
+          "description": "Whether event affects BIT"
+        },
+        {
+          "name": "bit_impact_score",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "constraints": ["-100 to 100"],
+          "description": "Impact on BIT score"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "required": false,
+          "default": "now()",
+          "constraints": [],
+          "description": "Record creation"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "column": "company_unique_id",
+          "references_table": "company_master",
+          "references_column": "company_unique_id",
+          "constraint_name": "company_events_company_unique_id_fkey"
+        }
+      ],
+      "unique_constraints": []
+    }
+  },
+  "relationships": [
+    {
+      "source_table": "company_slot",
+      "source_column": "company_unique_id",
+      "target_table": "company_master",
+      "target_column": "company_unique_id",
+      "relationship_type": "many-to-one",
+      "constraint_name": "fk_company"
+    },
+    {
+      "source_table": "company_slot",
+      "source_column": "person_unique_id",
+      "target_table": "people_master",
+      "target_column": "unique_id",
+      "relationship_type": "many-to-one (optional)",
+      "constraint_name": "fk_person"
+    },
+    {
+      "source_table": "people_master",
+      "source_column": "company_unique_id",
+      "target_table": "company_master",
+      "target_column": "company_unique_id",
+      "relationship_type": "many-to-one",
+      "constraint_name": "people_master_company_barton_id_format"
+    },
+    {
+      "source_table": "people_master",
+      "source_column": "company_slot_unique_id",
+      "target_table": "company_slot",
+      "target_column": "company_slot_unique_id",
+      "relationship_type": "one-to-one",
+      "constraint_name": "people_master_slot_barton_id_format"
+    },
+    {
+      "source_table": "person_movement_history",
+      "source_column": "person_unique_id",
+      "target_table": "people_master",
+      "target_column": "unique_id",
+      "relationship_type": "many-to-one",
+      "constraint_name": "person_movement_history_person_unique_id_fkey"
+    },
+    {
+      "source_table": "person_movement_history",
+      "source_column": "company_from_id",
+      "target_table": "company_master",
+      "target_column": "company_unique_id",
+      "relationship_type": "many-to-one",
+      "constraint_name": "person_movement_history_company_from_id_fkey"
+    },
+    {
+      "source_table": "person_movement_history",
+      "source_column": "company_to_id",
+      "target_table": "company_master",
+      "target_column": "company_unique_id",
+      "relationship_type": "many-to-one (optional)",
+      "constraint_name": "person_movement_history_company_to_id_fkey"
+    },
+    {
+      "source_table": "person_scores",
+      "source_column": "person_unique_id",
+      "target_table": "people_master",
+      "target_column": "unique_id",
+      "relationship_type": "one-to-one",
+      "constraint_name": "person_scores_person_unique_id_fkey"
+    },
+    {
+      "source_table": "company_events",
+      "source_column": "company_unique_id",
+      "target_table": "company_master",
+      "target_column": "company_unique_id",
+      "relationship_type": "many-to-one",
+      "constraint_name": "company_events_company_unique_id_fkey"
+    }
+  ],
+  "validation_rules": {
+    "barton_id_formats": {
+      "company": "^04\\.04\\.01\\.[0-9]{2}\\.[0-9]{5}\\.[0-9]{3}$",
+      "person": "^04\\.04\\.02\\.[0-9]{2}\\.[0-9]{5}\\.[0-9]{3}$",
+      "slot": "^04\\.04\\.05\\.[0-9]{2}\\.[0-9]{5}\\.[0-9]{3}$"
+    },
+    "email_format": "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$",
+    "valid_states": ["PA", "VA", "MD", "OH", "WV", "KY"],
+    "valid_slot_types": ["CEO", "CFO", "HR"],
+    "valid_movement_types": ["company_change", "title_change", "contact_lost"],
+    "valid_event_types": ["funding", "acquisition", "ipo", "layoff", "leadership_change", "product_launch", "office_opening", "other"],
+    "score_ranges": {
+      "bit_score": {"min": 0, "max": 100},
+      "confidence_score": {"min": 0, "max": 100},
+      "bit_impact_score": {"min": -100, "max": 100}
+    },
+    "employee_count_minimum": 50,
+    "founded_year_minimum": 1700
+  },
+  "enums": {
+    "slot_type": ["CEO", "CFO", "HR"],
+    "movement_type": ["company_change", "title_change", "contact_lost"],
+    "event_type": ["funding", "acquisition", "ipo", "layoff", "leadership_change", "product_launch", "office_opening", "other"],
+    "slot_status": ["open", "filled", "vacated"]
+  }
+}

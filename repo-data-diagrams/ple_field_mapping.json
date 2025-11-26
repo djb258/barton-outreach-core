@@ -1,0 +1,678 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2025-11-26T13:07:15.393Z",
+  "database_info": {
+    "schema": "marketing",
+    "connection_verified": true,
+    "total_tables": 6,
+    "total_columns": 104
+  },
+  "tables": {
+    "company_events": {
+      "spec_name": "company_events",
+      "actual_name": "company_events",
+      "column_count": 10,
+      "fields": {
+        "id": {
+          "actual_name": "id",
+          "data_type": "integer",
+          "is_nullable": "NO",
+          "has_default": true
+        },
+        "company_unique_id": {
+          "actual_name": "company_unique_id",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "has_default": false
+        },
+        "event_type": {
+          "actual_name": "event_type",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "event_date": {
+          "actual_name": "event_date",
+          "data_type": "date",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "source_url": {
+          "actual_name": "source_url",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "summary": {
+          "actual_name": "summary",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "detected_at": {
+          "actual_name": "detected_at",
+          "data_type": "timestamp without time zone",
+          "is_nullable": "NO",
+          "has_default": true
+        },
+        "impacts_bit": {
+          "actual_name": "impacts_bit",
+          "data_type": "boolean",
+          "is_nullable": "YES",
+          "has_default": true
+        },
+        "bit_impact_score": {
+          "actual_name": "bit_impact_score",
+          "data_type": "integer",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "created_at": {
+          "actual_name": "created_at",
+          "data_type": "timestamp without time zone",
+          "is_nullable": "YES",
+          "has_default": true
+        }
+      }
+    },
+    "company_master": {
+      "spec_name": "companies",
+      "actual_name": "company_master",
+      "column_count": 29,
+      "fields": {
+        "company_unique_id": {
+          "actual_name": "company_unique_id",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "has_default": false
+        },
+        "company_name": {
+          "actual_name": "company_name",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "has_default": false
+        },
+        "website_url": {
+          "actual_name": "website_url",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "has_default": false
+        },
+        "industry": {
+          "actual_name": "industry",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "employee_count": {
+          "actual_name": "employee_count",
+          "data_type": "integer",
+          "is_nullable": "NO",
+          "has_default": false
+        },
+        "company_phone": {
+          "actual_name": "company_phone",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "address_street": {
+          "actual_name": "address_street",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "address_city": {
+          "actual_name": "address_city",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "address_state": {
+          "actual_name": "address_state",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "has_default": false
+        },
+        "address_zip": {
+          "actual_name": "address_zip",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "address_country": {
+          "actual_name": "address_country",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "linkedin_url": {
+          "actual_name": "linkedin_url",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "facebook_url": {
+          "actual_name": "facebook_url",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "twitter_url": {
+          "actual_name": "twitter_url",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "sic_codes": {
+          "actual_name": "sic_codes",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "founded_year": {
+          "actual_name": "founded_year",
+          "data_type": "integer",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "keywords": {
+          "actual_name": "keywords",
+          "data_type": "ARRAY",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "description": {
+          "actual_name": "description",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "source_system": {
+          "actual_name": "source_system",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "has_default": false
+        },
+        "source_record_id": {
+          "actual_name": "source_record_id",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "promoted_from_intake_at": {
+          "actual_name": "promoted_from_intake_at",
+          "data_type": "timestamp with time zone",
+          "is_nullable": "NO",
+          "has_default": true
+        },
+        "promotion_audit_log_id": {
+          "actual_name": "promotion_audit_log_id",
+          "data_type": "integer",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "created_at": {
+          "actual_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "is_nullable": "YES",
+          "has_default": true
+        },
+        "updated_at": {
+          "actual_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "is_nullable": "YES",
+          "has_default": true
+        },
+        "state_abbrev": {
+          "actual_name": "state_abbrev",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "import_batch_id": {
+          "actual_name": "import_batch_id",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "validated_at": {
+          "actual_name": "validated_at",
+          "data_type": "timestamp with time zone",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "validated_by": {
+          "actual_name": "validated_by",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "data_quality_score": {
+          "actual_name": "data_quality_score",
+          "data_type": "numeric",
+          "is_nullable": "YES",
+          "has_default": false
+        }
+      }
+    },
+    "company_slot": {
+      "spec_name": "company_slots",
+      "actual_name": "company_slot",
+      "column_count": 14,
+      "fields": {
+        "company_slot_unique_id": {
+          "actual_name": "company_slot_unique_id",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "has_default": false
+        },
+        "company_unique_id": {
+          "actual_name": "company_unique_id",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "has_default": false
+        },
+        "person_unique_id": {
+          "actual_name": "person_unique_id",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "slot_type": {
+          "actual_name": "slot_type",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "has_default": false
+        },
+        "is_filled": {
+          "actual_name": "is_filled",
+          "data_type": "boolean",
+          "is_nullable": "YES",
+          "has_default": true
+        },
+        "confidence_score": {
+          "actual_name": "confidence_score",
+          "data_type": "numeric",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "created_at": {
+          "actual_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "is_nullable": "YES",
+          "has_default": true
+        },
+        "filled_at": {
+          "actual_name": "filled_at",
+          "data_type": "timestamp with time zone",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "last_refreshed_at": {
+          "actual_name": "last_refreshed_at",
+          "data_type": "timestamp with time zone",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "filled_by": {
+          "actual_name": "filled_by",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "source_system": {
+          "actual_name": "source_system",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": true
+        },
+        "enrichment_attempts": {
+          "actual_name": "enrichment_attempts",
+          "data_type": "integer",
+          "is_nullable": "YES",
+          "has_default": true
+        },
+        "status": {
+          "actual_name": "status",
+          "data_type": "character varying",
+          "is_nullable": "YES",
+          "has_default": true
+        },
+        "vacated_at": {
+          "actual_name": "vacated_at",
+          "data_type": "timestamp without time zone",
+          "is_nullable": "YES",
+          "has_default": false
+        }
+      }
+    },
+    "people_master": {
+      "spec_name": "people",
+      "actual_name": "people_master",
+      "column_count": 32,
+      "fields": {
+        "unique_id": {
+          "actual_name": "unique_id",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "has_default": false
+        },
+        "company_unique_id": {
+          "actual_name": "company_unique_id",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "has_default": false
+        },
+        "company_slot_unique_id": {
+          "actual_name": "company_slot_unique_id",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "has_default": false
+        },
+        "first_name": {
+          "actual_name": "first_name",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "has_default": false
+        },
+        "last_name": {
+          "actual_name": "last_name",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "has_default": false
+        },
+        "full_name": {
+          "actual_name": "full_name",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "title": {
+          "actual_name": "title",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "seniority": {
+          "actual_name": "seniority",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "department": {
+          "actual_name": "department",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "email": {
+          "actual_name": "email",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "work_phone_e164": {
+          "actual_name": "work_phone_e164",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "personal_phone_e164": {
+          "actual_name": "personal_phone_e164",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "linkedin_url": {
+          "actual_name": "linkedin_url",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "twitter_url": {
+          "actual_name": "twitter_url",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "facebook_url": {
+          "actual_name": "facebook_url",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "bio": {
+          "actual_name": "bio",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "skills": {
+          "actual_name": "skills",
+          "data_type": "ARRAY",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "education": {
+          "actual_name": "education",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "certifications": {
+          "actual_name": "certifications",
+          "data_type": "ARRAY",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "source_system": {
+          "actual_name": "source_system",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "has_default": false
+        },
+        "source_record_id": {
+          "actual_name": "source_record_id",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "promoted_from_intake_at": {
+          "actual_name": "promoted_from_intake_at",
+          "data_type": "timestamp with time zone",
+          "is_nullable": "NO",
+          "has_default": true
+        },
+        "promotion_audit_log_id": {
+          "actual_name": "promotion_audit_log_id",
+          "data_type": "integer",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "created_at": {
+          "actual_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "is_nullable": "YES",
+          "has_default": true
+        },
+        "updated_at": {
+          "actual_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "is_nullable": "YES",
+          "has_default": true
+        },
+        "email_verified": {
+          "actual_name": "email_verified",
+          "data_type": "boolean",
+          "is_nullable": "YES",
+          "has_default": true
+        },
+        "message_key_scheduled": {
+          "actual_name": "message_key_scheduled",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "email_verification_source": {
+          "actual_name": "email_verification_source",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "email_verified_at": {
+          "actual_name": "email_verified_at",
+          "data_type": "timestamp with time zone",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "validation_status": {
+          "actual_name": "validation_status",
+          "data_type": "character varying",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "last_verified_at": {
+          "actual_name": "last_verified_at",
+          "data_type": "timestamp without time zone",
+          "is_nullable": "NO",
+          "has_default": true
+        },
+        "last_enrichment_attempt": {
+          "actual_name": "last_enrichment_attempt",
+          "data_type": "timestamp without time zone",
+          "is_nullable": "YES",
+          "has_default": false
+        }
+      }
+    },
+    "person_movement_history": {
+      "spec_name": "person_movements",
+      "actual_name": "person_movement_history",
+      "column_count": 11,
+      "fields": {
+        "id": {
+          "actual_name": "id",
+          "data_type": "integer",
+          "is_nullable": "NO",
+          "has_default": true
+        },
+        "person_unique_id": {
+          "actual_name": "person_unique_id",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "has_default": false
+        },
+        "linkedin_url": {
+          "actual_name": "linkedin_url",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "company_from_id": {
+          "actual_name": "company_from_id",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "has_default": false
+        },
+        "company_to_id": {
+          "actual_name": "company_to_id",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "title_from": {
+          "actual_name": "title_from",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "has_default": false
+        },
+        "title_to": {
+          "actual_name": "title_to",
+          "data_type": "text",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "movement_type": {
+          "actual_name": "movement_type",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "has_default": false
+        },
+        "detected_at": {
+          "actual_name": "detected_at",
+          "data_type": "timestamp without time zone",
+          "is_nullable": "NO",
+          "has_default": true
+        },
+        "raw_payload": {
+          "actual_name": "raw_payload",
+          "data_type": "jsonb",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "created_at": {
+          "actual_name": "created_at",
+          "data_type": "timestamp without time zone",
+          "is_nullable": "YES",
+          "has_default": true
+        }
+      }
+    },
+    "person_scores": {
+      "spec_name": "person_scores",
+      "actual_name": "person_scores",
+      "column_count": 8,
+      "fields": {
+        "id": {
+          "actual_name": "id",
+          "data_type": "integer",
+          "is_nullable": "NO",
+          "has_default": true
+        },
+        "person_unique_id": {
+          "actual_name": "person_unique_id",
+          "data_type": "text",
+          "is_nullable": "NO",
+          "has_default": false
+        },
+        "bit_score": {
+          "actual_name": "bit_score",
+          "data_type": "integer",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "confidence_score": {
+          "actual_name": "confidence_score",
+          "data_type": "integer",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "calculated_at": {
+          "actual_name": "calculated_at",
+          "data_type": "timestamp without time zone",
+          "is_nullable": "NO",
+          "has_default": true
+        },
+        "score_factors": {
+          "actual_name": "score_factors",
+          "data_type": "jsonb",
+          "is_nullable": "YES",
+          "has_default": false
+        },
+        "created_at": {
+          "actual_name": "created_at",
+          "data_type": "timestamp without time zone",
+          "is_nullable": "YES",
+          "has_default": true
+        },
+        "updated_at": {
+          "actual_name": "updated_at",
+          "data_type": "timestamp without time zone",
+          "is_nullable": "YES",
+          "has_default": true
+        }
+      }
+    }
+  }
+}
