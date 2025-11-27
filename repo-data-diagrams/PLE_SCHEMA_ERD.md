@@ -8,6 +8,8 @@ erDiagram
     company_master ||--o{ people_master : "employs"
     company_master ||--o{ company_events : "has events"
     company_master ||--o{ person_movement_history : "source/destination"
+    company_master ||--o{ form_5500 : "has 5500 filings"
+    company_master ||--o{ dol_violations : "has violations"
 
     company_slot }o--|| people_master : "filled by"
     company_slot ||--|| company_master : "belongs to"
@@ -24,6 +26,10 @@ erDiagram
     person_scores }o--|| people_master : "scores person"
 
     company_events }o--|| company_master : "event for"
+
+    form_5500 }o--o| company_master : "5500 for company"
+
+    dol_violations }o--o| company_master : "violation for company"
 
     company_master {
         text company_unique_id PK "04.04.01.XX.XXXXX.XXX"
@@ -55,6 +61,13 @@ erDiagram
         timestamptz validated_at
         text validated_by
         numeric data_quality_score
+        varchar ein "Employer ID Number"
+        varchar duns "Dun Bradstreet Number"
+        varchar cage_code "Govt Entity Code"
+        varchar email_pattern "Pattern: {f}{last}@"
+        int email_pattern_confidence "0-100"
+        varchar email_pattern_source "hunter, manual, enrichment"
+        timestamp email_pattern_verified_at
     }
 
     company_slot {
@@ -72,6 +85,9 @@ erDiagram
         int enrichment_attempts "default 0"
         varchar status "default open"
         timestamp vacated_at
+        varchar phone "Role phone number"
+        varchar phone_extension "Phone extension"
+        timestamp phone_verified_at
     }
 
     people_master {
@@ -146,6 +162,42 @@ erDiagram
         int bit_impact_score "-100 to 100"
         timestamp created_at
     }
+
+    form_5500 {
+        int id PK "auto-increment"
+        text company_unique_id FK "nullable"
+        varchar ack_id "DOL acknowledgment"
+        varchar ein "Employer ID - 9 digits"
+        varchar plan_number "3 digits"
+        varchar plan_name "140 chars"
+        varchar sponsor_name "70 chars"
+        varchar address "35 chars"
+        varchar city "22 chars"
+        varchar state "2 chars"
+        varchar zip "12 chars"
+        date date_received
+        varchar plan_codes "59 chars"
+        int participant_count
+        numeric total_assets "15,2 precision"
+        int filing_year
+        jsonb raw_payload
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    dol_violations {
+        int id PK "auto-increment"
+        text company_unique_id FK "nullable"
+        varchar ein "9 digits"
+        varchar violation_type "100 chars"
+        date violation_date
+        date resolution_date "nullable"
+        numeric penalty_amount "12,2 precision"
+        text description
+        varchar source_url "500 chars"
+        jsonb raw_payload
+        timestamp detected_at
+    }
 ```
 
 ## Relationship Summary
@@ -161,6 +213,8 @@ erDiagram
 | person_movement_history | company_to_id | company_master | company_unique_id | Many-to-One (Optional) | person_movement_history_company_to_id_fkey |
 | person_scores | person_unique_id | people_master | unique_id | One-to-One | person_scores_person_unique_id_fkey |
 | company_events | company_unique_id | company_master | company_unique_id | Many-to-One | company_events_company_unique_id_fkey |
+| form_5500 | company_unique_id | company_master | company_unique_id | Many-to-One (Optional) | form_5500_company_unique_id_fkey |
+| dol_violations | company_unique_id | company_master | company_unique_id | Many-to-One (Optional) | dol_violations_company_unique_id_fkey |
 
 ## Constraints Summary
 
@@ -174,6 +228,8 @@ erDiagram
 | person_movement_history | id | Auto-increment Integer |
 | person_scores | id | Auto-increment Integer |
 | company_events | id | Auto-increment Integer |
+| form_5500 | id | Auto-increment Integer |
+| dol_violations | id | Auto-increment Integer |
 
 ### Unique Constraints
 
