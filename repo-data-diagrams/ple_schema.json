@@ -2,16 +2,37 @@
   "schema_name": "marketing",
   "database": "Marketing DB",
   "host": "ep-ancient-waterfall-a42vy0du-pooler.us-east-1.aws.neon.tech",
-  "version": "1.0.0",
-  "generated_at": "2025-11-26T00:00:00Z",
+  "version": "2.0.0",
+  "generated_at": "2025-11-27T00:00:00Z",
   "barton_doctrine": {
     "subhive": "04",
     "app": "04",
     "schemas": {
       "company": "01",
       "person": "02",
-      "slot": "05"
+      "slot": "05",
+      "dol_spoke": "dol"
     }
+  },
+  "spoke_architecture": {
+    "hub": "company_master",
+    "spokes": [
+      {
+        "name": "DOL Federal Data Spoke",
+        "tables": ["form_5500", "form_5500_sf", "schedule_a"],
+        "join_key": "ein (Employer Identification Number)",
+        "coverage": "2.7M+ retirement/welfare plans, 150K+ unique EINs",
+        "data_source": "US Department of Labor FOIA",
+        "refresh_frequency": "Annual",
+        "barton_pattern": "SIDECAR - Nullable FK to company_master"
+      },
+      {
+        "name": "BIT Scoring Spoke",
+        "tables": ["person_scores", "company_events", "person_movement_history"],
+        "join_key": "person_unique_id / company_unique_id",
+        "purpose": "Buyer Intent Trigger scoring and movement tracking"
+      }
+    ]
   },
   "tables": {
     "company_master": {
@@ -1003,6 +1024,478 @@
         }
       ],
       "unique_constraints": []
+    },
+    "form_5500": {
+      "purpose": "DOL Form 5500 filings - Large retirement/welfare plans (≥100 participants)",
+      "barton_id_format": "SIDECAR - Join via EIN to company_master",
+      "primary_key": "id",
+      "data_source": "US Department of Labor FOIA datasets",
+      "coverage": "700,000+ plan filings annually",
+      "columns": [
+        {
+          "name": "id",
+          "type": "serial",
+          "required": true,
+          "default": "auto-increment",
+          "constraints": ["PRIMARY KEY"],
+          "description": "Auto-increment ID"
+        },
+        {
+          "name": "ack_id",
+          "type": "varchar(30)",
+          "required": true,
+          "default": null,
+          "constraints": ["UNIQUE", "NOT NULL"],
+          "description": "DOL filing acknowledgment ID (unique filing identifier)"
+        },
+        {
+          "name": "company_unique_id",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": ["FOREIGN KEY (nullable)"],
+          "description": "Matched company (quarantine pattern)",
+          "references": {
+            "table": "company_master",
+            "column": "company_unique_id"
+          }
+        },
+        {
+          "name": "ein",
+          "type": "varchar(9)",
+          "required": true,
+          "default": null,
+          "constraints": ["CHECK (ein ~ '^[0-9]{9}$')"],
+          "description": "Employer Identification Number (9 digits)"
+        },
+        {
+          "name": "sponsor_name",
+          "type": "varchar(140)",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Plan sponsor company name"
+        },
+        {
+          "name": "plan_name",
+          "type": "varchar(140)",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Plan name"
+        },
+        {
+          "name": "plan_number",
+          "type": "varchar(3)",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Plan number (3 digits)"
+        },
+        {
+          "name": "state",
+          "type": "varchar(2)",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "State abbreviation"
+        },
+        {
+          "name": "participant_count",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Number of plan participants"
+        },
+        {
+          "name": "total_assets",
+          "type": "numeric(15,2)",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Total plan assets in dollars"
+        },
+        {
+          "name": "form_year",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Filing year"
+        },
+        {
+          "name": "raw_payload",
+          "type": "jsonb",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Complete DOL filing data (all fields)"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "required": false,
+          "default": "now()",
+          "constraints": [],
+          "description": "Record creation"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "required": false,
+          "default": "now()",
+          "constraints": [],
+          "description": "Last update"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "column": "company_unique_id",
+          "references_table": "company_master",
+          "references_column": "company_unique_id",
+          "constraint_name": "form_5500_company_unique_id_fkey",
+          "nullable": true,
+          "on_delete": "SET NULL"
+        }
+      ],
+      "unique_constraints": [
+        {
+          "name": "form_5500_ack_id_key",
+          "columns": ["ack_id"],
+          "description": "One filing per ACK_ID"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_form_5500_ein",
+          "columns": ["ein"],
+          "type": "btree"
+        },
+        {
+          "name": "idx_form_5500_company_id",
+          "columns": ["company_unique_id"],
+          "type": "btree"
+        },
+        {
+          "name": "idx_form_5500_sponsor_name_lower",
+          "columns": ["LOWER(sponsor_name)"],
+          "type": "btree"
+        },
+        {
+          "name": "idx_form_5500_state",
+          "columns": ["state"],
+          "type": "btree"
+        },
+        {
+          "name": "idx_form_5500_raw_payload",
+          "columns": ["raw_payload"],
+          "type": "gin"
+        }
+      ]
+    },
+    "form_5500_sf": {
+      "purpose": "DOL Form 5500-SF (Short Form) - Small retirement/welfare plans (<100 participants)",
+      "barton_id_format": "SIDECAR - Join via sponsor_dfe_ein to company_master",
+      "primary_key": "id",
+      "data_source": "US Department of Labor FOIA datasets",
+      "coverage": "2,000,000+ small plan filings annually",
+      "columns": [
+        {
+          "name": "id",
+          "type": "serial",
+          "required": true,
+          "default": "auto-increment",
+          "constraints": ["PRIMARY KEY"],
+          "description": "Auto-increment ID"
+        },
+        {
+          "name": "ack_id",
+          "type": "varchar(30)",
+          "required": true,
+          "default": null,
+          "constraints": ["UNIQUE", "NOT NULL"],
+          "description": "DOL filing acknowledgment ID"
+        },
+        {
+          "name": "company_unique_id",
+          "type": "text",
+          "required": false,
+          "default": null,
+          "constraints": ["FOREIGN KEY (nullable)"],
+          "description": "Matched company (quarantine pattern)",
+          "references": {
+            "table": "company_master",
+            "column": "company_unique_id"
+          }
+        },
+        {
+          "name": "sponsor_dfe_ein",
+          "type": "varchar(9)",
+          "required": true,
+          "default": null,
+          "constraints": ["CHECK (sponsor_dfe_ein ~ '^[0-9]{9}$')"],
+          "description": "Sponsor EIN (9 digits)"
+        },
+        {
+          "name": "sponsor_dfe_name",
+          "type": "varchar(140)",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Sponsor company name"
+        },
+        {
+          "name": "plan_name",
+          "type": "varchar(140)",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Plan name"
+        },
+        {
+          "name": "plan_number",
+          "type": "varchar(3)",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Plan number"
+        },
+        {
+          "name": "spons_dfe_mail_us_state",
+          "type": "varchar(2)",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Sponsor mailing state"
+        },
+        {
+          "name": "plan_type_pension_ind",
+          "type": "varchar(1)",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Pension plan indicator (1=yes)"
+        },
+        {
+          "name": "plan_type_welfare_ind",
+          "type": "varchar(1)",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Welfare plan indicator (1=yes)"
+        },
+        {
+          "name": "tot_partcp_eoy_cnt",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Total participants at end of year"
+        },
+        {
+          "name": "form_year",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Filing year"
+        },
+        {
+          "name": "raw_payload",
+          "type": "jsonb",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Complete DOL filing data"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "required": false,
+          "default": "now()",
+          "constraints": [],
+          "description": "Record creation"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "required": false,
+          "default": "now()",
+          "constraints": [],
+          "description": "Last update"
+        }
+      ],
+      "foreign_keys": [
+        {
+          "column": "company_unique_id",
+          "references_table": "company_master",
+          "references_column": "company_unique_id",
+          "constraint_name": "form_5500_sf_company_unique_id_fkey",
+          "nullable": true,
+          "on_delete": "SET NULL"
+        }
+      ],
+      "unique_constraints": [
+        {
+          "name": "form_5500_sf_ack_id_key",
+          "columns": ["ack_id"],
+          "description": "One filing per ACK_ID"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_form_5500_sf_ein",
+          "columns": ["sponsor_dfe_ein"],
+          "type": "btree"
+        },
+        {
+          "name": "idx_form_5500_sf_company_id",
+          "columns": ["company_unique_id"],
+          "type": "btree"
+        },
+        {
+          "name": "idx_form_5500_sf_sponsor_name_lower",
+          "columns": ["LOWER(sponsor_dfe_name)"],
+          "type": "btree"
+        },
+        {
+          "name": "idx_form_5500_sf_plan_type_pension",
+          "columns": ["plan_type_pension_ind"],
+          "type": "btree",
+          "partial": "WHERE plan_type_pension_ind = '1'"
+        },
+        {
+          "name": "idx_form_5500_sf_plan_type_welfare",
+          "columns": ["plan_type_welfare_ind"],
+          "type": "btree",
+          "partial": "WHERE plan_type_welfare_ind = '1'"
+        }
+      ]
+    },
+    "schedule_a": {
+      "purpose": "DOL Schedule A - Insurance information for Form 5500 and 5500-SF filings",
+      "barton_id_format": "SIDECAR - Join via ack_id to form_5500 or form_5500_sf",
+      "primary_key": "id",
+      "data_source": "US Department of Labor FOIA datasets",
+      "coverage": "1,500,000+ insurance records annually",
+      "columns": [
+        {
+          "name": "id",
+          "type": "serial",
+          "required": true,
+          "default": "auto-increment",
+          "constraints": ["PRIMARY KEY"],
+          "description": "Auto-increment ID"
+        },
+        {
+          "name": "ack_id",
+          "type": "varchar(30)",
+          "required": true,
+          "default": null,
+          "constraints": ["NOT NULL"],
+          "description": "DOL filing acknowledgment ID (joins to form_5500/form_5500_sf)"
+        },
+        {
+          "name": "insurance_company_name",
+          "type": "varchar(140)",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Insurance carrier name"
+        },
+        {
+          "name": "insurance_company_ein",
+          "type": "varchar(9)",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Insurance carrier EIN"
+        },
+        {
+          "name": "contract_number",
+          "type": "varchar(50)",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Policy/contract number"
+        },
+        {
+          "name": "policy_year_begin_date",
+          "type": "date",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Policy year start date"
+        },
+        {
+          "name": "policy_year_end_date",
+          "type": "date",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Policy year end date (renewal timing)"
+        },
+        {
+          "name": "renewal_month",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "constraints": ["1-12"],
+          "description": "Renewal month (derived from policy_year_end_date)"
+        },
+        {
+          "name": "renewal_year",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Renewal year (derived from policy_year_end_date)"
+        },
+        {
+          "name": "covered_lives",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Number of covered lives"
+        },
+        {
+          "name": "raw_payload",
+          "type": "jsonb",
+          "required": false,
+          "default": null,
+          "constraints": [],
+          "description": "Complete Schedule A data"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "required": false,
+          "default": "now()",
+          "constraints": [],
+          "description": "Record creation"
+        }
+      ],
+      "foreign_keys": [],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_schedule_a_ack_id",
+          "columns": ["ack_id"],
+          "type": "btree"
+        },
+        {
+          "name": "idx_schedule_a_insurance_ein",
+          "columns": ["insurance_company_ein"],
+          "type": "btree"
+        },
+        {
+          "name": "idx_schedule_a_renewal_month",
+          "columns": ["renewal_month"],
+          "type": "btree"
+        }
+      ]
     }
   },
   "relationships": [
@@ -1077,6 +1570,42 @@
       "target_column": "company_unique_id",
       "relationship_type": "many-to-one",
       "constraint_name": "company_events_company_unique_id_fkey"
+    },
+    {
+      "source_table": "form_5500",
+      "source_column": "company_unique_id",
+      "target_table": "company_master",
+      "target_column": "company_unique_id",
+      "relationship_type": "many-to-one (optional)",
+      "constraint_name": "form_5500_company_unique_id_fkey",
+      "description": "Nullable FK - quarantine pattern for unmatched DOL sponsors"
+    },
+    {
+      "source_table": "form_5500_sf",
+      "source_column": "company_unique_id",
+      "target_table": "company_master",
+      "target_column": "company_unique_id",
+      "relationship_type": "many-to-one (optional)",
+      "constraint_name": "form_5500_sf_company_unique_id_fkey",
+      "description": "Nullable FK - quarantine pattern for unmatched small plan sponsors"
+    },
+    {
+      "source_table": "schedule_a",
+      "source_column": "ack_id",
+      "target_table": "form_5500",
+      "target_column": "ack_id",
+      "relationship_type": "many-to-one",
+      "constraint_name": "schedule_a_form_5500_join",
+      "description": "Join to Form 5500 via ACK_ID"
+    },
+    {
+      "source_table": "schedule_a",
+      "source_column": "ack_id",
+      "target_table": "form_5500_sf",
+      "target_column": "ack_id",
+      "relationship_type": "many-to-one",
+      "constraint_name": "schedule_a_form_5500_sf_join",
+      "description": "Join to Form 5500-SF via ACK_ID"
     }
   ],
   "validation_rules": {
@@ -1084,6 +1613,11 @@
       "company": "^04\\.04\\.01\\.[0-9]{2}\\.[0-9]{5}\\.[0-9]{3}$",
       "person": "^04\\.04\\.02\\.[0-9]{2}\\.[0-9]{5}\\.[0-9]{3}$",
       "slot": "^04\\.04\\.05\\.[0-9]{2}\\.[0-9]{5}\\.[0-9]{3}$"
+    },
+    "dol_formats": {
+      "ein": "^[0-9]{9}$",
+      "ack_id": "^[0-9]{12,30}$",
+      "plan_number": "^[0-9]{3}$"
     },
     "email_format": "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$",
     "valid_states": ["PA", "VA", "MD", "OH", "WV", "KY"],
@@ -1093,7 +1627,8 @@
     "score_ranges": {
       "bit_score": {"min": 0, "max": 100},
       "confidence_score": {"min": 0, "max": 100},
-      "bit_impact_score": {"min": -100, "max": 100}
+      "bit_impact_score": {"min": -100, "max": 100},
+      "renewal_month": {"min": 1, "max": 12}
     },
     "employee_count_minimum": 50,
     "founded_year_minimum": 1700
