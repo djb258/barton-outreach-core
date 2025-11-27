@@ -7,18 +7,26 @@
 
 | File | Format | Purpose |
 |------|--------|---------|
-| [PLE_SCHEMA_ERD.md](PLE_SCHEMA_ERD.md) | Mermaid | Visual ERD diagram |
+| [PLE_SCHEMA_ERD.md](PLE_SCHEMA_ERD.md) | Mermaid | Visual ERD diagram (core tables) |
+| [DOL_SPOKE_ERD.md](DOL_SPOKE_ERD.md) | Mermaid | **NEW** - DOL Federal Data Spoke ERD |
 | [PLE_SCHEMA_REFERENCE.md](PLE_SCHEMA_REFERENCE.md) | Markdown | Complete column reference |
-| [ple_schema.json](ple_schema.json) | JSON | Machine-readable schema |
+| [ple_schema.json](ple_schema.json) | JSON | Machine-readable schema (v2.0.0) |
 
 ## Schema Files
 
 ### Visual Documentation
 
-- **PLE_SCHEMA_ERD.md** - Mermaid ERD that renders in:
-  - Obsidian
-  - GitHub/GitLab
-  - VS Code (with extension)
+- **PLE_SCHEMA_ERD.md** - Mermaid ERD for core PLE tables:
+  - company_master, company_slot, people_master
+  - person_movement_history, person_scores, company_events
+  - Renders in: Obsidian, GitHub/GitLab, VS Code
+
+- **DOL_SPOKE_ERD.md** - DOL Federal Data Spoke (NEW):
+  - Hub-and-spoke architecture diagram
+  - form_5500, form_5500_sf, schedule_a tables
+  - Data flow: DOL FOIA → Staging → Production → Company Hub
+  - 4 join pattern examples with SQL
+  - 13 indexes documented
 
 ### Reference Documentation
 
@@ -54,7 +62,7 @@
 
 ## Database Quick Reference
 
-### Tables (6 core PLE tables)
+### Core PLE Tables (6 tables)
 
 ```
 marketing.company_master     → Companies (50+ employees, PA/VA/MD/OH/WV/KY)
@@ -63,6 +71,17 @@ marketing.people_master      → Executives with LinkedIn/email
 marketing.person_movement_history → Job change tracking
 marketing.person_scores      → BIT scores
 marketing.company_events     → Company news/signals
+```
+
+### DOL Federal Data Spoke (3 tables) - NEW
+
+```
+marketing.form_5500          → Large plans (≥100 participants) - 700K+ filings
+marketing.form_5500_sf       → Small plans (<100 participants) - 2M+ filings
+marketing.schedule_a         → Insurance information - 1.5M+ records
+
+JOIN KEY: EIN (Employer Identification Number) → company_master.ein
+COVERAGE: 2.7M+ plans, 150K+ unique EINs
 ```
 
 ### Barton ID Formats
@@ -104,6 +123,7 @@ const required = Object.entries(schema.tables.company_master.columns)
 
 ---
 
-**Last Updated:** 2025-11-26
+**Last Updated:** 2025-11-27
 **Database:** Neon PostgreSQL (Marketing DB)
+**Schema Version:** 2.0.0 (includes DOL Federal Data Spoke)
 **Status:** Production Ready
