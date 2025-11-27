@@ -218,13 +218,22 @@ EOF
 psql $NEON_CONNECTION_STRING -c "CALL marketing.process_5500_sf_staging();"
 ```
 
-### Step 5: Import Schedule A - 30 minutes
+### Step 5: Import Schedule A (Insurance Data) - 30 minutes
 
 ```bash
-# Join and prepare
-python ctb/sys/enrichment/join_form5500_schedule_a.py
+# 1. Create Schedule A table
+node ctb/sys/enrichment/create_schedule_a_table.js
 
-# Outputs ready for manual review or warehouse load
+# 2. Prepare CSV (extract key columns from 90-column file)
+python ctb/sys/enrichment/import_schedule_a.py
+
+# 3. Import to staging
+psql $NEON_CONNECTION_STRING << 'EOF'
+\COPY marketing.schedule_a_staging FROM '/path/to/output/schedule_a_2023_staging.csv' CSV HEADER;
+EOF
+
+# 4. Process staging (includes renewal date calculation)
+psql $NEON_CONNECTION_STRING -c "CALL marketing.process_schedule_a_staging();"
 ```
 
 ### Step 6: Verification (10 minutes)
@@ -235,12 +244,21 @@ SELECT 'form_5500' as table_name, COUNT(*) as record_count FROM marketing.form_5
 UNION ALL
 SELECT 'form_5500_sf', COUNT(*) FROM marketing.form_5500_sf
 UNION ALL
-SELECT 'schedule_a', COUNT(*) FROM (SELECT 1 FROM schedule_a_joined LIMIT 1) x;
+SELECT 'schedule_a', COUNT(*) FROM marketing.schedule_a;
 
 -- Expected:
 -- form_5500: 700,000+
 -- form_5500_sf: 2,000,000+
 -- schedule_a: 1,500,000+
+
+-- Check renewal data quality
+SELECT
+    COUNT(*) as total_records,
+    COUNT(renewal_month) as records_with_renewal_month,
+    ROUND(100.0 * COUNT(renewal_month) / COUNT(*), 1) as renewal_data_pct
+FROM marketing.schedule_a;
+
+-- Expected: 60-80% of Schedule A records should have renewal_month populated
 ```
 
 ---
