@@ -195,3 +195,11 @@ _build/
 ctb/**/*.map
 ctb/**/dist/
 ctb/**/*.tsbuildinfo
+
+# DOL Form 5500 data files (large CSVs and zips)
+data/*.csv
+data/*.zip
+output/*.csv
+# Keep directory structure but not the files
+!data/.gitkeep
+!output/.gitkeep
