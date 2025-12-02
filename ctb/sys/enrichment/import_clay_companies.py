@@ -67,14 +67,14 @@ def parse_employee_count(size_str):
     Examples:
         "51-200 employees" -> 125
         "201-500 employees" -> 350
-        "1001-5000 employees" -> 3000
-        "10001+ employees" -> 15000
+        "1,001-5,000 employees" -> 3000
+        "10,001+ employees" -> 15000
     """
     if not size_str:
         return None
 
-    # Remove "employees" and clean up
-    size_str = size_str.lower().replace('employees', '').replace(' ', '').strip()
+    # Remove "employees", commas, and clean up
+    size_str = size_str.lower().replace('employees', '').replace(',', '').replace(' ', '').strip()
 
     # Handle 10001+ style
     if '+' in size_str:
