@@ -44,96 +44,89 @@ print("\nVerifying required columns...")
 
 required_columns = [
     "ACK_ID",
-    "SPONSOR_DFE_EIN",
-    "SPONSOR_DFE_NAME"
+    "SF_SPONS_EIN",
+    "SF_SPONSOR_NAME"
 ]
 
 missing = [col for col in required_columns if col not in df.columns]
 if missing:
     raise ValueError(f"Missing required columns: {missing}")
 
-print(f"✓ All required columns present")
+print(f"[OK] All required columns present")
 print(f"  Unique ACK_IDs: {df['ACK_ID'].nunique():,}")
-print(f"  Unique EINs: {df['SPONSOR_DFE_EIN'].nunique():,}")
+print(f"  Unique EINs: {df['SF_SPONS_EIN'].nunique():,}")
 
 # ============================================================================
 # STEP 3: COLUMN MAPPING (DOL → Neon schema)
 # ============================================================================
 print("\nMapping columns to database schema...")
 
-# Map DOL column names to Neon schema (lowercase with underscores)
+# Map DOL column names (5500-SF uses SF_ prefix) to Neon schema
 column_mapping = {
     # Primary key
     "ACK_ID": "ack_id",
 
     # System metadata
-    "FILING_STATUS": "filing_status",
-    "DATE_RECEIVED": "date_received",
-    "VALID_SIG": "valid_sig",
+    "SF_FILING_STATUS": "filing_status",
+    "SF_DATE_RECEIVED": "date_received",
+    "SF_VALID_SIG": "valid_sig",
 
-    # Sponsor/Company fields
-    "SPONSOR_DFE_EIN": "sponsor_dfe_ein",
-    "SPONSOR_DFE_NAME": "sponsor_dfe_name",
+    # Sponsor/Company fields (5500-SF uses SF_ prefix)
+    "SF_SPONS_EIN": "sponsor_dfe_ein",
+    "SF_SPONSOR_NAME": "sponsor_dfe_name",
+    "SF_SPONSOR_DFE_DBA_NAME": "spons_dfe_dba_name",
 
-    # Mailing address
-    "SPONS_DFE_MAIL_US_ADDRESS1": "spons_dfe_mail_us_address1",
-    "SPONS_DFE_MAIL_US_ADDRESS2": "spons_dfe_mail_us_address2",
-    "SPONS_DFE_MAIL_US_CITY": "spons_dfe_mail_us_city",
-    "SPONS_DFE_MAIL_US_STATE": "spons_dfe_mail_us_state",
-    "SPONS_DFE_MAIL_US_ZIP": "spons_dfe_mail_us_zip",
+    # Mailing address (5500-SF format)
+    "SF_SPONS_US_ADDRESS1": "spons_dfe_mail_us_address1",
+    "SF_SPONS_US_ADDRESS2": "spons_dfe_mail_us_address2",
+    "SF_SPONS_US_CITY": "spons_dfe_mail_us_city",
+    "SF_SPONS_US_STATE": "spons_dfe_mail_us_state",
+    "SF_SPONS_US_ZIP": "spons_dfe_mail_us_zip",
 
-    # Location address
-    "SPONS_DFE_LOC_US_ADDRESS1": "spons_dfe_loc_us_address1",
-    "SPONS_DFE_LOC_US_ADDRESS2": "spons_dfe_loc_us_address2",
-    "SPONS_DFE_LOC_US_CITY": "spons_dfe_loc_us_city",
-    "SPONS_DFE_LOC_US_STATE": "spons_dfe_loc_us_state",
-    "SPONS_DFE_LOC_US_ZIP": "spons_dfe_loc_us_zip",
+    # Foreign address (may be present)
+    "SF_SPONS_FOREIGN_ADDRESS1": "spons_dfe_loc_us_address1",
+    "SF_SPONS_FOREIGN_ADDRESS2": "spons_dfe_loc_us_address2",
+    "SF_SPONS_FOREIGN_CITY": "spons_dfe_loc_us_city",
+    "SF_SPONS_FOREIGN_PROV_STATE": "spons_dfe_loc_us_state",
+    "SF_SPONS_FOREIGN_POSTAL_CD": "spons_dfe_loc_us_zip",
 
     # Contact
-    "SPONS_DFE_PHONE_NUM": "spons_dfe_phone_num",
-    "BUSINESS_CODE": "business_code",
+    "SF_SPONS_PHONE_NUM": "spons_dfe_phone_num",
+    "SF_BUSINESS_CD": "business_code",
 
-    # Plan-level fields
-    "PLAN_NAME": "plan_name",
-    "PLAN_NUM": "plan_number",  # Note: May be PLAN_NUM or PLAN_NUMBER
+    # Plan-level fields (5500-SF format)
+    "SF_PLAN_NAME": "plan_name",
+    "SF_PLAN_NUM": "plan_number",
 
-    # Plan type indicators
-    "PLAN_TYPE_PENSION_IND": "plan_type_pension_ind",
-    "PLAN_TYPE_WELFARE_IND": "plan_type_welfare_ind",
+    # Plan type codes (benefit codes, not boolean indicators)
+    "SF_TYPE_PENSION_BNFT_CODE": "plan_type_pension_ind",
+    "SF_TYPE_WELFARE_BNFT_CODE": "plan_type_welfare_ind",
 
     # Funding indicators
-    "FUNDING_INSURANCE_IND": "funding_insurance_ind",
-    "FUNDING_TRUST_IND": "funding_trust_ind",
-    "FUNDING_GEN_ASSETS_IND": "funding_gen_assets_ind",
+    "SF_FUNDING_INSURANCE_IND": "funding_insurance_ind",
+    "SF_FUNDING_TRUST_IND": "funding_trust_ind",
+    "SF_FUNDING_GEN_ASSETS_IND": "funding_gen_assets_ind",
 
     # Benefit indicators
-    "BENEFIT_INSURANCE_IND": "benefit_insurance_ind",
-    "BENEFIT_TRUST_IND": "benefit_trust_ind",
-    "BENEFIT_GEN_ASSETS_IND": "benefit_gen_assets_ind",
+    "SF_BENEFIT_INSURANCE_IND": "benefit_insurance_ind",
+    "SF_BENEFIT_TRUST_IND": "benefit_trust_ind",
+    "SF_BENEFIT_GEN_ASSETS_IND": "benefit_gen_assets_ind",
 
-    # Participant counts
-    "TOT_ACTIVE_PARTCP_BOY_CNT": "tot_active_partcp_boy_cnt",
-    "TOT_PARTCP_BOY_CNT": "tot_partcp_boy_cnt",
-    "TOT_ACTIVE_PARTCP_EOY_CNT": "tot_active_partcp_eoy_cnt",
-    "TOT_PARTCP_EOY_CNT": "tot_partcp_eoy_cnt",
-    "PARTICIPANT_CNT_RPTD_IND": "participant_cnt_rptd_ind",
+    # Participant counts (5500-SF format)
+    "SF_TOT_ACT_PARTCP_BOY_CNT": "tot_active_partcp_boy_cnt",
+    "SF_TOT_PARTCP_BOY_CNT": "tot_partcp_boy_cnt",
+    "SF_TOT_ACT_PARTCP_EOY_CNT": "tot_active_partcp_eoy_cnt",
+    "SF_TOT_PARTCP_EOY_CNT": "tot_partcp_eoy_cnt",
+    "SF_PARTCP_CNT_IND": "participant_cnt_rptd_ind",
 
     # Plan year and program flags
-    "SHORT_PLAN_YR_IND": "short_plan_year_ind",
-    "DFVC_PROGRAM_IND": "dfvc_program_ind",
+    "SF_SHORT_PLAN_YR_IND": "short_plan_year_ind",
+    "SF_DFVC_PROGRAM_IND": "dfvc_program_ind",
 
     # Schedule attachment indicators
-    "SCH_A_ATTACHED_IND": "sch_a_attached_ind",
-    "NUM_SCH_A_ATTACHED_CNT": "num_sch_a_attached_cnt",
-    "SCH_C_ATTACHED_IND": "sch_c_attached_ind",
-    "SCH_D_ATTACHED_IND": "sch_d_attached_ind",
-    "SCH_G_ATTACHED_IND": "sch_g_attached_ind",
-    "SCH_H_ATTACHED_IND": "sch_h_attached_ind",
-    "SCH_I_ATTACHED_IND": "sch_i_attached_ind",
-    "SCH_MB_ATTACHED_IND": "sch_mb_attached_ind",
-    "SCH_SB_ATTACHED_IND": "sch_sb_attached_ind",
-    "SCH_R_ATTACHED_IND": "sch_r_attached_ind",
-    "MEWA_M1_ATTACHED_IND": "mewa_m1_attached_ind",
+    "SF_SCH_A_ATTACHED_IND": "sch_a_attached_ind",
+    "SF_NUM_SCH_A_ATTACHED_CNT": "num_sch_a_attached_cnt",
+    "SF_MEWA_IND": "mewa_m1_attached_ind",
 }
 
 # Rename columns that exist in the dataframe
@@ -143,7 +136,7 @@ df_staging = df.rename(columns=available_mappings)
 # Add form_year column (constant for this dataset)
 df_staging["form_year"] = YEAR
 
-print(f"✓ Mapped {len(available_mappings)} columns")
+print(f"[OK] Mapped {len(available_mappings)} columns")
 print(f"  Missing optional columns: {len(column_mapping) - len(available_mappings)}")
 
 # ============================================================================
@@ -206,7 +199,7 @@ for col in staging_columns:
 
 df_staging = df_staging[staging_columns]
 
-print(f"\n✓ Prepared {len(df_staging):,} records for staging")
+print(f"\n[OK] Prepared {len(df_staging):,} records for staging")
 
 # ============================================================================
 # STEP 5: WRITE STAGING CSV FOR PSQL IMPORT
@@ -215,7 +208,7 @@ output_file = Path("output") / f"form_5500_sf_{YEAR}_staging.csv"
 output_file.parent.mkdir(exist_ok=True)
 
 df_staging.to_csv(output_file, index=False, encoding="utf-8")
-print(f"\n✓ Wrote staging CSV: {output_file}")
+print(f"\n[OK] Wrote staging CSV: {output_file}")
 print(f"  Rows: {len(df_staging):,}")
 print(f"  Columns: {len(staging_columns)}")
 
@@ -299,5 +292,5 @@ print(f"""
 """)
 
 print("=" * 80)
-print("✅ Script complete!")
+print("SCRIPT COMPLETE!")
 print("=" * 80)

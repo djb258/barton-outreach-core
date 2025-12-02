@@ -442,7 +442,7 @@ async function createForm5500SFTable() {
         console.log('\n✅ Ready to import DOL Form 5500-SF CSV data');
         console.log('\nNext steps:');
         console.log('1. Download CSV: F_5500_SF_2023_latest.csv from DOL');
-        console.log('2. Import: \\COPY marketing.form_5500_sf_staging FROM \\'5500_sf_data.csv\\' CSV HEADER;');
+        console.log("2. Import: \\COPY marketing.form_5500_sf_staging FROM '5500_sf_data.csv' CSV HEADER;");
         console.log('3. Process: CALL marketing.process_5500_sf_staging();');
         console.log('4. Verify: SELECT COUNT(*) FROM marketing.form_5500_sf;');
 
