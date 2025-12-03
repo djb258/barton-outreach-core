@@ -13,7 +13,7 @@ import time
 import requests
 import pandas as pd
 from datetime import datetime
-from rapidfuzz import fuzz
+from rapidfuzz.distance import JaroWinkler
 from bs4 import BeautifulSoup
 
 # Configuration
@@ -55,7 +55,7 @@ def jaro_winkler_sim(s1, s2):
     """Calculate Jaro-Winkler similarity using rapidfuzz."""
     if not s1 or not s2:
         return 0.0
-    return fuzz.jaro_winkler_similarity(s1, s2) / 100.0
+    return JaroWinkler.similarity(s1, s2)
 
 
 def trigram_sim(s1, s2):
