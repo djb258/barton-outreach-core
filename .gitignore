@@ -203,3 +203,9 @@ output/*.csv
 # Keep directory structure but not the files
 !data/.gitkeep
 !output/.gitkeep
+# Large data exports
+companies.csv
+dol_form5500.csv
+dol_form5500sf.csv
+schedule_a.csv
+nul
