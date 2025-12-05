@@ -82,6 +82,12 @@ from .phases.phase3_email_pattern_waterfall import Phase3EmailPatternWaterfall, 
 from .phases.phase4_pattern_verification import Phase4PatternVerification, Phase4Stats
 from .phases.talentflow_phase0_company_gate import TalentFlowCompanyGate, CompanyGateResult
 
+# People Pipeline (Phases 5-8)
+from .phases.phase5_email_generation import Phase5EmailGeneration, Phase5Stats
+from .phases.phase6_slot_assignment import Phase6SlotAssignment, Phase6Stats
+from .phases.phase7_enrichment_queue import Phase7EnrichmentQueue, Phase7Stats
+from .phases.phase8_output_writer import Phase8OutputWriter, Phase8Stats, PipelineSummary
+
 from .utils.logging import (
     PipelineLogger,
     EventType,
@@ -91,6 +97,15 @@ from .utils.logging import (
     log_error
 )
 from .utils.config import PipelineConfig, load_config
+
+# Provider Benchmark Engine (System-Level)
+from ctb.sys.enrichment.provider_benchmark import ProviderBenchmarkEngine
+
+# Waterfall Optimization Engine (System-Level)
+from ctb.sys.enrichment.waterfall_optimization import WaterfallOptimizer
+
+# Movement Engine (4-Funnel GTM System)
+from .movement_engine import MovementEngine, LifecycleState, EventType as MovementEventType
 
 
 @dataclass
@@ -180,6 +195,16 @@ class CompanyIdentityPipeline:
         # Output directory
         self.output_dir = Path(self.config.get('output_directory', './output'))
         self.output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Initialize Provider Benchmark Engine (System-Level Singleton)
+        self.provider_benchmark = ProviderBenchmarkEngine.get_instance()
+
+        # Initialize Waterfall Optimization Engine (System-Level)
+        self.waterfall_optimizer = WaterfallOptimizer()
+
+        # Initialize Movement Engine (4-Funnel GTM System)
+        # Hooks only - no database writes yet
+        self.movement_engine = MovementEngine()
 
         # Initialize phases with shared logger
         self.phase1 = Phase1CompanyMatching(config=self.config, logger=self.logger)
@@ -548,6 +573,55 @@ class CompanyIdentityPipeline:
         }
 
     # ==========================================
+    # WATERFALL OPTIMIZATION
+    # ==========================================
+
+    def optimize_waterfall(self):
+        """
+        Generate optimized waterfall tier ordering.
+
+        Reads Provider Benchmark Engine (PBE) scorecards and produces
+        an OptimizationPlan with recommended tier ordering.
+
+        Returns:
+            OptimizationPlan with:
+                - ordered_providers: Dict of tier -> provider list
+                - promoted: List of promoted providers
+                - demoted: List of demoted providers
+                - removed: List of removed providers
+                - rationale: Explanation of changes
+        """
+        return self.waterfall_optimizer.generate_optimized_order()
+
+    def get_waterfall_profiles(self) -> Dict[str, Any]:
+        """
+        Get all waterfall profiles for different pipelines.
+
+        Returns optimized waterfall orderings for:
+        - global: Baseline waterfall order
+        - company_pipeline: Company Pipeline specific order
+        - people_pipeline: People Pipeline order (prioritizes quality)
+        - talent_flow_pipeline: Talent Flow order (prioritizes speed)
+
+        NOTE: This method does NOT apply profiles automatically.
+        Profiles are returned for inspection/manual application only.
+
+        Returns:
+            Dict with keys:
+                - global: Global waterfall order
+                - company_pipeline: Company Pipeline order
+                - people_pipeline: People Pipeline order
+                - talent_flow_pipeline: Talent Flow order
+        """
+        plan = self.optimize_waterfall()
+        return {
+            "global": plan.global_order,
+            "company_pipeline": plan.company_pipeline_order,
+            "people_pipeline": plan.people_pipeline_order,
+            "talent_flow_pipeline": plan.talent_flow_pipeline_order
+        }
+
+    # ==========================================
     # TALENT FLOW ORCHESTRATORS
     # ==========================================
 
@@ -614,6 +688,355 @@ class CompanyIdentityPipeline:
         # TODO: implement batch processing
         pass
 
+    # ==========================================
+    # MOVEMENT ENGINE HOOKS (4-Funnel GTM System)
+    # ==========================================
+    # These hooks are called from appropriate pipeline locations
+    # to detect events for the Movement Engine. No database writes.
+
+    def hook_movement_reply(self, company_id: str, person_id: str,
+                            reply_text: str = None, metadata: Dict[str, Any] = None) -> None:
+        """
+        Hook: Detect reply event for Movement Engine.
+
+        Called when an email reply is received.
+        Logs event and queues for Movement Engine processing.
+
+        Args:
+            company_id: Company unique ID
+            person_id: Person unique ID
+            reply_text: Optional reply text for sentiment analysis
+            metadata: Optional additional metadata
+        """
+        try:
+            event = self.movement_engine.detect_event(
+                company_id=company_id,
+                person_id=person_id,
+                event_type='email_reply',
+                metadata={'reply_text': reply_text, **(metadata or {})}
+            )
+            self.logger.log_movement_reply(
+                company_id=company_id,
+                person_id=person_id,
+                reply_text=reply_text,
+                sentiment=event.metadata.get('sentiment') if event else None
+            )
+        except Exception as e:
+            self.logger.warning(f"Movement hook error (reply): {e}")
+
+    def hook_movement_warm_engagement(self, company_id: str, person_id: str,
+                                       opens: int = 0, clicks: int = 0,
+                                       bit_score: int = None,
+                                       metadata: Dict[str, Any] = None) -> None:
+        """
+        Hook: Detect warm engagement event for Movement Engine.
+
+        Called when engagement thresholds are crossed (opens >= 3, clicks >= 2,
+        or BIT score crosses threshold).
+
+        Args:
+            company_id: Company unique ID
+            person_id: Person unique ID
+            opens: Number of email opens
+            clicks: Number of link clicks
+            bit_score: Optional BIT score
+            metadata: Optional additional metadata
+        """
+        try:
+            # Determine event type based on engagement
+            if opens >= 3:
+                event_type = 'email_opens'
+            elif clicks >= 2:
+                event_type = 'link_clicks'
+            elif bit_score and bit_score >= 25:
+                event_type = 'bit_threshold'
+            else:
+                event_type = 'warm_engagement'
+
+            event = self.movement_engine.detect_event(
+                company_id=company_id,
+                person_id=person_id,
+                event_type=event_type,
+                metadata={'opens': opens, 'clicks': clicks, 'bit_score': bit_score, **(metadata or {})}
+            )
+            self.logger.log_movement_warm_engagement(
+                company_id=company_id,
+                person_id=person_id,
+                opens=opens,
+                clicks=clicks,
+                bit_score=bit_score
+            )
+        except Exception as e:
+            self.logger.warning(f"Movement hook error (warm_engagement): {e}")
+
+    def hook_movement_talentflow(self, company_id: str, person_id: str,
+                                  signal_type: str, new_company: str = None,
+                                  metadata: Dict[str, Any] = None) -> None:
+        """
+        Hook: Detect TalentFlow event for Movement Engine.
+
+        Called when TalentFlow detects job movement (employer change,
+        promotion, title change).
+
+        Args:
+            company_id: Company unique ID
+            person_id: Person unique ID
+            signal_type: Type of TalentFlow signal (job_change, promotion, etc.)
+            new_company: Optional new company name
+            metadata: Optional additional metadata
+        """
+        try:
+            event = self.movement_engine.detect_event(
+                company_id=company_id,
+                person_id=person_id,
+                event_type='talentflow_signal',
+                metadata={'signal_type': signal_type, 'new_company': new_company, **(metadata or {})}
+            )
+            self.logger.log_movement_talentflow(
+                company_id=company_id,
+                person_id=person_id,
+                signal_type=signal_type,
+                new_company=new_company
+            )
+        except Exception as e:
+            self.logger.warning(f"Movement hook error (talentflow): {e}")
+
+    def hook_movement_appointment(self, company_id: str, person_id: str,
+                                   appointment_type: str = None,
+                                   metadata: Dict[str, Any] = None) -> None:
+        """
+        Hook: Detect appointment booked event for Movement Engine.
+
+        Called when a meeting is scheduled with a contact.
+
+        Args:
+            company_id: Company unique ID
+            person_id: Person unique ID
+            appointment_type: Optional type of appointment
+            metadata: Optional additional metadata
+        """
+        try:
+            event = self.movement_engine.detect_event(
+                company_id=company_id,
+                person_id=person_id,
+                event_type='appointment_booked',
+                metadata={'appointment_type': appointment_type, **(metadata or {})}
+            )
+            self.logger.log_movement_appointment(
+                company_id=company_id,
+                person_id=person_id,
+                appointment_type=appointment_type
+            )
+        except Exception as e:
+            self.logger.warning(f"Movement hook error (appointment): {e}")
+
+    # ==========================================
+    # PEOPLE PIPELINE (PHASES 5-8)
+    # ==========================================
+
+    def run_people_pipeline(
+        self,
+        matched_people_df: pd.DataFrame,
+        pattern_df: pd.DataFrame,
+        output_dir: str = None
+    ) -> Tuple[PipelineSummary, Dict[str, Any]]:
+        """
+        Run the People Pipeline (Phases 5-8).
+
+        Takes output from Company Identity Pipeline (Phases 1-4) and:
+        - Phase 5: Generates emails using verified patterns
+        - Phase 6: Assigns people to company HR slots
+        - Phase 7: Builds enrichment queue for items needing follow-up
+        - Phase 8: Writes final output to CSV files
+
+        REQUIRES: company_id anchor (Company-First doctrine)
+
+        Args:
+            matched_people_df: DataFrame with matched people from Company Pipeline
+                Required columns: person_id, company_id, first_name, last_name
+                Optional columns: job_title, title
+            pattern_df: DataFrame with verified patterns from Phase 4
+                Required columns: company_id, email_pattern, resolved_domain
+                Optional columns: pattern_confidence, verification_status
+            output_dir: Output directory (default: configured output_dir)
+
+        Returns:
+            Tuple of (PipelineSummary, phase_stats_dict)
+        """
+        start_time = time.time()
+        output_dir = output_dir or str(self.output_dir)
+
+        self.logger.info("=" * 60)
+        self.logger.info("STARTING PEOPLE PIPELINE (Phases 5-8)")
+        self.logger.info("=" * 60)
+
+        # Track all phase stats
+        phase_stats = {
+            'started_at': datetime.now(),
+            'pipeline_start_time': start_time,
+            'input_patterns': len(pattern_df) if pattern_df is not None else 0
+        }
+
+        try:
+            # ==========================================
+            # PHASE 5: Email Generation
+            # ==========================================
+            self.logger.info("-" * 60)
+            self.logger.info("PHASE 5: Email Generation")
+            self.logger.info("-" * 60)
+
+            phase5 = Phase5EmailGeneration(config=self.config)
+            people_with_emails_df, people_missing_pattern_df, phase5_stats = phase5.run(
+                matched_people_df, pattern_df
+            )
+
+            phase_stats['phase5'] = {
+                'total_input': phase5_stats.total_input,
+                'emails_generated': phase5_stats.emails_generated,
+                'verified_emails': phase5_stats.verified_emails,
+                'derived_emails': phase5_stats.derived_emails,
+                'low_confidence_emails': phase5_stats.low_confidence_emails,
+                'waterfall_emails': phase5_stats.waterfall_emails,
+                'waterfall_patterns_discovered': phase5_stats.waterfall_patterns_discovered,
+                'waterfall_api_calls': phase5_stats.waterfall_api_calls,
+                'missing_pattern': phase5_stats.missing_pattern,
+                'missing_name': phase5_stats.missing_name,
+                'duration_seconds': phase5_stats.duration_seconds
+            }
+
+            waterfall_info = ""
+            if phase5_stats.waterfall_patterns_discovered > 0:
+                waterfall_info = f" ({phase5_stats.waterfall_patterns_discovered} patterns via waterfall)"
+
+            self.logger.info(
+                f"Phase 5 complete: {phase5_stats.emails_generated} emails generated, "
+                f"{phase5_stats.missing_pattern} missing pattern{waterfall_info}"
+            )
+
+            # ==========================================
+            # PHASE 6: Slot Assignment
+            # ==========================================
+            self.logger.info("-" * 60)
+            self.logger.info("PHASE 6: Slot Assignment")
+            self.logger.info("-" * 60)
+
+            phase6 = Phase6SlotAssignment(config=self.config)
+            slotted_df, unslotted_df, slot_summary_df, phase6_stats = phase6.run(
+                people_with_emails_df
+            )
+
+            phase_stats['phase6'] = {
+                'total_input': phase6_stats.total_input,
+                'slots_assigned': phase6_stats.slots_assigned,
+                'chro_count': phase6_stats.chro_count,
+                'hr_manager_count': phase6_stats.hr_manager_count,
+                'benefits_lead_count': phase6_stats.benefits_lead_count,
+                'payroll_admin_count': phase6_stats.payroll_admin_count,
+                'hr_support_count': phase6_stats.hr_support_count,
+                'unslotted_count': phase6_stats.unslotted_count,
+                'conflicts_resolved': phase6_stats.conflicts_resolved,
+                'duration_seconds': phase6_stats.duration_seconds
+            }
+
+            self.logger.info(
+                f"Phase 6 complete: {phase6_stats.slots_assigned} slots assigned, "
+                f"{phase6_stats.unslotted_count} unslotted"
+            )
+
+            # ==========================================
+            # PHASE 7: Enrichment Queue
+            # ==========================================
+            self.logger.info("-" * 60)
+            self.logger.info("PHASE 7: Enrichment Queue")
+            self.logger.info("-" * 60)
+
+            phase7 = Phase7EnrichmentQueue(config=self.config)
+            enrichment_queue_df, resolved_patterns_df, phase7_stats = phase7.run(
+                people_missing_pattern_df,
+                unslotted_df,
+                slot_summary_df
+            )
+
+            phase_stats['phase7'] = {
+                'total_queued': phase7_stats.total_queued,
+                'high_priority': phase7_stats.high_priority,
+                'medium_priority': phase7_stats.medium_priority,
+                'low_priority': phase7_stats.low_priority,
+                'company_items': phase7_stats.company_items,
+                'person_items': phase7_stats.person_items,
+                'pattern_missing': phase7_stats.pattern_missing,
+                'slot_missing': phase7_stats.slot_missing,
+                'waterfall_processed': phase7_stats.waterfall_processed,
+                'waterfall_resolved': phase7_stats.waterfall_resolved,
+                'waterfall_exhausted': phase7_stats.waterfall_exhausted,
+                'waterfall_api_calls': phase7_stats.waterfall_api_calls,
+                'duration_seconds': phase7_stats.duration_seconds
+            }
+
+            waterfall_info = ""
+            if phase7_stats.waterfall_processed > 0:
+                waterfall_info = f" (Waterfall: {phase7_stats.waterfall_resolved}/{phase7_stats.waterfall_processed} resolved)"
+
+            self.logger.info(
+                f"Phase 7 complete: {phase7_stats.total_queued} items queued "
+                f"(HIGH: {phase7_stats.high_priority}, MEDIUM: {phase7_stats.medium_priority}, "
+                f"LOW: {phase7_stats.low_priority}){waterfall_info}"
+            )
+
+            # ==========================================
+            # PHASE 8: Output Writer
+            # ==========================================
+            self.logger.info("-" * 60)
+            self.logger.info("PHASE 8: Output Writer")
+            self.logger.info("-" * 60)
+
+            phase8_config = {**self.config, 'output_dir': output_dir}
+            phase8 = Phase8OutputWriter(config=phase8_config)
+            summary, phase8_stats = phase8.run(
+                people_with_emails_df,
+                slotted_df,
+                unslotted_df,
+                slot_summary_df,
+                enrichment_queue_df,
+                phase_stats
+            )
+
+            phase_stats['phase8'] = {
+                'files_written': phase8_stats.files_written,
+                'total_records': phase8_stats.total_records,
+                'people_final_count': phase8_stats.people_final_count,
+                'slot_assignments_count': phase8_stats.slot_assignments_count,
+                'enrichment_queue_count': phase8_stats.enrichment_queue_count,
+                'errors': phase8_stats.errors,
+                'duration_seconds': phase8_stats.duration_seconds
+            }
+
+            self.logger.info(
+                f"Phase 8 complete: {phase8_stats.files_written} files written, "
+                f"{phase8_stats.total_records} total records"
+            )
+
+            # ==========================================
+            # FINALIZE
+            # ==========================================
+            total_duration = time.time() - start_time
+
+            self.logger.info("=" * 60)
+            self.logger.info(f"PEOPLE PIPELINE COMPLETE in {total_duration:.2f}s")
+            self.logger.info(f"  Input: {phase5_stats.total_input} people, {len(pattern_df) if pattern_df is not None else 0} patterns")
+            self.logger.info(f"  Emails Generated: {phase5_stats.emails_generated}")
+            self.logger.info(f"  Slots Assigned: {phase6_stats.slots_assigned}")
+            self.logger.info(f"  Queued for Enrichment: {phase7_stats.total_queued}")
+            self.logger.info(f"  Files Written: {phase8_stats.files_written}")
+            self.logger.info(f"  Output Directory: {output_dir}")
+            self.logger.info("=" * 60)
+
+            return summary, phase_stats
+
+        except Exception as e:
+            log_error(self.logger, e, context={'phase': 'people_pipeline'})
+            raise
+
 
 # Convenience function for simple usage
 def run_company_identity_pipeline(
@@ -634,6 +1057,36 @@ def run_company_identity_pipeline(
     """
     pipeline = CompanyIdentityPipeline(config=config)
     return pipeline.run(people_df, company_df)
+
+
+def run_people_pipeline(
+    matched_people_df: pd.DataFrame,
+    pattern_df: pd.DataFrame,
+    output_dir: str = './output',
+    config: Dict[str, Any] = None
+) -> Tuple[PipelineSummary, Dict[str, Any]]:
+    """
+    Run the People Pipeline (Phases 5-8).
+
+    Convenience function for running People Pipeline standalone.
+
+    Args:
+        matched_people_df: DataFrame with matched people from Company Pipeline
+            Required columns: person_id, company_id, first_name, last_name
+            Optional columns: job_title, title
+        pattern_df: DataFrame with verified patterns from Phase 4
+            Required columns: company_id, email_pattern, resolved_domain
+        output_dir: Output directory for CSV files
+        config: Optional configuration
+
+    Returns:
+        Tuple of (PipelineSummary, phase_stats_dict)
+    """
+    config = config or {}
+    config['output_directory'] = output_dir
+
+    pipeline = CompanyIdentityPipeline(config=config)
+    return pipeline.run_people_pipeline(matched_people_df, pattern_df, output_dir)
 
 
 def main():

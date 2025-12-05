@@ -22,6 +22,13 @@ from typing import Optional, Dict, Any
 from dataclasses import dataclass
 import pandas as pd
 
+# Provider Benchmark Engine (System-Level) - Optional import
+try:
+    from ctb.sys.enrichment.provider_benchmark import ProviderBenchmarkEngine
+    _PBE_AVAILABLE = True
+except ImportError:
+    _PBE_AVAILABLE = False
+
 
 @dataclass
 class CompanyGateResult:
@@ -33,6 +40,9 @@ class CompanyGateResult:
     needs_enrichment: bool = False
     enrichment_triggered: bool = False
     metadata: Dict[str, Any] = None
+    # Movement Engine tracking
+    person_id: Optional[str] = None
+    movement_event_detected: bool = False
 
     def __post_init__(self):
         if self.metadata is None:
@@ -51,7 +61,8 @@ class TalentFlowCompanyGate:
     - Return an enriched or existing company record for downstream processing
     """
 
-    def __init__(self, config: Dict[str, Any] = None):
+    def __init__(self, config: Dict[str, Any] = None,
+                 movement_hook: callable = None):
         """
         Initialize the Company Gate.
 
@@ -59,23 +70,56 @@ class TalentFlowCompanyGate:
             config: Configuration dictionary with:
                 - auto_enrich: Whether to auto-trigger enrichment (default: True)
                 - match_threshold: Similarity threshold for existing match (default: 0.95)
+            movement_hook: Optional callback for Movement Engine integration.
+                Signature: movement_hook(company_id, person_id, signal_type, new_company, metadata)
         """
         self.config = config or {}
         self.auto_enrich = self.config.get('auto_enrich', True)
         self.match_threshold = self.config.get('match_threshold', 0.95)
 
-    def run(self, new_company_name: str, company_df: pd.DataFrame) -> CompanyGateResult:
+        # Movement Engine hook (4-Funnel GTM System)
+        self._movement_hook = movement_hook
+
+        # Provider Benchmark Engine reference (for future enrichment tracking)
+        self._pbe = None
+        if _PBE_AVAILABLE:
+            try:
+                self._pbe = ProviderBenchmarkEngine.get_instance()
+            except Exception:
+                pass
+
+    def run(self, new_company_name: str, company_df: pd.DataFrame,
+            person_id: str = None, signal_type: str = 'job_change',
+            metadata: Dict[str, Any] = None) -> CompanyGateResult:
         """
         Shell method for processing new employer events.
 
         Parameters:
             new_company_name (str): Name of employer detected from movement
             company_df (DataFrame): Current company master data
+            person_id (str): Optional person ID for Movement Engine tracking
+            signal_type (str): Type of TalentFlow signal (job_change, promotion, etc.)
+            metadata (Dict): Optional additional metadata
 
         Returns:
             CompanyGateResult: Placeholder enriched company record (None for now)
         """
         # TODO: implement normalization, lookup, enrichment callbacks
+
+        # Movement Engine hook call (4-Funnel GTM System)
+        # Detect TalentFlow event when company gate processes movement
+        if self._movement_hook and person_id:
+            try:
+                self._movement_hook(
+                    company_id=None,  # Will be populated after lookup
+                    person_id=person_id,
+                    signal_type=signal_type,
+                    new_company=new_company_name,
+                    metadata=metadata
+                )
+            except Exception:
+                pass  # Hook errors should not block pipeline
+
         pass
 
     def normalize_company_name(self, company_name: str) -> str:

@@ -71,6 +71,16 @@ class EventType(Enum):
     WARNING = "warning"
     INFO = "info"
 
+    # Movement Engine events (4-Funnel GTM System)
+    MOVEMENT_REPLY = "movement_reply"
+    MOVEMENT_WARM_ENGAGEMENT = "movement_warm_engagement"
+    MOVEMENT_TALENTFLOW = "movement_talentflow"
+    MOVEMENT_APPOINTMENT = "movement_appointment"
+    MOVEMENT_TRANSITION = "movement_transition"
+    MOVEMENT_BIT_THRESHOLD = "movement_bit_threshold"
+    MOVEMENT_INACTIVITY = "movement_inactivity"
+    MOVEMENT_UNSUBSCRIBE = "movement_unsubscribe"
+
 
 @dataclass
 class PipelineEvent:
@@ -341,6 +351,86 @@ class PipelineLogger:
             entity_type="slot",
             entity_id=company_id,
             metadata={"slot_type": slot_type, "existing_id": existing_id, "new_id": new_id}
+        )
+
+    # Movement Engine logging methods (4-Funnel GTM System)
+    def log_movement_reply(self, company_id: str, person_id: str,
+                           reply_text: str = None, sentiment: str = None) -> None:
+        """Log reply event for Movement Engine."""
+        self.log_event(
+            EventType.MOVEMENT_REPLY,
+            f"Reply detected for person {person_id}",
+            entity_type="movement",
+            entity_id=person_id,
+            metadata={
+                "company_id": company_id,
+                "reply_text": reply_text[:100] if reply_text else None,
+                "sentiment": sentiment
+            }
+        )
+
+    def log_movement_warm_engagement(self, company_id: str, person_id: str,
+                                      opens: int = 0, clicks: int = 0,
+                                      bit_score: int = None) -> None:
+        """Log warm engagement event (opens/clicks/BIT threshold)."""
+        self.log_event(
+            EventType.MOVEMENT_WARM_ENGAGEMENT,
+            f"Warm engagement: opens={opens}, clicks={clicks}",
+            entity_type="movement",
+            entity_id=person_id,
+            metadata={
+                "company_id": company_id,
+                "opens": opens,
+                "clicks": clicks,
+                "bit_score": bit_score
+            }
+        )
+
+    def log_movement_talentflow(self, company_id: str, person_id: str,
+                                 signal_type: str, new_company: str = None) -> None:
+        """Log TalentFlow movement signal."""
+        self.log_event(
+            EventType.MOVEMENT_TALENTFLOW,
+            f"TalentFlow signal: {signal_type}",
+            entity_type="movement",
+            entity_id=person_id,
+            metadata={
+                "company_id": company_id,
+                "signal_type": signal_type,
+                "new_company": new_company
+            }
+        )
+
+    def log_movement_appointment(self, company_id: str, person_id: str,
+                                  appointment_type: str = None) -> None:
+        """Log appointment booked event."""
+        self.log_event(
+            EventType.MOVEMENT_APPOINTMENT,
+            f"Appointment booked for person {person_id}",
+            entity_type="movement",
+            entity_id=person_id,
+            metadata={
+                "company_id": company_id,
+                "appointment_type": appointment_type
+            }
+        )
+
+    def log_movement_transition(self, company_id: str, person_id: str,
+                                 from_state: str, to_state: str,
+                                 event_type: str, reason: str = None) -> None:
+        """Log state transition in Movement Engine."""
+        self.log_event(
+            EventType.MOVEMENT_TRANSITION,
+            f"State transition: {from_state} -> {to_state} ({event_type})",
+            entity_type="movement",
+            entity_id=person_id,
+            metadata={
+                "company_id": company_id,
+                "from_state": from_state,
+                "to_state": to_state,
+                "event_type": event_type,
+                "reason": reason
+            }
         )
 
     def get_events(self, phase: int = None, event_type: str = None,

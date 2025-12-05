@@ -1,0 +1,86 @@
+{
+  "firecrawl": {
+    "cost_per_call": 0.0001,
+    "cost_unit": "USD",
+    "billing_model": "per_request",
+    "free_tier_limit": 500,
+    "notes": "Free tier available, very low cost at scale"
+  },
+  "scraperapi": {
+    "cost_per_call": 0.002,
+    "cost_unit": "USD",
+    "billing_model": "per_request",
+    "free_tier_limit": 1000,
+    "notes": "API credits, cost varies by concurrency"
+  },
+  "googleplaces": {
+    "cost_per_call": 0.003,
+    "cost_unit": "USD",
+    "billing_model": "per_request",
+    "free_tier_limit": 0,
+    "notes": "Google Cloud billing, $200 monthly credit"
+  },
+  "hunter": {
+    "cost_per_call": 0.008,
+    "cost_unit": "USD",
+    "billing_model": "per_request",
+    "free_tier_limit": 25,
+    "notes": "Monthly quota based on plan"
+  },
+  "apollo": {
+    "cost_per_call": 0.005,
+    "cost_unit": "USD",
+    "billing_model": "credit_based",
+    "free_tier_limit": 50,
+    "notes": "Credit system, varies by enrichment type"
+  },
+  "clay": {
+    "cost_per_call": 0.01,
+    "cost_unit": "USD",
+    "billing_model": "credit_based",
+    "free_tier_limit": 100,
+    "notes": "Credit-based, waterfall has variable cost"
+  },
+  "prospeo": {
+    "cost_per_call": 0.003,
+    "cost_unit": "USD",
+    "billing_model": "credit_based",
+    "free_tier_limit": 75,
+    "notes": "Competitive email verification pricing"
+  },
+  "snov": {
+    "cost_per_call": 0.004,
+    "cost_unit": "USD",
+    "billing_model": "credit_based",
+    "free_tier_limit": 50,
+    "notes": "Trial credits available"
+  },
+  "clearbit": {
+    "cost_per_call": 0.02,
+    "cost_unit": "USD",
+    "billing_model": "per_request",
+    "free_tier_limit": 0,
+    "notes": "Premium enrichment, higher accuracy"
+  },
+  "pdl": {
+    "cost_per_call": 0.03,
+    "cost_unit": "USD",
+    "billing_model": "per_request",
+    "free_tier_limit": 100,
+    "notes": "Bulk discounts available"
+  },
+  "zenrows": {
+    "cost_per_call": 0.005,
+    "cost_unit": "USD",
+    "billing_model": "per_request",
+    "free_tier_limit": 1000,
+    "notes": "Premium scraping with JS rendering"
+  },
+  "zoominfo": {
+    "cost_per_call": 0.15,
+    "cost_unit": "USD",
+    "billing_model": "enterprise_license",
+    "free_tier_limit": 0,
+    "notes": "Enterprise pricing, negotiated rates"
+  }
+}
