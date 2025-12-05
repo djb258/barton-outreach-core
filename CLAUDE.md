@@ -10,6 +10,95 @@
 
 ---
 
+## 🏛️ CORE ARCHITECTURE PRINCIPLE: HUB-AND-SPOKE
+
+**THE COMPANY HUB IS THE MASTER NODE.**
+
+Everything in this system is gravity-bound to the Company Hub. There is NO valid pipeline that does not first anchor to a company record.
+
+```
+                              SPOKE NODES (Satellites)
+                                       │
+         ┌─────────────────────────────┼─────────────────────────────┐
+         │                             │                             │
+         ▼                             ▼                             ▼
+┌─────────────────┐          ┌─────────────────┐          ┌─────────────────┐
+│  PEOPLE NODE    │          │   DOL NODE      │          │   BLOG NODE     │
+│  (Spoke #1)     │          │  (Spoke #2)     │          │  (Spoke #3)     │
+│  Status: ACTIVE │          │  Status: ACTIVE │          │  Status: PLANNED│
+└────────┬────────┘          └────────┬────────┘          └────────┬────────┘
+         │                             │                             │
+         └─────────────────────────────┼─────────────────────────────┘
+                                       │
+                                       ▼
+                         ┌─────────────────────────────┐
+                         │       COMPANY HUB           │
+                         │      (Master Node)          │
+                         │                             │
+                         │  • company_id               │
+                         │  • company_name             │
+                         │  • domain                   │
+                         │  • email_pattern            │
+                         │  • slots (CHRO/HR/Benefits) │
+                         └─────────────────────────────┘
+                                       │
+         ┌─────────────────────────────┼─────────────────────────────┐
+         │                             │                             │
+         ▼                             ▼                             ▼
+┌─────────────────┐          ┌─────────────────┐          ┌─────────────────┐
+│  TALENT FLOW    │          │   BIT ENGINE    │          │    OUTREACH     │
+│  (Spoke #4)     │          │  (Spoke #5)     │          │  (Spoke #6)     │
+│  Status: SHELL  │          │  Status: PLANNED│          │  Status: PLANNED│
+└─────────────────┘          └─────────────────┘          └─────────────────┘
+```
+
+### Node Registry
+
+| Node | Type | Status | Description |
+|------|------|--------|-------------|
+| **Company** | HUB | ACTIVE | Master node - all data anchors here |
+| **People** | SPOKE | ACTIVE | Titles, emails, slot assignments |
+| **DOL** | SPOKE | ACTIVE | Form 5500 filings, renewal dates |
+| **Blog** | SPOKE | PLANNED | News, sentiment, competitor intel |
+| **Talent Flow** | SPOKE | SHELL | Movement detection, job changes |
+| **BIT Engine** | SPOKE | PLANNED | Buyer intent scoring |
+| **Outreach** | SPOKE | PLANNED | Campaign targeting, sequences |
+
+### Why Hub-and-Spoke?
+
+| Spoke Node | Must Anchor to Company Hub Because... |
+|------------|--------------------------------------|
+| **People** | People do NOT stand alone - they attach to a company. Unroutable without company_id. |
+| **DOL** | Form 5500 filings must map into company_master. EIN matching requires company anchor. |
+| **Blog** | Signals feed into COMPANY intelligence. Sentiment requires knowing WHICH company. |
+| **Talent Flow** | Movement events pivot around company changes. Both old AND new company must be valid. |
+| **BIT Engine** | Intent scoring is IMPOSSIBLE without company anchor. Scores attach to companies. |
+| **Outreach** | Cannot send emails without company domain and pattern. |
+
+### The Golden Rule
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                                                                         │
+│   IF company_id IS NULL OR domain IS NULL OR email_pattern IS NULL:    │
+│       STOP. DO NOT PROCEED.                                            │
+│       → Route to Company Identity Pipeline first.                      │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**No spoke pipeline should EVER process a record that lacks a valid company anchor.**
+
+### Pipeline Execution Order
+
+1. **Company Identity Pipeline (Phases 1-4)** — ALWAYS FIRST
+2. People Pipeline (Phases 5-8) — Only after company anchor exists
+3. BIT Scoring — Only after people are slotted
+
+**Full Architecture Documentation**: `ctb/sys/enrichment/pipeline_engine/ARCHITECTURE.md`
+
+---
+
 ## 🌐 ECOSYSTEM ARCHITECTURE
 
 ```
