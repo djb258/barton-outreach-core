@@ -82,11 +82,16 @@ from .phases.phase3_email_pattern_waterfall import Phase3EmailPatternWaterfall, 
 from .phases.phase4_pattern_verification import Phase4PatternVerification, Phase4Stats
 from .phases.talentflow_phase0_company_gate import TalentFlowCompanyGate, CompanyGateResult
 
-# People Pipeline (Phases 5-8)
+# People Pipeline (Phases 0, 5-8)
+from .phases.phase0_people_ingest import Phase0PeopleIngest, Phase0Stats, PeopleIngestResult
 from .phases.phase5_email_generation import Phase5EmailGeneration, Phase5Stats
 from .phases.phase6_slot_assignment import Phase6SlotAssignment, Phase6Stats
 from .phases.phase7_enrichment_queue import Phase7EnrichmentQueue, Phase7Stats
 from .phases.phase8_output_writer import Phase8OutputWriter, Phase8Stats, PipelineSummary
+
+# People Node State Management
+from .people_state_initializer import PeopleStateInitializer, PeopleStateInitializationResult
+from .people_neon_writer import PeopleNeonWriter
 
 from .utils.logging import (
     PipelineLogger,
@@ -212,6 +217,15 @@ class CompanyIdentityPipeline:
         self.phase2 = Phase2DomainResolution(config=self.config, logger=self.logger)
         self.phase3 = Phase3EmailPatternWaterfall(config=self.config, logger=self.logger)
         self.phase4 = Phase4PatternVerification(config=self.config, logger=self.logger)
+
+        # People Node components (ingest → state init → phases 5-8 → Neon write)
+        self.phase0_people_ingest = Phase0PeopleIngest(config=self.config)
+        self.people_state_initializer = PeopleStateInitializer(
+            movement_engine=self.movement_engine,
+            logger=self.logger,
+            config=self.config
+        )
+        self.people_neon_writer = PeopleNeonWriter(config=self.config)
 
         # Run tracking
         self.current_run: Optional[PipelineRun] = None
@@ -838,12 +852,14 @@ class CompanyIdentityPipeline:
         self,
         matched_people_df: pd.DataFrame,
         pattern_df: pd.DataFrame,
-        output_dir: str = None
+        output_dir: str = None,
+        skip_ingest: bool = False
     ) -> Tuple[PipelineSummary, Dict[str, Any]]:
         """
-        Run the People Pipeline (Phases 5-8).
+        Run the People Pipeline (Phases 0, 5-8).
 
         Takes output from Company Identity Pipeline (Phases 1-4) and:
+        - Phase 0: Classifies people and initializes funnel state
         - Phase 5: Generates emails using verified patterns
         - Phase 6: Assigns people to company HR slots
         - Phase 7: Builds enrichment queue for items needing follow-up
@@ -859,6 +875,7 @@ class CompanyIdentityPipeline:
                 Required columns: company_id, email_pattern, resolved_domain
                 Optional columns: pattern_confidence, verification_status
             output_dir: Output directory (default: configured output_dir)
+            skip_ingest: Skip Phase 0 ingest (for re-processing existing data)
 
         Returns:
             Tuple of (PipelineSummary, phase_stats_dict)
@@ -867,7 +884,7 @@ class CompanyIdentityPipeline:
         output_dir = output_dir or str(self.output_dir)
 
         self.logger.info("=" * 60)
-        self.logger.info("STARTING PEOPLE PIPELINE (Phases 5-8)")
+        self.logger.info("STARTING PEOPLE PIPELINE (Phases 0, 5-8)")
         self.logger.info("=" * 60)
 
         # Track all phase stats
@@ -878,6 +895,46 @@ class CompanyIdentityPipeline:
         }
 
         try:
+            # ==========================================
+            # PHASE 0: People Ingest & State Initialization
+            # ==========================================
+            if not skip_ingest:
+                self.logger.info("-" * 60)
+                self.logger.info("PHASE 0: People Ingest & State Initialization")
+                self.logger.info("-" * 60)
+
+                # Run ingest classification
+                ingest_results, phase0_stats = self.phase0_people_ingest.run(matched_people_df)
+
+                # Initialize state in Movement Engine
+                init_results = self.people_state_initializer.initialize_batch(ingest_results)
+
+                # Write initial states to Neon (placeholder)
+                for init_result in init_results:
+                    if init_result.company_id:
+                        self.people_neon_writer.write_initial_state(
+                            person_id=init_result.person_id,
+                            company_id=init_result.company_id,
+                            funnel_state=init_result.initial_state,
+                            ts=init_result.initialized_at
+                        )
+
+                phase_stats['phase0'] = {
+                    'total_input': phase0_stats.total_input,
+                    'classified_suspect': phase0_stats.classified_suspect,
+                    'classified_warm': phase0_stats.classified_warm,
+                    'classified_talentflow_warm': phase0_stats.classified_talentflow_warm,
+                    'classified_appointment': phase0_stats.classified_appointment,
+                    'missing_company_id': phase0_stats.missing_company_id,
+                    'duration_seconds': phase0_stats.duration_seconds
+                }
+
+                self.logger.info(
+                    f"Phase 0 complete: {phase0_stats.total_input} people classified "
+                    f"(SUSPECT: {phase0_stats.classified_suspect}, WARM: {phase0_stats.classified_warm}, "
+                    f"TALENTFLOW: {phase0_stats.classified_talentflow_warm}, APPOINTMENT: {phase0_stats.classified_appointment})"
+                )
+
             # ==========================================
             # PHASE 5: Email Generation
             # ==========================================
@@ -1063,10 +1120,11 @@ def run_people_pipeline(
     matched_people_df: pd.DataFrame,
     pattern_df: pd.DataFrame,
     output_dir: str = './output',
-    config: Dict[str, Any] = None
+    config: Dict[str, Any] = None,
+    skip_ingest: bool = False
 ) -> Tuple[PipelineSummary, Dict[str, Any]]:
     """
-    Run the People Pipeline (Phases 5-8).
+    Run the People Pipeline (Phases 0, 5-8).
 
     Convenience function for running People Pipeline standalone.
 
@@ -1078,6 +1136,7 @@ def run_people_pipeline(
             Required columns: company_id, email_pattern, resolved_domain
         output_dir: Output directory for CSV files
         config: Optional configuration
+        skip_ingest: Skip Phase 0 ingest (for re-processing existing data)
 
     Returns:
         Tuple of (PipelineSummary, phase_stats_dict)
@@ -1086,7 +1145,7 @@ def run_people_pipeline(
     config['output_directory'] = output_dir
 
     pipeline = CompanyIdentityPipeline(config=config)
-    return pipeline.run_people_pipeline(matched_people_df, pattern_df, output_dir)
+    return pipeline.run_people_pipeline(matched_people_df, pattern_df, output_dir, skip_ingest=skip_ingest)
 
 
 def main():
