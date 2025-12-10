@@ -1,7 +1,16 @@
 /**
- * HashAgent
- * =========
- * Generates movement hash for tracking changes.
+ * MovementHashAgent
+ * =================
+ * People Node: Movement Detection via Hash Comparison
+ *
+ * Generates movement hash for tracking employment changes.
+ * Renamed from HashAgent to better reflect its purpose in hub-and-spoke.
+ *
+ * Hub-and-Spoke Role:
+ * - Part of PEOPLE_NODE (spoke)
+ * - Receives title/company data from TitleCompanyAgent
+ * - Movement signals feed BIT Node for intent scoring
+ * - Enables daily/weekly change detection
  *
  * Features:
  * - SHA-256 hashing of slot data
@@ -11,7 +20,7 @@
  * - Always free - no vendor costs
  */
 
-import { AgentResult, SlotRow } from "../models/SlotRow";
+import { AgentResult, SlotRow } from "../../models/SlotRow";
 import { createHash } from "crypto";
 
 /**
@@ -22,7 +31,7 @@ export type HashAlgorithm = "sha256" | "sha512" | "md5";
 /**
  * Agent configuration.
  */
-export interface HashAgentConfig {
+export interface MovementHashAgentConfig {
   /** Hash algorithm to use */
   algorithm: HashAlgorithm;
   /** Include timestamp in hash (for daily snapshots) */
@@ -38,7 +47,7 @@ export interface HashAgentConfig {
 /**
  * Default configuration.
  */
-export const DEFAULT_HASH_AGENT_CONFIG: HashAgentConfig = {
+export const DEFAULT_MOVEMENT_HASH_CONFIG: MovementHashAgentConfig = {
   algorithm: "sha256",
   include_timestamp: false,
   include_email: true,
@@ -47,9 +56,9 @@ export const DEFAULT_HASH_AGENT_CONFIG: HashAgentConfig = {
 };
 
 /**
- * Task for HashAgent.
+ * Task for MovementHashAgent.
  */
-export interface HashTask {
+export interface MovementHashTask {
   task_id: string;
   slot_row_id: string;
   company_name: string;
@@ -77,7 +86,7 @@ interface HashInputFields {
 }
 
 /**
- * HashAgent - Generates movement hash for tracking changes.
+ * MovementHashAgent - Generates movement hash for tracking changes.
  *
  * Execution Flow:
  * 1. Collect all relevant fields from task
@@ -86,12 +95,12 @@ interface HashInputFields {
  * 4. Generate hash using configured algorithm
  * 5. Compare with previous hash to detect movement
  */
-export class HashAgent {
-  private config: HashAgentConfig;
+export class MovementHashAgent {
+  private config: MovementHashAgentConfig;
 
-  constructor(config?: Partial<HashAgentConfig>) {
+  constructor(config?: Partial<MovementHashAgentConfig>) {
     this.config = {
-      ...DEFAULT_HASH_AGENT_CONFIG,
+      ...DEFAULT_MOVEMENT_HASH_CONFIG,
       ...config,
     };
   }
@@ -99,7 +108,7 @@ export class HashAgent {
   /**
    * Run the agent to generate a movement hash.
    */
-  async run(task: HashTask, row?: SlotRow): Promise<AgentResult> {
+  async run(task: MovementHashTask, row?: SlotRow): Promise<AgentResult> {
     try {
       // Validate input
       if (!task.slot_row_id || !task.company_name || !task.slot_type) {
@@ -112,7 +121,7 @@ export class HashAgent {
       }
 
       if (this.config.verbose) {
-        console.log(`[HashAgent] Generating hash for slot: ${task.slot_row_id}`);
+        console.log(`[MovementHashAgent] Generating hash for slot: ${task.slot_row_id}`);
       }
 
       // Build hash input
@@ -164,7 +173,7 @@ export class HashAgent {
   async runOnRow(row: SlotRow): Promise<SlotRow> {
     const previousHash = row.movement_hash;
 
-    const task: HashTask = {
+    const task: MovementHashTask = {
       task_id: `hash_${row.id}_${Date.now()}`,
       slot_row_id: row.id,
       company_name: row.company_name || "",
@@ -183,7 +192,6 @@ export class HashAgent {
 
   /**
    * Synchronous hash generation for a SlotRow.
-   * Utility method for quick hashing without full task structure.
    */
   hashRow(row: SlotRow): string {
     const hashInput = this.buildHashInput({
@@ -205,28 +213,23 @@ export class HashAgent {
    * Returns true if movement detected (hashes differ).
    */
   detectMovement(oldHash: string | null, newHash: string): boolean {
-    if (!oldHash) return false; // No previous hash = no movement
+    if (!oldHash) return false;
     return oldHash !== newHash;
   }
 
   /**
    * Build hash input object from fields.
-   * Normalizes all strings and filters based on config.
    */
   private buildHashInput(fields: HashInputFields): Record<string, string | null> {
     const input: Record<string, string | null> = {
-      // Core identity fields (always included)
       slot_row_id: fields.slot_row_id,
       company_name: this.normalize(fields.company_name),
       slot_type: fields.slot_type.toUpperCase(),
       person_name: this.normalize(fields.person_name),
-
-      // Movement-sensitive fields
       current_title: this.normalize(fields.current_title),
       current_company: this.normalize(fields.current_company),
     };
 
-    // Optional fields based on config
     if (this.config.include_linkedin) {
       input.linkedin_url = fields.linkedin_url ?? null;
     }
@@ -235,9 +238,8 @@ export class HashAgent {
       input.email = fields.email ? fields.email.toLowerCase().trim() : null;
     }
 
-    // Optionally add timestamp (for daily snapshots)
     if (this.config.include_timestamp) {
-      input.timestamp = new Date().toISOString().split("T")[0]; // Date only (YYYY-MM-DD)
+      input.timestamp = new Date().toISOString().split("T")[0];
     }
 
     return input;
@@ -245,18 +247,14 @@ export class HashAgent {
 
   /**
    * Generate hash from input object.
-   * Keys are sorted for deterministic output.
    */
   private generateHash(input: Record<string, string | null>): string {
-    // Sort keys for deterministic output
     const sortedKeys = Object.keys(input).sort();
 
-    // Build hash string
     const hashString = sortedKeys
       .map((key) => `${key}:${input[key] ?? ""}`)
       .join("|");
 
-    // Generate hash
     const hash = createHash(this.config.algorithm);
     hash.update(hashString);
 
@@ -298,10 +296,8 @@ export class HashAgent {
       const previousHash = previousHashes.get(rowId);
 
       if (!previousHash) {
-        // New row
         changedRowIds.push(rowId);
       } else if (this.detectMovement(previousHash, currentHash)) {
-        // Hash changed
         changedRowIds.push(rowId);
       }
     }
@@ -313,14 +309,14 @@ export class HashAgent {
    * Create a standardized AgentResult.
    */
   private createResult(
-    task: HashTask,
+    task: MovementHashTask,
     success: boolean,
     data: Record<string, unknown>,
     error?: string
   ): AgentResult {
     return {
       task_id: task.task_id,
-      agent_type: "HashAgent",
+      agent_type: "MovementHashAgent",
       slot_row_id: task.slot_row_id,
       success,
       data,
@@ -329,17 +325,11 @@ export class HashAgent {
     };
   }
 
-  /**
-   * Get current configuration.
-   */
-  getConfig(): HashAgentConfig {
+  getConfig(): MovementHashAgentConfig {
     return { ...this.config };
   }
 
-  /**
-   * Update configuration.
-   */
-  updateConfig(config: Partial<HashAgentConfig>): void {
+  updateConfig(config: Partial<MovementHashAgentConfig>): void {
     this.config = { ...this.config, ...config };
   }
 }

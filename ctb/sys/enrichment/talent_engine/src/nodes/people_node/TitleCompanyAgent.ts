@@ -1,7 +1,15 @@
 /**
  * TitleCompanyAgent
  * =================
+ * People Node: Title and Company Retrieval Agent
+ *
  * Retrieves current title and company from LinkedIn profiles using adapters.
+ *
+ * Hub-and-Spoke Role:
+ * - Part of PEOPLE_NODE (spoke)
+ * - Requires LinkedIn URL from LinkedInFinderAgent
+ * - Feeds data to MovementHashAgent for change detection
+ * - Movement signals feed BIT Node
  *
  * Features:
  * - Primary adapter for LinkedIn profile data
@@ -10,16 +18,15 @@
  * - Cost-aware fallback decisions
  */
 
-import { AgentResult, SlotRow } from "../models/SlotRow";
+import { AgentResult, SlotRow } from "../../models/SlotRow";
 import {
   linkedInProfileAdapter,
   personEmploymentLookupAdapter,
-  detectEmploymentMovement,
   LinkedInResolverConfig,
   PersonEmploymentConfig,
   DEFAULT_LINKEDIN_RESOLVER_CONFIG,
   DEFAULT_PERSON_EMPLOYMENT_CONFIG,
-} from "../adapters";
+} from "../../adapters";
 
 /**
  * Agent configuration.
@@ -278,7 +285,6 @@ export class TitleCompanyAgent {
       }
     }
 
-    // No movement detected
     return { detected: false, type: null };
   }
 
@@ -320,30 +326,18 @@ export class TitleCompanyAgent {
     };
   }
 
-  /**
-   * Get total cost incurred.
-   */
   getTotalCost(): number {
     return this.totalCostIncurred;
   }
 
-  /**
-   * Reset cost tracking.
-   */
   resetCost(): void {
     this.totalCostIncurred = 0;
   }
 
-  /**
-   * Get current configuration.
-   */
   getConfig(): TitleCompanyConfig {
     return { ...this.config };
   }
 
-  /**
-   * Update configuration.
-   */
   updateConfig(config: Partial<TitleCompanyConfig>): void {
     this.config = { ...this.config, ...config };
   }

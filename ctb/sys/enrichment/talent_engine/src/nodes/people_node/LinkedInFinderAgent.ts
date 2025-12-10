@@ -1,7 +1,14 @@
 /**
  * LinkedInFinderAgent
  * ===================
+ * People Node: LinkedIn URL Discovery Agent
+ *
  * Finds LinkedIn URLs for people using generic adapter with fallback support.
+ *
+ * Hub-and-Spoke Role:
+ * - Part of PEOPLE_NODE (spoke)
+ * - Requires company anchor from Company Hub
+ * - Provides LinkedIn data for TitleCompanyAgent and MovementHashAgent
  *
  * Features:
  * - Primary adapter for LinkedIn URL resolution
@@ -11,7 +18,7 @@
  * - Cost-aware fallback decisions
  */
 
-import { AgentTask, AgentResult, SlotRow } from "../models/SlotRow";
+import { AgentTask, AgentResult, SlotRow } from "../../models/SlotRow";
 import {
   linkedInResolverAdapter,
   linkedInProfileAdapter,
@@ -21,7 +28,7 @@ import {
   AdapterResponse,
   AdapterConfig,
   DEFAULT_ADAPTER_CONFIG,
-} from "../adapters";
+} from "../../adapters";
 
 /**
  * Agent configuration.
@@ -92,10 +99,6 @@ export class LinkedInFinderAgent {
 
   /**
    * Run the agent to find a LinkedIn URL.
-   *
-   * @param task - The agent task to process
-   * @param row - Optional SlotRow to update directly
-   * @returns AgentResult with found LinkedIn URL
    */
   async run(task: LinkedInFinderTask, row?: SlotRow): Promise<AgentResult> {
     try {
@@ -274,8 +277,6 @@ export class LinkedInFinderAgent {
       ...this.config.fallback_config,
     };
 
-    // TODO: In real implementation, this would use a different vendor
-    // For now, it uses the same adapter with different config
     return linkedInResolverAdapter(
       {
         first_name: nameParts.firstName,
@@ -309,11 +310,9 @@ export class LinkedInFinderAgent {
     const parts = cleanName.split(/\s+/);
 
     if (parts.length === 1) {
-      // Single name - use as both first and last
       return { firstName: parts[0], lastName: parts[0] };
     }
 
-    // First part is first name, rest is last name
     return {
       firstName: parts[0],
       lastName: parts.slice(1).join(" "),
@@ -340,30 +339,18 @@ export class LinkedInFinderAgent {
     };
   }
 
-  /**
-   * Get total cost incurred.
-   */
   getTotalCost(): number {
     return this.totalCostIncurred;
   }
 
-  /**
-   * Reset cost tracking.
-   */
   resetCost(): void {
     this.totalCostIncurred = 0;
   }
 
-  /**
-   * Get current configuration.
-   */
   getConfig(): LinkedInFinderConfig {
     return { ...this.config };
   }
 
-  /**
-   * Update configuration.
-   */
   updateConfig(config: Partial<LinkedInFinderConfig>): void {
     this.config = { ...this.config, ...config };
   }

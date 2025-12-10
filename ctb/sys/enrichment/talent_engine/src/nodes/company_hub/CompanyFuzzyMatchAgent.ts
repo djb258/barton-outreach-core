@@ -1,11 +1,16 @@
 /**
- * FuzzyMatchAgent
- * ===============
- * Layer 1: Fuzzy Matching Intake Agent
+ * CompanyFuzzyMatchAgent
+ * ======================
+ * Company Hub Node: Fuzzy Matching Agent
  *
  * Responsible for matching raw company input to known company names.
  * Runs BEFORE any other processing - no slot work should happen
  * until company_name is resolved.
+ *
+ * Hub-and-Spoke Role:
+ * - Part of COMPANY_HUB (master node)
+ * - All other nodes depend on company resolution
+ * - Must complete before People, DOL, or BIT nodes can process
  *
  * Features:
  * - String normalization (lowercase, strip punctuation, remove LLC/Inc/etc.)
@@ -13,23 +18,23 @@
  * - Fallback to external company lookup when local match fails
  */
 
-import { AgentResult, SlotRow } from "../models/SlotRow";
+import { AgentResult, SlotRow } from "../../models/SlotRow";
 import {
   FuzzyMatchConfig,
   FuzzyMatchResult,
   FuzzyCandidate,
   DEFAULT_FUZZY_CONFIG,
-} from "../logic/fuzzyMatch";
+} from "../../logic/fuzzyMatch";
 import {
   externalCompanyLookupAdapter,
   CompanyLookupConfig,
   DEFAULT_COMPANY_LOOKUP_CONFIG,
-} from "../adapters/companyLookupAdapter";
+} from "../../adapters/companyLookupAdapter";
 
 /**
  * Agent configuration.
  */
-export interface FuzzyMatchAgentConfig extends FuzzyMatchConfig {
+export interface CompanyFuzzyMatchAgentConfig extends FuzzyMatchConfig {
   /** Enable detailed logging */
   verbose?: boolean;
   /** Enable external lookup fallback */
@@ -41,7 +46,7 @@ export interface FuzzyMatchAgentConfig extends FuzzyMatchConfig {
 /**
  * Default agent configuration.
  */
-export const DEFAULT_FUZZY_MATCH_AGENT_CONFIG: FuzzyMatchAgentConfig = {
+export const DEFAULT_COMPANY_FUZZY_MATCH_CONFIG: CompanyFuzzyMatchAgentConfig = {
   ...DEFAULT_FUZZY_CONFIG,
   verbose: false,
   enable_external_fallback: true,
@@ -52,9 +57,9 @@ export const DEFAULT_FUZZY_MATCH_AGENT_CONFIG: FuzzyMatchAgentConfig = {
 };
 
 /**
- * Task specific to FuzzyMatchAgent.
+ * Task specific to CompanyFuzzyMatchAgent.
  */
-export interface FuzzyMatchTask {
+export interface CompanyFuzzyMatchTask {
   task_id: string;
   slot_row_id: string;
   raw_company_input: string;
@@ -97,7 +102,7 @@ const COMPANY_SUFFIXES = [
 ];
 
 /**
- * FuzzyMatchAgent - Matches raw company input to known companies.
+ * CompanyFuzzyMatchAgent - Matches raw company input to known companies.
  *
  * Execution Flow:
  * 1. Normalize input string (lowercase, strip punctuation, remove LLC/Inc/etc.)
@@ -107,12 +112,12 @@ const COMPANY_SUFFIXES = [
  * 5. If score < min_match_score → call external lookup adapter
  * 6. If external lookup fails → UNMATCHED
  */
-export class FuzzyMatchAgent {
-  private config: FuzzyMatchAgentConfig;
+export class CompanyFuzzyMatchAgent {
+  private config: CompanyFuzzyMatchAgentConfig;
 
-  constructor(config?: Partial<FuzzyMatchAgentConfig>) {
+  constructor(config?: Partial<CompanyFuzzyMatchAgentConfig>) {
     this.config = {
-      ...DEFAULT_FUZZY_MATCH_AGENT_CONFIG,
+      ...DEFAULT_COMPANY_FUZZY_MATCH_CONFIG,
       ...config,
     };
   }
@@ -123,7 +128,7 @@ export class FuzzyMatchAgent {
    * @param task - The fuzzy match task to process
    * @returns AgentResult with match outcome
    */
-  async run(task: FuzzyMatchTask): Promise<AgentResult> {
+  async run(task: CompanyFuzzyMatchTask): Promise<AgentResult> {
     try {
       // Validate input
       if (!task.raw_company_input) {
@@ -138,7 +143,7 @@ export class FuzzyMatchAgent {
       const normalizedInput = this.normalizeCompanyName(task.raw_company_input);
 
       if (this.config.verbose) {
-        console.log(`[FuzzyMatchAgent] Input: "${task.raw_company_input}" → Normalized: "${normalizedInput}"`);
+        console.log(`[CompanyFuzzyMatchAgent] Input: "${task.raw_company_input}" → Normalized: "${normalizedInput}"`);
       }
 
       // Step 2: Find best matches in canonical list
@@ -149,7 +154,7 @@ export class FuzzyMatchAgent {
       const matchScore = bestCandidate?.score ?? 0;
 
       if (this.config.verbose) {
-        console.log(`[FuzzyMatchAgent] Best match: "${bestCandidate?.company}" (score: ${matchScore})`);
+        console.log(`[CompanyFuzzyMatchAgent] Best match: "${bestCandidate?.company}" (score: ${matchScore})`);
       }
 
       // High confidence match
@@ -213,29 +218,21 @@ export class FuzzyMatchAgent {
 
   /**
    * Normalize a company name for matching.
-   *
-   * @param name - Raw company name
-   * @returns Normalized company name
    */
   normalizeCompanyName(name: string): string {
     if (!name) return "";
 
     let normalized = name
-      // Convert to lowercase
       .toLowerCase()
-      // Remove punctuation
       .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"]/g, " ")
-      // Remove extra whitespace
       .replace(/\s+/g, " ")
       .trim();
 
-    // Remove common suffixes
     for (const suffix of COMPANY_SUFFIXES) {
       const suffixPattern = new RegExp(`\\b${suffix}\\b\\.?$`, "i");
       normalized = normalized.replace(suffixPattern, "").trim();
     }
 
-    // Remove trailing dots and spaces
     normalized = normalized.replace(/[\s.]+$/, "");
 
     return normalized;
@@ -243,10 +240,6 @@ export class FuzzyMatchAgent {
 
   /**
    * Find candidate matches in the company master list.
-   *
-   * @param normalizedInput - Normalized input string
-   * @param companyMaster - List of canonical company names
-   * @returns Sorted array of candidates
    */
   findCandidates(normalizedInput: string, companyMaster: string[]): FuzzyCandidate[] {
     const candidates: FuzzyCandidate[] = [];
@@ -256,7 +249,6 @@ export class FuzzyMatchAgent {
       const score = this.calculateSimilarity(normalizedInput, normalizedCompany);
 
       if (score >= this.config.min_match_score * 0.5) {
-        // Include lower scores for debugging
         candidates.push({
           company,
           score,
@@ -265,29 +257,21 @@ export class FuzzyMatchAgent {
       }
     }
 
-    // Sort by score descending
     return candidates.sort((a, b) => b.score - a.score).slice(0, this.config.max_candidates);
   }
 
   /**
    * Calculate similarity score between two strings.
-   * Uses a combination of algorithms for better accuracy.
-   *
-   * @param input - Normalized input string
-   * @param candidate - Normalized candidate string
-   * @returns Similarity score (0-100)
    */
   calculateSimilarity(input: string, candidate: string): number {
     if (input === candidate) return 100;
     if (!input || !candidate) return 0;
 
-    // Calculate multiple similarity metrics
     const levenshteinScore = this.levenshteinSimilarity(input, candidate);
     const jaccardScore = this.jaccardSimilarity(input, candidate);
     const containsScore = this.containsSimilarity(input, candidate);
     const prefixScore = this.prefixSimilarity(input, candidate);
 
-    // Weighted combination
     const weightedScore =
       levenshteinScore * 0.4 +
       jaccardScore * 0.3 +
@@ -297,9 +281,6 @@ export class FuzzyMatchAgent {
     return Math.round(weightedScore);
   }
 
-  /**
-   * Levenshtein distance-based similarity.
-   */
   private levenshteinSimilarity(a: string, b: string): number {
     const distance = this.levenshteinDistance(a, b);
     const maxLength = Math.max(a.length, b.length);
@@ -307,9 +288,6 @@ export class FuzzyMatchAgent {
     return ((maxLength - distance) / maxLength) * 100;
   }
 
-  /**
-   * Calculate Levenshtein edit distance.
-   */
   private levenshteinDistance(a: string, b: string): number {
     const matrix: number[][] = [];
 
@@ -326,9 +304,9 @@ export class FuzzyMatchAgent {
           matrix[i][j] = matrix[i - 1][j - 1];
         } else {
           matrix[i][j] = Math.min(
-            matrix[i - 1][j - 1] + 1, // substitution
-            matrix[i][j - 1] + 1, // insertion
-            matrix[i - 1][j] + 1 // deletion
+            matrix[i - 1][j - 1] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j] + 1
           );
         }
       }
@@ -337,9 +315,6 @@ export class FuzzyMatchAgent {
     return matrix[b.length][a.length];
   }
 
-  /**
-   * Jaccard similarity based on word tokens.
-   */
   private jaccardSimilarity(a: string, b: string): number {
     const tokensA = new Set(a.split(/\s+/));
     const tokensB = new Set(b.split(/\s+/));
@@ -351,18 +326,12 @@ export class FuzzyMatchAgent {
     return (intersection.size / union.size) * 100;
   }
 
-  /**
-   * Contains-based similarity (one contains the other).
-   */
   private containsSimilarity(a: string, b: string): number {
     if (a.includes(b)) return (b.length / a.length) * 100;
     if (b.includes(a)) return (a.length / b.length) * 100;
     return 0;
   }
 
-  /**
-   * Prefix-based similarity.
-   */
   private prefixSimilarity(a: string, b: string): number {
     let matchLen = 0;
     const minLen = Math.min(a.length, b.length);
@@ -381,10 +350,6 @@ export class FuzzyMatchAgent {
 
   /**
    * Try external company lookup when local match fails.
-   *
-   * @param rawInput - Raw company input
-   * @param companyMaster - Local company master list (for cross-reference)
-   * @returns FuzzyMatchResult or null
    */
   private async tryExternalLookup(
     rawInput: string,
@@ -405,7 +370,6 @@ export class FuzzyMatchAgent {
         return null;
       }
 
-      // Check if external results match anything in our master list
       for (const externalCompany of response.data) {
         const normalizedExternal = this.normalizeCompanyName(externalCompany.company_name);
 
@@ -445,12 +409,10 @@ export class FuzzyMatchAgent {
         }
       }
 
-      // External found results but none match our master list
-      // Could add the new company to master list here if desired
       return null;
     } catch (error) {
       if (this.config.verbose) {
-        console.error(`[FuzzyMatchAgent] External lookup failed: ${error}`);
+        console.error(`[CompanyFuzzyMatchAgent] External lookup failed: ${error}`);
       }
       return null;
     }
@@ -458,13 +420,8 @@ export class FuzzyMatchAgent {
 
   /**
    * Run fuzzy match directly on a SlotRow.
-   *
-   * @param row - The SlotRow to process
-   * @param companyMaster - List of known company names
-   * @returns Updated SlotRow
    */
   async runOnRow(row: SlotRow, companyMaster: string[]): Promise<SlotRow> {
-    // Check if row needs fuzzy matching
     if (!row.needsFuzzyMatch()) {
       return row;
     }
@@ -476,7 +433,6 @@ export class FuzzyMatchAgent {
       return row;
     }
 
-    // Run the full matching process
     const result = await this.run({
       task_id: `fuzzy_${row.id}_${Date.now()}`,
       slot_row_id: row.id,
@@ -484,7 +440,6 @@ export class FuzzyMatchAgent {
       company_master: companyMaster,
     });
 
-    // Apply result to row
     row.fuzzy_match_status = result.data.status as any;
     row.fuzzy_match_score = result.data.match_score as number;
     row.fuzzy_match_candidates = result.data.all_candidates as FuzzyCandidate[];
@@ -500,10 +455,6 @@ export class FuzzyMatchAgent {
 
   /**
    * Batch process multiple rows.
-   *
-   * @param rows - Array of SlotRows to process
-   * @param companyMaster - List of known company names
-   * @returns Array of processed SlotRows
    */
   async runBatch(rows: SlotRow[], companyMaster: string[]): Promise<SlotRow[]> {
     const results: SlotRow[] = [];
@@ -520,14 +471,14 @@ export class FuzzyMatchAgent {
    * Create a standardized AgentResult.
    */
   private createResult(
-    task: FuzzyMatchTask,
+    task: CompanyFuzzyMatchTask,
     success: boolean,
     data: Record<string, unknown>,
     error?: string
   ): AgentResult {
     return {
       task_id: task.task_id,
-      agent_type: "FuzzyMatchAgent",
+      agent_type: "CompanyFuzzyMatchAgent",
       slot_row_id: task.slot_row_id,
       success,
       data,
@@ -539,14 +490,14 @@ export class FuzzyMatchAgent {
   /**
    * Get current configuration.
    */
-  getConfig(): FuzzyMatchAgentConfig {
+  getConfig(): CompanyFuzzyMatchAgentConfig {
     return { ...this.config };
   }
 
   /**
    * Update configuration.
    */
-  updateConfig(config: Partial<FuzzyMatchAgentConfig>): void {
+  updateConfig(config: Partial<CompanyFuzzyMatchAgentConfig>): void {
     this.config = { ...this.config, ...config };
   }
 }

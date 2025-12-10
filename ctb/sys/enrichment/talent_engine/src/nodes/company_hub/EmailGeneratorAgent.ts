@@ -1,7 +1,14 @@
 /**
  * EmailGeneratorAgent
  * ===================
+ * Company Hub Node: Email Generation Agent
+ *
  * Generates and verifies email addresses using generic adapters.
+ *
+ * Hub-and-Spoke Role:
+ * - Part of COMPANY_HUB (master node)
+ * - Uses pattern from PatternAgent + person data from People Node
+ * - Provides verified emails back to People Node
  *
  * Features:
  * - Generate email from pattern + name + domain
@@ -10,7 +17,7 @@
  * - Cost-aware verification decisions
  */
 
-import { AgentResult, SlotRow } from "../models/SlotRow";
+import { AgentResult, SlotRow } from "../../models/SlotRow";
 import {
   generateEmailFromPattern,
   emailFinderAdapter,
@@ -21,7 +28,7 @@ import {
   DEFAULT_EMAIL_PATTERN_CONFIG,
   DEFAULT_EMAIL_VERIFICATION_CONFIG,
   COMMON_EMAIL_PATTERNS,
-} from "../adapters";
+} from "../../adapters";
 
 /**
  * Agent configuration.
@@ -171,7 +178,6 @@ export class EmailGeneratorAgent {
                            verifyResult.data.status === "catch_all";
 
             if (isValid) {
-              // Found a valid email!
               if (row) {
                 row.email = email;
                 row.email_verified = true;
@@ -188,7 +194,6 @@ export class EmailGeneratorAgent {
               });
             }
 
-            // Save as fallback if better than previous
             if (!bestResult || verifyResult.data.status !== "invalid") {
               bestEmail = email;
               bestResult = {
@@ -200,7 +205,6 @@ export class EmailGeneratorAgent {
               };
             }
 
-            // Try next pattern if configured
             if (this.config.try_multiple_patterns) {
               if (this.config.verbose) {
                 console.log(`[EmailGeneratorAgent] Email ${email} verification: ${verifyResult.data.status}, trying next pattern`);
@@ -209,7 +213,6 @@ export class EmailGeneratorAgent {
             }
           }
         } else {
-          // No verification - accept first valid format
           if (row) {
             row.email = email;
             row.email_verified = false;
@@ -317,17 +320,15 @@ export class EmailGeneratorAgent {
   }
 
   /**
-   * Get patterns to try (task pattern first, then common patterns).
+   * Get patterns to try.
    */
   private getPatternsToTry(taskPattern?: string): string[] {
     const patterns: string[] = [];
 
-    // Add task pattern first if provided
     if (taskPattern) {
       patterns.push(taskPattern);
     }
 
-    // Add common patterns
     for (const pattern of COMMON_EMAIL_PATTERNS) {
       if (!patterns.includes(pattern)) {
         patterns.push(pattern);
@@ -354,11 +355,9 @@ export class EmailGeneratorAgent {
     const parts = cleanName.split(/\s+/);
 
     if (parts.length === 1) {
-      // Single name - use as both first and last
       return { firstName: parts[0], lastName: parts[0] };
     }
 
-    // First part is first name, rest is last name
     return {
       firstName: parts[0],
       lastName: parts.slice(1).join(" "),

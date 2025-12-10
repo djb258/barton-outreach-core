@@ -1,10 +1,15 @@
 /**
  * MissingSlotAgent
  * ================
- * Layer 4: Missing Slot Trigger Agent
+ * Company Hub Node: Missing Slot Detection Agent
  *
  * Responsible for detecting and filling missing slots for a company.
  * Uses slot discovery adapter to find executives for empty positions.
+ *
+ * Hub-and-Spoke Role:
+ * - Part of COMPANY_HUB (master node)
+ * - Triggers People Node discovery when slots are empty
+ * - Defines which executive roles need filling
  *
  * Features:
  * - Company-level slot completeness check
@@ -13,21 +18,20 @@
  * - Configurable mandatory slots
  */
 
-import { AgentResult, SlotRow, SlotType, ALL_SLOT_TYPES, createSlotRow } from "../models/SlotRow";
-import { CompanyStateResult, evaluateCompanyState } from "../models/CompanyState";
+import { AgentResult, SlotRow, SlotType, createSlotRow } from "../../models/SlotRow";
+import { CompanyStateResult, evaluateCompanyState } from "../../models/CompanyState";
 import {
   checkCompany,
   CompanyCheckResult,
   CompanyCheckerConfig,
   DEFAULT_CHECKER_CONFIG,
-} from "../logic/companyChecker";
+} from "../../logic/companyChecker";
 import {
   slotDiscoveryAdapter,
-  findPersonForSlotAdapter,
   SlotDiscoveryConfig,
   DEFAULT_SLOT_DISCOVERY_CONFIG,
   SlotDiscoveryResult,
-} from "../adapters";
+} from "../../adapters";
 
 /**
  * Agent configuration.
@@ -223,7 +227,6 @@ export class MissingSlotAgent {
 
   /**
    * Create SlotRows for missing slots.
-   * Uses discovered people data when available, otherwise creates placeholders.
    */
   private createRowsForMissingSlots(
     companyId: string,
@@ -233,22 +236,18 @@ export class MissingSlotAgent {
   ): SlotRow[] {
     const createdRows: SlotRow[] = [];
 
-    // Create map of discovered people by slot type
     const discoveredBySlot = new Map<string, SlotDiscoveryResult>();
     for (const person of discoveredPeople) {
-      // Take highest confidence person for each slot
       const existing = discoveredBySlot.get(person.slot_type);
       if (!existing || person.confidence > existing.confidence) {
         discoveredBySlot.set(person.slot_type, person);
       }
     }
 
-    // Create rows for each missing slot
     for (const slotType of missingSlots) {
       const discovered = discoveredBySlot.get(slotType);
 
       if (discovered) {
-        // Create row with discovered data
         const row = createSlotRow({
           company_id: companyId,
           company_name: companyName,
@@ -260,7 +259,6 @@ export class MissingSlotAgent {
         });
         createdRows.push(row);
       } else {
-        // Create placeholder row
         const row = createSlotRow({
           company_id: companyId,
           company_name: companyName,
@@ -282,7 +280,7 @@ export class MissingSlotAgent {
   }
 
   /**
-   * Run directly on company state (legacy interface).
+   * Run directly on company state.
    */
   async runOnState(companyState: CompanyStateResult): Promise<MissingSlotResult> {
     const task: MissingSlotTask = {
@@ -305,7 +303,6 @@ export class MissingSlotAgent {
       };
     }
 
-    // Return minimal result on failure
     return {
       company_id: companyState.company_id,
       company_name: companyState.company_name,
@@ -387,30 +384,18 @@ export class MissingSlotAgent {
     };
   }
 
-  /**
-   * Get total cost incurred.
-   */
   getTotalCost(): number {
     return this.totalCostIncurred;
   }
 
-  /**
-   * Reset cost tracking.
-   */
   resetCost(): void {
     this.totalCostIncurred = 0;
   }
 
-  /**
-   * Get current configuration.
-   */
   getConfig(): MissingSlotAgentConfig {
     return { ...this.config };
   }
 
-  /**
-   * Update configuration.
-   */
   updateConfig(config: Partial<MissingSlotAgentConfig>): void {
     this.config = { ...this.config, ...config };
   }

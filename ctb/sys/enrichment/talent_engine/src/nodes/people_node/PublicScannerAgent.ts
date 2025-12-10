@@ -1,7 +1,14 @@
 /**
  * PublicScannerAgent
  * ==================
+ * People Node: LinkedIn Accessibility Scanner
+ *
  * Scans LinkedIn profiles to determine public accessibility.
+ *
+ * Hub-and-Spoke Role:
+ * - Part of PEOPLE_NODE (spoke)
+ * - Requires LinkedIn URL from LinkedInFinderAgent
+ * - Informs scraping strategy and data freshness approach
  *
  * Features:
  * - Check profile public/private status
@@ -9,12 +16,12 @@
  * - Fallback to private assumption on failure
  */
 
-import { AgentResult, SlotRow } from "../models/SlotRow";
+import { AgentResult, SlotRow } from "../../models/SlotRow";
 import {
   linkedInAccessibilityAdapter,
   AdapterConfig,
   DEFAULT_ADAPTER_CONFIG,
-} from "../adapters";
+} from "../../adapters";
 
 /**
  * Agent configuration.
@@ -31,7 +38,7 @@ export interface PublicScannerConfig extends AdapterConfig {
  */
 export const DEFAULT_PUBLIC_SCANNER_CONFIG: PublicScannerConfig = {
   ...DEFAULT_ADAPTER_CONFIG,
-  default_on_failure: false, // Assume private on failure (conservative)
+  default_on_failure: false,
   verbose: false,
 };
 
@@ -123,12 +130,11 @@ export class PublicScannerAgent {
 
       return this.createResult(task, true, {
         public_accessible: this.config.default_on_failure,
-        profile_exists: true, // Assume exists
+        profile_exists: true,
         source: "fallback",
         warning: "Could not verify accessibility, assuming private",
       });
     } catch (error) {
-      // On error, default to private (conservative)
       if (row) {
         row.public_accessible = this.config.default_on_failure;
         row.last_updated = new Date();
@@ -165,7 +171,6 @@ export class PublicScannerAgent {
    * Validate LinkedIn URL format.
    */
   private isValidLinkedInUrl(url: string): boolean {
-    // Support various LinkedIn URL formats
     const linkedInPattern = /^https?:\/\/(www\.)?linkedin\.com\/in\/[a-zA-Z0-9\-_%.]+\/?.*$/i;
     return linkedInPattern.test(url);
   }
@@ -190,16 +195,10 @@ export class PublicScannerAgent {
     };
   }
 
-  /**
-   * Get current configuration.
-   */
   getConfig(): PublicScannerConfig {
     return { ...this.config };
   }
 
-  /**
-   * Update configuration.
-   */
   updateConfig(config: Partial<PublicScannerConfig>): void {
     this.config = { ...this.config, ...config };
   }

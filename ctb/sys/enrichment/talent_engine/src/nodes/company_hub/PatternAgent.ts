@@ -1,7 +1,14 @@
 /**
  * PatternAgent
  * ============
+ * Company Hub Node: Email Pattern Discovery Agent
+ *
  * Discovers email patterns for companies using generic adapter.
+ *
+ * Hub-and-Spoke Role:
+ * - Part of COMPANY_HUB (master node)
+ * - Provides email pattern for People Node email generation
+ * - Must complete before EmailGeneratorAgent can run
  *
  * Features:
  * - Primary adapter for email pattern discovery
@@ -10,13 +17,13 @@
  * - Fallback to common patterns when API fails
  */
 
-import { AgentResult, SlotRow } from "../models/SlotRow";
+import { AgentResult, SlotRow } from "../../models/SlotRow";
 import {
   emailPatternAdapter,
   EmailPatternConfig,
   DEFAULT_EMAIL_PATTERN_CONFIG,
   COMMON_EMAIL_PATTERNS,
-} from "../adapters";
+} from "../../adapters";
 
 /**
  * Agent configuration.
@@ -147,7 +154,7 @@ export class PatternAgent {
         return this.createResult(task, true, {
           email_pattern: fallbackPattern,
           domain,
-          confidence: 0.3, // Low confidence for fallback
+          confidence: 0.3,
           source: "fallback",
           warning: "Pattern from fallback - verify before use",
         });
@@ -191,12 +198,10 @@ export class PatternAgent {
 
   /**
    * Infer domain from company name.
-   * Simple heuristic - real implementation would be more sophisticated.
    */
   private inferDomainFromCompany(companyName: string): string | null {
     if (!companyName) return null;
 
-    // Remove common suffixes and normalize
     const cleaned = companyName
       .toLowerCase()
       .replace(/\s+(inc|llc|ltd|corp|co|company|corporation|group|holdings)\.?$/i, "")
@@ -205,7 +210,6 @@ export class PatternAgent {
 
     if (!cleaned) return null;
 
-    // Return as .com domain (simple heuristic)
     return `${cleaned}.com`;
   }
 
@@ -213,12 +217,11 @@ export class PatternAgent {
    * Get the most common email pattern.
    */
   private getMostCommonPattern(): string {
-    // first.last is most common in corporate environments
     return COMMON_EMAIL_PATTERNS[0] || "{first}.{last}";
   }
 
   /**
-   * Get all common patterns (for testing/reference).
+   * Get all common patterns.
    */
   getCommonPatterns(): string[] {
     return [...COMMON_EMAIL_PATTERNS];
