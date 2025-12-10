@@ -11,6 +11,8 @@
  * - Dispatcher: Routes rows to agents
  * - Throttle: Rate limiting
  * - KillSwitch: Agent blocking
+ * - CostGuard: Global spend guardrails
+ * - Costs: Per-agent cost metadata
  * - Agents: Processing stubs (to be implemented)
  */
 
@@ -25,6 +27,7 @@ export {
   KillSwitchState,
   DispatchStatus,
   DispatchResult,
+  DEFAULT_SLOT_COST_LIMIT,
 } from "./SlotRow";
 
 // Checklist
@@ -39,6 +42,7 @@ export {
   dispatcher,
   batchDispatch,
   getDispatchSummary,
+  getTotalCostIncurred,
 } from "./dispatcher";
 
 // Throttle
@@ -52,6 +56,22 @@ export {
   KillSwitchManager,
   DEFAULT_KILL_SWITCH_STATE,
 } from "./killswitch";
+
+// Cost Guard
+export {
+  CostGuard,
+  CostGuardConfig,
+  DEFAULT_COST_GUARD_CONFIG,
+  globalCostGuard,
+} from "./costGuard";
+
+// Per-Agent Costs
+export {
+  agentCosts,
+  AgentName,
+  getAgentCost,
+  isValidAgentName,
+} from "./costs";
 
 // Agents
 export {

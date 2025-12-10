@@ -2,13 +2,15 @@
  * Dispatcher
  * ==========
  * Routes SlotRows to the correct agent based on checklist evaluation.
- * Respects throttle limits and kill switches.
+ * Respects throttle limits, kill switches, and cost guardrails.
  */
 
 import { SlotRow, AgentTask, AgentType, DispatchResult } from "./SlotRow";
 import { evaluateChecklist, ChecklistResult } from "./checklist";
 import { ThrottleManager } from "./throttle";
 import { KillSwitchManager } from "./killswitch";
+import { agentCosts, AgentName, isValidAgentName } from "./costs";
+import { globalCostGuard, CostGuard } from "./costGuard";
 
 /**
  * Generate a unique task ID.
@@ -64,6 +66,18 @@ function determineAgent(checklist: ChecklistResult): AgentType | null {
 }
 
 /**
+ * Get the cost for an agent type.
+ * @param agentType - The agent type
+ * @returns Cost in USD
+ */
+function getAgentCost(agentType: AgentType): number {
+  if (isValidAgentName(agentType)) {
+    return agentCosts[agentType];
+  }
+  return 0;
+}
+
+/**
  * Dispatch a SlotRow to the appropriate agent.
  *
  * Process:
@@ -72,17 +86,20 @@ function determineAgent(checklist: ChecklistResult): AgentType | null {
  * 3. Determine which agent is needed
  * 4. Check kill switch for that agent
  * 5. Check throttle limits
- * 6. If all checks pass -> route to agent
+ * 6. Check cost guardrails (slot-level and global)
+ * 7. If all checks pass -> route to agent and record costs
  *
  * @param row - The SlotRow to dispatch
  * @param throttle - ThrottleManager instance
  * @param killSwitch - KillSwitchManager instance
+ * @param costGuard - Optional CostGuard instance (defaults to globalCostGuard)
  * @returns DispatchResult with status and task info
  */
 export function dispatcher(
   row: SlotRow,
   throttle: ThrottleManager,
-  killSwitch: KillSwitchManager
+  killSwitch: KillSwitchManager,
+  costGuard: CostGuard = globalCostGuard
 ): DispatchResult {
   // Step 1: Evaluate checklist
   const checklist = evaluateChecklist(row);
@@ -133,17 +150,46 @@ export function dispatcher(
     };
   }
 
-  // Step 6: Create task and route to agent
+  // Step 6: Check cost guardrails
+  const agentCost = getAgentCost(agentType);
+
+  // 6a: Check per-slot cost ceiling
+  if (row.slot_cost_accumulated + agentCost > row.slot_cost_limit) {
+    return {
+      status: "COST_EXCEEDED",
+      agent_type: agentType,
+      task: null,
+      reason: `Slot cost ceiling exceeded: $${row.slot_cost_accumulated.toFixed(3)} + $${agentCost.toFixed(3)} > $${row.slot_cost_limit.toFixed(2)} limit`,
+    };
+  }
+
+  // 6b: Check global cost guard
+  if (!costGuard.canSpend(agentCost)) {
+    return {
+      status: "COST_EXCEEDED",
+      agent_type: agentType,
+      task: null,
+      reason: `Global spend limit exceeded: ${costGuard.getStatusString()}`,
+    };
+  }
+
+  // Step 7: Create task and route to agent
   const task = createTask(row, agentType);
 
   // Record the call in throttle
   throttle.recordCall();
+
+  // Record costs
+  row.slot_cost_accumulated += agentCost;
+  row.last_updated = new Date();
+  costGuard.recordSpend(agentCost);
 
   return {
     status: "ROUTED",
     agent_type: agentType,
     task: task,
     reason: `Routed to ${agentType}`,
+    cost_incurred: agentCost,
   };
 }
 
@@ -153,14 +199,16 @@ export function dispatcher(
  * @param rows - Array of SlotRows to dispatch
  * @param throttle - ThrottleManager instance
  * @param killSwitch - KillSwitchManager instance
+ * @param costGuard - Optional CostGuard instance (defaults to globalCostGuard)
  * @returns Array of DispatchResults
  */
 export function batchDispatch(
   rows: SlotRow[],
   throttle: ThrottleManager,
-  killSwitch: KillSwitchManager
+  killSwitch: KillSwitchManager,
+  costGuard: CostGuard = globalCostGuard
 ): DispatchResult[] {
-  return rows.map((row) => dispatcher(row, throttle, killSwitch));
+  return rows.map((row) => dispatcher(row, throttle, killSwitch, costGuard));
 }
 
 /**
@@ -173,6 +221,7 @@ export function getDispatchSummary(results: DispatchResult[]): Record<string, nu
     KILLED: 0,
     COMPLETED: 0,
     NO_ACTION: 0,
+    COST_EXCEEDED: 0,
   };
 
   for (const result of results) {
@@ -180,4 +229,11 @@ export function getDispatchSummary(results: DispatchResult[]): Record<string, nu
   }
 
   return summary;
+}
+
+/**
+ * Get total cost incurred from a batch of results.
+ */
+export function getTotalCostIncurred(results: DispatchResult[]): number {
+  return results.reduce((total, result) => total + (result.cost_incurred ?? 0), 0);
 }

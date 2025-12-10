@@ -24,6 +24,11 @@ export type AgentType =
   | "HashAgent";
 
 /**
+ * Default per-slot cost limit in USD.
+ */
+export const DEFAULT_SLOT_COST_LIMIT = 0.10;
+
+/**
  * Core SlotRow class representing a slot-completion pipeline row.
  */
 export class SlotRow {
@@ -42,6 +47,10 @@ export class SlotRow {
   slot_complete: boolean;
   last_updated: Date;
 
+  // Cost tracking fields
+  slot_cost_accumulated: number;
+  slot_cost_limit: number;
+
   constructor(init: Partial<SlotRow> & { id: string; company_name: string; slot_type: SlotType }) {
     this.id = init.id;
     this.company_name = init.company_name;
@@ -57,6 +66,10 @@ export class SlotRow {
     this.movement_hash = init.movement_hash ?? null;
     this.slot_complete = init.slot_complete ?? false;
     this.last_updated = init.last_updated ?? new Date();
+
+    // Initialize cost tracking
+    this.slot_cost_accumulated = init.slot_cost_accumulated ?? 0;
+    this.slot_cost_limit = init.slot_cost_limit ?? DEFAULT_SLOT_COST_LIMIT;
   }
 
   /**
@@ -128,7 +141,8 @@ export type DispatchStatus =
   | "THROTTLED"
   | "KILLED"
   | "COMPLETED"
-  | "NO_ACTION";
+  | "NO_ACTION"
+  | "COST_EXCEEDED";
 
 /**
  * Result from dispatcher routing.
@@ -138,4 +152,5 @@ export interface DispatchResult {
   agent_type: AgentType | null;
   task: AgentTask | null;
   reason: string;
+  cost_incurred?: number;
 }
