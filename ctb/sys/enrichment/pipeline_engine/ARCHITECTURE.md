@@ -431,8 +431,150 @@ company.company_slot
 | `phases/phase7_enrichment_queue.py` | Queue failures (People Pipeline) |
 | `phases/phase8_output_writer.py` | Final output (People Pipeline) |
 | `main.py` | Pipeline orchestrator |
+| `email/pattern_guesser.py` | Local email pattern generation (FREE) |
+| `email/bulk_verifier.py` | MillionVerifier async integration |
+| `email/pattern_discovery_pipeline.py` | Pattern discovery orchestration |
+| `intake/wv_hr_full_pipeline.py` | Full WV HR pipeline with verification |
 
 ---
 
-*Last Updated: 2024-12-05*
-*Architecture Version: 1.0*
+## Email Verification Module
+
+### Cost-Optimized Email Strategy
+
+The email module uses a **Pattern Guessing + Bulk Verification** approach to minimize costs:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    EMAIL VERIFICATION COST COMPARISON                    │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  Hunter.io:        $6,700+ for 67K companies ($0.10/lookup)            │
+│  Pattern + MV:     ~$500-1000 for 67K companies                        │
+│                                                                         │
+│  SAVINGS:          ~90% cost reduction                                  │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Pattern Guesser (FREE - Local Processing)
+
+The `email/pattern_guesser.py` module generates email variants locally without any API calls:
+
+```
+Pattern Priority (most common first):
+1. first.last@domain.com     (40% of companies)
+2. flast@domain.com          (25% of companies)
+3. f.last@domain.com         (10% of companies)
+4. firstl@domain.com         (8% of companies)
+5. first@domain.com          (5% of companies)
+6. last.first@domain.com     (5% of companies)
+7. lastf@domain.com          (4% of companies)
+8. first_last@domain.com     (3% of companies)
+```
+
+### MillionVerifier Integration (~$37/10,000 verifications)
+
+The `email/bulk_verifier.py` module provides async verification:
+
+```
+┌───────────────────────────────────────────────────────────────┐
+│                    VERIFICATION FLOW                           │
+│                                                                │
+│  1. Generate all pattern variants locally (FREE)              │
+│  2. Sort by priority (most likely patterns first)             │
+│  3. Verify with MillionVerifier ($0.0037/email)               │
+│  4. STOP on first valid email for each company                │
+│  5. Save discovered pattern to company_master                 │
+│                                                                │
+│  Average verifications per company: 2-3                        │
+│  Cost per company: ~$0.01                                      │
+└───────────────────────────────────────────────────────────────┘
+```
+
+### Pattern Discovery Pipeline
+
+```python
+# Pattern discovery for companies without known patterns
+async def discover_patterns_for_companies(people, companies):
+    # 1. Generate guesses (FREE)
+    guesses = generate_verification_batch(people, companies)
+
+    # 2. Sort by priority
+    guesses = sort_guesses_by_priority(guesses)
+
+    # 3. Verify (CHEAP)
+    results, discovered = await verify_batch(guesses, api_key, {})
+
+    # 4. Return discovered patterns
+    return discovered  # {company_id: PatternDiscovery}
+```
+
+### Full Pipeline Integration
+
+The `intake/wv_hr_full_pipeline.py` integrates all components:
+
+```
+CSV Input (720 people)
+        │
+        ▼
+[Load Companies from Neon] ← company_master with domains
+        │
+        ▼
+[Fuzzy Match People to Companies] ← 80% threshold
+        │
+        ├──→ <80% → failed_company_match table
+        │
+        ▼
+[Slot Assignment] ← Seniority competition
+        │
+        ├──→ Lost slot → failed_slot_assignment table
+        ├──→ 70-79% → failed_low_confidence table
+        │
+        ▼
+[Email Pattern Lookup] ← From company_master.email_pattern
+        │
+        ├──→ No pattern → Pattern Discovery Pipeline
+        │                  │
+        │                  ▼
+        │              [Generate Guesses (FREE)]
+        │                  │
+        │                  ▼
+        │              [MillionVerifier (CHEAP)]
+        │                  │
+        │                  ▼
+        │              [Save Pattern to company_master]
+        │
+        ▼
+[Email Generation] ← Apply pattern to first.last
+        │
+        ▼
+[Email Verification] ← MillionVerifier
+        │
+        ├──→ Invalid → failed_email_verification table
+        │
+        ▼
+[Export to Neon] ← ONLY verified emails
+        │
+        ▼
+people_master + company_slot (is_filled=true, email_verified=true)
+```
+
+---
+
+## Stage-Specific Failure Tables
+
+The pipeline routes failures to stage-specific tables for manual review:
+
+| Table | Stage | Trigger | Resolution Options |
+|-------|-------|---------|-------------------|
+| `failed_company_match` | Phase 2 | Fuzzy score <80% | Confirm, Reject, Remap |
+| `failed_slot_assignment` | Phase 3 | Lost to higher seniority | Manual override |
+| `failed_low_confidence` | Phase 3 | Fuzzy score 70-79% | Confirm, Reject, Remap |
+| `failed_no_pattern` | Phase 4 | No domain/pattern | Add pattern manually |
+| `failed_email_verification` | Phase 5 | MV returned invalid | Try alternate email |
+
+---
+
+*Last Updated: 2024-12-11*
+*Architecture Version: 1.1 - Added Email Verification Module*

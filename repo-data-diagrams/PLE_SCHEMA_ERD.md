@@ -31,6 +31,12 @@ erDiagram
 
     dol_violations }o--o| company_master : "violation for company"
 
+    failed_company_match ||--o| company_master : "best match"
+    failed_slot_assignment ||--|| company_master : "matched to"
+    failed_low_confidence ||--o| company_master : "low conf match"
+    failed_no_pattern ||--|| company_master : "has no pattern"
+    failed_email_verification ||--|| company_master : "email failed"
+
     company_master {
         text company_unique_id PK "04.04.01.XX.XXXXX.XXX"
         text company_name
@@ -198,6 +204,111 @@ erDiagram
         jsonb raw_payload
         timestamp detected_at
     }
+
+    failed_company_match {
+        int id PK "auto-increment"
+        varchar person_id "PE-XX-XXXXXXXX"
+        varchar full_name
+        varchar job_title
+        varchar title_seniority
+        varchar company_name_raw "Raw input company"
+        varchar linkedin_url
+        varchar best_match_company "Closest fuzzy match"
+        decimal best_match_score "0-100"
+        text best_match_notes
+        varchar resolution_status "pending,resolved"
+        varchar resolution "confirmed,rejected,remapped"
+        text resolution_notes
+        varchar resolved_by
+        timestamp resolved_at
+        varchar resolved_company_id FK "If added to hub"
+        varchar source_file
+        timestamp created_at
+    }
+
+    failed_slot_assignment {
+        int id PK "auto-increment"
+        varchar person_id "PE-XX-XXXXXXXX"
+        varchar full_name
+        varchar job_title
+        varchar title_seniority
+        varchar company_name_raw
+        varchar linkedin_url
+        varchar matched_company_id FK
+        varchar matched_company_name
+        decimal fuzzy_score
+        varchar slot_type "hr"
+        varchar lost_to_person_id "Winner's ID"
+        varchar lost_to_person_name
+        varchar lost_to_seniority
+        varchar resolution_status "pending"
+        varchar source_file
+        timestamp created_at
+    }
+
+    failed_low_confidence {
+        int id PK "auto-increment"
+        varchar person_id "PE-XX-XXXXXXXX"
+        varchar full_name
+        varchar job_title
+        varchar title_seniority
+        varchar company_name_raw
+        varchar linkedin_url
+        varchar matched_company_id FK
+        varchar matched_company_name
+        decimal fuzzy_score "70-79%"
+        text match_notes
+        varchar resolution_status "pending"
+        varchar resolution "confirmed,rejected,remapped"
+        varchar confirmed_company_id FK "If confirmed"
+        varchar source_file
+        timestamp created_at
+    }
+
+    failed_no_pattern {
+        int id PK "auto-increment"
+        varchar person_id "PE-XX-XXXXXXXX"
+        varchar full_name
+        varchar job_title
+        varchar title_seniority
+        varchar company_name_raw
+        varchar linkedin_url
+        varchar company_id FK
+        varchar company_name
+        varchar company_domain
+        varchar slot_type "hr"
+        varchar failure_reason "no_domain,pattern_lookup_failed"
+        text failure_notes
+        varchar resolution_status "pending"
+        varchar resolution "pattern_added,manual_email,skipped"
+        varchar manual_email "If manually provided"
+        varchar source_file
+        timestamp created_at
+    }
+
+    failed_email_verification {
+        int id PK "auto-increment"
+        varchar person_id "PE-XX-XXXXXXXX"
+        varchar full_name
+        varchar job_title
+        varchar title_seniority
+        varchar company_name_raw
+        varchar linkedin_url
+        varchar company_id FK
+        varchar company_name
+        varchar company_domain
+        varchar email_pattern
+        varchar slot_type "hr"
+        varchar generated_email "Email that failed"
+        varchar verification_error "invalid,catch_all,etc"
+        text verification_notes
+        text email_variants "JSON: variants tried"
+        varchar resolution_status "pending"
+        varchar resolution "alt_email_found,manual_verified,skipped"
+        varchar verified_email "If alt found"
+        varchar source_file
+        timestamp created_at
+    }
 ```
 
 ## Relationship Summary
@@ -215,6 +326,12 @@ erDiagram
 | company_events | company_unique_id | company_master | company_unique_id | Many-to-One | company_events_company_unique_id_fkey |
 | form_5500 | company_unique_id | company_master | company_unique_id | Many-to-One (Optional) | form_5500_company_unique_id_fkey |
 | dol_violations | company_unique_id | company_master | company_unique_id | Many-to-One (Optional) | dol_violations_company_unique_id_fkey |
+| failed_company_match | resolved_company_id | company_master | company_unique_id | Many-to-One (Optional) | fk_failed_company_match_resolved |
+| failed_slot_assignment | matched_company_id | company_master | company_unique_id | Many-to-One | fk_failed_slot_assignment_company |
+| failed_low_confidence | matched_company_id | company_master | company_unique_id | Many-to-One (Optional) | fk_failed_low_confidence_matched |
+| failed_low_confidence | confirmed_company_id | company_master | company_unique_id | Many-to-One (Optional) | fk_failed_low_confidence_confirmed |
+| failed_no_pattern | company_id | company_master | company_unique_id | Many-to-One | fk_failed_no_pattern_company |
+| failed_email_verification | company_id | company_master | company_unique_id | Many-to-One | fk_failed_email_verification_company |
 
 ## Constraints Summary
 
@@ -230,6 +347,11 @@ erDiagram
 | company_events | id | Auto-increment Integer |
 | form_5500 | id | Auto-increment Integer |
 | dol_violations | id | Auto-increment Integer |
+| failed_company_match | id | Auto-increment Integer |
+| failed_slot_assignment | id | Auto-increment Integer |
+| failed_low_confidence | id | Auto-increment Integer |
+| failed_no_pattern | id | Auto-increment Integer |
+| failed_email_verification | id | Auto-increment Integer |
 
 ### Unique Constraints
 
@@ -306,6 +428,52 @@ erDiagram
 4. Slot updated with person_unique_id
 5. person_scores calculated
 6. company_slot.last_refreshed_at updated
+
+### Pipeline Failure Flow (Stage-Specific Routing)
+
+The pipeline routes failures to stage-specific tables for manual review:
+
+```
+CSV Input (720 people)
+        |
+        v
+[Phase 2: Fuzzy Match to Company Hub]
+        |
+        +---> <80% match --> failed_company_match (manual review)
+        |
+        v
+[Phase 3: Slot Assignment (Seniority Competition)]
+        |
+        +---> Lost to higher seniority --> failed_slot_assignment
+        |
+        +---> 70-79% confidence --> failed_low_confidence (manual review)
+        |
+        v
+[Phase 4: Email Pattern Lookup]
+        |
+        +---> No domain/pattern --> failed_no_pattern
+        |
+        v
+[Phase 5: Email Generation + Verification]
+        |
+        +---> MillionVerifier: invalid --> failed_email_verification
+        |
+        v
+[SUCCESS: Export to Neon]
+        |
+        v
+people_master + company_slot (is_filled=true)
+```
+
+**Failure Table Purposes:**
+
+| Table | Stage | Trigger | Resolution Options |
+|-------|-------|---------|-------------------|
+| failed_company_match | Phase 2 | Fuzzy score <80% | Confirm match, Reject, Remap to different company |
+| failed_slot_assignment | Phase 3 | Higher seniority person won slot | Manual override, Wait for vacancy |
+| failed_low_confidence | Phase 3 | Fuzzy score 70-79% | Confirm match, Reject, Remap |
+| failed_no_pattern | Phase 4 | Company has no domain or email pattern | Add pattern manually, Provide manual email |
+| failed_email_verification | Phase 5 | MillionVerifier returned invalid | Try alternate email, Manual verification |
 
 ## Notes
 
