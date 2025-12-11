@@ -3,6 +3,8 @@ Provider Utilities
 ==================
 API provider wrappers for email pattern discovery.
 Implements tiered waterfall: Tier 0 (free) → Tier 1 (low cost) → Tier 2 (premium).
+
+Integrated with Provider Benchmark Engine (PBE) for metrics tracking.
 """
 
 import re
@@ -15,6 +17,13 @@ from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Tuple
 from enum import Enum
 from urllib.parse import urljoin, quote
+
+# Provider Benchmark Engine (System-Level) - Optional import
+try:
+    from ctb.sys.enrichment.provider_benchmark import ProviderBenchmarkEngine
+    _PBE_AVAILABLE = True
+except ImportError:
+    _PBE_AVAILABLE = False
 
 
 class ProviderTier(Enum):
@@ -173,6 +182,56 @@ class ProviderBase(ABC):
         """Record a request for rate limiting."""
         self.request_timestamps.append(time.time())
         self.stats.total_requests += 1
+
+    def _record_pbe_metrics(
+        self,
+        success: bool,
+        pattern_found: bool,
+        verified: bool,
+        latency_ms: float
+    ) -> None:
+        """
+        Record metrics to Provider Benchmark Engine (PBE).
+
+        Args:
+            success: Whether the API call succeeded
+            pattern_found: Whether a pattern was discovered
+            verified: Whether the pattern was verified
+            latency_ms: Response time in milliseconds
+        """
+        if not _PBE_AVAILABLE:
+            return
+
+        try:
+            engine = ProviderBenchmarkEngine.get_instance()
+            cost = self.get_cost()
+
+            if success:
+                engine.record_result(
+                    provider_name=self.name,
+                    pattern_found=pattern_found,
+                    verified=verified,
+                    latency=latency_ms,
+                    cost=cost
+                )
+            else:
+                engine.record_call(self.name, cost=cost)
+                engine.record_error(self.name, error_type='error')
+        except Exception:
+            # Silently ignore PBE errors - metrics are non-critical
+            pass
+
+    def _record_pbe_timeout(self) -> None:
+        """Record a timeout to PBE."""
+        if not _PBE_AVAILABLE:
+            return
+
+        try:
+            engine = ProviderBenchmarkEngine.get_instance()
+            engine.record_call(self.name, cost=self.get_cost())
+            engine.record_error(self.name, error_type='timeout')
+        except Exception:
+            pass
 
     def _make_request(self, method: str, url: str,
                       headers: Dict = None, params: Dict = None,
@@ -385,6 +444,14 @@ class FirecrawlProvider(ProviderBase):
             if pattern:
                 self.stats.patterns_found += 1
 
+            # PBE Hook: Record successful pattern discovery
+            self._record_pbe_metrics(
+                success=True,
+                pattern_found=pattern is not None,
+                verified=False,  # Not verified yet
+                latency_ms=elapsed_ms
+            )
+
             return ProviderResult(
                 success=True,
                 pattern=pattern,
@@ -398,6 +465,15 @@ class FirecrawlProvider(ProviderBase):
             )
 
         self.stats.failed_requests += 1
+
+        # PBE Hook: Record failed pattern discovery
+        self._record_pbe_metrics(
+            success=True,  # API call succeeded, but no pattern
+            pattern_found=False,
+            verified=False,
+            latency_ms=elapsed_ms
+        )
+
         return ProviderResult(
             success=False,
             provider_name=self.name,
@@ -739,6 +815,14 @@ class HunterProvider(ProviderBase):
         self.stats.successful_requests += 1
         if pattern:
             self.stats.patterns_found += 1
+
+        # PBE Hook: Record Hunter.io result
+        self._record_pbe_metrics(
+            success=True,
+            pattern_found=pattern is not None,
+            verified=False,
+            latency_ms=elapsed_ms
+        )
 
         return ProviderResult(
             success=True,

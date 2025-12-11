@@ -27,6 +27,8 @@ import {
   DEFAULT_LINKEDIN_RESOLVER_CONFIG,
   DEFAULT_PERSON_EMPLOYMENT_CONFIG,
 } from "../../adapters";
+import { createPersonCompanyMismatchFailure } from "../../models/FailureRecord";
+import { FailureRouter, globalFailureRouter } from "../../services/FailureRouter";
 
 /**
  * Agent configuration.
@@ -42,6 +44,10 @@ export interface TitleCompanyConfig {
   verbose: boolean;
   /** Maximum cost for fallback */
   max_fallback_cost: number;
+  /** Minimum confidence threshold for person-company match */
+  person_company_match_threshold: number;
+  /** Failure router instance */
+  failure_router?: FailureRouter;
 }
 
 /**
@@ -53,6 +59,7 @@ export const DEFAULT_TITLE_COMPANY_CONFIG: TitleCompanyConfig = {
   enable_fallback: true,
   verbose: false,
   max_fallback_cost: 0.50,
+  person_company_match_threshold: 0.85, // 85% confidence required
 };
 
 /**
@@ -230,8 +237,22 @@ export class TitleCompanyAgent {
 
   /**
    * Run directly on a SlotRow.
+   *
+   * SETS PERSON_COMPANY_VALID FLAG:
+   * After retrieving current title/company, compares the scraped employer
+   * to the canonical company_name on the row.
+   *
+   * - If match >= threshold (85%): person_company_valid = true
+   * - If match < threshold: person_company_valid = false, skip_email = true
+   *
+   * GOLDEN RULE: Email generation requires person_company_valid = true
+   *
+   * FAILURE ROUTING:
+   * If person_company_valid = false, routes to person_company_mismatch failure bay.
    */
   async runOnRow(row: SlotRow): Promise<SlotRow> {
+    const failureRouter = this.config.failure_router || globalFailureRouter;
+
     if (!row.linkedin_url && !row.person_name) {
       return row;
     }
@@ -247,8 +268,132 @@ export class TitleCompanyAgent {
       previous_company: row.current_company ?? undefined,
     };
 
-    await this.run(task, row);
+    const result = await this.run(task, row);
+
+    // === SET PERSON_COMPANY_VALID FLAG ===
+    if (result.success && result.data.current_company) {
+      const scrapedCompany = result.data.current_company as string;
+      const canonicalCompany = row.company_name || "";
+
+      // Compare scraped employer to canonical company
+      const matchScore = this.calculateCompanyMatchScore(scrapedCompany, canonicalCompany);
+
+      if (matchScore >= this.config.person_company_match_threshold) {
+        // Person's employer matches canonical company
+        row.setPersonCompanyValid(true, matchScore);
+
+        if (this.config.verbose) {
+          console.log(`[TitleCompanyAgent] person_company_valid=TRUE for row ${row.id} (score: ${matchScore})`);
+        }
+      } else {
+        // Person's employer does NOT match canonical company
+        const reason = `Person employer "${scrapedCompany}" does not match canonical company "${canonicalCompany}" (score: ${matchScore})`;
+        row.setPersonCompanyValid(false, matchScore, reason);
+
+        // ROUTE TO FAILURE BAY
+        const failure = createPersonCompanyMismatchFailure(
+          row,
+          canonicalCompany,
+          scrapedCompany,
+          matchScore,
+          this.config.person_company_match_threshold,
+          reason
+        );
+        await failureRouter.routePersonCompanyMismatch(failure);
+
+        if (this.config.verbose) {
+          console.log(`[TitleCompanyAgent] person_company_valid=FALSE for row ${row.id}`);
+          console.log(`[TitleCompanyAgent] Scraped: "${scrapedCompany}" vs Canonical: "${canonicalCompany}" (score: ${matchScore})`);
+          console.log(`[TitleCompanyAgent] ROUTED to person_company_mismatch failure bay`);
+        }
+      }
+    } else if (!result.success) {
+      // Could not retrieve employment info - cannot validate
+      const reason = "Could not retrieve current employer for validation";
+      row.setPersonCompanyValid(false, 0, reason);
+
+      // ROUTE TO FAILURE BAY
+      const failure = createPersonCompanyMismatchFailure(
+        row,
+        row.company_name || "",
+        null,
+        0,
+        this.config.person_company_match_threshold,
+        reason
+      );
+      await failureRouter.routePersonCompanyMismatch(failure);
+
+      if (this.config.verbose) {
+        console.log(`[TitleCompanyAgent] person_company_valid=FALSE (no data) for row ${row.id}`);
+        console.log(`[TitleCompanyAgent] ROUTED to person_company_mismatch failure bay`);
+      }
+    }
+
     return row;
+  }
+
+  /**
+   * Get the failure bay for this agent.
+   */
+  static getFailureBay(): string {
+    return "person_company_mismatch";
+  }
+
+  /**
+   * Calculate similarity score between scraped company and canonical company.
+   */
+  private calculateCompanyMatchScore(scrapedCompany: string, canonicalCompany: string): number {
+    if (!scrapedCompany || !canonicalCompany) return 0;
+
+    const normScraped = this.normalizeCompanyName(scrapedCompany);
+    const normCanonical = this.normalizeCompanyName(canonicalCompany);
+
+    // Exact match after normalization
+    if (normScraped === normCanonical) return 1.0;
+
+    // Contains check
+    if (normScraped.includes(normCanonical) || normCanonical.includes(normScraped)) {
+      const longer = Math.max(normScraped.length, normCanonical.length);
+      const shorter = Math.min(normScraped.length, normCanonical.length);
+      return shorter / longer;
+    }
+
+    // Levenshtein-based similarity
+    const distance = this.levenshteinDistance(normScraped, normCanonical);
+    const maxLen = Math.max(normScraped.length, normCanonical.length);
+    if (maxLen === 0) return 0;
+
+    return (maxLen - distance) / maxLen;
+  }
+
+  /**
+   * Calculate Levenshtein distance between two strings.
+   */
+  private levenshteinDistance(a: string, b: string): number {
+    const matrix: number[][] = [];
+
+    for (let i = 0; i <= b.length; i++) {
+      matrix[i] = [i];
+    }
+    for (let j = 0; j <= a.length; j++) {
+      matrix[0][j] = j;
+    }
+
+    for (let i = 1; i <= b.length; i++) {
+      for (let j = 1; j <= a.length; j++) {
+        if (b.charAt(i - 1) === a.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j] + 1
+          );
+        }
+      }
+    }
+
+    return matrix[b.length][a.length];
   }
 
   /**

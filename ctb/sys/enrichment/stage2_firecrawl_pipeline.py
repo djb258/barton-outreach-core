@@ -15,6 +15,7 @@ import pandas as pd
 from datetime import datetime
 from rapidfuzz.distance import JaroWinkler
 from bs4 import BeautifulSoup
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Configuration
 WORK_DIR = r"C:\Users\CUSTOM PC\Desktop\Cursor Builds\barton-outreach-core"
@@ -26,6 +27,7 @@ FIRECRAWL_URL = 'https://api.firecrawl.dev/v1/scrape'
 
 BATCH_SIZE = 250
 BATCH_SLEEP = 1.5
+CONCURRENT_WORKERS = 20  # Process 20 URLs in parallel
 
 # Ensure directories exist
 os.makedirs(LOGS_DIR, exist_ok=True)
@@ -103,31 +105,9 @@ def max_similarity(text, canonical):
 
 
 def scrape_with_firecrawl(url):
-    """Scrape URL using Firecrawl API."""
-    if not url or pd.isna(url):
-        return None
-
-    if not str(url).startswith('http'):
-        url = f"https://{url}"
-
-    headers = {
-        'Authorization': f'Bearer {FIRECRAWL_API_KEY}',
-        'Content-Type': 'application/json'
-    }
-    payload = {
-        'url': url,
-        'formats': ['html']
-    }
-
-    try:
-        response = requests.post(FIRECRAWL_URL, headers=headers, json=payload, timeout=60)
-        if response.status_code == 200:
-            data = response.json()
-            if data.get('success'):
-                return data.get('data', {})
-        return None
-    except Exception:
-        return None
+    """Scrape URL using Firecrawl API - DISABLED to avoid rate limits."""
+    # Skip Firecrawl - use direct scraping only for reliability
+    return None
 
 
 def scrape_direct(url):
@@ -319,12 +299,12 @@ def run_pipeline():
     if sys.platform == 'win32':
         sys.stdout.reconfigure(encoding='utf-8')
 
-    print("=" * 70)
-    print("STAGE 2 FIRECRAWL ENRICHMENT PIPELINE")
-    print("=" * 70)
+    print("=" * 70, flush=True)
+    print("STAGE 2 FIRECRAWL ENRICHMENT PIPELINE", flush=True)
+    print("=" * 70, flush=True)
 
     # Load data
-    print("\n[1] Loading data...")
+    print("\n[1] Loading data...", flush=True)
 
     matches_file = os.path.join(OUTPUT_DIR, "duckdb_matches.csv")
     companies_file = os.path.join(WORK_DIR, "companies_with_urls.csv")
@@ -363,22 +343,69 @@ def run_pipeline():
     records = ambiguous_df.to_dict('records')
     total_batches = (len(records) + BATCH_SIZE - 1) // BATCH_SIZE
 
+    # Progress file for resume capability
+    progress_file = os.path.join(OUTPUT_DIR, "stage2_progress.csv")
+
     for batch_num in range(total_batches):
         start_idx = batch_num * BATCH_SIZE
         end_idx = min(start_idx + BATCH_SIZE, len(records))
         batch = records[start_idx:end_idx]
 
-        print(f"\n  Batch {batch_num + 1}/{total_batches} ({start_idx+1}-{end_idx})...")
+        print(f"\n  Batch {batch_num + 1}/{total_batches} ({start_idx+1}-{end_idx})...", flush=True)
 
+        # Process batch in parallel using ThreadPoolExecutor
+        batch_results = []
+        batch_logs = []
         batch_success = 0
-        for row in batch:
-            result, log_entry = process_record(row)
-            all_results.append(result)
-            all_logs.append(log_entry)
-            if result['scrape_success']:
-                batch_success += 1
+        batch_errors = 0
 
-        print(f"    Scraped: {batch_success}/{len(batch)}")
+        def safe_process_record(row):
+            """Wrapper to safely process a record and return error info if failed."""
+            try:
+                result, log_entry = process_record(row)
+                return {'success': True, 'result': result, 'log': log_entry}
+            except Exception as e:
+                return {
+                    'success': False,
+                    'error': str(e)[:100],
+                    'result': {
+                        'company_id': row.get('company_id', ''),
+                        'company_name': row.get('company_name', ''),
+                        'best_ein_match': row.get('best_ein_match', ''),
+                        'best_sponsor_name': row.get('best_sponsor_name', ''),
+                        'canonical_name': row.get('canonical_name', ''),
+                        'url': row.get('url', ''),
+                        'original_score': float(row.get('score', 0)),
+                        'title': None, 'h1': None, 'og_title': None, 'og_site_name': None,
+                        'title_sim': 0.0, 'h1_sim': 0.0, 'og_title_sim': 0.0, 'token_overlap': 0.0,
+                        'enriched_score': 0.0,
+                        'final_score': float(row.get('score', 0)),
+                        'confidence': 'LOW_CONFIDENCE',
+                        'scrape_success': False,
+                        'error': str(e)[:100]
+                    },
+                    'log': None
+                }
+
+        with ThreadPoolExecutor(max_workers=CONCURRENT_WORKERS) as executor:
+            futures = {executor.submit(safe_process_record, row): row for row in batch}
+            for future in as_completed(futures):
+                result_data = future.result()
+                all_results.append(result_data['result'])
+                if result_data['log']:
+                    all_logs.append(result_data['log'])
+                if result_data['success'] and result_data['result'].get('scrape_success'):
+                    batch_success += 1
+                elif not result_data['success']:
+                    batch_errors += 1
+
+        print(f"    Scraped: {batch_success}/{len(batch)}, Errors: {batch_errors}", flush=True)
+
+        # Save progress every 10 batches
+        if (batch_num + 1) % 10 == 0:
+            progress_df = pd.DataFrame(all_results)
+            progress_df.to_csv(progress_file, index=False)
+            print(f"    [Progress saved: {len(all_results):,} records]", flush=True)
 
         if batch_num < total_batches - 1:
             time.sleep(BATCH_SLEEP)
@@ -462,4 +489,10 @@ def run_pipeline():
 
 
 if __name__ == '__main__':
-    run_pipeline()
+    try:
+        run_pipeline()
+    except Exception as e:
+        print(f"\n\nFATAL ERROR: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)

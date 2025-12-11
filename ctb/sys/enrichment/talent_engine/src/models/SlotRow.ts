@@ -6,11 +6,19 @@
  * A SlotRow represents: Company + Slot (CEO/CFO/HR/Benefits) + Person
  * Each slot must complete a checklist before exiting the pipeline.
  *
- * Four-Layer Architecture:
- * 1. Fuzzy Matching Intake Step
- * 2. Slot Completion Checklist Engine
- * 3. Company-Level Missing-Slot Detection
- * 4. Missing-Slot Agent Trigger
+ * Hub-and-Spoke Architecture:
+ * - COMPANY_HUB: FuzzyMatch, CompanyState, Pattern, MissingSlot, EmailGenerator
+ * - PEOPLE_NODE: LinkedInFinder, PublicScanner, TitleCompany, MovementHash, PeopleFuzzyMatch
+ * - DOL_NODE: DOLSync, RenewalParser, CarrierNormalizer
+ * - BIT_NODE: BITScore, ChurnDetector, RenewalIntent
+ *
+ * VALIDATION FLAGS (Golden Rule Enforcement):
+ * - company_valid: Set by CompanyFuzzyMatchAgent when canonical match succeeds
+ * - person_company_valid: Set by TitleCompanyAgent when person's employer matches
+ * - skip_email: Set by dispatcher or agents when email generation should be skipped
+ *
+ * IF company_valid = false OR person_company_valid = false:
+ *   → Email generation and verification are DISABLED
  */
 
 /**
@@ -28,13 +36,23 @@ export const ALL_SLOT_TYPES: SlotType[] = ["CEO", "CFO", "HR", "BENEFITS"];
  */
 export type AgentType =
   | "FuzzyMatchAgent"
+  | "CompanyFuzzyMatchAgent"
+  | "CompanyStateAgent"
   | "LinkedInFinderAgent"
   | "PublicScannerAgent"
   | "PatternAgent"
   | "EmailGeneratorAgent"
   | "TitleCompanyAgent"
   | "HashAgent"
-  | "MissingSlotAgent";
+  | "MovementHashAgent"
+  | "MissingSlotAgent"
+  | "PeopleFuzzyMatchAgent"
+  | "DOLSyncAgent"
+  | "RenewalParserAgent"
+  | "CarrierNormalizerAgent"
+  | "BITScoreAgent"
+  | "ChurnDetectorAgent"
+  | "RenewalIntentAgent";
 
 /**
  * Default per-slot cost limit in USD.
@@ -83,6 +101,19 @@ export class SlotRow {
   // Movement tracking
   movement_hash: string | null;
 
+  // === VALIDATION FLAGS (Golden Rule Enforcement) ===
+  // Inherited from CompanyState - set by CompanyFuzzyMatchAgent
+  company_valid: boolean;
+  company_invalid_reason: string | null;
+
+  // Set by TitleCompanyAgent - person's employer matches canonical company
+  person_company_valid: boolean;
+  person_company_match_score: number | null;
+
+  // Skip email generation flag - set by dispatcher or agents
+  skip_email: boolean;
+  skip_reason: string | null;
+
   // Completion status
   slot_complete: boolean;
   last_updated: Date;
@@ -125,6 +156,14 @@ export class SlotRow {
 
     // Movement
     this.movement_hash = init.movement_hash ?? null;
+
+    // Validation flags (Golden Rule)
+    this.company_valid = init.company_valid ?? false; // Default to false until validated
+    this.company_invalid_reason = init.company_invalid_reason ?? null;
+    this.person_company_valid = init.person_company_valid ?? false; // Default to false until validated
+    this.person_company_match_score = init.person_company_match_score ?? null;
+    this.skip_email = init.skip_email ?? false;
+    this.skip_reason = init.skip_reason ?? null;
 
     // Completion
     this.slot_complete = init.slot_complete ?? false;
@@ -169,6 +208,75 @@ export class SlotRow {
       !this.slot_complete &&
       !this.permanently_failed
     );
+  }
+
+  /**
+   * Check if email generation is allowed based on validation flags.
+   * GOLDEN RULE: Both company and person must be valid.
+   */
+  isEmailGenerationAllowed(): boolean {
+    return (
+      this.company_valid === true &&
+      this.person_company_valid === true &&
+      this.skip_email === false &&
+      this.email_pattern !== null
+    );
+  }
+
+  /**
+   * Mark email as skipped with reason.
+   */
+  markEmailSkipped(reason: string): void {
+    this.skip_email = true;
+    this.skip_reason = reason;
+    this.last_updated = new Date();
+  }
+
+  /**
+   * Set company validation status.
+   */
+  setCompanyValid(valid: boolean, reason?: string): void {
+    this.company_valid = valid;
+    this.company_invalid_reason = valid ? null : (reason ?? "Company validation failed");
+    this.last_updated = new Date();
+
+    // If company is invalid, also skip email
+    if (!valid) {
+      this.markEmailSkipped(reason ?? "Company validation failed");
+    }
+  }
+
+  /**
+   * Set person-company validation status.
+   */
+  setPersonCompanyValid(valid: boolean, matchScore?: number, reason?: string): void {
+    this.person_company_valid = valid;
+    this.person_company_match_score = matchScore ?? null;
+    this.last_updated = new Date();
+
+    // If person-company match is invalid, also skip email
+    if (!valid) {
+      this.markEmailSkipped(reason ?? "Person not matched to canonical company");
+    }
+  }
+
+  /**
+   * Get validation status summary.
+   */
+  getValidationSummary(): {
+    company_valid: boolean;
+    person_company_valid: boolean;
+    skip_email: boolean;
+    skip_reason: string | null;
+    email_allowed: boolean;
+  } {
+    return {
+      company_valid: this.company_valid,
+      person_company_valid: this.person_company_valid,
+      skip_email: this.skip_email,
+      skip_reason: this.skip_reason,
+      email_allowed: this.isEmailGenerationAllowed(),
+    };
   }
 
   /**

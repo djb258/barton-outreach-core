@@ -29,6 +29,8 @@ import {
   DEFAULT_EMAIL_VERIFICATION_CONFIG,
   COMMON_EMAIL_PATTERNS,
 } from "../../adapters";
+import { createEmailGenerationFailure } from "../../models/FailureRecord";
+import { FailureRouter, globalFailureRouter } from "../../services/FailureRouter";
 
 /**
  * Agent configuration.
@@ -46,6 +48,8 @@ export interface EmailGeneratorConfig {
   max_patterns_to_try: number;
   /** Enable verbose logging */
   verbose: boolean;
+  /** Failure router instance */
+  failure_router?: FailureRouter;
 }
 
 /**
@@ -300,23 +304,140 @@ export class EmailGeneratorAgent {
 
   /**
    * Run directly on a SlotRow.
+   *
+   * GOLDEN RULE ENFORCEMENT:
+   * Email generation is DISABLED if:
+   * - company_valid = false
+   * - person_company_valid = false
+   * - skip_email = true
+   * - email_pattern is missing
+   *
+   * Uses row.isEmailGenerationAllowed() to check all conditions.
+   *
+   * FAILURE ROUTING:
+   * If email generation fails, routes to email_generation_failures bay.
    */
   async runOnRow(row: SlotRow): Promise<SlotRow> {
-    if (!row.person_name || !row.company_name) {
+    const failureRouter = this.config.failure_router || globalFailureRouter;
+
+    // === GOLDEN RULE CHECK ===
+    // Check company validation
+    if (row.company_valid === false) {
+      const reason = row.company_invalid_reason ?? "Company validation failed";
+
+      if (this.config.verbose) {
+        console.log(`[EmailGeneratorAgent] SKIPPED: company_valid=false for row ${row.id}`);
+        console.log(`[EmailGeneratorAgent] Reason: ${reason}`);
+      }
+
+      row.markEmailSkipped(`EmailGeneratorAgent: Company invalid - ${reason}`);
+
+      // ROUTE TO FAILURE BAY
+      const failure = createEmailGenerationFailure(
+        row,
+        null,
+        null,
+        `Company invalid - ${reason}`
+      );
+      await failureRouter.routeEmailGenerationFailure(failure);
+
       return row;
     }
 
+    // Check person-company validation
+    if (row.person_company_valid === false) {
+      const reason = "Person not matched to canonical company";
+
+      if (this.config.verbose) {
+        console.log(`[EmailGeneratorAgent] SKIPPED: person_company_valid=false for row ${row.id}`);
+      }
+
+      row.markEmailSkipped(`EmailGeneratorAgent: ${reason}`);
+
+      // ROUTE TO FAILURE BAY
+      const failure = createEmailGenerationFailure(
+        row,
+        null,
+        null,
+        reason
+      );
+      await failureRouter.routeEmailGenerationFailure(failure);
+
+      return row;
+    }
+
+    // Check if already marked to skip
+    if (row.skip_email === true) {
+      if (this.config.verbose) {
+        console.log(`[EmailGeneratorAgent] SKIPPED: skip_email=true for row ${row.id}`);
+        console.log(`[EmailGeneratorAgent] Reason: ${row.skip_reason}`);
+      }
+      return row;
+    }
+
+    // Check required data
+    if (!row.person_name || !row.company_name) {
+      const reason = "Missing person_name or company_name";
+      row.markEmailSkipped(`EmailGeneratorAgent: ${reason}`);
+
+      // ROUTE TO FAILURE BAY
+      const failure = createEmailGenerationFailure(row, null, null, reason);
+      await failureRouter.routeEmailGenerationFailure(failure);
+
+      return row;
+    }
+
+    // Check pattern requirement
+    if (!row.email_pattern) {
+      const reason = "No email pattern available";
+      row.markEmailSkipped(`EmailGeneratorAgent: ${reason}`);
+
+      // ROUTE TO FAILURE BAY
+      const failure = createEmailGenerationFailure(row, null, null, reason);
+      await failureRouter.routeEmailGenerationFailure(failure);
+
+      return row;
+    }
+
+    // All validations passed - proceed with email generation
     const task: EmailGeneratorTask = {
       task_id: `email_${row.id}_${Date.now()}`,
       slot_row_id: row.id,
       person_name: row.person_name,
       company_name: row.company_name,
-      company_domain: row.company_domain ?? undefined,
+      company_domain: (row as any).company_domain ?? undefined,
       email_pattern: row.email_pattern ?? undefined,
     };
 
-    await this.run(task, row);
+    const result = await this.run(task, row);
+
+    // Route to failure bay if email generation failed
+    if (!result.success) {
+      const reason = result.error || "Could not generate valid email address";
+
+      // ROUTE TO FAILURE BAY
+      const failure = createEmailGenerationFailure(
+        row,
+        (result.data?.email as string) || null,
+        (result.data?.verification_status as string) || null,
+        reason
+      );
+      await failureRouter.routeEmailGenerationFailure(failure);
+
+      if (this.config.verbose) {
+        console.log(`[EmailGeneratorAgent] FAILED for row ${row.id}: ${reason}`);
+        console.log(`[EmailGeneratorAgent] ROUTED to email_generation_failures bay`);
+      }
+    }
+
     return row;
+  }
+
+  /**
+   * Get the failure bay for this agent.
+   */
+  static getFailureBay(): string {
+    return "email_generation_failures";
   }
 
   /**

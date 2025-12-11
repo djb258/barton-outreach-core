@@ -29,6 +29,12 @@ export interface SlotState {
 
 /**
  * Company-level state tracking all slots.
+ *
+ * VALIDATION FLAGS:
+ * - company_valid: true only if CompanyFuzzyMatchAgent successfully matched
+ * - reason_invalid: explanation if company_valid is false
+ *
+ * GOLDEN RULE: If company_valid = false, NO downstream processing occurs.
  */
 export class CompanyState {
   company_id: string;
@@ -36,11 +42,31 @@ export class CompanyState {
   slots: Map<SlotType, SlotState>;
   last_evaluated: Date;
 
+  // === VALIDATION FLAGS ===
+  company_valid: boolean;
+  reason_invalid: string | null;
+
+  // Company metadata from fuzzy match
+  canonical_company_name: string | null;
+  domain: string | null;
+  email_pattern: string | null;
+  fuzzy_match_score: number | null;
+
   constructor(company_id: string, company_name: string) {
     this.company_id = company_id;
     this.company_name = company_name;
     this.slots = new Map();
     this.last_evaluated = new Date();
+
+    // Validation flags - default to false until validated
+    this.company_valid = false;
+    this.reason_invalid = null;
+
+    // Company metadata
+    this.canonical_company_name = null;
+    this.domain = null;
+    this.email_pattern = null;
+    this.fuzzy_match_score = null;
 
     // Initialize all slots as MISSING
     for (const slotType of ALL_SLOT_TYPES) {
@@ -52,6 +78,45 @@ export class CompanyState {
         completion_percentage: 0,
       });
     }
+  }
+
+  /**
+   * Set company as valid after successful fuzzy match.
+   */
+  setValid(
+    canonicalName: string,
+    matchScore: number,
+    domain?: string,
+    pattern?: string
+  ): void {
+    this.company_valid = true;
+    this.reason_invalid = null;
+    this.canonical_company_name = canonicalName;
+    this.fuzzy_match_score = matchScore;
+    this.domain = domain ?? null;
+    this.email_pattern = pattern ?? null;
+    this.last_evaluated = new Date();
+  }
+
+  /**
+   * Set company as invalid with reason.
+   */
+  setInvalid(reason: string): void {
+    this.company_valid = false;
+    this.reason_invalid = reason;
+    this.last_evaluated = new Date();
+  }
+
+  /**
+   * Check if company can proceed to email generation.
+   * GOLDEN RULE: Must have valid company + domain + pattern.
+   */
+  canGenerateEmails(): boolean {
+    return (
+      this.company_valid === true &&
+      this.domain !== null &&
+      this.email_pattern !== null
+    );
   }
 
   /**
@@ -203,6 +268,11 @@ export interface CompanyStateResult {
   is_fully_staffed: boolean;
   overall_completion: number;
   needs_missing_slot_agent: boolean;
+
+  // Validation results
+  company_valid: boolean;
+  reason_invalid: string | null;
+  can_generate_emails: boolean;
 }
 
 /**
@@ -219,6 +289,12 @@ export function evaluateCompanyState(
   for (const row of rows) {
     if (row.company_id === company_id || row.company_name === company_name) {
       state.updateSlotFromRow(row);
+
+      // Inherit company_valid from the first row that has been validated
+      if (row.company_valid !== undefined) {
+        state.company_valid = row.company_valid;
+        state.reason_invalid = row.company_invalid_reason ?? null;
+      }
     }
   }
 
@@ -235,5 +311,10 @@ export function evaluateCompanyState(
     is_fully_staffed: state.isFullyStaffed(),
     overall_completion: state.getOverallCompletion(),
     needs_missing_slot_agent: missingSlots.length > 0,
+
+    // Validation results
+    company_valid: state.company_valid,
+    reason_invalid: state.reason_invalid,
+    can_generate_emails: state.canGenerateEmails(),
   };
 }

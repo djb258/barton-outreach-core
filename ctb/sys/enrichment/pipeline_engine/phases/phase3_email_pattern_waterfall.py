@@ -38,6 +38,13 @@ from ..utils.logging import (
     log_phase_complete
 )
 
+# Provider Benchmark Engine (System-Level) - Optional import
+try:
+    from ctb.sys.enrichment.provider_benchmark import ProviderBenchmarkEngine
+    _PBE_AVAILABLE = True
+except ImportError:
+    _PBE_AVAILABLE = False
+
 
 class PatternSource(Enum):
     """Source of pattern discovery."""
@@ -139,6 +146,14 @@ class Phase3EmailPatternWaterfall:
 
         # Cache for discovered patterns (domain -> PatternResult)
         self._pattern_cache: Dict[str, PatternResult] = {}
+
+        # Provider Benchmark Engine reference
+        self._pbe = None
+        if _PBE_AVAILABLE:
+            try:
+                self._pbe = ProviderBenchmarkEngine.get_instance()
+            except Exception:
+                pass
 
     def run(self, domain_df: pd.DataFrame) -> Tuple[pd.DataFrame, Phase3Stats]:
         """
@@ -322,6 +337,8 @@ class Phase3EmailPatternWaterfall:
         # Process provider results
         for pr in provider_results:
             result.cost_credits += pr.cost_credits
+            # PBE Hook: Record each provider result
+            self._record_pbe_provider_result(pr)
 
             if pr.success and pr.patterns:
                 # Found a pattern
@@ -404,6 +421,33 @@ class Phase3EmailPatternWaterfall:
             return None
 
         return extract_patterns_from_multiple(emails, domain)
+
+    def _record_pbe_provider_result(self, provider_result: ProviderResult) -> None:
+        """
+        Record a provider result to Provider Benchmark Engine (PBE).
+
+        PBE Hook - records metrics for Phase 3 provider calls.
+        Silently ignores errors since metrics are non-critical.
+
+        Args:
+            provider_result: The ProviderResult from waterfall execution
+        """
+        if not self._pbe:
+            return
+        try:
+            has_pattern = bool(provider_result.success and provider_result.patterns)
+            confidence = 0.0
+            if has_pattern and provider_result.patterns:
+                confidence = max(p.get('confidence', 0) for p in provider_result.patterns)
+
+            self._pbe.record_waterfall_attempt(
+                provider_name=provider_result.provider,
+                success=has_pattern,
+                pattern_verified=confidence >= self.min_confidence,
+                latency_ms=provider_result.latency_ms if hasattr(provider_result, 'latency_ms') else 0.0
+            )
+        except Exception:
+            pass  # Silently ignore PBE errors - metrics are non-critical
 
     def _build_result_dataframe(self, domain_df: pd.DataFrame,
                                 domain_patterns: Dict[str, PatternResult]) -> pd.DataFrame:

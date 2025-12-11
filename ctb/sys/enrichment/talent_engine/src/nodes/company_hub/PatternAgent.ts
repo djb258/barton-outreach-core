@@ -24,6 +24,8 @@ import {
   DEFAULT_EMAIL_PATTERN_CONFIG,
   COMMON_EMAIL_PATTERNS,
 } from "../../adapters";
+import { createEmailPatternFailure } from "../../models/FailureRecord";
+import { FailureRouter, globalFailureRouter } from "../../services/FailureRouter";
 
 /**
  * Agent configuration.
@@ -35,6 +37,8 @@ export interface PatternAgentConfig extends EmailPatternConfig {
   use_fallback_patterns: boolean;
   /** Minimum confidence to accept pattern */
   min_confidence: number;
+  /** Failure router instance */
+  failure_router?: FailureRouter;
 }
 
 /**
@@ -179,9 +183,32 @@ export class PatternAgent {
 
   /**
    * Run directly on a SlotRow.
+   *
+   * GOLDEN RULE ENFORCEMENT:
+   * If company_valid = false, pattern discovery is SKIPPED.
+   * Email generation cannot proceed without a valid company.
+   *
+   * FAILURE ROUTING:
+   * If pattern discovery fails and no fallback, routes to email_pattern_failures bay.
    */
   async runOnRow(row: SlotRow): Promise<SlotRow> {
+    const failureRouter = this.config.failure_router || globalFailureRouter;
+
+    // === GOLDEN RULE CHECK ===
+    if (row.company_valid === false) {
+      const reason = row.company_invalid_reason ?? "Company validation failed";
+
+      if (this.config.verbose) {
+        console.log(`[PatternAgent] SKIPPED: company_valid=false for row ${row.id}`);
+        console.log(`[PatternAgent] Reason: ${reason}`);
+      }
+
+      row.markEmailSkipped(`PatternAgent: ${reason}`);
+      return row;
+    }
+
     if (!row.company_name) {
+      row.markEmailSkipped("PatternAgent: No company name");
       return row;
     }
 
@@ -189,11 +216,44 @@ export class PatternAgent {
       task_id: `pattern_${row.id}_${Date.now()}`,
       slot_row_id: row.id,
       company_name: row.company_name,
-      company_domain: row.company_domain ?? undefined,
+      company_domain: (row as any).company_domain ?? undefined,
     };
 
-    await this.run(task, row);
+    const result = await this.run(task, row);
+
+    // Route to failure bay if pattern discovery failed
+    if (!result.success) {
+      const reason = result.error || "Could not determine email pattern";
+      const attemptedSources = ["adapter"];
+      if (this.config.use_fallback_patterns) {
+        attemptedSources.push("fallback");
+      }
+
+      // ROUTE TO FAILURE BAY
+      const failure = createEmailPatternFailure(
+        row,
+        row.company_name,
+        (row as any).company_domain || null,
+        attemptedSources,
+        this.config.use_fallback_patterns,
+        reason
+      );
+      await failureRouter.routeEmailPatternFailure(failure);
+
+      if (this.config.verbose) {
+        console.log(`[PatternAgent] FAILED for row ${row.id}: ${reason}`);
+        console.log(`[PatternAgent] ROUTED to email_pattern_failures bay`);
+      }
+    }
+
     return row;
+  }
+
+  /**
+   * Get the failure bay for this agent.
+   */
+  static getFailureBay(): string {
+    return "email_pattern_failures";
   }
 
   /**

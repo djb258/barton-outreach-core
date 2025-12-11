@@ -19,6 +19,7 @@
  */
 
 import { AgentResult, SlotRow } from "../../models/SlotRow";
+import { createCompanyFuzzyFailure } from "../../models/FailureRecord";
 import {
   FuzzyMatchConfig,
   FuzzyMatchResult,
@@ -30,6 +31,7 @@ import {
   CompanyLookupConfig,
   DEFAULT_COMPANY_LOOKUP_CONFIG,
 } from "../../adapters/companyLookupAdapter";
+import { FailureRouter, globalFailureRouter } from "../../services/FailureRouter";
 
 /**
  * Agent configuration.
@@ -41,6 +43,8 @@ export interface CompanyFuzzyMatchAgentConfig extends FuzzyMatchConfig {
   enable_external_fallback?: boolean;
   /** External lookup adapter config */
   external_config?: Partial<CompanyLookupConfig>;
+  /** Failure router instance */
+  failure_router?: FailureRouter;
 }
 
 /**
@@ -420,8 +424,21 @@ export class CompanyFuzzyMatchAgent {
 
   /**
    * Run fuzzy match directly on a SlotRow.
+   *
+   * SETS COMPANY_VALID FLAG:
+   * - On MATCHED: company_valid = true
+   * - On MANUAL_REVIEW: company_valid = false (requires human approval)
+   * - On UNMATCHED: company_valid = false
+   *
+   * GOLDEN RULE: If company_valid = false, downstream email processing is DISABLED.
+   *
+   * FAILURE ROUTING:
+   * - On MANUAL_REVIEW or UNMATCHED: Routes to company_fuzzy_failures table
+   * - Failure bay: company_fuzzy_failures
    */
   async runOnRow(row: SlotRow, companyMaster: string[]): Promise<SlotRow> {
+    const failureRouter = this.config.failure_router || globalFailureRouter;
+
     if (!row.needsFuzzyMatch()) {
       return row;
     }
@@ -430,6 +447,25 @@ export class CompanyFuzzyMatchAgent {
 
     if (!rawInput) {
       row.fuzzy_match_status = "UNMATCHED";
+      // SET COMPANY_VALID = FALSE: No company input provided
+      row.setCompanyValid(false, "No company input provided");
+
+      // ROUTE TO FAILURE BAY
+      const failure = createCompanyFuzzyFailure(
+        row,
+        rawInput,
+        null,
+        0,
+        "UNMATCHED",
+        [],
+        "No company input provided"
+      );
+      await failureRouter.routeCompanyFuzzyFailure(failure);
+
+      if (this.config.verbose) {
+        console.log(`[CompanyFuzzyMatchAgent] ROUTED TO BAY: company_fuzzy_failures (no input)`);
+      }
+
       return row;
     }
 
@@ -446,11 +482,69 @@ export class CompanyFuzzyMatchAgent {
 
     if (result.data.status === "MATCHED" && result.data.matched_company) {
       row.company_name = result.data.matched_company as string;
+
+      // SET COMPANY_VALID = TRUE: Successful match to canonical company
+      row.setCompanyValid(true);
+
+      if (this.config.verbose) {
+        console.log(`[CompanyFuzzyMatchAgent] company_valid=TRUE for row ${row.id}`);
+      }
+    } else if (result.data.status === "MANUAL_REVIEW") {
+      // SET COMPANY_VALID = FALSE: Requires human review before proceeding
+      const reason = `Manual review required (score: ${result.data.match_score})`;
+      row.setCompanyValid(false, reason);
+
+      // ROUTE TO FAILURE BAY
+      const candidates = (result.data.all_candidates as FuzzyCandidate[]) || [];
+      const failure = createCompanyFuzzyFailure(
+        row,
+        rawInput,
+        result.data.matched_company as string || null,
+        result.data.match_score as number,
+        "MANUAL_REVIEW",
+        candidates.map((c) => ({ company: c.company, score: c.score })),
+        reason
+      );
+      await failureRouter.routeCompanyFuzzyFailure(failure);
+
+      if (this.config.verbose) {
+        console.log(`[CompanyFuzzyMatchAgent] company_valid=FALSE (manual review) for row ${row.id}`);
+        console.log(`[CompanyFuzzyMatchAgent] ROUTED TO BAY: company_fuzzy_failures`);
+      }
+    } else {
+      // SET COMPANY_VALID = FALSE: No match found
+      const reason = `Company not found in master list (best score: ${result.data.match_score})`;
+      row.setCompanyValid(false, reason);
+
+      // ROUTE TO FAILURE BAY
+      const candidates = (result.data.all_candidates as FuzzyCandidate[]) || [];
+      const failure = createCompanyFuzzyFailure(
+        row,
+        rawInput,
+        candidates[0]?.company || null,
+        result.data.match_score as number,
+        "UNMATCHED",
+        candidates.map((c) => ({ company: c.company, score: c.score })),
+        reason
+      );
+      await failureRouter.routeCompanyFuzzyFailure(failure);
+
+      if (this.config.verbose) {
+        console.log(`[CompanyFuzzyMatchAgent] company_valid=FALSE (unmatched) for row ${row.id}`);
+        console.log(`[CompanyFuzzyMatchAgent] ROUTED TO BAY: company_fuzzy_failures`);
+      }
     }
 
     row.last_updated = new Date();
 
     return row;
+  }
+
+  /**
+   * Get failure bay for this agent.
+   */
+  static getFailureBay(): string {
+    return "company_fuzzy_failures";
   }
 
   /**

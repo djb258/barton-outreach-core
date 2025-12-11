@@ -29,6 +29,8 @@ import {
   AdapterConfig,
   DEFAULT_ADAPTER_CONFIG,
 } from "../../adapters";
+import { createLinkedInResolutionFailure } from "../../models/FailureRecord";
+import { FailureRouter, globalFailureRouter } from "../../services/FailureRouter";
 
 /**
  * Agent configuration.
@@ -44,6 +46,8 @@ export interface LinkedInFinderConfig {
   verbose: boolean;
   /** Maximum cost for fallback */
   max_fallback_cost: number;
+  /** Failure router instance */
+  failure_router?: FailureRouter;
 }
 
 /**
@@ -212,8 +216,13 @@ export class LinkedInFinderAgent {
 
   /**
    * Run directly on a SlotRow.
+   *
+   * FAILURE ROUTING:
+   * If LinkedIn resolution fails, routes to linkedin_resolution_failures bay.
    */
   async runOnRow(row: SlotRow): Promise<SlotRow> {
+    const failureRouter = this.config.failure_router || globalFailureRouter;
+
     const task: LinkedInFinderTask = {
       task_id: `linkedin_${row.id}_${Date.now()}`,
       slot_row_id: row.id,
@@ -223,8 +232,38 @@ export class LinkedInFinderAgent {
       linkedin_url: row.linkedin_url,
     };
 
-    await this.run(task, row);
+    const result = await this.run(task, row);
+
+    // Route to failure bay if LinkedIn resolution failed
+    if (!result.success) {
+      const reason = result.error || "Could not resolve LinkedIn URL";
+      const attemptedSources = (result.data?.attempted_sources as string[]) || ["primary"];
+      if (this.config.enable_fallback) {
+        attemptedSources.push("fallback");
+      }
+
+      // ROUTE TO FAILURE BAY
+      const failure = createLinkedInResolutionFailure(
+        row,
+        attemptedSources,
+        reason
+      );
+      await failureRouter.routeLinkedInResolutionFailure(failure);
+
+      if (this.config.verbose) {
+        console.log(`[LinkedInFinderAgent] FAILED for row ${row.id}: ${reason}`);
+        console.log(`[LinkedInFinderAgent] ROUTED to linkedin_resolution_failures bay`);
+      }
+    }
+
     return row;
+  }
+
+  /**
+   * Get the failure bay for this agent.
+   */
+  static getFailureBay(): string {
+    return "linkedin_resolution_failures";
   }
 
   /**

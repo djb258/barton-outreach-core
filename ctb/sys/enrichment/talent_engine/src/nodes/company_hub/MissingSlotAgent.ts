@@ -107,6 +107,10 @@ export class MissingSlotAgent {
 
   /**
    * Run the missing slot agent on a task.
+   *
+   * GOLDEN RULE ENFORCEMENT:
+   * If company_valid = false, this agent STOPS and does NOT process slots.
+   * All rows for invalid companies are marked with skip_email = true.
    */
   async run(task: MissingSlotTask): Promise<AgentResult> {
     try {
@@ -117,6 +121,32 @@ export class MissingSlotAgent {
 
       if (this.config.verbose) {
         console.log(`[MissingSlotAgent] Checking slots for: ${task.company_name}`);
+      }
+
+      // === GOLDEN RULE CHECK ===
+      // Check if ANY existing row has company_valid = false
+      const hasInvalidCompany = task.existing_rows.some(row => row.company_valid === false);
+      if (hasInvalidCompany) {
+        const invalidRow = task.existing_rows.find(row => row.company_valid === false);
+        const reason = invalidRow?.company_invalid_reason ?? "Company validation failed";
+
+        if (this.config.verbose) {
+          console.log(`[MissingSlotAgent] STOPPED: company_valid=false for ${task.company_name}`);
+          console.log(`[MissingSlotAgent] Reason: ${reason}`);
+        }
+
+        // Mark all rows as skipped for email
+        for (const row of task.existing_rows) {
+          row.markEmailSkipped(`MissingSlotAgent: ${reason}`);
+        }
+
+        return this.createResult(task, true, {
+          skipped: true,
+          skip_reason: `Company validation failed: ${reason}`,
+          company_valid: false,
+          reason_invalid: reason,
+          email_generation_disabled: true,
+        });
       }
 
       // Check company state
