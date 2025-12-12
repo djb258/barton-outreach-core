@@ -10,11 +10,26 @@
 
 ---
 
-## 🏛️ CORE ARCHITECTURE PRINCIPLE: HUB-AND-SPOKE
+## 🏛️ CORE ARCHITECTURE PRINCIPLE: BICYCLE WHEEL DOCTRINE
 
 **THE COMPANY HUB IS THE MASTER NODE.**
 
 Everything in this system is gravity-bound to the Company Hub. There is NO valid pipeline that does not first anchor to a company record.
+
+### The Bicycle Wheel Mental Model
+
+We diagram AND program using a **bicycle-wheel hub-and-spoke model** — extended fractally:
+
+- **Hub (Axle)** = The central entity that everything anchors to (Company, Person, Order)
+- **Spokes** = Major domains/functions connected to the hub (People Node, DOL Node)
+- **Sub-wheels** = Smaller bicycle wheels at spoke endpoints (Email Verification is a sub-wheel of People Node)
+- **Failure Spokes** = Small secondary spokes for error states (failed_company_match, invalid_email)
+
+> **"Think in wheels. Code in wheels. Diagram in wheels."**
+>
+> This is not just a visual metaphor — it is our **programming paradigm** and **architectural standard**.
+
+**Full Doctrine**: `repo-data-diagrams/BICYCLE_WHEEL_DOCTRINE.md`
 
 ```
                               SPOKE NODES (Satellites)
