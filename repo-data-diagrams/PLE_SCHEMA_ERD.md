@@ -1,489 +1,834 @@
-# PLE Schema ERD - Marketing Database
+# PLE Schema ERD - Bicycle Wheel Architecture
 
-## Entity Relationship Diagram
+> **"Think in wheels. Code in wheels. Diagram in wheels."**
+> — Bicycle Wheel Doctrine
+
+---
+
+## The Master Wheel: Company Hub
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                 │
+│                                    PLE DATABASE - BICYCLE WHEEL ERD                                             │
+│                                    "Everything anchors to the Company Hub"                                      │
+│                                                                                                                 │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+                                              DOL NODE (SPOKE)
+                                         ╔═══════════════════════╗
+                                         ║      form_5500        ║
+                                         ║      dol_violations   ║
+                                         ╚═══════════╤═══════════╝
+                                                     │
+                                                     │ EIN match
+                                                     │
+            BLOG NODE (SPOKE)                        │                        TALENT FLOW (SPOKE)
+           ╔═══════════════════╗                     │                       ╔═══════════════════╗
+           ║  company_events   ║                     │                       ║ person_movement   ║
+           ║  [funding, IPO,   ║                     │                       ║ _history          ║
+           ║   layoffs, etc]   ║                     │                       ║                   ║
+           ╚═════════╤═════════╝                     │                       ╚═════════╤═════════╝
+                     │                               │                                 │
+                     │ company_unique_id             │                                 │ company_from/to_id
+                     │                               │                                 │
+                     ╲                               │                               ╱
+                       ╲                             │                             ╱
+                         ╲                           │                           ╱
+                           ╲                         │                         ╱
+                             ╲                       │                       ╱
+                               ╲                     │                     ╱
+        ╔════════════════════════════════════════════════════════════════════════════════════════════╗
+        ║                                                                                            ║
+        ║                              ╔══════════════════════════════════════╗                      ║
+        ║                              ║                                      ║                      ║
+        ║                              ║         COMPANY HUB                  ║                      ║
+        ║                              ║         (CENTRAL AXLE)               ║                      ║
+        ║                              ║                                      ║                      ║
+        ║                              ║   ┌──────────────────────────────┐   ║                      ║
+        ║                              ║   │         BIT ENGINE           │   ║                      ║
+        ║                              ║   │      (Core Metric)           │   ║                      ║
+        ║                              ║   │                              │   ║                      ║
+        ║                              ║   │   All signals converge here  │   ║                      ║
+        ║                              ║   │   Score: 0-100               │   ║                      ║
+        ║                              ║   └──────────────────────────────┘   ║                      ║
+        ║                              ║                                      ║                      ║
+        ║                              ║   company_master                     ║                      ║
+        ║                              ║   ├── company_unique_id (PK)         ║                      ║
+        ║                              ║   ├── company_name                   ║                      ║
+        ║                              ║   ├── domain ←───────────────────────╫── REQUIRED          ║
+        ║                              ║   ├── email_pattern ←────────────────╫── REQUIRED          ║
+        ║                              ║   ├── ein                            ║                      ║
+        ║                              ║   └── slots[] ────────────┐          ║                      ║
+        ║                              ║                           │          ║                      ║
+        ║                              ╚══════════════════════════════════════╝                      ║
+        ║                                              │                                             ║
+        ║                                              │                                             ║
+        ╚══════════════════════════════════════════════╪═════════════════════════════════════════════╝
+                               ╱                       │                       ╲
+                             ╱                         │                         ╲
+                           ╱                           │                           ╲
+                         ╱                             │                             ╲
+                       ╱                               │                               ╲
+                     ╱                                 │                                 ╲
+                   ╱                                   │                                   ╲
+                 ╱                                     │                                     ╲
+               ╱                                       │                                       ╲
+  ╔═══════════════════════════╗         ╔══════════════════════════════╗         ╔═══════════════════════════╗
+  ║     SLOTS SUB-WHEEL       ║         ║      PEOPLE NODE             ║         ║    OUTREACH NODE          ║
+  ║                           ║         ║      (SPOKE)                 ║         ║    [PLANNED]              ║
+  ║     company_slot          ║◄────────║                              ║         ║                           ║
+  ║     ├── slot_type         ║         ║      people_master           ║────────►║  Campaigns, Sequences     ║
+  ║     │   (CEO/CFO/HR)      ║         ║      ├── unique_id (PK)      ║         ║  Engagement tracking      ║
+  ║     ├── is_filled         ║◄───────►║      ├── full_name           ║         ║                           ║
+  ║     └── person_unique_id  ║         ║      ├── email (verified)    ║         ╚═══════════════════════════╝
+  ║                           ║         ║      ├── title               ║
+  ╚═══════════════════════════╝         ║      ├── seniority           ║
+                                        ║      └── linkedin_url        ║
+                                        ║                              ║
+                                        ║      person_scores           ║
+                                        ║      ├── bit_score           ║
+                                        ║      └── confidence_score    ║
+                                        ║                              ║
+                                        ╚══════════════╤═══════════════╝
+                                                       │
+                                                       │
+                                        ┌──────────────┴──────────────┐
+                                        │                             │
+                                        │    EMAIL VERIFICATION       │
+                                        │       (SUB-WHEEL)           │
+                                        │                             │
+                                        │  ┌───────────────────────┐  │
+                                        │  │   MILLIONVERIFIER     │  │
+                                        │  │      (Hub/Axle)       │  │
+                                        │  └───────────────────────┘  │
+                                        │           │                 │
+                                        │     ┌─────┴─────┐           │
+                                        │     │           │           │
+                                        │  pattern    bulk            │
+                                        │  _guesser   _verifier       │
+                                        │  (FREE)     ($37/10K)       │
+                                        │                             │
+                                        └─────────────────────────────┘
+```
+
+---
+
+## Failure Spokes (Broken Spokes Need Repair)
+
+Every wheel has failure spokes - these are NOT exceptions, they are first-class citizens:
+
+```
+                                    ┌─────────────────────────────────────────────────────────────────┐
+                                    │                     FAILURE SPOKES                              │
+                                    │               (Attached to Every Hub & Sub-Hub)                 │
+                                    └─────────────────────────────────────────────────────────────────┘
+
+
+                                                    COMPANY HUB
+                                                         │
+                         ┌───────────────────────────────┼───────────────────────────────┐
+                         │                               │                               │
+                         ▼                               ▼                               ▼
+              ┌─────────────────────┐        ┌─────────────────────┐        ┌─────────────────────┐
+              │ domain_missing      │        │ pattern_missing     │        │ identity_conflict   │
+              │ [Failure Spoke]     │        │ [Failure Spoke]     │        │ [Failure Spoke]     │
+              │                     │        │                     │        │                     │
+              │ Route to: Tier 0    │        │ Route to: Pattern   │        │ Route to: Manual    │
+              │ Enrichment          │        │ Discovery Pipeline  │        │ Review Queue        │
+              └─────────────────────┘        └─────────────────────┘        └─────────────────────┘
+
+
+
+                                                    PEOPLE NODE
+                                                         │
+             ┌───────────────┬───────────────┬───────────┼───────────────┬───────────────┐
+             │               │               │           │               │               │
+             ▼               ▼               ▼           ▼               ▼               ▼
+    ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
+    │failed_      │ │failed_slot_ │ │failed_low_  │ │failed_no_   │ │failed_email_│
+    │company_     │ │assignment   │ │confidence   │ │pattern      │ │verification │
+    │match        │ │             │ │             │ │             │ │             │
+    │             │ │             │ │             │ │             │ │             │
+    │ <80% fuzzy  │ │ Lost to     │ │ 70-79%      │ │ No domain/  │ │ MV returned │
+    │ score       │ │ seniority   │ │ fuzzy       │ │ pattern     │ │ invalid     │
+    └──────┬──────┘ └──────┬──────┘ └──────┬──────┘ └──────┬──────┘ └──────┬──────┘
+           │               │               │               │               │
+           ▼               ▼               ▼               ▼               ▼
+    ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
+    │Resolution:  │ │Resolution:  │ │Resolution:  │ │Resolution:  │ │Resolution:  │
+    │• Confirm    │ │• Manual     │ │• Confirm    │ │• Add pattern│ │• Try alt    │
+    │• Reject     │ │  override   │ │• Reject     │ │• Manual     │ │  patterns   │
+    │• Remap      │ │• Wait       │ │• Remap      │ │  email      │ │• Manual     │
+    └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘
+```
+
+---
+
+## Wheel-by-Wheel Table Definitions
+
+### COMPANY HUB (Central Axle)
+
+The master wheel. Everything anchors here.
+
+```
+╔══════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                     COMPANY_MASTER                                           ║
+║                                     (The Axle)                                               ║
+╠══════════════════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                              ║
+║  PRIMARY KEY: company_unique_id (Barton ID: 04.04.01.XX.XXXXX.XXX)                          ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ ANCHOR FIELDS (Required for spokes to function)                                      │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ company_unique_id    │ text      │ PK    │ 04.04.01.XX.XXXXX.XXX                    │    ║
+║  │ company_name         │ text      │       │ Normalized company name                   │    ║
+║  │ domain               │ varchar   │ REQ   │ Validated domain (e.g., company.com)     │    ║
+║  │ email_pattern        │ varchar   │ REQ   │ Pattern: {f}{last}@, first.last@, etc.   │    ║
+║  │ ein                  │ varchar   │       │ Employer ID Number (9 digits)            │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ CORE METRIC (BIT lives inside the hub)                                               │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ data_quality_score   │ numeric   │       │ Overall data quality 0-100               │    ║
+║  │ email_pattern_conf   │ int       │       │ Pattern confidence 0-100                 │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ IDENTITY FIELDS                                                                      │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ website_url          │ text      │       │ Primary website                          │    ║
+║  │ industry             │ text      │       │ Industry classification                  │    ║
+║  │ employee_count       │ int       │ >=50  │ Must be 50+ employees                    │    ║
+║  │ address_street       │ text      │       │ Street address                           │    ║
+║  │ address_city         │ text      │       │ City (guardrail for fuzzy matching)      │    ║
+║  │ address_state        │ text      │ ENUM  │ PA, VA, MD, OH, WV, KY only             │    ║
+║  │ address_zip          │ text      │       │ ZIP code                                 │    ║
+║  │ founded_year         │ int       │ 1700+ │ Year founded                             │    ║
+║  │ sic_codes            │ text      │       │ SIC industry codes                       │    ║
+║  │ duns                 │ varchar   │       │ Dun & Bradstreet Number                  │    ║
+║  │ cage_code            │ varchar   │       │ Government Entity Code                   │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ SOCIAL LINKS                                                                         │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ linkedin_url         │ text      │       │ Company LinkedIn page                    │    ║
+║  │ facebook_url         │ text      │       │ Company Facebook page                    │    ║
+║  │ twitter_url          │ text      │       │ Company Twitter/X page                   │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ AUDIT FIELDS                                                                         │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ source_system        │ text      │       │ Where data came from                     │    ║
+║  │ created_at           │ timestamp │       │ Record creation                          │    ║
+║  │ updated_at           │ timestamp │       │ Last modification                        │    ║
+║  │ validated_at         │ timestamp │       │ When validated                           │    ║
+║  │ validated_by         │ text      │       │ Who validated                            │    ║
+║  │ email_pattern_source │ varchar   │       │ hunter, manual, enrichment               │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════╝
+```
+
+### SLOTS SUB-WHEEL (Attached to Company Hub)
+
+```
+╔══════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                     COMPANY_SLOT                                             ║
+║                                     (Sub-Wheel of Company Hub)                               ║
+╠══════════════════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                              ║
+║  PRIMARY KEY: company_slot_unique_id (Barton ID: 04.04.05.XX.XXXXX.XXX)                     ║
+║  FOREIGN KEY: company_unique_id → company_master                                            ║
+║  FOREIGN KEY: person_unique_id → people_master (nullable)                                   ║
+║                                                                                              ║
+║  UNIQUE CONSTRAINT: (company_unique_id, slot_type) - One slot per role per company         ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ SLOT IDENTITY                                                                        │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ company_slot_unique_id │ text     │ PK    │ 04.04.05.XX.XXXXX.XXX                   │    ║
+║  │ company_unique_id      │ text     │ FK    │ Links to company_master                 │    ║
+║  │ slot_type              │ text     │ ENUM  │ CEO, CFO, HR (expandable)              │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ SLOT STATE                                                                           │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ person_unique_id       │ text     │ FK    │ Who fills this slot (nullable)          │    ║
+║  │ is_filled              │ bool     │ def F │ Is someone in this slot?                │    ║
+║  │ status                 │ varchar  │ def O │ open, filled, vacated                   │    ║
+║  │ confidence_score       │ numeric  │       │ How confident are we in assignment?     │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ CONTACT INFO (Role-level)                                                            │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ phone                  │ varchar  │       │ Role phone number                        │    ║
+║  │ phone_extension        │ varchar  │       │ Phone extension                          │    ║
+║  │ phone_verified_at      │ timestamp│       │ When phone was verified                  │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ ENRICHMENT TRACKING                                                                  │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ enrichment_attempts    │ int      │ def 0 │ How many times we tried to fill         │    ║
+║  │ last_refreshed_at      │ timestamp│       │ Last enrichment attempt                  │    ║
+║  │ filled_at              │ timestamp│       │ When slot was filled                     │    ║
+║  │ vacated_at             │ timestamp│       │ When person left slot                    │    ║
+║  │ filled_by              │ text     │       │ System/user that filled slot             │    ║
+║  │ source_system          │ text     │ def M │ manual, enrichment, import               │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════╝
+```
+
+### PEOPLE NODE (Spoke)
+
+```
+╔══════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                     PEOPLE_MASTER                                            ║
+║                                     (Spoke Node)                                             ║
+╠══════════════════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                              ║
+║  PRIMARY KEY: unique_id (Barton ID: 04.04.02.XX.XXXXX.XXX)                                  ║
+║  FOREIGN KEY: company_unique_id → company_master                                            ║
+║  FOREIGN KEY: company_slot_unique_id → company_slot                                         ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ PERSON IDENTITY                                                                      │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ unique_id              │ text     │ PK    │ 04.04.02.XX.XXXXX.XXX                   │    ║
+║  │ company_unique_id      │ text     │ FK    │ Links to company_master                 │    ║
+║  │ company_slot_unique_id │ text     │ FK    │ Links to company_slot                   │    ║
+║  │ first_name             │ text     │       │ First name                              │    ║
+║  │ last_name              │ text     │       │ Last name                               │    ║
+║  │ full_name              │ text     │       │ Full display name                       │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ PROFESSIONAL INFO                                                                    │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ title                  │ text     │       │ Job title                               │    ║
+║  │ seniority              │ text     │       │ CHRO > VP > Director > Manager > etc.  │    ║
+║  │ department             │ text     │       │ Department (HR, Finance, etc.)          │    ║
+║  │ bio                    │ text     │       │ Professional bio                        │    ║
+║  │ skills                 │ text[]   │       │ Array of skills                         │    ║
+║  │ education              │ text     │       │ Education background                    │    ║
+║  │ certifications         │ text[]   │       │ Array of certifications                 │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ CONTACT INFO (Verified)                                                              │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ email                  │ text     │ REQ*  │ Verified email address                  │    ║
+║  │ email_verified         │ bool     │ def F │ Has email been verified?                │    ║
+║  │ email_verified_at      │ timestamp│       │ When verified                           │    ║
+║  │ email_verification_src │ text     │       │ millionverifier, manual, etc.           │    ║
+║  │ work_phone_e164        │ text     │       │ Work phone (E.164 format)               │    ║
+║  │ personal_phone_e164    │ text     │       │ Personal phone (E.164 format)           │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ SOCIAL LINKS                                                                         │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ linkedin_url           │ text     │ REQ*  │ LinkedIn profile URL                    │    ║
+║  │ twitter_url            │ text     │       │ Twitter/X profile                       │    ║
+║  │ facebook_url           │ text     │       │ Facebook profile                        │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+║  * At least one of email OR linkedin_url is required (chk_contact_required)                 ║
+║                                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════╝
+```
+
+### PERSON SCORES (Sub-Spoke of People Node)
+
+```
+╔══════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                     PERSON_SCORES                                            ║
+║                                     (Sub-Spoke - One per Person)                             ║
+╠══════════════════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                              ║
+║  PRIMARY KEY: id (auto-increment)                                                           ║
+║  FOREIGN KEY: person_unique_id → people_master (UNIQUE - one score per person)             ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ SCORING                                                                              │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ person_unique_id       │ text     │ FK    │ Links to people_master                  │    ║
+║  │ bit_score              │ int      │ 0-100 │ Buyer Intent Tool score                 │    ║
+║  │ confidence_score       │ int      │ 0-100 │ Data confidence score                   │    ║
+║  │ score_factors          │ jsonb    │       │ Breakdown of scoring factors            │    ║
+║  │ calculated_at          │ timestamp│       │ When score was calculated               │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════╝
+```
+
+### DOL NODE (Spoke)
+
+```
+╔══════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                     FORM_5500                                                ║
+║                                     (DOL Spoke - 5500 Filings)                               ║
+╠══════════════════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                              ║
+║  PRIMARY KEY: id (auto-increment)                                                           ║
+║  FOREIGN KEY: company_unique_id → company_master (optional - matched via EIN)              ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ FILING IDENTITY                                                                      │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ ack_id                 │ varchar  │       │ DOL acknowledgment ID                   │    ║
+║  │ ein                    │ varchar  │ 9 dig │ Employer ID Number                      │    ║
+║  │ plan_number            │ varchar  │ 3 dig │ Plan number                             │    ║
+║  │ plan_name              │ varchar  │ 140ch │ Plan name                               │    ║
+║  │ sponsor_name           │ varchar  │ 70ch  │ Plan sponsor name                       │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ PLAN DATA                                                                            │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ participant_count      │ int      │       │ Number of participants                  │    ║
+║  │ total_assets           │ numeric  │ 15,2  │ Total plan assets                       │    ║
+║  │ filing_year            │ int      │       │ Year of filing                          │    ║
+║  │ plan_codes             │ varchar  │ 59ch  │ Plan type codes                         │    ║
+║  │ date_received          │ date     │       │ DOL receipt date                        │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ LOCATION                                                                             │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ address                │ varchar  │ 35ch  │ Street address                          │    ║
+║  │ city                   │ varchar  │ 22ch  │ City                                    │    ║
+║  │ state                  │ varchar  │ 2ch   │ State code                              │    ║
+║  │ zip                    │ varchar  │ 12ch  │ ZIP code                                │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════╝
+
+╔══════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                     DOL_VIOLATIONS                                           ║
+║                                     (DOL Spoke - Violations)                                 ║
+╠══════════════════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                              ║
+║  PRIMARY KEY: id (auto-increment)                                                           ║
+║  FOREIGN KEY: company_unique_id → company_master (optional)                                 ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ VIOLATION DATA                                                                       │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ ein                    │ varchar  │ 9 dig │ Employer ID Number                      │    ║
+║  │ violation_type         │ varchar  │ 100ch │ Type of violation                       │    ║
+║  │ violation_date         │ date     │       │ When violation occurred                 │    ║
+║  │ resolution_date        │ date     │       │ When resolved (nullable)                │    ║
+║  │ penalty_amount         │ numeric  │ 12,2  │ Penalty amount                          │    ║
+║  │ description            │ text     │       │ Violation description                   │    ║
+║  │ source_url             │ varchar  │ 500ch │ Source documentation                    │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════╝
+```
+
+### TALENT FLOW NODE (Spoke)
+
+```
+╔══════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                     PERSON_MOVEMENT_HISTORY                                  ║
+║                                     (Talent Flow Spoke)                                      ║
+╠══════════════════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                              ║
+║  PRIMARY KEY: id (auto-increment)                                                           ║
+║  FOREIGN KEY: person_unique_id → people_master                                              ║
+║  FOREIGN KEY: company_from_id → company_master                                              ║
+║  FOREIGN KEY: company_to_id → company_master (optional - could be unknown company)         ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ MOVEMENT DATA                                                                        │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ person_unique_id       │ text     │ FK    │ Who moved                               │    ║
+║  │ linkedin_url           │ text     │       │ LinkedIn URL for tracking               │    ║
+║  │ company_from_id        │ text     │ FK    │ Origin company                          │    ║
+║  │ company_to_id          │ text     │ FK    │ Destination company (nullable)          │    ║
+║  │ title_from             │ text     │       │ Previous title                          │    ║
+║  │ title_to               │ text     │       │ New title (nullable)                    │    ║
+║  │ movement_type          │ text     │ ENUM  │ company_change, title_change, lost      │    ║
+║  │ detected_at            │ timestamp│       │ When movement was detected              │    ║
+║  │ raw_payload            │ jsonb    │       │ Raw detection data                      │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════╝
+```
+
+### BLOG NODE (Spoke)
+
+```
+╔══════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                     COMPANY_EVENTS                                           ║
+║                                     (Blog/News Spoke)                                        ║
+╠══════════════════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                              ║
+║  PRIMARY KEY: id (auto-increment)                                                           ║
+║  FOREIGN KEY: company_unique_id → company_master                                            ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ EVENT DATA                                                                           │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ company_unique_id      │ text     │ FK    │ Which company                           │    ║
+║  │ event_type             │ text     │ ENUM  │ funding, acquisition, ipo, layoff,      │    ║
+║  │                        │          │       │ leadership_change, product_launch,       │    ║
+║  │                        │          │       │ office_opening, other                    │    ║
+║  │ event_date             │ date     │       │ When event occurred                      │    ║
+║  │ source_url             │ text     │       │ Source article/announcement             │    ║
+║  │ summary                │ text     │       │ Event summary                           │    ║
+║  │ detected_at            │ timestamp│       │ When we detected it                     │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ BIT IMPACT (Feeds back to hub)                                                       │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ impacts_bit            │ bool     │ def T │ Does this event affect BIT score?       │    ║
+║  │ bit_impact_score       │ int      │ -100  │ How much does it change BIT?            │    ║
+║  │                        │          │ to100 │ Positive = opportunity, Negative = risk │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════╝
+```
+
+---
+
+## Failure Spoke Tables (Broken Spokes)
+
+### FAILED_COMPANY_MATCH (Fuzzy Match Failure)
+
+```
+╔══════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                     FAILED_COMPANY_MATCH                                     ║
+║                                     (Failure Spoke - Phase 2)                                ║
+╠══════════════════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                              ║
+║  TRIGGER: Fuzzy match score < 80%                                                           ║
+║  RESOLUTION OPTIONS: Confirm match, Reject, Remap to different company                      ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ PERSON DATA (from input)                                                             │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ person_id              │ varchar  │       │ Input person ID                         │    ║
+║  │ full_name              │ varchar  │       │ Person's name                           │    ║
+║  │ job_title              │ varchar  │       │ Job title                               │    ║
+║  │ title_seniority        │ varchar  │       │ Seniority level                         │    ║
+║  │ company_name_raw       │ varchar  │       │ Raw company name from input             │    ║
+║  │ linkedin_url           │ varchar  │       │ LinkedIn URL                            │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ MATCH ATTEMPT                                                                        │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ best_match_company     │ varchar  │       │ Closest fuzzy match found               │    ║
+║  │ best_match_score       │ decimal  │ 0-100 │ Fuzzy match score                       │    ║
+║  │ best_match_notes       │ text     │       │ Why match failed                        │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ RESOLUTION                                                                           │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ resolution_status      │ varchar  │       │ pending, resolved                       │    ║
+║  │ resolution             │ varchar  │       │ confirmed, rejected, remapped           │    ║
+║  │ resolution_notes       │ text     │       │ Resolution notes                        │    ║
+║  │ resolved_by            │ varchar  │       │ Who resolved                            │    ║
+║  │ resolved_at            │ timestamp│       │ When resolved                           │    ║
+║  │ resolved_company_id    │ varchar  │ FK    │ Final company assignment                │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════╝
+```
+
+### FAILED_SLOT_ASSIGNMENT (Seniority Competition Loss)
+
+```
+╔══════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                     FAILED_SLOT_ASSIGNMENT                                   ║
+║                                     (Failure Spoke - Phase 3)                                ║
+╠══════════════════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                              ║
+║  TRIGGER: Lost slot to higher seniority person                                              ║
+║  RESOLUTION OPTIONS: Manual override, Wait for vacancy                                      ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ LOSER DATA                                                                           │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ person_id              │ varchar  │       │ Person who lost                         │    ║
+║  │ full_name              │ varchar  │       │ Their name                              │    ║
+║  │ job_title              │ varchar  │       │ Their title                             │    ║
+║  │ title_seniority        │ varchar  │       │ Their seniority level                   │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ COMPETITION RESULT                                                                   │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ matched_company_id     │ varchar  │ FK    │ Company they matched to                 │    ║
+║  │ matched_company_name   │ varchar  │       │ Company name                            │    ║
+║  │ fuzzy_score            │ decimal  │       │ Their match score                       │    ║
+║  │ slot_type              │ varchar  │       │ Which slot (hr, cfo, etc.)              │    ║
+║  │ lost_to_person_id      │ varchar  │       │ Winner's ID                             │    ║
+║  │ lost_to_person_name    │ varchar  │       │ Winner's name                           │    ║
+║  │ lost_to_seniority      │ varchar  │       │ Winner's seniority                      │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════╝
+```
+
+### FAILED_LOW_CONFIDENCE (70-79% Match)
+
+```
+╔══════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                     FAILED_LOW_CONFIDENCE                                    ║
+║                                     (Failure Spoke - Phase 3)                                ║
+╠══════════════════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                              ║
+║  TRIGGER: Fuzzy match score 70-79% (below auto-accept, above reject)                       ║
+║  RESOLUTION OPTIONS: Confirm match, Reject, Remap                                          ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ MATCH DATA                                                                           │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ matched_company_id     │ varchar  │ FK    │ Tentative company match                 │    ║
+║  │ matched_company_name   │ varchar  │       │ Company name                            │    ║
+║  │ fuzzy_score            │ decimal  │ 70-79 │ Match score                             │    ║
+║  │ match_notes            │ text     │       │ Why it's uncertain                      │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ RESOLUTION                                                                           │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ resolution_status      │ varchar  │       │ pending, resolved                       │    ║
+║  │ resolution             │ varchar  │       │ confirmed, rejected, remapped           │    ║
+║  │ confirmed_company_id   │ varchar  │ FK    │ Final confirmed company                 │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════╝
+```
+
+### FAILED_NO_PATTERN (Missing Email Pattern)
+
+```
+╔══════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                     FAILED_NO_PATTERN                                        ║
+║                                     (Failure Spoke - Phase 4)                                ║
+╠══════════════════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                              ║
+║  TRIGGER: Company has no domain or email_pattern                                            ║
+║  RESOLUTION OPTIONS: Add pattern manually, Provide manual email, Skip                       ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ COMPANY DATA                                                                         │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ company_id             │ varchar  │ FK    │ Company that lacks pattern              │    ║
+║  │ company_name           │ varchar  │       │ Company name                            │    ║
+║  │ company_domain         │ varchar  │       │ Domain (may be null)                    │    ║
+║  │ failure_reason         │ varchar  │       │ no_domain, pattern_lookup_failed        │    ║
+║  │ failure_notes          │ text     │       │ Details                                 │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ RESOLUTION                                                                           │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ resolution_status      │ varchar  │       │ pending, resolved                       │    ║
+║  │ resolution             │ varchar  │       │ pattern_added, manual_email, skipped    │    ║
+║  │ manual_email           │ varchar  │       │ If manually provided                    │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════╝
+```
+
+### FAILED_EMAIL_VERIFICATION (Invalid Email)
+
+```
+╔══════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                     FAILED_EMAIL_VERIFICATION                                ║
+║                                     (Failure Spoke - Phase 5)                                ║
+╠══════════════════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                              ║
+║  TRIGGER: MillionVerifier returned invalid                                                  ║
+║  RESOLUTION OPTIONS: Try alternate patterns, Manual verification, Skip                      ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ VERIFICATION DATA                                                                    │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ company_id             │ varchar  │ FK    │ Company                                 │    ║
+║  │ company_domain         │ varchar  │       │ Domain used                             │    ║
+║  │ email_pattern          │ varchar  │       │ Pattern used                            │    ║
+║  │ generated_email        │ varchar  │       │ Email that failed                       │    ║
+║  │ verification_error     │ varchar  │       │ invalid, catch_all, timeout, etc.       │    ║
+║  │ verification_notes     │ text     │       │ Details from MillionVerifier            │    ║
+║  │ email_variants         │ text     │       │ JSON: all variants tried                │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────────────────┐    ║
+║  │ RESOLUTION                                                                           │    ║
+║  ├─────────────────────────────────────────────────────────────────────────────────────┤    ║
+║  │ resolution_status      │ varchar  │       │ pending, resolved                       │    ║
+║  │ resolution             │ varchar  │       │ alt_email_found, manual_verified, skip  │    ║
+║  │ verified_email         │ varchar  │       │ If alternate found                      │    ║
+║  └─────────────────────────────────────────────────────────────────────────────────────┘    ║
+║                                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════╝
+```
+
+---
+
+## Wheel Rotation = Pipeline Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                 │
+│                                    WHEEL ROTATION = DATA FLOW                                                   │
+│                               (Process spins clockwise through the system)                                      │
+│                                                                                                                 │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+        ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+        │                                                                                                  │
+        │   1. INTAKE                      CSV Input (720 people)                                         │
+        │      │                                                                                           │
+        │      ▼                                                                                           │
+        │   2. COMPANY HUB GATE            Is company in hub?                                             │
+        │      │                           ├── YES → Use company_id                                       │
+        │      │                           └── NO → Fuzzy match attempt                                   │
+        │      │                                    │                                                      │
+        │      │                                    ├── >=80% → Auto-match                                │
+        │      │                                    ├── 70-79% → failed_low_confidence                    │
+        │      │                                    └── <70% → failed_company_match                       │
+        │      ▼                                                                                           │
+        │   3. SLOT SPOKE                  Seniority competition                                          │
+        │      │                           ├── WIN → Get slot                                             │
+        │      │                           └── LOSE → failed_slot_assignment                              │
+        │      ▼                                                                                           │
+        │   4. EMAIL SUB-WHEEL             Pattern lookup                                                 │
+        │      │                           ├── Has pattern → Generate email                               │
+        │      │                           └── No pattern → failed_no_pattern                             │
+        │      ▼                                                                                           │
+        │   5. VERIFICATION SUB-WHEEL      MillionVerifier check                                          │
+        │      │                           ├── Valid → PROCEED                                            │
+        │      │                           └── Invalid → failed_email_verification                        │
+        │      ▼                                                                                           │
+        │   6. EXPORT TO HUB               Write to people_master + company_slot                          │
+        │      │                           │                                                              │
+        │      ▼                           ▼                                                              │
+        │   7. BIT CALCULATION             Signals feed back to company BIT score                         │
+        │                                                                                                  │
+        └──────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Mermaid ERD (Traditional View)
 
 ```mermaid
 erDiagram
+    %% COMPANY HUB (Central Axle)
     company_master ||--o{ company_slot : "has slots"
     company_master ||--o{ people_master : "employs"
     company_master ||--o{ company_events : "has events"
-    company_master ||--o{ person_movement_history : "source/destination"
+    company_master ||--o{ person_movement_history : "movement source/dest"
     company_master ||--o{ form_5500 : "has 5500 filings"
     company_master ||--o{ dol_violations : "has violations"
 
-    company_slot }o--|| people_master : "filled by"
-    company_slot ||--|| company_master : "belongs to"
+    %% SLOTS SUB-WHEEL
+    company_slot }o--o| people_master : "filled by"
 
-    people_master ||--|| company_slot : "fills slot"
-    people_master ||--|| company_master : "works at"
-    people_master ||--o{ person_movement_history : "has movements"
+    %% PEOPLE NODE
     people_master ||--o| person_scores : "has score"
+    people_master ||--o{ person_movement_history : "has movements"
 
-    person_movement_history }o--|| people_master : "tracks person"
-    person_movement_history }o--|| company_master : "from company"
-    person_movement_history }o--o| company_master : "to company"
-
-    person_scores }o--|| people_master : "scores person"
-
-    company_events }o--|| company_master : "event for"
-
-    form_5500 }o--o| company_master : "5500 for company"
-
-    dol_violations }o--o| company_master : "violation for company"
-
-    failed_company_match ||--o| company_master : "best match"
-    failed_slot_assignment ||--|| company_master : "matched to"
-    failed_low_confidence ||--o| company_master : "low conf match"
-    failed_no_pattern ||--|| company_master : "has no pattern"
-    failed_email_verification ||--|| company_master : "email failed"
+    %% FAILURE SPOKES
+    failed_company_match }o--o| company_master : "resolved to"
+    failed_slot_assignment }o--|| company_master : "matched to"
+    failed_low_confidence }o--o| company_master : "confirmed to"
+    failed_no_pattern }o--|| company_master : "belongs to"
+    failed_email_verification }o--|| company_master : "belongs to"
 
     company_master {
-        text company_unique_id PK "04.04.01.XX.XXXXX.XXX"
+        text company_unique_id PK
         text company_name
-        text website_url
-        text industry
-        int employee_count "min 50"
-        text company_phone
-        text address_street
-        text address_city
-        text address_state "PA,VA,MD,OH,WV,KY"
-        text address_zip
-        text address_country
-        text linkedin_url
-        text facebook_url
-        text twitter_url
-        text sic_codes
-        int founded_year "1700-current"
-        text_array keywords
-        text description
-        text source_system
-        text source_record_id
-        timestamptz promoted_from_intake_at
-        int promotion_audit_log_id
-        timestamptz created_at
-        timestamptz updated_at
-        text state_abbrev
-        text import_batch_id
-        timestamptz validated_at
-        text validated_by
+        varchar domain
+        varchar email_pattern
+        varchar ein
         numeric data_quality_score
-        varchar ein "Employer ID Number"
-        varchar duns "Dun Bradstreet Number"
-        varchar cage_code "Govt Entity Code"
-        varchar email_pattern "Pattern: {f}{last}@"
-        int email_pattern_confidence "0-100"
-        varchar email_pattern_source "hunter, manual, enrichment"
-        timestamp email_pattern_verified_at
     }
 
     company_slot {
-        text company_slot_unique_id PK "04.04.05.XX.XXXXX.XXX"
+        text company_slot_unique_id PK
         text company_unique_id FK
-        text person_unique_id FK "nullable"
-        text slot_type "CEO,CFO,HR"
-        bool is_filled "default false"
-        numeric confidence_score
-        timestamptz created_at
-        timestamptz filled_at
-        timestamptz last_refreshed_at
-        text filled_by
-        text source_system "default manual"
-        int enrichment_attempts "default 0"
-        varchar status "default open"
-        timestamp vacated_at
-        varchar phone "Role phone number"
-        varchar phone_extension "Phone extension"
-        timestamp phone_verified_at
+        text person_unique_id FK
+        text slot_type
+        bool is_filled
     }
 
     people_master {
-        text unique_id PK "04.04.02.XX.XXXXX.XXX"
-        text company_unique_id FK "04.04.01.XX.XXXXX.XXX"
-        text company_slot_unique_id FK "04.04.05.XX.XXXXX.XXX"
-        text first_name
-        text last_name
+        text unique_id PK
+        text company_unique_id FK
+        text company_slot_unique_id FK
         text full_name
-        text title
-        text seniority
-        text department
-        text email "validated format"
-        text work_phone_e164
-        text personal_phone_e164
-        text linkedin_url
-        text twitter_url
-        text facebook_url
-        text bio
-        text_array skills
-        text education
-        text_array certifications
-        text source_system
-        text source_record_id
-        timestamptz promoted_from_intake_at
-        int promotion_audit_log_id
-        timestamptz created_at
-        timestamptz updated_at
-        bool email_verified "default false"
-        text message_key_scheduled
-        text email_verification_source
-        timestamptz email_verified_at
-        varchar validation_status
-        timestamp last_verified_at
-        timestamp last_enrichment_attempt
-    }
-
-    person_movement_history {
-        int id PK "auto-increment"
-        text person_unique_id FK
-        text linkedin_url
-        text company_from_id FK
-        text company_to_id FK "nullable"
-        text title_from
-        text title_to "nullable"
-        text movement_type "company_change,title_change,contact_lost"
-        timestamp detected_at
-        jsonb raw_payload
-        timestamp created_at
+        text email
+        bool email_verified
     }
 
     person_scores {
-        int id PK "auto-increment"
-        text person_unique_id FK "unique"
-        int bit_score "0-100"
-        int confidence_score "0-100"
-        timestamp calculated_at
-        jsonb score_factors
-        timestamp created_at
-        timestamp updated_at
-    }
-
-    company_events {
-        int id PK "auto-increment"
-        text company_unique_id FK
-        text event_type "funding,acquisition,ipo,layoff,leadership_change,product_launch,office_opening,other"
-        date event_date
-        text source_url
-        text summary
-        timestamp detected_at
-        bool impacts_bit "default true"
-        int bit_impact_score "-100 to 100"
-        timestamp created_at
-    }
-
-    form_5500 {
-        int id PK "auto-increment"
-        text company_unique_id FK "nullable"
-        varchar ack_id "DOL acknowledgment"
-        varchar ein "Employer ID - 9 digits"
-        varchar plan_number "3 digits"
-        varchar plan_name "140 chars"
-        varchar sponsor_name "70 chars"
-        varchar address "35 chars"
-        varchar city "22 chars"
-        varchar state "2 chars"
-        varchar zip "12 chars"
-        date date_received
-        varchar plan_codes "59 chars"
-        int participant_count
-        numeric total_assets "15,2 precision"
-        int filing_year
-        jsonb raw_payload
-        timestamp created_at
-        timestamp updated_at
-    }
-
-    dol_violations {
-        int id PK "auto-increment"
-        text company_unique_id FK "nullable"
-        varchar ein "9 digits"
-        varchar violation_type "100 chars"
-        date violation_date
-        date resolution_date "nullable"
-        numeric penalty_amount "12,2 precision"
-        text description
-        varchar source_url "500 chars"
-        jsonb raw_payload
-        timestamp detected_at
-    }
-
-    failed_company_match {
-        int id PK "auto-increment"
-        varchar person_id "PE-XX-XXXXXXXX"
-        varchar full_name
-        varchar job_title
-        varchar title_seniority
-        varchar company_name_raw "Raw input company"
-        varchar linkedin_url
-        varchar best_match_company "Closest fuzzy match"
-        decimal best_match_score "0-100"
-        text best_match_notes
-        varchar resolution_status "pending,resolved"
-        varchar resolution "confirmed,rejected,remapped"
-        text resolution_notes
-        varchar resolved_by
-        timestamp resolved_at
-        varchar resolved_company_id FK "If added to hub"
-        varchar source_file
-        timestamp created_at
-    }
-
-    failed_slot_assignment {
-        int id PK "auto-increment"
-        varchar person_id "PE-XX-XXXXXXXX"
-        varchar full_name
-        varchar job_title
-        varchar title_seniority
-        varchar company_name_raw
-        varchar linkedin_url
-        varchar matched_company_id FK
-        varchar matched_company_name
-        decimal fuzzy_score
-        varchar slot_type "hr"
-        varchar lost_to_person_id "Winner's ID"
-        varchar lost_to_person_name
-        varchar lost_to_seniority
-        varchar resolution_status "pending"
-        varchar source_file
-        timestamp created_at
-    }
-
-    failed_low_confidence {
-        int id PK "auto-increment"
-        varchar person_id "PE-XX-XXXXXXXX"
-        varchar full_name
-        varchar job_title
-        varchar title_seniority
-        varchar company_name_raw
-        varchar linkedin_url
-        varchar matched_company_id FK
-        varchar matched_company_name
-        decimal fuzzy_score "70-79%"
-        text match_notes
-        varchar resolution_status "pending"
-        varchar resolution "confirmed,rejected,remapped"
-        varchar confirmed_company_id FK "If confirmed"
-        varchar source_file
-        timestamp created_at
-    }
-
-    failed_no_pattern {
-        int id PK "auto-increment"
-        varchar person_id "PE-XX-XXXXXXXX"
-        varchar full_name
-        varchar job_title
-        varchar title_seniority
-        varchar company_name_raw
-        varchar linkedin_url
-        varchar company_id FK
-        varchar company_name
-        varchar company_domain
-        varchar slot_type "hr"
-        varchar failure_reason "no_domain,pattern_lookup_failed"
-        text failure_notes
-        varchar resolution_status "pending"
-        varchar resolution "pattern_added,manual_email,skipped"
-        varchar manual_email "If manually provided"
-        varchar source_file
-        timestamp created_at
-    }
-
-    failed_email_verification {
-        int id PK "auto-increment"
-        varchar person_id "PE-XX-XXXXXXXX"
-        varchar full_name
-        varchar job_title
-        varchar title_seniority
-        varchar company_name_raw
-        varchar linkedin_url
-        varchar company_id FK
-        varchar company_name
-        varchar company_domain
-        varchar email_pattern
-        varchar slot_type "hr"
-        varchar generated_email "Email that failed"
-        varchar verification_error "invalid,catch_all,etc"
-        text verification_notes
-        text email_variants "JSON: variants tried"
-        varchar resolution_status "pending"
-        varchar resolution "alt_email_found,manual_verified,skipped"
-        varchar verified_email "If alt found"
-        varchar source_file
-        timestamp created_at
+        int id PK
+        text person_unique_id FK
+        int bit_score
+        int confidence_score
     }
 ```
 
-## Relationship Summary
+---
 
-| Source Table | Source Column | Target Table | Target Column | Relationship Type | Constraint Name |
-|--------------|---------------|--------------|---------------|-------------------|-----------------|
-| company_slot | company_unique_id | company_master | company_unique_id | Many-to-One | fk_company |
-| company_slot | person_unique_id | people_master | unique_id | Many-to-One (Optional) | fk_person |
-| people_master | company_unique_id | company_master | company_unique_id | Many-to-One | people_master_company_barton_id_format |
-| people_master | company_slot_unique_id | company_slot | company_slot_unique_id | One-to-One | people_master_slot_barton_id_format |
-| person_movement_history | person_unique_id | people_master | unique_id | Many-to-One | person_movement_history_person_unique_id_fkey |
-| person_movement_history | company_from_id | company_master | company_unique_id | Many-to-One | person_movement_history_company_from_id_fkey |
-| person_movement_history | company_to_id | company_master | company_unique_id | Many-to-One (Optional) | person_movement_history_company_to_id_fkey |
-| person_scores | person_unique_id | people_master | unique_id | One-to-One | person_scores_person_unique_id_fkey |
-| company_events | company_unique_id | company_master | company_unique_id | Many-to-One | company_events_company_unique_id_fkey |
-| form_5500 | company_unique_id | company_master | company_unique_id | Many-to-One (Optional) | form_5500_company_unique_id_fkey |
-| dol_violations | company_unique_id | company_master | company_unique_id | Many-to-One (Optional) | dol_violations_company_unique_id_fkey |
-| failed_company_match | resolved_company_id | company_master | company_unique_id | Many-to-One (Optional) | fk_failed_company_match_resolved |
-| failed_slot_assignment | matched_company_id | company_master | company_unique_id | Many-to-One | fk_failed_slot_assignment_company |
-| failed_low_confidence | matched_company_id | company_master | company_unique_id | Many-to-One (Optional) | fk_failed_low_confidence_matched |
-| failed_low_confidence | confirmed_company_id | company_master | company_unique_id | Many-to-One (Optional) | fk_failed_low_confidence_confirmed |
-| failed_no_pattern | company_id | company_master | company_unique_id | Many-to-One | fk_failed_no_pattern_company |
-| failed_email_verification | company_id | company_master | company_unique_id | Many-to-One | fk_failed_email_verification_company |
+## Constraints Reference
 
-## Constraints Summary
+### Barton ID Formats
 
-### Primary Keys
-
-| Table | Column | Type |
-|-------|--------|------|
-| company_master | company_unique_id | Barton ID (04.04.01.XX.XXXXX.XXX) |
-| company_slot | company_slot_unique_id | Barton ID (04.04.05.XX.XXXXX.XXX) |
-| people_master | unique_id | Barton ID (04.04.02.XX.XXXXX.XXX) |
-| person_movement_history | id | Auto-increment Integer |
-| person_scores | id | Auto-increment Integer |
-| company_events | id | Auto-increment Integer |
-| form_5500 | id | Auto-increment Integer |
-| dol_violations | id | Auto-increment Integer |
-| failed_company_match | id | Auto-increment Integer |
-| failed_slot_assignment | id | Auto-increment Integer |
-| failed_low_confidence | id | Auto-increment Integer |
-| failed_no_pattern | id | Auto-increment Integer |
-| failed_email_verification | id | Auto-increment Integer |
-
-### Unique Constraints
-
-| Table | Columns | Constraint Name | Purpose |
-|-------|---------|-----------------|---------|
-| company_slot | (company_unique_id, slot_type) | unique_company_slot, uq_company_slot_type | Ensures one slot per role per company |
-| person_scores | person_unique_id | person_scores_person_unique_id_key | One score record per person |
+| Entity | Format | Example |
+|--------|--------|---------|
+| Company | `04.04.01.XX.XXXXX.XXX` | 04.04.01.04.30000.001 |
+| Person | `04.04.02.XX.XXXXX.XXX` | 04.04.02.04.20000.001 |
+| Slot | `04.04.05.XX.XXXXX.XXX` | 04.04.05.04.10000.001 |
 
 ### Check Constraints
 
-#### company_master
+| Table | Constraint | Rule |
+|-------|------------|------|
+| company_master | chk_employee_minimum | employee_count >= 50 |
+| company_master | chk_state_valid | state IN (PA, VA, MD, OH, WV, KY) |
+| people_master | chk_contact_required | linkedin_url OR email IS NOT NULL |
+| person_scores | bit_score_check | 0 <= bit_score <= 100 |
+| company_events | bit_impact_check | -100 <= bit_impact_score <= 100 |
 
-| Constraint | Rule | Description |
-|------------|------|-------------|
-| company_master_barton_id_format | `^04\.04\.01\.[0-9]{2}\.[0-9]{5}\.[0-9]{3}$` | Validates Barton ID format |
-| company_master_employee_count_positive | `employee_count >= 0` | Ensures non-negative employee count |
-| company_master_founded_year_reasonable | `1700 <= founded_year <= CURRENT_YEAR` | Validates founding year |
-| chk_employee_minimum | `employee_count >= 50` | Minimum 50 employees required |
-| chk_state_valid | State in (PA, VA, MD, OH, WV, KY) | Restricts to specific states |
+### Unique Constraints
 
-#### people_master
+| Table | Columns | Purpose |
+|-------|---------|---------|
+| company_slot | (company_unique_id, slot_type) | One slot per role per company |
+| person_scores | person_unique_id | One score per person |
 
-| Constraint | Rule | Description |
-|------------|------|-------------|
-| people_master_barton_id_format | `^04\.04\.02\.[0-9]{2}\.[0-9]{5}\.[0-9]{3}$` | Validates person Barton ID |
-| people_master_company_barton_id_format | `^04\.04\.01\.[0-9]{2}\.[0-9]{5}\.[0-9]{3}$` | Validates company reference |
-| people_master_slot_barton_id_format | `^04\.04\.05\.[0-9]{2}\.[0-9]{5}\.[0-9]{3}$` | Validates slot reference |
-| people_master_email_format | Valid email regex | Ensures proper email format |
-| chk_contact_required | `linkedin_url IS NOT NULL OR email IS NOT NULL` | At least one contact method required |
-
-#### company_slot
-
-| Constraint | Rule | Description |
-|------------|------|-------------|
-| company_slot_slot_type_check | Type in (CEO, CFO, HR) | Restricts slot types to exec roles |
-
-#### person_movement_history
-
-| Constraint | Rule | Description |
-|------------|------|-------------|
-| person_movement_history_movement_type_check | Type in (company_change, title_change, contact_lost) | Valid movement types |
-
-#### person_scores
-
-| Constraint | Rule | Description |
-|------------|------|-------------|
-| person_scores_bit_score_check | `0 <= bit_score <= 100` | BIT score range |
-| person_scores_confidence_score_check | `0 <= confidence_score <= 100` | Confidence score range |
-
-#### company_events
-
-| Constraint | Rule | Description |
-|------------|------|-------------|
-| company_events_event_type_check | Type in (funding, acquisition, ipo, layoff, leadership_change, product_launch, office_opening, other) | Valid event types |
-| company_events_bit_impact_score_check | `-100 <= bit_impact_score <= 100` | BIT impact range |
-
-## Data Flow
-
-### Typical Insert Sequence
-
-1. **company_master** - Insert validated company (from intake)
-2. **company_slot** - Auto-create slots (CEO, CFO, HR) for company
-3. **people_master** - Insert person and link to company + slot
-4. **company_slot** - Update with person_unique_id, set is_filled=true
-5. **person_scores** - Calculate and insert BIT/confidence scores
-6. **company_events** - Track significant company events
-7. **person_movement_history** - Track role/company changes
-
-### Enrichment Flow
-
-1. Slot created empty (is_filled=false)
-2. Enrichment agent discovers executive
-3. Person inserted into people_master
-4. Slot updated with person_unique_id
-5. person_scores calculated
-6. company_slot.last_refreshed_at updated
-
-### Pipeline Failure Flow (Stage-Specific Routing)
-
-The pipeline routes failures to stage-specific tables for manual review:
-
-```
-CSV Input (720 people)
-        |
-        v
-[Phase 2: Fuzzy Match to Company Hub]
-        |
-        +---> <80% match --> failed_company_match (manual review)
-        |
-        v
-[Phase 3: Slot Assignment (Seniority Competition)]
-        |
-        +---> Lost to higher seniority --> failed_slot_assignment
-        |
-        +---> 70-79% confidence --> failed_low_confidence (manual review)
-        |
-        v
-[Phase 4: Email Pattern Lookup]
-        |
-        +---> No domain/pattern --> failed_no_pattern
-        |
-        v
-[Phase 5: Email Generation + Verification]
-        |
-        +---> MillionVerifier: invalid --> failed_email_verification
-        |
-        v
-[SUCCESS: Export to Neon]
-        |
-        v
-people_master + company_slot (is_filled=true)
-```
-
-**Failure Table Purposes:**
-
-| Table | Stage | Trigger | Resolution Options |
-|-------|-------|---------|-------------------|
-| failed_company_match | Phase 2 | Fuzzy score <80% | Confirm match, Reject, Remap to different company |
-| failed_slot_assignment | Phase 3 | Higher seniority person won slot | Manual override, Wait for vacancy |
-| failed_low_confidence | Phase 3 | Fuzzy score 70-79% | Confirm match, Reject, Remap |
-| failed_no_pattern | Phase 4 | Company has no domain or email pattern | Add pattern manually, Provide manual email |
-| failed_email_verification | Phase 5 | MillionVerifier returned invalid | Try alternate email, Manual verification |
+---
 
 ## Notes
 
-- All Barton IDs follow format: `04.04.XX.YY.ZZZZZ.NNN`
-  - 04.04 = SubHive.App
-  - XX = Schema (01=company, 02=person, 05=slot)
-  - YY = Layer
-  - ZZZZZ = Sequence
-  - NNN = Counter
-- Timestamps use `timestamptz` for timezone awareness (created_at, updated_at, etc.)
-- Event tracking uses `timestamp without time zone` for detected_at
-- JSONB fields store flexible metadata (raw_payload, score_factors)
-- Arrays store multi-value fields (keywords, skills, certifications)
+- All wheels anchor to the **Company Hub** - the central axle
+- **Failure spokes** are first-class citizens, not exceptions
+- **BIT Engine** lives inside the Company Hub (core metric)
+- Sub-wheels (Slots, Email Verification) are fractal extensions
+- Data flows clockwise through the wheel (pipeline rotation)
+
+---
+
+*Last Updated: December 2024*
+*Architecture: Bicycle Wheel Doctrine v1.0*
