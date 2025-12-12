@@ -2,15 +2,41 @@
 
 > Central reference for all PLE (Perpetual Lead Engine) schema documentation.
 > Auto-generated from Neon PostgreSQL database.
+> **Architecture: Bicycle Wheel Doctrine v1.1**
 
 ## Quick Links
 
 | File | Format | Purpose |
 |------|--------|---------|
-| [PLE_SCHEMA_ERD.md](PLE_SCHEMA_ERD.md) | Mermaid | Visual ERD diagram (core tables) |
-| [DOL_SPOKE_ERD.md](DOL_SPOKE_ERD.md) | Mermaid | **NEW** - DOL Federal Data Spoke ERD |
+| [BICYCLE_WHEEL_DOCTRINE.md](BICYCLE_WHEEL_DOCTRINE.md) | Markdown | Official architecture standard (8 rules) |
+| [imo-architecture.json](imo-architecture.json) | JSON | Machine-readable wheel definition |
+| [MASTER_FAILURE_HUB.md](MASTER_FAILURE_HUB.md) | Markdown | Centralized failure handling |
+| [PLE_SCHEMA_ERD.md](PLE_SCHEMA_ERD.md) | Mermaid | Visual ERD (Bicycle Wheel format) |
+| [DOL_SPOKE_ERD.md](DOL_SPOKE_ERD.md) | Mermaid | DOL Federal Data Spoke ERD |
 | [PLE_SCHEMA_REFERENCE.md](PLE_SCHEMA_REFERENCE.md) | Markdown | Complete column reference |
 | [ple_schema.json](ple_schema.json) | JSON | Machine-readable schema (v2.0.0) |
+
+## Bicycle Wheel Architecture
+
+```
+                              BARTON OUTREACH CORE
+                                 (Master Wheel)
+
+         DOL NODE ──────────────────●────────────────── PEOPLE NODE
+              │                     │                        │
+              │               COMPANY HUB                    │
+              │              (Central Axle)                  │
+              │            ┌──────────────┐                  │
+              │            │  BIT ENGINE  │                  │
+              │            │(Core Metric) │                  │
+              │            └──────────────┘                  │
+              │                     │                        │
+        BLOG NODE ──────────────────┴────────────────── TALENT FLOW
+```
+
+**Core Principle:** "Think in wheels. Code in wheels. Diagram in wheels."
+
+See [BICYCLE_WHEEL_DOCTRINE.md](BICYCLE_WHEEL_DOCTRINE.md) for the 8 structural rules.
 
 ## Schema Files
 

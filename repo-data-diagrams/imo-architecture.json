@@ -1,0 +1,275 @@
+{
+  "model": "IMO-Radial Architecture",
+  "version": "1.0",
+  "description": "Universal, fractal hub-and-spoke (bicycle-wheel) model for Barton Outreach Core.",
+
+  "centralHub": {
+    "name": "BARTON_OUTREACH_CORE",
+    "type": "root",
+    "description": "Perpetual Lead Engine (PLE) - Master node for marketing intelligence and executive enrichment.",
+    "metric": {
+      "name": "BIT_ENGINE",
+      "description": "Buyer Intent Tool - Central intelligence scoring metric that aggregates signals from all spokes."
+    },
+    "primaryHubs": [
+      {
+        "name": "COMPANY_HUB",
+        "type": "domain",
+        "description": "Central axle - all data anchors here. Contains company_master, domain, email_pattern, slots.",
+        "subHubs": [
+          {
+            "name": "SLOTS_SUBWHEEL",
+            "type": "component",
+            "description": "Executive position tracking (CEO, CFO, HR). Manages slot assignment and competition.",
+            "subHubs": [],
+            "failures": ["FAILED_SLOT_ASSIGNMENT"]
+          }
+        ],
+        "failures": ["FAILED_COMPANY_MATCH", "FAILED_LOW_CONFIDENCE"]
+      },
+      {
+        "name": "PEOPLE_NODE",
+        "type": "domain",
+        "description": "Spoke #1 - Titles, emails, slot assignments. Contains people_master and enrichment logic.",
+        "subHubs": [
+          {
+            "name": "EMAIL_VERIFICATION_SUBWHEEL",
+            "type": "component",
+            "description": "Email validation sub-wheel with MillionVerifier as hub/axle.",
+            "subHubs": [
+              {
+                "name": "PATTERN_GUESSER",
+                "type": "feature",
+                "description": "FREE tier - generates email candidates from patterns.",
+                "subHubs": [],
+                "failures": []
+              },
+              {
+                "name": "BULK_VERIFIER",
+                "type": "feature",
+                "description": "CHEAP tier ($37/10K) - batch verification via MillionVerifier.",
+                "subHubs": [],
+                "failures": []
+              }
+            ],
+            "failures": ["FAILED_EMAIL_VERIFICATION"]
+          }
+        ],
+        "failures": ["FAILED_NO_PATTERN"]
+      },
+      {
+        "name": "DOL_NODE",
+        "type": "domain",
+        "description": "Spoke #2 - Department of Labor data. Form 5500 filings, Schedule A, violations.",
+        "subHubs": [
+          {
+            "name": "FORM_5500",
+            "type": "dataflow",
+            "description": "Annual benefit plan filings with EIN, participants, assets.",
+            "subHubs": [],
+            "failures": []
+          },
+          {
+            "name": "SCHEDULE_A",
+            "type": "dataflow",
+            "description": "Insurance broker commission data.",
+            "subHubs": [],
+            "failures": []
+          },
+          {
+            "name": "DOL_VIOLATIONS",
+            "type": "dataflow",
+            "description": "Compliance violations and penalties.",
+            "subHubs": [],
+            "failures": []
+          }
+        ],
+        "failures": ["FAILED_DOL_MATCH"]
+      },
+      {
+        "name": "TALENT_FLOW_NODE",
+        "type": "domain",
+        "description": "Spoke #4 - Movement detection, job changes, company transitions.",
+        "subHubs": [
+          {
+            "name": "MOVEMENT_DETECTION",
+            "type": "feature",
+            "description": "Detects when executives change companies.",
+            "subHubs": [],
+            "failures": []
+          },
+          {
+            "name": "JOB_CHANGES",
+            "type": "feature",
+            "description": "Tracks title and role changes within companies.",
+            "subHubs": [],
+            "failures": []
+          }
+        ],
+        "failures": ["FAILED_MOVEMENT_DETECTION"]
+      },
+      {
+        "name": "BLOG_NODE",
+        "type": "domain",
+        "description": "Spoke #3 - News, sentiment, competitor intel. Company events and signals.",
+        "subHubs": [],
+        "failures": ["FAILED_SENTIMENT_ANALYSIS"]
+      },
+      {
+        "name": "OUTREACH_NODE",
+        "type": "domain",
+        "description": "Spoke #6 - Campaign targeting, sequences, email delivery.",
+        "subHubs": [],
+        "failures": ["FAILED_OUTREACH_DELIVERY"]
+      }
+    ]
+  },
+
+  "failureSystem": {
+    "strategy": "distributed_centralized_reporting",
+    "description": "Each hub tracks local failures but also reports upward to the Master Failure Hub (shq_error_log).",
+    "masterFailureHub": {
+      "name": "SHQ_ERROR_LOG",
+      "type": "core_monitor",
+      "description": "Centralized collection of all failure spokes across the radial network. Maps to public.shq_error_log table.",
+      "responsibilities": [
+        "Aggregate failure events from all hubs and sub-hubs",
+        "Classify severity (info, warning, error, critical)",
+        "Track resolution status and resolution paths",
+        "Feed diagnostic reports and pipeline health metrics",
+        "Report health metrics back to BIT_ENGINE"
+      ],
+      "dataModel": {
+        "table": "public.shq_error_log",
+        "fields": [
+          {"name": "error_id", "type": "text", "description": "Barton ID: 04.04.02.04.40000.###"},
+          {"name": "source_hub", "type": "text", "description": "Which hub generated the failure"},
+          {"name": "sub_hub", "type": "text", "description": "Which sub-hub if applicable"},
+          {"name": "error_code", "type": "text", "description": "Standardized error code"},
+          {"name": "error_message", "type": "text", "description": "Human-readable description"},
+          {"name": "severity", "type": "enum", "values": ["info", "warning", "error", "critical"]},
+          {"name": "component", "type": "text", "description": "Pipeline phase or module"},
+          {"name": "stack_trace", "type": "text", "description": "Full stack trace if available"},
+          {"name": "resolution_status", "type": "enum", "values": ["open", "investigating", "resolved", "wont_fix"]},
+          {"name": "created_at", "type": "timestamp", "description": "When failure occurred"},
+          {"name": "updated_at", "type": "timestamp", "description": "Last status update"}
+        ]
+      }
+    },
+    "failureSpokes": [
+      {
+        "name": "FAILED_COMPANY_MATCH",
+        "phase": 2,
+        "trigger": "Fuzzy match score < 80%",
+        "resolution": "Confirm/Reject/Remap via review queue",
+        "table": "marketing.failed_company_match"
+      },
+      {
+        "name": "FAILED_LOW_CONFIDENCE",
+        "phase": 3,
+        "trigger": "Fuzzy match 70-79%",
+        "resolution": "Manual confirmation required",
+        "table": "marketing.failed_low_confidence"
+      },
+      {
+        "name": "FAILED_SLOT_ASSIGNMENT",
+        "phase": 3,
+        "trigger": "Lost seniority competition",
+        "resolution": "Manual override or wait for slot vacancy",
+        "table": "marketing.failed_slot_assignment"
+      },
+      {
+        "name": "FAILED_NO_PATTERN",
+        "phase": 4,
+        "trigger": "No domain or email pattern available",
+        "resolution": "Add pattern manually or enrich via Firecrawl",
+        "table": "marketing.failed_no_pattern"
+      },
+      {
+        "name": "FAILED_EMAIL_VERIFICATION",
+        "phase": 5,
+        "trigger": "MillionVerifier returns invalid/risky",
+        "resolution": "Try alternate pattern or mark as unverifiable",
+        "table": "marketing.failed_email_verification"
+      }
+    ],
+    "propagationRules": {
+      "onFailure": "report_to_parent_and_master",
+      "retryPolicy": "phase_specific",
+      "autoRepairHooks": true,
+      "severityLevels": ["info", "warning", "error", "critical"],
+      "escalationPath": ["sub_hub", "hub", "central_hub", "master_failure_hub"]
+    }
+  },
+
+  "pipelinePhases": {
+    "description": "Wheel Rotation = Pipeline Flow. Data flows through the system like a wheel rotating.",
+    "phases": [
+      {"phase": 1, "name": "INTAKE", "description": "CSV Input - Raw data enters the wheel"},
+      {"phase": 2, "name": "HUB_GATE", "description": "Fuzzy match to company_master - Anchor to hub"},
+      {"phase": 3, "name": "SLOT_SPOKE", "description": "Seniority competition - Assign to slots"},
+      {"phase": 4, "name": "EMAIL_SUBWHEEL", "description": "Pattern lookup + generation"},
+      {"phase": 5, "name": "VERIFY_SUBWHEEL", "description": "MillionVerifier check"},
+      {"phase": 6, "name": "EXPORT_TO_HUB", "description": "Write to people_master + slot"},
+      {"phase": 7, "name": "BIT_CALCULATION", "description": "Signals feed back to hub metric"}
+    ]
+  },
+
+  "rules": {
+    "recursion": true,
+    "failurePropagation": "bubble_up_to_core",
+    "metricAggregation": "weighted_sum",
+    "defaultSpokeStyle": "radial",
+    "visualStyle": "sketch",
+    "goldenRule": "IF company_id IS NULL OR domain IS NULL OR email_pattern IS NULL: STOP. Route to Company Identity Pipeline first."
+  },
+
+  "visualization": {
+    "layout": "radial",
+    "style": "sketch",
+    "showFailures": true,
+    "showMetrics": true,
+    "centerIncludesMetric": true,
+    "colorMapping": {
+      "core": "#FFD700",
+      "hub": "#8FD3FE",
+      "subHub": "#C2F784",
+      "failure": "#FF6B6B",
+      "verified": "#4CAF50",
+      "pending": "#FFC107"
+    },
+    "annotations": [
+      "Every repo, service, or domain is a hub in a larger wheel.",
+      "Each hub may contain nested mini-hubs (wheels-within-wheels).",
+      "Each hub and sub-hub has its own failure spoke.",
+      "All failures propagate to the Master Failure Hub (shq_error_log).",
+      "The BIT_ENGINE in the center aggregates performance and health.",
+      "Company Hub is the central axle - nothing processes without company anchor."
+    ]
+  },
+
+  "bartonIdFormats": {
+    "company": {"format": "04.04.01.XX.XXXXX.XXX", "example": "04.04.01.04.30000.001"},
+    "person": {"format": "04.04.02.XX.XXXXX.XXX", "example": "04.04.02.04.20000.001"},
+    "slot": {"format": "04.04.05.XX.XXXXX.XXX", "example": "04.04.05.04.10000.001"},
+    "error": {"format": "04.04.02.04.40000.XXX", "example": "04.04.02.04.40000.001"}
+  },
+
+  "meta": {
+    "framework": "Barton Outreach Core / IMO-Creator",
+    "author": "Barton Engineering",
+    "created": "2025-12-12",
+    "doctrine": "Bicycle Wheel Doctrine v1.0",
+    "purpose": "Provide a single JSON schema for diagramming, programming, and monitoring the PLE system.",
+    "keywords": [
+      "hub-and-spoke",
+      "radial architecture",
+      "fractal systems",
+      "diagram-as-code",
+      "self-healing architecture",
+      "bicycle-wheel",
+      "PLE",
+      "BIT engine"
+    ]
+  }
+}

@@ -381,6 +381,113 @@ When adding any new feature, ask:
 
 ---
 
+## Rule 7: Machine-Readable Architecture (JSON Schema)
+
+Every repository declares its wheel structure in `imo-architecture.json`:
+
+```json
+{
+  "model": "IMO-Radial Architecture",
+  "version": "1.0",
+  "centralHub": {
+    "name": "CORE_SYSTEM",
+    "type": "root",
+    "metric": {
+      "name": "CORE_METRIC",
+      "description": "Central intelligence metric"
+    },
+    "primaryHubs": [
+      {
+        "name": "DOMAIN_HUB",
+        "type": "domain",
+        "subHubs": [],
+        "failures": ["DOMAIN_HUB_FAILURE"]
+      }
+    ]
+  },
+  "failureSystem": {
+    "strategy": "distributed_centralized_reporting",
+    "masterFailureHub": {
+      "name": "MASTER_FAILURE_LOG",
+      "type": "core_monitor"
+    }
+  }
+}
+```
+
+### How to Use
+
+| Step | Action | Result |
+|------|--------|--------|
+| 1 | Place `imo-architecture.json` in each repo | Repo declares its hub, sub-hubs, and failure spokes |
+| 2 | IMO-Creator ingests all repo JSON files | Builds fractal radial graph visualization |
+| 3 | System links failures to MASTER_FAILURE_LOG | Centralized telemetry, self-healing triggers |
+| 4 | Visualization engine renders in radial style | Everyone sees how repos connect and where failures occur |
+
+---
+
+## Rule 8: Master Failure Hub
+
+All failures propagate to a centralized Master Failure Hub:
+
+```
+     SUB-HUB FAILURES
+            │
+            ▼
+     DOMAIN HUB FAILURES
+            │
+            ▼
+   ╔═══════════════════════════╗
+   ║   MASTER FAILURE HUB      ║
+   ║   (shq_error_log)         ║
+   ║                           ║
+   ║   • Aggregate failures    ║
+   ║   • Classify severity     ║
+   ║   • Trigger auto-repair   ║
+   ║   • Feed health metrics   ║
+   ╚═══════════════════════════╝
+            │
+            ▼
+        BIT ENGINE
+```
+
+See: [[MASTER_FAILURE_HUB.md]] for complete documentation.
+
+---
+
+## Related Files
+
+| File | Purpose |
+|------|---------|
+| `imo-architecture.json` | Machine-readable wheel definition |
+| `MASTER_FAILURE_HUB.md` | Centralized failure handling |
+| `PLE_SCHEMA_ERD.md` | Database schema as wheels |
+| `HUB_SPOKE_BICYCLE_WHEEL.md` | Visual diagrams |
+
+---
+
+## Summary
+
+```
++-------------------------------------------------------------------------------------+
+|                                                                                     |
+|   "Think in wheels. Code in wheels. Diagram in wheels."                             |
+|                                                                                     |
+|   * Every system is a bicycle wheel with a hub, spokes, and sub-wheels              |
+|   * Failures are spokes, not exceptions                                             |
+|   * All spokes feed the central hub                                                 |
+|   * Wheels can contain wheels (fractal)                                             |
+|   * Layout is radial, not hierarchical                                              |
+|   * Architecture is machine-readable (JSON schema)                                  |
+|   * All failures propagate to Master Failure Hub                                    |
+|                                                                                     |
+|   This is the Barton way.                                                           |
+|                                                                                     |
++-------------------------------------------------------------------------------------+
+```
+
+---
+
 *Adopted: December 2024*
-*Version: 1.0*
+*Version: 1.1*
 *Applies to: All Barton Outreach systems, IMO Creator, and future projects*
