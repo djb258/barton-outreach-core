@@ -1,4 +1,4 @@
 altitude: 40k
-branch: sys/bigquery-warehouse
-created: 2025-10-14T23:56:45Z
+branch: sys/builder-bridge
+created: 2025-10-14T23:56:46Z
 purpose: CTB branch at 40k altitude
