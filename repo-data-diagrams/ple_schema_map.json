@@ -1,0 +1,409 @@
+{
+  "meta": {
+    "title": "PLE Schema Map - Current State vs Target Specification",
+    "version": "1.0.0",
+    "generated_at": "2025-11-26",
+    "database": "Neon PostgreSQL - Marketing DB",
+    "host": "ep-ancient-waterfall-a42vy0du-pooler.us-east-1.aws.neon.tech",
+    "target_states": ["PA", "VA", "MD", "OH", "WV", "KY"],
+    "target_employee_range": "50-2000",
+    "slot_types": ["CEO", "CFO", "HR"]
+  },
+  "compliance_summary": {
+    "overall_completion_pct": 50.0,
+    "core_tables": {
+      "total": 3,
+      "existing": 3,
+      "missing": 0,
+      "completion_pct": 100.0
+    },
+    "sidecar_tables": {
+      "total": 3,
+      "existing": 0,
+      "missing": 3,
+      "completion_pct": 0.0
+    },
+    "missing_columns": {
+      "critical": 4,
+      "columns": [
+        "people_master.validation_status",
+        "people_master.last_verified_at",
+        "people_master.last_enrichment_attempt",
+        "company_slot.vacated_at"
+      ]
+    }
+  },
+  "schemas_in_database": {
+    "BIT": { "tables": 0, "purpose": "Reserved for Buyer Intent Tool" },
+    "PLE": { "tables": 3, "purpose": "PLE lifecycle tracking (ple_cycle, ple_log, ple_step)" },
+    "archive": { "tables": 46, "purpose": "Historical data" },
+    "bit": { "tables": 3, "purpose": "BIT scoring (bit_company_score, bit_contact_score, bit_signal)" },
+    "company": { "tables": 0, "purpose": "Reserved" },
+    "intake": { "tables": 2, "purpose": "Raw data intake (company_raw_intake, people_raw_intake)" },
+    "marketing": { "tables": 17, "purpose": "PRIMARY SCHEMA for core data" },
+    "neon_auth": { "tables": 1, "purpose": "User sync" },
+    "people": { "tables": 0, "purpose": "Reserved" },
+    "ple": { "tables": 3, "purpose": "PLE workflow" },
+    "public": { "tables": 3, "purpose": "System logs" },
+    "shq": { "tables": 1, "purpose": "Audit logs" }
+  },
+  "core_tables": {
+    "companies": {
+      "ple_spec_table": "companies",
+      "current_table": "marketing.company_master",
+      "status": "EXISTS",
+      "match_quality": "GOOD",
+      "column_mapping": {
+        "id": {
+          "ple_spec": "id SERIAL PRIMARY KEY",
+          "current": "company_unique_id TEXT NOT NULL PRIMARY KEY",
+          "status": "MAPPED",
+          "note": "Uses TEXT ID instead of SERIAL"
+        },
+        "company_uid": {
+          "ple_spec": "company_uid UUID UNIQUE",
+          "current": "company_unique_id TEXT",
+          "status": "MAPPED",
+          "note": "Same column as PK"
+        },
+        "name": {
+          "ple_spec": "name VARCHAR NOT NULL",
+          "current": "company_name TEXT NOT NULL",
+          "status": "MAPPED"
+        },
+        "linkedin_url": {
+          "ple_spec": "linkedin_url VARCHAR",
+          "current": "linkedin_url TEXT",
+          "status": "EXACT_MATCH"
+        },
+        "employee_count": {
+          "ple_spec": "employee_count INT",
+          "current": "employee_count INTEGER",
+          "status": "EXACT_MATCH"
+        },
+        "state": {
+          "ple_spec": "state VARCHAR",
+          "current": "address_state TEXT + state_abbrev TEXT",
+          "status": "MAPPED",
+          "note": "Split into two columns"
+        },
+        "city": {
+          "ple_spec": "city VARCHAR",
+          "current": "address_city TEXT",
+          "status": "MAPPED"
+        },
+        "industry": {
+          "ple_spec": "industry VARCHAR",
+          "current": "industry TEXT",
+          "status": "EXACT_MATCH"
+        },
+        "source": {
+          "ple_spec": "source VARCHAR NOT NULL",
+          "current": "source_system TEXT NOT NULL",
+          "status": "MAPPED"
+        },
+        "created_at": {
+          "ple_spec": "created_at TIMESTAMP",
+          "current": "created_at TIMESTAMPTZ",
+          "status": "EXACT_MATCH"
+        },
+        "updated_at": {
+          "ple_spec": "updated_at TIMESTAMP",
+          "current": "updated_at TIMESTAMPTZ",
+          "status": "EXACT_MATCH"
+        }
+      },
+      "extra_columns": [
+        "website_url", "company_phone", "address_street", "address_zip",
+        "address_country", "facebook_url", "twitter_url", "sic_codes",
+        "founded_year", "keywords", "description", "promoted_from_intake_at",
+        "promotion_audit_log_id", "import_batch_id", "validated_at",
+        "validated_by", "data_quality_score", "source_record_id"
+      ],
+      "sample_query": {
+        "ple_style": "SELECT id, company_uid, name, state, city FROM companies WHERE employee_count BETWEEN 50 AND 2000",
+        "current_style": "SELECT company_unique_id, company_name, address_state, address_city FROM marketing.company_master WHERE employee_count BETWEEN 50 AND 2000"
+      }
+    },
+    "company_slots": {
+      "ple_spec_table": "company_slots",
+      "current_table": "marketing.company_slot",
+      "status": "EXISTS",
+      "match_quality": "GOOD",
+      "note": "Also has marketing.company_slots (plural) as reference table",
+      "column_mapping": {
+        "id": {
+          "ple_spec": "id SERIAL PRIMARY KEY",
+          "current": "company_slot_unique_id TEXT NOT NULL PRIMARY KEY",
+          "status": "MAPPED"
+        },
+        "slot_uid": {
+          "ple_spec": "slot_uid UUID UNIQUE",
+          "current": "company_slot_unique_id TEXT",
+          "status": "MAPPED"
+        },
+        "company_id": {
+          "ple_spec": "company_id INT FK",
+          "current": "company_unique_id TEXT FK",
+          "status": "MAPPED"
+        },
+        "slot_type": {
+          "ple_spec": "slot_type VARCHAR",
+          "current": "slot_type TEXT",
+          "status": "EXACT_MATCH",
+          "values": ["CEO", "CFO", "HR"]
+        },
+        "person_id": {
+          "ple_spec": "person_id INT FK",
+          "current": "person_unique_id TEXT FK",
+          "status": "MAPPED"
+        },
+        "assigned_at": {
+          "ple_spec": "assigned_at TIMESTAMP",
+          "current": "filled_at TIMESTAMPTZ",
+          "status": "MAPPED"
+        },
+        "vacated_at": {
+          "ple_spec": "vacated_at TIMESTAMP",
+          "current": null,
+          "status": "MISSING",
+          "action_required": "ALTER TABLE marketing.company_slot ADD COLUMN vacated_at TIMESTAMPTZ"
+        }
+      },
+      "extra_columns": [
+        "is_filled", "status", "created_at", "last_refreshed_at",
+        "confidence_score", "filled_by", "source_system", "enrichment_attempts"
+      ],
+      "constraints": {
+        "unique_slot_per_company": "UNIQUE(company_unique_id, slot_type)"
+      }
+    },
+    "people": {
+      "ple_spec_table": "people",
+      "current_table": "marketing.people_master",
+      "status": "EXISTS",
+      "match_quality": "PARTIAL",
+      "note": "Missing 3 critical PLE columns",
+      "column_mapping": {
+        "id": {
+          "ple_spec": "id SERIAL PRIMARY KEY",
+          "current": "unique_id TEXT NOT NULL PRIMARY KEY",
+          "status": "MAPPED"
+        },
+        "person_uid": {
+          "ple_spec": "person_uid UUID UNIQUE",
+          "current": "unique_id TEXT",
+          "status": "MAPPED"
+        },
+        "company_id": {
+          "ple_spec": "company_id INT FK",
+          "current": "company_unique_id TEXT FK",
+          "status": "MAPPED"
+        },
+        "linkedin_url": {
+          "ple_spec": "linkedin_url VARCHAR",
+          "current": "linkedin_url TEXT",
+          "status": "EXACT_MATCH"
+        },
+        "email": {
+          "ple_spec": "email VARCHAR",
+          "current": "email TEXT",
+          "status": "EXACT_MATCH"
+        },
+        "first_name": {
+          "ple_spec": "first_name VARCHAR NOT NULL",
+          "current": "first_name TEXT NOT NULL",
+          "status": "EXACT_MATCH"
+        },
+        "last_name": {
+          "ple_spec": "last_name VARCHAR NOT NULL",
+          "current": "last_name TEXT NOT NULL",
+          "status": "EXACT_MATCH"
+        },
+        "title": {
+          "ple_spec": "title VARCHAR",
+          "current": "title TEXT",
+          "status": "EXACT_MATCH"
+        },
+        "validation_status": {
+          "ple_spec": "validation_status VARCHAR",
+          "current": null,
+          "status": "MISSING",
+          "action_required": "ALTER TABLE marketing.people_master ADD COLUMN validation_status TEXT DEFAULT 'pending'",
+          "valid_values": ["pending", "full", "linkedin_only", "email_only", "invalid"]
+        },
+        "last_verified_at": {
+          "ple_spec": "last_verified_at TIMESTAMP",
+          "current": null,
+          "status": "MISSING",
+          "action_required": "ALTER TABLE marketing.people_master ADD COLUMN last_verified_at TIMESTAMPTZ",
+          "note": "Has email_verified_at but that's email-specific only"
+        },
+        "last_enrichment_attempt": {
+          "ple_spec": "last_enrichment_attempt TIMESTAMP",
+          "current": null,
+          "status": "MISSING",
+          "action_required": "ALTER TABLE marketing.people_master ADD COLUMN last_enrichment_attempt TIMESTAMPTZ",
+          "purpose": "Track annual enrichment cycle for email_only contacts"
+        },
+        "created_at": {
+          "ple_spec": "created_at TIMESTAMP",
+          "current": "created_at TIMESTAMPTZ",
+          "status": "EXACT_MATCH"
+        },
+        "updated_at": {
+          "ple_spec": "updated_at TIMESTAMP",
+          "current": "updated_at TIMESTAMPTZ",
+          "status": "EXACT_MATCH"
+        }
+      },
+      "extra_columns": [
+        "company_slot_unique_id", "full_name", "email_verified",
+        "email_verified_at", "email_verification_source", "seniority",
+        "department", "work_phone_e164", "personal_phone_e164",
+        "twitter_url", "facebook_url", "bio", "skills", "education",
+        "certifications", "source_system", "source_record_id",
+        "promoted_from_intake_at", "promotion_audit_log_id", "message_key_scheduled"
+      ]
+    }
+  },
+  "sidecar_tables": {
+    "person_movement_history": {
+      "ple_spec_table": "person_movement_history",
+      "current_table": null,
+      "status": "MISSING",
+      "purpose": "Track career movements and job changes for BIT scoring",
+      "columns": {
+        "id": "SERIAL PRIMARY KEY",
+        "person_id": "TEXT NOT NULL FK -> marketing.people_master.unique_id",
+        "linkedin_url": "TEXT (snapshot at detection)",
+        "company_id_from": "TEXT FK -> marketing.company_master.company_unique_id",
+        "company_id_to": "TEXT FK (NULL = contact_lost)",
+        "title_from": "TEXT NOT NULL",
+        "title_to": "TEXT",
+        "movement_type": "TEXT NOT NULL (company_change, title_change, contact_lost)",
+        "detected_at": "TIMESTAMPTZ DEFAULT NOW()",
+        "raw_payload": "JSONB (scrape receipt)"
+      },
+      "create_sql": "CREATE TABLE ple.person_movement_history (...)",
+      "indexes": [
+        "idx_movement_person (person_id)",
+        "idx_movement_detected (detected_at DESC)",
+        "idx_movement_type (movement_type)",
+        "idx_movement_company_from (company_id_from)",
+        "idx_movement_company_to (company_id_to)"
+      ],
+      "related_existing": "May overlap with bit.bit_signal"
+    },
+    "person_scores": {
+      "ple_spec_table": "person_scores",
+      "current_table": null,
+      "status": "MISSING",
+      "purpose": "Store calculated BIT scores for contacts",
+      "columns": {
+        "id": "SERIAL PRIMARY KEY",
+        "person_id": "TEXT NOT NULL FK -> marketing.people_master.unique_id",
+        "bit_score": "NUMERIC (0-100 buyer intent score)",
+        "confidence_score": "NUMERIC (0-100 data confidence)",
+        "calculated_at": "TIMESTAMPTZ DEFAULT NOW()",
+        "score_factors": "JSONB (breakdown of score components)"
+      },
+      "create_sql": "CREATE TABLE ple.person_scores (...)",
+      "indexes": [
+        "idx_scores_person (person_id)",
+        "idx_scores_bit (bit_score DESC)",
+        "idx_scores_calculated (calculated_at DESC)",
+        "UNIQUE(person_id, calculated_at)"
+      ],
+      "related_existing": "bit.bit_contact_score (may serve similar purpose)"
+    },
+    "company_events": {
+      "ple_spec_table": "company_events",
+      "current_table": null,
+      "status": "MISSING",
+      "purpose": "Track significant company events for BIT scoring",
+      "columns": {
+        "id": "SERIAL PRIMARY KEY",
+        "company_id": "TEXT NOT NULL FK -> marketing.company_master.company_unique_id",
+        "event_type": "TEXT NOT NULL (layoff, acquisition, funding, leadership_change, expansion)",
+        "event_date": "DATE",
+        "source_url": "TEXT",
+        "summary": "TEXT",
+        "detected_at": "TIMESTAMPTZ DEFAULT NOW()",
+        "impacts_bit": "BOOLEAN DEFAULT true"
+      },
+      "create_sql": "CREATE TABLE ple.company_events (...)",
+      "indexes": [
+        "idx_events_company (company_id)",
+        "idx_events_type (event_type)",
+        "idx_events_detected (detected_at DESC)",
+        "idx_events_bit (impacts_bit) WHERE impacts_bit = true"
+      ],
+      "related_existing": "bit.bit_signal (may capture some events)"
+    }
+  },
+  "migration_plan": {
+    "phase_1": {
+      "name": "Add Missing Columns",
+      "risk": "LOW",
+      "estimated_time": "5 minutes",
+      "sql": [
+        "ALTER TABLE marketing.people_master ADD COLUMN validation_status TEXT DEFAULT 'pending';",
+        "ALTER TABLE marketing.people_master ADD COLUMN last_verified_at TIMESTAMPTZ;",
+        "ALTER TABLE marketing.people_master ADD COLUMN last_enrichment_attempt TIMESTAMPTZ;",
+        "ALTER TABLE marketing.company_slot ADD COLUMN vacated_at TIMESTAMPTZ;"
+      ]
+    },
+    "phase_2": {
+      "name": "Create PLE Views",
+      "risk": "NONE",
+      "estimated_time": "5 minutes",
+      "purpose": "Enable PLE-compliant column names while maintaining backwards compatibility",
+      "views": ["ple.companies", "ple.company_slots", "ple.people"]
+    },
+    "phase_3": {
+      "name": "Create Sidecar Tables",
+      "risk": "LOW",
+      "estimated_time": "10 minutes",
+      "tables": ["ple.person_movement_history", "ple.person_scores", "ple.company_events"]
+    },
+    "phase_4": {
+      "name": "Add Indexes",
+      "risk": "NONE",
+      "estimated_time": "5 minutes",
+      "total_indexes": 19
+    }
+  },
+  "quick_reference": {
+    "column_aliases": {
+      "companies": {
+        "id": "company_unique_id",
+        "company_uid": "company_unique_id",
+        "name": "company_name",
+        "state": "address_state",
+        "city": "address_city",
+        "source": "source_system"
+      },
+      "company_slots": {
+        "id": "company_slot_unique_id",
+        "slot_uid": "company_slot_unique_id",
+        "company_id": "company_unique_id",
+        "person_id": "person_unique_id",
+        "assigned_at": "filled_at"
+      },
+      "people": {
+        "id": "unique_id",
+        "person_uid": "unique_id",
+        "company_id": "company_unique_id"
+      }
+    }
+  },
+  "files_generated": [
+    "PLE_SCHEMA_VERIFICATION_REPORT.md",
+    "ctb/sys/enrichment/ple_schema_migration.sql",
+    "ctb/sys/enrichment/PLE_SCHEMA_QUICK_REFERENCE.md",
+    "ctb/sys/enrichment/ple_schema_summary.json",
+    "verify_ple_schema.py",
+    "docs/ple_schema_map.json"
+  ]
+}

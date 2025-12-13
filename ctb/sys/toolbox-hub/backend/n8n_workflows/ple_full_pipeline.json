@@ -1,0 +1,478 @@
+{
+  "name": "PLE Full Pipeline - Intake to Outreach",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ple-intake",
+        "responseMode": "responseNode",
+        "options": {
+          "allowUnauthorizedCerts": false
+        }
+      },
+      "name": "Webhook - Intake Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 400],
+      "webhookId": "ple-intake-trigger",
+      "id": "intake-webhook-001",
+      "notes": "Entry point for CSV upload or API intake. Receives company/people data."
+    },
+    {
+      "parameters": {
+        "functionCode": "// NODE 1a: Parse and validate incoming data\nconst payload = $input.item.json.body || $input.item.json;\n\n// Extract company and people data\nconst companies = payload.companies || [];\nconst people = payload.people || [];\nconst state = payload.state || 'WV';\nconst batchId = `INTAKE-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.random().toString(36).substr(2,8)}`;\n\n// Basic validation\nconst validCompanies = [];\nconst invalidCompanies = [];\n\nfor (const company of companies) {\n  const errors = [];\n  \n  // Rule 1: company_name >= 3 chars\n  if (!company.company_name || company.company_name.length < 3) {\n    errors.push('company_name_required');\n  }\n  \n  // Rule 2: website starts with http\n  if (!company.website || !company.website.startsWith('http')) {\n    errors.push('website_invalid');\n  }\n  \n  // Rule 3: employee_count > 50\n  const empCount = parseInt(company.employee_count) || 0;\n  if (empCount <= 50) {\n    errors.push('employee_count_below_50');\n  }\n  \n  // Rule 4: linkedin_url contains linkedin.com/company/\n  if (!company.linkedin_url || !company.linkedin_url.includes('linkedin.com/company/')) {\n    errors.push('linkedin_url_invalid');\n  }\n  \n  if (errors.length === 0) {\n    // Generate company ID if not present\n    if (!company.company_unique_id) {\n      company.company_unique_id = `04.04.02.04.30000.${String(validCompanies.length + 1).padStart(3, '0')}`;\n    }\n    validCompanies.push(company);\n  } else {\n    invalidCompanies.push({\n      ...company,\n      validation_errors: errors,\n      validation_timestamp: new Date().toISOString()\n    });\n  }\n}\n\nreturn {\n  json: {\n    batch_id: batchId,\n    state: state,\n    valid_companies: validCompanies,\n    invalid_companies: invalidCompanies,\n    people: people,\n    stats: {\n      total_companies: companies.length,\n      valid: validCompanies.length,\n      invalid: invalidCompanies.length\n    },\n    next_phase: 'enrichment_waterfall'\n  }\n};"
+      },
+      "name": "Phase 1 - Intake Validation",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [500, 400],
+      "id": "phase1-validation-001",
+      "notes": "Validates company structure: name, website, employee_count > 50, LinkedIn URL"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.stats.valid > 0}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "Has Valid Companies?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [750, 400],
+      "id": "if-valid-companies-001"
+    },
+    {
+      "parameters": {
+        "functionCode": "// NODE 1b: Route invalid companies to Google Sheets\nconst invalid = $input.item.json.invalid_companies || [];\nconst batchId = $input.item.json.batch_id;\nconst state = $input.item.json.state;\n\nconst rows = invalid.map(company => ({\n  json: {\n    company_name: company.company_name || '',\n    website: company.website || '',\n    employee_count: company.employee_count || 0,\n    linkedin_url: company.linkedin_url || '',\n    validation_errors: (company.validation_errors || []).join('; '),\n    batch_id: batchId,\n    state: state,\n    timestamp: new Date().toISOString()\n  }\n}));\n\nreturn rows;"
+      },
+      "name": "Format Invalid for Sheets",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1000, 550],
+      "id": "format-invalid-001"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1i9QNWBqMgY825fLg7lblszMs6X6f5tLxCnAP3Qchfeg",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Invalid_Companies",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "company_name": "={{$json.company_name}}",
+            "website": "={{$json.website}}",
+            "employee_count": "={{$json.employee_count}}",
+            "linkedin_url": "={{$json.linkedin_url}}",
+            "validation_errors": "={{$json.validation_errors}}",
+            "batch_id": "={{$json.batch_id}}",
+            "state": "={{$json.state}}",
+            "timestamp": "={{$json.timestamp}}"
+          }
+        }
+      },
+      "name": "Log Invalid to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [1250, 550],
+      "id": "sheets-invalid-001"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Three-Tier Enrichment Waterfall\n// Tier 1: Firecrawl/SerpAPI ($0.20)\n// Tier 2: Abacus.ai/Clay ($1.50)\n// Tier 3: RocketReach/PDL ($3.00)\n\nconst validCompanies = $input.item.json.valid_companies || [];\nconst batchId = $input.item.json.batch_id;\nconst state = $input.item.json.state;\n\nconst enrichedCompanies = [];\nlet totalCost = 0;\n\nfor (const company of validCompanies) {\n  const enrichment = {\n    company_unique_id: company.company_unique_id,\n    company_name: company.company_name,\n    tier_used: null,\n    enrichment_success: false,\n    enrichment_data: {},\n    cost: 0,\n    slots: {\n      ceo: { exists: false, is_filled: false, person_id: null },\n      cfo: { exists: false, is_filled: false, person_id: null },\n      hr: { exists: false, is_filled: false, person_id: null }\n    }\n  };\n  \n  // Simulate three-tier waterfall\n  // In production, these would be actual API calls\n  \n  // Tier 1: Cheap & Wide ($0.20, 80% success)\n  const tier1Success = Math.random() < 0.80;\n  if (tier1Success) {\n    enrichment.tier_used = 'tier_1';\n    enrichment.enrichment_success = true;\n    enrichment.cost = 0.20;\n    enrichment.enrichment_data = {\n      source: 'Firecrawl/SerpAPI',\n      description: 'Company info from web scraping',\n      enriched_at: new Date().toISOString()\n    };\n  } else {\n    // Tier 2: Mid-Cost ($1.50, 15% of remaining)\n    const tier2Success = Math.random() < 0.75; // 75% of 20% = 15% overall\n    if (tier2Success) {\n      enrichment.tier_used = 'tier_2';\n      enrichment.enrichment_success = true;\n      enrichment.cost = 0.20 + 1.50;\n      enrichment.enrichment_data = {\n        source: 'Abacus.ai/Clay',\n        description: 'AI-validated company data',\n        enriched_at: new Date().toISOString()\n      };\n    } else {\n      // Tier 3: Expensive ($3.00, 5% of remaining)\n      const tier3Success = Math.random() < 0.95; // Almost always succeeds\n      if (tier3Success) {\n        enrichment.tier_used = 'tier_3';\n        enrichment.enrichment_success = true;\n        enrichment.cost = 0.20 + 1.50 + 3.00;\n        enrichment.enrichment_data = {\n          source: 'RocketReach/PDL',\n          description: 'Premium contact data',\n          enriched_at: new Date().toISOString()\n        };\n      } else {\n        enrichment.tier_used = 'all_failed';\n        enrichment.enrichment_success = false;\n        enrichment.cost = 0.20 + 1.50 + 3.00;\n      }\n    }\n  }\n  \n  // Simulate slot creation (CEO, CFO, HR)\n  // In production, this would check/create in database\n  const slotFillRate = enrichment.enrichment_success ? 0.85 : 0.30;\n  \n  enrichment.slots.ceo = {\n    exists: true,\n    is_filled: Math.random() < slotFillRate,\n    person_id: Math.random() < slotFillRate ? `04.04.02.04.20000.${company.company_unique_id.split('.').pop()}01` : null\n  };\n  enrichment.slots.cfo = {\n    exists: true,\n    is_filled: Math.random() < slotFillRate,\n    person_id: Math.random() < slotFillRate ? `04.04.02.04.20000.${company.company_unique_id.split('.').pop()}02` : null\n  };\n  enrichment.slots.hr = {\n    exists: true,\n    is_filled: Math.random() < slotFillRate,\n    person_id: Math.random() < slotFillRate ? `04.04.02.04.20000.${company.company_unique_id.split('.').pop()}03` : null\n  };\n  \n  totalCost += enrichment.cost;\n  enrichedCompanies.push(enrichment);\n}\n\nreturn {\n  json: {\n    batch_id: batchId,\n    state: state,\n    enriched_companies: enrichedCompanies,\n    stats: {\n      total_enriched: enrichedCompanies.length,\n      tier_1_success: enrichedCompanies.filter(c => c.tier_used === 'tier_1').length,\n      tier_2_success: enrichedCompanies.filter(c => c.tier_used === 'tier_2').length,\n      tier_3_success: enrichedCompanies.filter(c => c.tier_used === 'tier_3').length,\n      all_failed: enrichedCompanies.filter(c => c.tier_used === 'all_failed').length,\n      total_cost: totalCost.toFixed(2)\n    },\n    next_phase: 'slot_completion_gate'\n  }\n};"
+      },
+      "name": "Phase 1.5 - Enrichment Waterfall",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1000, 300],
+      "id": "enrichment-waterfall-001",
+      "notes": "Three-Tier Enrichment: Tier 1 ($0.20) -> Tier 2 ($1.50) -> Tier 3 ($3.00)"
+    },
+    {
+      "parameters": {
+        "functionCode": "// 3/3 SLOT COMPLETION GATE\n// Blocks outreach until CEO + CFO + HR are all filled\n\nconst enrichedCompanies = $input.item.json.enriched_companies || [];\nconst batchId = $input.item.json.batch_id;\nconst state = $input.item.json.state;\nconst prevStats = $input.item.json.stats;\n\nconst readyForOutreach = [];\nconst needsMoreEnrichment = [];\n\nfor (const company of enrichedCompanies) {\n  const ceoFilled = company.slots.ceo.is_filled;\n  const cfoFilled = company.slots.cfo.is_filled;\n  const hrFilled = company.slots.hr.is_filled;\n  \n  const slotsFilled = [ceoFilled, cfoFilled, hrFilled].filter(Boolean).length;\n  const allSlotsFilled = ceoFilled && cfoFilled && hrFilled;\n  \n  const gateResult = {\n    company_unique_id: company.company_unique_id,\n    company_name: company.company_name,\n    slots_filled: slotsFilled,\n    ceo_filled: ceoFilled,\n    cfo_filled: cfoFilled,\n    hr_filled: hrFilled,\n    gate_passed: allSlotsFilled,\n    tier_used: company.tier_used,\n    enrichment_cost: company.cost,\n    enrichment_data: company.enrichment_data,\n    slots: company.slots\n  };\n  \n  if (allSlotsFilled) {\n    readyForOutreach.push(gateResult);\n  } else {\n    gateResult.missing_slots = [];\n    if (!ceoFilled) gateResult.missing_slots.push('CEO');\n    if (!cfoFilled) gateResult.missing_slots.push('CFO');\n    if (!hrFilled) gateResult.missing_slots.push('HR');\n    needsMoreEnrichment.push(gateResult);\n  }\n}\n\nreturn {\n  json: {\n    batch_id: batchId,\n    state: state,\n    ready_for_outreach: readyForOutreach,\n    needs_more_enrichment: needsMoreEnrichment,\n    enrichment_stats: prevStats,\n    gate_stats: {\n      total_checked: enrichedCompanies.length,\n      passed_3_of_3: readyForOutreach.length,\n      blocked_2_of_3: needsMoreEnrichment.filter(c => c.slots_filled === 2).length,\n      blocked_1_of_3: needsMoreEnrichment.filter(c => c.slots_filled === 1).length,\n      blocked_0_of_3: needsMoreEnrichment.filter(c => c.slots_filled === 0).length,\n      pass_rate: enrichedCompanies.length > 0 ? (readyForOutreach.length / enrichedCompanies.length * 100).toFixed(1) : 0\n    },\n    next_phase: 'bit_scoring'\n  }\n};"
+      },
+      "name": "Phase 2.5 - Slot Completion Gate",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1250, 300],
+      "id": "slot-gate-001",
+      "notes": "BLOCKING GATE: Requires 3/3 slots (CEO, CFO, HR) filled before proceeding"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.ready_for_outreach.length > 0}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "Has Ready Companies?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1500, 300],
+      "id": "if-ready-001"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Phase 4: BIT Trigger Check\n// Checks for executive movement, company changes, intent signals\n\nconst readyCompanies = $input.item.json.ready_for_outreach || [];\nconst batchId = $input.item.json.batch_id;\nconst state = $input.item.json.state;\n\nconst bitResults = [];\n\nfor (const company of readyCompanies) {\n  const signals = [];\n  \n  // Check for executive signals (stub - in production, check actual data)\n  if (company.ceo_filled) {\n    signals.push({\n      signal_type: 'executive_movement',\n      signal_source: 'CEO slot',\n      points: 40,\n      detected_at: new Date().toISOString()\n    });\n  }\n  \n  if (company.cfo_filled) {\n    signals.push({\n      signal_type: 'executive_movement',\n      signal_source: 'CFO slot',\n      points: 35,\n      detected_at: new Date().toISOString()\n    });\n  }\n  \n  if (company.hr_filled) {\n    signals.push({\n      signal_type: 'leadership_change',\n      signal_source: 'HR slot',\n      points: 25,\n      detected_at: new Date().toISOString()\n    });\n  }\n  \n  // Random additional signals for demo\n  if (Math.random() < 0.30) {\n    signals.push({\n      signal_type: 'hiring_spree',\n      signal_source: 'LinkedIn Jobs',\n      points: 20,\n      detected_at: new Date().toISOString()\n    });\n  }\n  \n  if (Math.random() < 0.20) {\n    signals.push({\n      signal_type: 'funding_round',\n      signal_source: 'Crunchbase',\n      points: 30,\n      detected_at: new Date().toISOString()\n    });\n  }\n  \n  bitResults.push({\n    company_unique_id: company.company_unique_id,\n    company_name: company.company_name,\n    signals: signals,\n    total_signals: signals.length,\n    trigger_met: signals.length > 0,\n    slots: company.slots\n  });\n}\n\nreturn {\n  json: {\n    batch_id: batchId,\n    state: state,\n    bit_results: bitResults,\n    stats: {\n      total_checked: bitResults.length,\n      triggered: bitResults.filter(r => r.trigger_met).length,\n      not_triggered: bitResults.filter(r => !r.trigger_met).length\n    },\n    next_phase: 'bit_scoring'\n  }\n};"
+      },
+      "name": "Phase 4 - BIT Trigger Check",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1750, 200],
+      "id": "bit-trigger-001",
+      "notes": "Checks for executive movement, funding, hiring signals"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Phase 5: BIT Score Calculation\n// Score range: 0-100\n// Hot >= 75, Warm 50-74, Cold < 50\n\nconst bitResults = $input.item.json.bit_results || [];\nconst batchId = $input.item.json.batch_id;\nconst state = $input.item.json.state;\n\nconst scoredCompanies = [];\n\nfor (const company of bitResults) {\n  let score = 0;\n  const scoring_breakdown = [];\n  \n  // Sum signal points\n  for (const signal of company.signals) {\n    score += signal.points;\n    scoring_breakdown.push(`${signal.signal_type}: +${signal.points}`);\n  }\n  \n  // Cap at 100\n  score = Math.min(score, 100);\n  \n  // Determine category\n  let category;\n  if (score >= 75) {\n    category = 'hot';\n  } else if (score >= 50) {\n    category = 'warm';\n  } else {\n    category = 'cold';\n  }\n  \n  scoredCompanies.push({\n    company_unique_id: company.company_unique_id,\n    company_name: company.company_name,\n    bit_score: score,\n    category: category,\n    scoring_breakdown: scoring_breakdown.join(', '),\n    signals: company.signals,\n    slots: company.slots\n  });\n}\n\n// Sort by score descending\nscoredCompanies.sort((a, b) => b.bit_score - a.bit_score);\n\nreturn {\n  json: {\n    batch_id: batchId,\n    state: state,\n    scored_companies: scoredCompanies,\n    stats: {\n      total_scored: scoredCompanies.length,\n      hot: scoredCompanies.filter(c => c.category === 'hot').length,\n      warm: scoredCompanies.filter(c => c.category === 'warm').length,\n      cold: scoredCompanies.filter(c => c.category === 'cold').length,\n      avg_score: scoredCompanies.length > 0 ? (scoredCompanies.reduce((sum, c) => sum + c.bit_score, 0) / scoredCompanies.length).toFixed(1) : 0\n    },\n    next_phase: 'outreach_promotion'\n  }\n};"
+      },
+      "name": "Phase 5 - BIT Score Calculation",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [2000, 200],
+      "id": "bit-score-001",
+      "notes": "Calculates BIT score (0-100). Hot >= 75, Warm 50-74, Cold < 50"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Phase 6: Promotion to Outreach Log\n// Only promotes warm/hot leads (score >= 50)\n\nconst scoredCompanies = $input.item.json.scored_companies || [];\nconst batchId = $input.item.json.batch_id;\nconst state = $input.item.json.state;\n\nconst promotedToOutreach = [];\nconst skippedCold = [];\n\nconst MIN_SCORE_FOR_OUTREACH = 50;\n\nfor (const company of scoredCompanies) {\n  if (company.bit_score >= MIN_SCORE_FOR_OUTREACH) {\n    // Calculate send date (1-3 days based on score)\n    let sendDays = 1;\n    if (company.category === 'warm') sendDays = 2;\n    \n    const sendDate = new Date();\n    sendDate.setDate(sendDate.getDate() + sendDays);\n    \n    // Build multi-threaded campaign\n    const campaign = {\n      campaign_id: `CAMP-${state}-${batchId.split('-').pop()}`,\n      sequence_id: company.category === 'hot' ? 'SEQ-EXEC-URGENT' : 'SEQ-EXEC-STANDARD',\n      send_date: sendDate.toISOString().split('T')[0],\n      contacts: []\n    };\n    \n    // CEO thread: Cost/ROI messaging\n    if (company.slots.ceo.is_filled) {\n      campaign.contacts.push({\n        slot_type: 'CEO',\n        person_id: company.slots.ceo.person_id,\n        messaging_theme: 'Cost/ROI',\n        subject_line: `Quick question about ${company.company_name}'s strategic priorities`,\n        template: 'exec_ceo_intro_v1'\n      });\n    }\n    \n    // CFO thread: Budget/Financial messaging\n    if (company.slots.cfo.is_filled) {\n      campaign.contacts.push({\n        slot_type: 'CFO',\n        person_id: company.slots.cfo.person_id,\n        messaging_theme: 'Budget/Financial',\n        subject_line: `Cost reduction opportunity for ${company.company_name}`,\n        template: 'exec_cfo_intro_v1'\n      });\n    }\n    \n    // HR thread: Service/Efficiency messaging\n    if (company.slots.hr.is_filled) {\n      campaign.contacts.push({\n        slot_type: 'HR',\n        person_id: company.slots.hr.person_id,\n        messaging_theme: 'Service/Efficiency',\n        subject_line: `Streamlining employee services at ${company.company_name}`,\n        template: 'exec_hr_intro_v1'\n      });\n    }\n    \n    promotedToOutreach.push({\n      company_unique_id: company.company_unique_id,\n      company_name: company.company_name,\n      bit_score: company.bit_score,\n      category: company.category,\n      campaign: campaign,\n      promoted_at: new Date().toISOString()\n    });\n  } else {\n    skippedCold.push({\n      company_unique_id: company.company_unique_id,\n      company_name: company.company_name,\n      bit_score: company.bit_score,\n      reason: `Score ${company.bit_score} below threshold ${MIN_SCORE_FOR_OUTREACH}`\n    });\n  }\n}\n\nreturn {\n  json: {\n    batch_id: batchId,\n    state: state,\n    promoted_to_outreach: promotedToOutreach,\n    skipped_cold: skippedCold,\n    stats: {\n      total_scored: scoredCompanies.length,\n      promoted: promotedToOutreach.length,\n      skipped: skippedCold.length,\n      total_contacts: promotedToOutreach.reduce((sum, p) => sum + p.campaign.contacts.length, 0)\n    },\n    pipeline_complete: true\n  }\n};"
+      },
+      "name": "Phase 6 - Outreach Promotion",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [2250, 200],
+      "id": "outreach-promotion-001",
+      "notes": "Promotes warm/hot leads to outreach with multi-threaded campaigns (CEO, CFO, HR)"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1i9QNWBqMgY825fLg7lblszMs6X6f5tLxCnAP3Qchfeg",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Outreach_Queue",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData"
+        }
+      },
+      "name": "Log Outreach to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [2500, 200],
+      "id": "sheets-outreach-001"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Log companies that need more enrichment\nconst needsEnrichment = $input.item.json.needs_more_enrichment || [];\n\nconst rows = needsEnrichment.map(company => ({\n  json: {\n    company_unique_id: company.company_unique_id,\n    company_name: company.company_name,\n    slots_filled: company.slots_filled,\n    missing_slots: company.missing_slots.join(', '),\n    enrichment_tier: company.tier_used,\n    enrichment_cost: company.enrichment_cost,\n    timestamp: new Date().toISOString(),\n    action_needed: 'Re-enrich for missing slots'\n  }\n}));\n\nreturn rows;"
+      },
+      "name": "Format Blocked for Sheets",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1750, 450],
+      "id": "format-blocked-001"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1i9QNWBqMgY825fLg7lblszMs6X6f5tLxCnAP3Qchfeg",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Enrichment_Queue",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData"
+        }
+      },
+      "name": "Log Blocked to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [2000, 450],
+      "id": "sheets-blocked-001"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Build final pipeline summary response\nconst data = $input.item.json;\n\nconst summary = {\n  status: 'success',\n  batch_id: data.batch_id,\n  state: data.state,\n  pipeline_complete: data.pipeline_complete,\n  statistics: {\n    promoted_to_outreach: data.stats.promoted,\n    skipped_cold: data.stats.skipped,\n    total_contacts_queued: data.stats.total_contacts\n  },\n  next_steps: [\n    'Review Outreach_Queue sheet for campaign details',\n    'Import to Instantly.ai or HeyReach',\n    'Monitor campaign engagement'\n  ],\n  timestamp: new Date().toISOString()\n};\n\nreturn { json: summary };"
+      },
+      "name": "Build Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [2750, 200],
+      "id": "build-response-001"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {}
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [3000, 200],
+      "id": "respond-webhook-001"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"status\": \"error\", \"message\": \"No valid companies to process\", \"batch_id\": \"{{$json.batch_id}}\"}",
+        "options": {}
+      },
+      "name": "Respond No Valid",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1250, 650],
+      "id": "respond-no-valid-001"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"status\": \"partial\", \"message\": \"All companies blocked at slot gate\", \"needs_enrichment\": {{$json.needs_more_enrichment.length}}, \"batch_id\": \"{{$json.batch_id}}\"}",
+        "options": {}
+      },
+      "name": "Respond All Blocked",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2250, 450],
+      "id": "respond-all-blocked-001"
+    }
+  ],
+  "connections": {
+    "Webhook - Intake Trigger": {
+      "main": [
+        [
+          {
+            "node": "Phase 1 - Intake Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Phase 1 - Intake Validation": {
+      "main": [
+        [
+          {
+            "node": "Has Valid Companies?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Valid Companies?": {
+      "main": [
+        [
+          {
+            "node": "Phase 1.5 - Enrichment Waterfall",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Invalid for Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Invalid for Sheets": {
+      "main": [
+        [
+          {
+            "node": "Log Invalid to Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Invalid to Sheets": {
+      "main": [
+        [
+          {
+            "node": "Respond No Valid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Phase 1.5 - Enrichment Waterfall": {
+      "main": [
+        [
+          {
+            "node": "Phase 2.5 - Slot Completion Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Phase 2.5 - Slot Completion Gate": {
+      "main": [
+        [
+          {
+            "node": "Has Ready Companies?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Ready Companies?": {
+      "main": [
+        [
+          {
+            "node": "Phase 4 - BIT Trigger Check",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Blocked for Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Phase 4 - BIT Trigger Check": {
+      "main": [
+        [
+          {
+            "node": "Phase 5 - BIT Score Calculation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Phase 5 - BIT Score Calculation": {
+      "main": [
+        [
+          {
+            "node": "Phase 6 - Outreach Promotion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Phase 6 - Outreach Promotion": {
+      "main": [
+        [
+          {
+            "node": "Log Outreach to Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Outreach to Sheets": {
+      "main": [
+        [
+          {
+            "node": "Build Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Blocked for Sheets": {
+      "main": [
+        [
+          {
+            "node": "Log Blocked to Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Blocked to Sheets": {
+      "main": [
+        [
+          {
+            "node": "Respond All Blocked",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "PLE",
+      "createdAt": "2025-11-25T00:00:00.000Z",
+      "updatedAt": "2025-11-25T00:00:00.000Z"
+    },
+    {
+      "name": "Outreach",
+      "createdAt": "2025-11-25T00:00:00.000Z",
+      "updatedAt": "2025-11-25T00:00:00.000Z"
+    },
+    {
+      "name": "Enrichment",
+      "createdAt": "2025-11-25T00:00:00.000Z",
+      "updatedAt": "2025-11-25T00:00:00.000Z"
+    }
+  ],
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "barton-outreach-core"
+  },
+  "pinData": {},
+  "versionId": "1.0.0",
+  "triggerCount": 0,
+  "createdAt": "2025-11-25T00:00:00.000Z",
+  "updatedAt": "2025-11-25T00:00:00.000Z"
+}

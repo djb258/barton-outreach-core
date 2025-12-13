@@ -9,11 +9,25 @@ obsidian-vault/
 ├── .obsidian/          # Obsidian configuration
 ├── notes/              # Daily notes and meeting notes
 ├── architecture/       # System architecture documentation
+│   ├── Hub-Spoke-Schema-Architecture.md   # PLE Hub + Spoke DB design
+│   ├── PLE-Data-Catalog.md                # AI-searchable metadata layer
+│   ├── Schema-Export-System.md            # Neon schema export system
+│   └── CTB-Phase-6-Completion.md          # CTB completion notes
 ├── processes/          # Process documentation and runbooks
 ├── research/           # Research notes and findings
 ├── templates/          # Note templates
 └── assets/             # Images and attachments
 ```
+
+## Architecture Documentation
+
+### Core Schema Documentation
+
+| Document | Description |
+|----------|-------------|
+| [[architecture/Hub-Spoke-Schema-Architecture]] | Hub + Spoke database design with 5 schemas, 31 tables, 2.4M+ rows |
+| [[architecture/PLE-Data-Catalog]] | AI & human searchable metadata layer (725 columns documented) |
+| [[architecture/Schema-Export-System]] | Automated Neon schema export to JSON/MD |
 
 ## 🔧 Setup
 

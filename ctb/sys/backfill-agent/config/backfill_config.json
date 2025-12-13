@@ -1,0 +1,101 @@
+{
+  "agent_id": "04.04.02.04.80000.001",
+  "barton_doctrine_id": "04.04.02.04.ple.backfill",
+  "agent_name": "Backfill & Historical State Agent",
+  "ctb_color": "yellow",
+  "ctb_layer": "System (AI/SHQ nerve)",
+
+  "database": {
+    "connection_string_env": "NEON_DATABASE_URL",
+    "schema": "marketing",
+    "pool_min_size": 2,
+    "pool_max_size": 10,
+    "command_timeout": 60
+  },
+
+  "input": {
+    "csv_path": "",
+    "csv_encoding": "utf-8",
+    "skip_header": true,
+    "expected_columns": [
+      "company_name",
+      "company_domain",
+      "company_website",
+      "full_name",
+      "first_name",
+      "last_name",
+      "title",
+      "email",
+      "phone",
+      "linkedin_url",
+      "historical_open_count",
+      "historical_reply_count",
+      "historical_meeting_count",
+      "last_engaged_at",
+      "notes"
+    ],
+    "required_columns": ["company_name", "full_name"]
+  },
+
+  "matching": {
+    "perfect_match": {
+      "company_domain_exact": 1.00,
+      "linkedin_url_exact": 1.00,
+      "email_domain_and_name_exact": 1.00
+    },
+    "fuzzy_match": {
+      "company_name_threshold": 0.90,
+      "person_name_threshold": 0.88,
+      "enable_fuzzy_matching": true,
+      "algorithm": "levenshtein"
+    },
+    "locked_fields": [
+      "locked_fields",
+      "manual_overrides",
+      "manually_corrected_email",
+      "manually_corrected_title",
+      "manually_corrected_domain",
+      "notes_internal"
+    ]
+  },
+
+  "baseline_generation": {
+    "bit_baseline": {
+      "enabled": true,
+      "signal_weights": {
+        "historical_open": 5,
+        "historical_reply": 30,
+        "historical_meeting": 50
+      },
+      "generate_bit_signals": true
+    },
+    "talent_flow_baseline": {
+      "enabled": true,
+      "create_initial_snapshot": true,
+      "hash_fields": ["full_name", "title", "company_name", "linkedin_url"]
+    }
+  },
+
+  "safety": {
+    "no_overwrite_locked_fields": true,
+    "no_duplicate_entries": true,
+    "no_tier3_enrichment": true,
+    "require_confidence_for_fuzzy": true,
+    "min_confidence_for_auto_match": 0.90,
+    "fallout_bucket_threshold": 0.90
+  },
+
+  "processing": {
+    "batch_size": 100,
+    "max_concurrent": 5,
+    "use_staging_table": true,
+    "enable_parallel_processing": false
+  },
+
+  "logging": {
+    "log_to_shq": true,
+    "log_level": "INFO",
+    "log_match_details": true,
+    "log_skipped_locked": true
+  }
+}

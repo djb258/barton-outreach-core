@@ -1,0 +1,16 @@
+{
+  "discovered_patterns": {
+    "04.04.02.04.30000.457": {
+      "domain": "wesbanco.com",
+      "pattern": "flast",
+      "verified_email": "rmichalo@wesbanco.com",
+      "confidence": 0.95
+    }
+  },
+  "stats": {
+    "companies_processed": 12,
+    "patterns_discovered": 1,
+    "verifications_performed": 18,
+    "discovery_rate": "16.7%"
+  }
+}

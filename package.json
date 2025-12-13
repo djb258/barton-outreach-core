@@ -9,9 +9,6 @@
     "test:python": "python -m pytest",
     "lint": "echo 'Linting not configured - add your linter here'",
     "format": "echo 'Formatting not configured - add your formatter here'",
-    "dev:factory-imo": "cd ctb/ui/apps/factory-imo && npm install && npm run dev",
-    "dev:amplify": "cd ctb/ui/apps/amplify-client && npm install && npm run dev",
-    "dev:outreach-ui": "cd ctb/ui/apps/outreach-ui && npm install && npm run dev",
     "sync:svg-ple": "bash infra/scripts/auto-sync-svg-ple-github.sh --once",
     "sync:svg-ple:watch": "bash infra/scripts/auto-sync-svg-ple-github.sh --watch",
     "schema:export": "python ctb/ops/scripts/export-neon-schema.py",
@@ -27,7 +24,7 @@
     "ctb",
     "outreach",
     "neon",
-    "grafana",
+    "ple",
     "executive-enrichment"
   ],
   "repository": {

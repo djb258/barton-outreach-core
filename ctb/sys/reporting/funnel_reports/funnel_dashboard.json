@@ -1,0 +1,506 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Funnel Dashboard Schema",
+  "description": "Schema for 4-Funnel GTM System dashboard data",
+  "version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "description": "Dashboard metadata",
+      "properties": {
+        "dashboard_id": {
+          "type": "string",
+          "description": "Unique dashboard identifier"
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when dashboard was generated"
+        },
+        "period_start": {
+          "type": "string",
+          "format": "date",
+          "description": "Start of reporting period"
+        },
+        "period_end": {
+          "type": "string",
+          "format": "date",
+          "description": "End of reporting period"
+        },
+        "refresh_frequency": {
+          "type": "string",
+          "enum": ["realtime", "hourly", "daily", "weekly", "monthly"],
+          "default": "daily"
+        }
+      },
+      "required": ["dashboard_id", "generated_at"]
+    },
+
+    "funnel_overview": {
+      "type": "object",
+      "description": "High-level funnel stage counts",
+      "properties": {
+        "suspects": {
+          "type": "object",
+          "properties": {
+            "total": { "type": "integer", "minimum": 0 },
+            "new_this_period": { "type": "integer", "minimum": 0 },
+            "churned_this_period": { "type": "integer", "minimum": 0 },
+            "conversion_rate": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "warm": {
+          "type": "object",
+          "properties": {
+            "total": { "type": "integer", "minimum": 0 },
+            "new_this_period": { "type": "integer", "minimum": 0 },
+            "churned_this_period": { "type": "integer", "minimum": 0 },
+            "conversion_rate": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "talentflow_warm": {
+          "type": "object",
+          "properties": {
+            "total": { "type": "integer", "minimum": 0 },
+            "new_this_period": { "type": "integer", "minimum": 0 },
+            "churned_this_period": { "type": "integer", "minimum": 0 },
+            "conversion_rate": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "appointments": {
+          "type": "object",
+          "properties": {
+            "total": { "type": "integer", "minimum": 0 },
+            "scheduled_this_period": { "type": "integer", "minimum": 0 },
+            "completed_this_period": { "type": "integer", "minimum": 0 },
+            "conversion_rate": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "clients": {
+          "type": "object",
+          "properties": {
+            "total": { "type": "integer", "minimum": 0 },
+            "new_this_period": { "type": "integer", "minimum": 0 },
+            "churned_this_period": { "type": "integer", "minimum": 0 },
+            "retention_rate": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        }
+      }
+    },
+
+    "conversion_rates": {
+      "type": "object",
+      "description": "Stage-to-stage conversion metrics",
+      "properties": {
+        "suspect_to_warm": {
+          "type": "object",
+          "properties": {
+            "rate": { "type": "number", "minimum": 0, "maximum": 1 },
+            "benchmark": { "type": "number", "minimum": 0, "maximum": 1 },
+            "trend": { "type": "string", "enum": ["up", "down", "stable"] },
+            "vs_benchmark": { "type": "number" }
+          }
+        },
+        "warm_to_talentflow": {
+          "type": "object",
+          "properties": {
+            "rate": { "type": "number", "minimum": 0, "maximum": 1 },
+            "benchmark": { "type": "number", "minimum": 0, "maximum": 1 },
+            "trend": { "type": "string", "enum": ["up", "down", "stable"] },
+            "vs_benchmark": { "type": "number" }
+          }
+        },
+        "talentflow_to_appointment": {
+          "type": "object",
+          "properties": {
+            "rate": { "type": "number", "minimum": 0, "maximum": 1 },
+            "benchmark": { "type": "number", "minimum": 0, "maximum": 1 },
+            "trend": { "type": "string", "enum": ["up", "down", "stable"] },
+            "vs_benchmark": { "type": "number" }
+          }
+        },
+        "appointment_to_client": {
+          "type": "object",
+          "properties": {
+            "rate": { "type": "number", "minimum": 0, "maximum": 1 },
+            "benchmark": { "type": "number", "minimum": 0, "maximum": 1 },
+            "trend": { "type": "string", "enum": ["up", "down", "stable"] },
+            "vs_benchmark": { "type": "number" }
+          }
+        },
+        "total_efficiency": {
+          "type": "object",
+          "properties": {
+            "rate": { "type": "number", "minimum": 0, "maximum": 1 },
+            "benchmark": { "type": "number", "minimum": 0, "maximum": 1 },
+            "trend": { "type": "string", "enum": ["up", "down", "stable"] },
+            "vs_benchmark": { "type": "number" }
+          }
+        }
+      }
+    },
+
+    "ten_three_one": {
+      "type": "object",
+      "description": "10-3-1 Modern Sales Ratios",
+      "properties": {
+        "target": {
+          "type": "object",
+          "properties": {
+            "leads_per_client": { "type": "number", "default": 10 },
+            "appointments_per_client": { "type": "number", "default": 3 },
+            "client_rate": { "type": "number", "default": 1 }
+          }
+        },
+        "actual": {
+          "type": "object",
+          "properties": {
+            "leads_per_client": { "type": "number" },
+            "appointments_per_client": { "type": "number" }
+          }
+        },
+        "efficiency": {
+          "type": "object",
+          "properties": {
+            "leads_efficiency": { "type": "number" },
+            "appointment_efficiency": { "type": "number" }
+          }
+        },
+        "is_above_target": { "type": "boolean" },
+        "performance_score": {
+          "type": "number",
+          "description": "0-100 score based on 10-3-1 performance"
+        }
+      }
+    },
+
+    "monthly_movements": {
+      "type": "array",
+      "description": "Monthly movement data for trend analysis",
+      "items": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "object",
+            "properties": {
+              "month": { "type": "integer", "minimum": 1, "maximum": 12 },
+              "year": { "type": "integer" }
+            }
+          },
+          "movements": {
+            "type": "object",
+            "properties": {
+              "suspects_added": { "type": "integer" },
+              "suspects_to_warm": { "type": "integer" },
+              "warm_to_talentflow": { "type": "integer" },
+              "talentflow_to_appointment": { "type": "integer" },
+              "appointments_to_client": { "type": "integer" }
+            }
+          },
+          "exits": {
+            "type": "object",
+            "properties": {
+              "suspects_churned": { "type": "integer" },
+              "warm_churned": { "type": "integer" },
+              "unsubscribes": { "type": "integer" },
+              "disqualified": { "type": "integer" }
+            }
+          },
+          "percentages": {
+            "type": "object",
+            "properties": {
+              "suspect_warm_pct": { "type": "number" },
+              "warm_talentflow_pct": { "type": "number" },
+              "talentflow_appointment_pct": { "type": "number" },
+              "appointment_client_pct": { "type": "number" },
+              "churn_rate": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+
+    "renewal_cyclicity": {
+      "type": "object",
+      "description": "Renewal-driven cyclicity metrics",
+      "properties": {
+        "quarterly_weights": {
+          "type": "object",
+          "properties": {
+            "q1": { "type": "number", "minimum": 0, "maximum": 1 },
+            "q2": { "type": "number", "minimum": 0, "maximum": 1 },
+            "q3": { "type": "number", "minimum": 0, "maximum": 1 },
+            "q4": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "contract_distribution": {
+          "type": "object",
+          "properties": {
+            "one_year_pct": { "type": "number" },
+            "two_year_pct": { "type": "number" },
+            "three_year_pct": { "type": "number" }
+          }
+        },
+        "retention_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "upcoming_renewals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "month": { "type": "integer" },
+              "year": { "type": "integer" },
+              "count": { "type": "integer" },
+              "arr_at_risk": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+
+    "forecast": {
+      "type": "object",
+      "description": "Revenue and lives projections",
+      "properties": {
+        "scenario": {
+          "type": "string",
+          "enum": ["conservative", "moderate", "aggressive"]
+        },
+        "projection_months": { "type": "integer" },
+        "revenue": {
+          "type": "object",
+          "properties": {
+            "starting_arr": { "type": "number" },
+            "ending_arr": { "type": "number" },
+            "arr_growth_pct": { "type": "number" },
+            "cagr": { "type": "number" },
+            "total_revenue": { "type": "number" },
+            "monthly_projections": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "month": { "type": "integer" },
+                  "clients": { "type": "integer" },
+                  "revenue": { "type": "number" },
+                  "growth_rate": { "type": "number" }
+                }
+              }
+            }
+          }
+        },
+        "lives": {
+          "type": "object",
+          "properties": {
+            "starting_lives": { "type": "integer" },
+            "ending_lives": { "type": "integer" },
+            "growth_pct": { "type": "number" },
+            "monthly_lives": {
+              "type": "array",
+              "items": { "type": "integer" }
+            }
+          }
+        },
+        "compounding": {
+          "type": "object",
+          "properties": {
+            "base_revenue": { "type": "number" },
+            "compounded_revenue": { "type": "number" },
+            "referral_revenue": { "type": "number" },
+            "cross_sell_revenue": { "type": "number" },
+            "price_uplift_revenue": { "type": "number" },
+            "compounding_multiplier": { "type": "number" }
+          }
+        }
+      }
+    },
+
+    "alerts": {
+      "type": "array",
+      "description": "Active alerts and warnings",
+      "items": {
+        "type": "object",
+        "properties": {
+          "alert_id": { "type": "string" },
+          "severity": {
+            "type": "string",
+            "enum": ["info", "warning", "critical"]
+          },
+          "category": {
+            "type": "string",
+            "enum": ["conversion", "churn", "velocity", "forecast", "renewal"]
+          },
+          "message": { "type": "string" },
+          "metric_name": { "type": "string" },
+          "current_value": { "type": "number" },
+          "threshold_value": { "type": "number" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+
+    "kpis": {
+      "type": "object",
+      "description": "Key Performance Indicators",
+      "properties": {
+        "funnel_velocity_days": {
+          "type": "number",
+          "description": "Average days from suspect to client"
+        },
+        "cost_per_client": {
+          "type": "number",
+          "description": "Marketing cost per acquired client"
+        },
+        "ltv_cac_ratio": {
+          "type": "number",
+          "description": "Lifetime Value / Customer Acquisition Cost"
+        },
+        "net_revenue_retention": {
+          "type": "number",
+          "description": "NRR percentage (>100% = expansion)"
+        },
+        "gross_margin": {
+          "type": "number",
+          "description": "Gross margin percentage"
+        },
+        "monthly_recurring_revenue": {
+          "type": "number",
+          "description": "Current MRR"
+        },
+        "annual_recurring_revenue": {
+          "type": "number",
+          "description": "Current ARR"
+        },
+        "avg_revenue_per_client": {
+          "type": "number",
+          "description": "ARPC"
+        },
+        "avg_lives_per_client": {
+          "type": "number",
+          "description": "Average employees per client"
+        }
+      }
+    },
+
+    "visualizations": {
+      "type": "object",
+      "description": "Chart configuration for dashboard rendering",
+      "properties": {
+        "funnel_chart": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "default": "funnel" },
+            "stages": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "value": { "type": "integer" },
+                  "color": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "conversion_trend": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "default": "line" },
+            "x_axis": { "type": "string", "default": "month" },
+            "series": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "data": { "type": "array", "items": { "type": "number" } }
+                }
+              }
+            }
+          }
+        },
+        "revenue_forecast": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "default": "area" },
+            "scenarios": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "data": { "type": "array", "items": { "type": "number" } },
+                  "color": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "ten_three_one_gauge": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "default": "gauge" },
+            "value": { "type": "number" },
+            "max": { "type": "number", "default": 100 },
+            "thresholds": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "value": { "type": "number" },
+                  "color": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+
+  "required": ["metadata", "funnel_overview", "conversion_rates"],
+
+  "examples": [
+    {
+      "metadata": {
+        "dashboard_id": "funnel-dash-2025-12",
+        "generated_at": "2025-12-05T10:30:00Z",
+        "period_start": "2025-12-01",
+        "period_end": "2025-12-31",
+        "refresh_frequency": "daily"
+      },
+      "funnel_overview": {
+        "suspects": { "total": 10000, "new_this_period": 500, "churned_this_period": 100, "conversion_rate": 0.10 },
+        "warm": { "total": 1000, "new_this_period": 100, "churned_this_period": 20, "conversion_rate": 0.30 },
+        "talentflow_warm": { "total": 300, "new_this_period": 30, "churned_this_period": 5, "conversion_rate": 0.33 },
+        "appointments": { "total": 100, "scheduled_this_period": 33, "completed_this_period": 25, "conversion_rate": 0.33 },
+        "clients": { "total": 33, "new_this_period": 8, "churned_this_period": 1, "retention_rate": 0.97 }
+      },
+      "conversion_rates": {
+        "suspect_to_warm": { "rate": 0.10, "benchmark": 0.10, "trend": "stable", "vs_benchmark": 0 },
+        "warm_to_talentflow": { "rate": 0.30, "benchmark": 0.25, "trend": "up", "vs_benchmark": 20 },
+        "talentflow_to_appointment": { "rate": 0.33, "benchmark": 0.30, "trend": "up", "vs_benchmark": 10 },
+        "appointment_to_client": { "rate": 0.33, "benchmark": 0.33, "trend": "stable", "vs_benchmark": 0 },
+        "total_efficiency": { "rate": 0.0033, "benchmark": 0.01, "trend": "stable", "vs_benchmark": -67 }
+      },
+      "ten_three_one": {
+        "target": { "leads_per_client": 10, "appointments_per_client": 3, "client_rate": 1 },
+        "actual": { "leads_per_client": 30.3, "appointments_per_client": 3.0 },
+        "efficiency": { "leads_efficiency": 0.33, "appointment_efficiency": 1.0 },
+        "is_above_target": false,
+        "performance_score": 66
+      },
+      "kpis": {
+        "funnel_velocity_days": 90,
+        "cost_per_client": 5000,
+        "ltv_cac_ratio": 10,
+        "net_revenue_retention": 105,
+        "monthly_recurring_revenue": 137500,
+        "annual_recurring_revenue": 1650000,
+        "avg_revenue_per_client": 50000,
+        "avg_lives_per_client": 150
+      }
+    }
+  ]
+}

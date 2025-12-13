@@ -1,0 +1,60 @@
+{
+  "data_source_weights": {
+    "peopledatalabs": 1.0,
+    "rocketreach": 0.95,
+    "clearbit": 0.9,
+    "abacus": 0.85,
+    "apify": 0.8,
+    "clay": 0.8,
+    "firecrawl": 0.7,
+    "scraperapi": 0.65,
+    "zenrows": 0.65,
+    "scrapingbee": 0.6,
+    "serpapi": 0.6,
+    "manual": 1.0,
+    "unknown": 0.5
+  },
+  "recency_multipliers": {
+    "days_0_7": 1.0,
+    "days_8_30": 0.95,
+    "days_31_90": 0.85,
+    "days_91_180": 0.7,
+    "days_181_365": 0.5,
+    "days_365_plus": 0.3
+  },
+  "field_completeness_bonus": {
+    "all_fields_present": 0.1,
+    "critical_fields_present": 0.05,
+    "partial_fields": 0.0,
+    "minimal_fields": -0.1
+  },
+  "critical_fields": [
+    "full_name",
+    "title",
+    "company_name"
+  ],
+  "movement_confidence_modifiers": {
+    "hire": {
+      "has_start_date": 0.15,
+      "linkedin_verified": 0.1,
+      "multiple_sources": 0.1
+    },
+    "exit": {
+      "has_end_date": 0.2,
+      "linkedin_verified": 0.1,
+      "multiple_sources": 0.1
+    },
+    "promotion": {
+      "title_level_clear": 0.15,
+      "same_company_verified": 0.1,
+      "multiple_sources": 0.1
+    },
+    "transfer": {
+      "department_clear": 0.1,
+      "same_company_verified": 0.15,
+      "multiple_sources": 0.1
+    }
+  },
+  "minimum_base_confidence": 0.5,
+  "maximum_confidence": 1.0
+}

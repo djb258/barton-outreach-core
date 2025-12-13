@@ -1,0 +1,176 @@
+{
+  "database": "Neon PostgreSQL - Marketing DB",
+  "verification_date": "2025-11-26",
+  "status": {
+    "total_tables": 6,
+    "existing": 3,
+    "missing": 3,
+    "completion_pct": 50.0
+  },
+  "tables": {
+    "companies": {
+      "exists": true,
+      "current_table": "marketing.company_master",
+      "ple_view": "ple.companies",
+      "status": "Exists with column name differences",
+      "missing_columns": [
+        "id",
+        "name",
+        "city",
+        "state",
+        "source",
+        "company_uid"
+      ],
+      "mapped_columns": {
+        "id": "company_unique_id",
+        "company_uid": "company_unique_id",
+        "name": "company_name",
+        "city": "address_city",
+        "state": "address_state",
+        "source": "source_system"
+      }
+    },
+    "company_slots": {
+      "exists": true,
+      "current_table": "marketing.company_slot",
+      "ple_view": "ple.company_slots",
+      "status": "Exists with column name differences",
+      "missing_columns": [
+        "id",
+        "slot_uid",
+        "company_id",
+        "person_id",
+        "assigned_at",
+        "vacated_at"
+      ],
+      "mapped_columns": {
+        "id": "company_slot_unique_id",
+        "slot_uid": "company_slot_unique_id",
+        "company_id": "company_unique_id",
+        "person_id": "person_unique_id",
+        "assigned_at": "filled_at",
+        "vacated_at": "MISSING - needs to be added"
+      }
+    },
+    "people": {
+      "exists": true,
+      "current_table": "marketing.people_master",
+      "ple_view": "ple.people",
+      "status": "Exists with critical missing columns",
+      "missing_columns": [
+        "id",
+        "person_uid",
+        "company_id",
+        "validation_status",
+        "last_verified_at",
+        "last_enrichment_attempt"
+      ],
+      "mapped_columns": {
+        "id": "unique_id",
+        "person_uid": "unique_id",
+        "company_id": "company_unique_id",
+        "validation_status": "MISSING - needs to be added",
+        "last_verified_at": "MISSING - needs to be added",
+        "last_enrichment_attempt": "MISSING - needs to be added"
+      }
+    },
+    "person_movement_history": {
+      "exists": false,
+      "current_table": null,
+      "ple_view": "ple.person_movement_history",
+      "status": "Does not exist - needs to be created",
+      "columns": [
+        "id",
+        "person_id",
+        "linkedin_url",
+        "company_id_from",
+        "company_id_to",
+        "title_from",
+        "title_to",
+        "movement_type",
+        "detected_at",
+        "raw_payload"
+      ]
+    },
+    "person_scores": {
+      "exists": false,
+      "current_table": null,
+      "ple_view": "ple.person_scores",
+      "status": "Does not exist - needs to be created",
+      "columns": [
+        "id",
+        "person_id",
+        "bit_score",
+        "confidence_score",
+        "calculated_at",
+        "score_factors"
+      ],
+      "note": "Check if bit.bit_contact_score can be used instead"
+    },
+    "company_events": {
+      "exists": false,
+      "current_table": null,
+      "ple_view": "ple.company_events",
+      "status": "Does not exist - needs to be created",
+      "columns": [
+        "id",
+        "company_id",
+        "event_type",
+        "event_date",
+        "source_url",
+        "summary",
+        "detected_at",
+        "impacts_bit"
+      ]
+    }
+  },
+  "migration_phases": [
+    {
+      "phase": 1,
+      "name": "Add Missing Columns",
+      "actions": [
+        "ADD marketing.people_master.validation_status",
+        "ADD marketing.people_master.last_verified_at",
+        "ADD marketing.people_master.last_enrichment_attempt",
+        "ADD marketing.company_slot.vacated_at"
+      ],
+      "risk": "LOW"
+    },
+    {
+      "phase": 2,
+      "name": "Create PLE Views",
+      "actions": [
+        "CREATE VIEW ple.companies",
+        "CREATE VIEW ple.company_slots",
+        "CREATE VIEW ple.people"
+      ],
+      "risk": "NONE"
+    },
+    {
+      "phase": 3,
+      "name": "Create Sidecar Tables",
+      "actions": [
+        "CREATE TABLE ple.person_movement_history",
+        "CREATE TABLE ple.person_scores",
+        "CREATE TABLE ple.company_events"
+      ],
+      "risk": "LOW"
+    },
+    {
+      "phase": 4,
+      "name": "Add Indexes",
+      "actions": [
+        "CREATE INDEXES on person_movement_history (7 indexes)",
+        "CREATE INDEXES on person_scores (6 indexes)",
+        "CREATE INDEXES on company_events (6 indexes)"
+      ],
+      "risk": "NONE"
+    }
+  ],
+  "files_generated": [
+    "PLE_SCHEMA_VERIFICATION_REPORT.md",
+    "ctb/sys/enrichment/ple_schema_migration.sql",
+    "ctb/sys/enrichment/PLE_SCHEMA_QUICK_REFERENCE.md",
+    "verify_ple_schema.py"
+  ]
+}

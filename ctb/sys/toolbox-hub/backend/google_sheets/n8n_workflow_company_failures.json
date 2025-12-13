@@ -1,0 +1,111 @@
+{
+  "name": "Push Company Failures to Google Sheets",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "push-company-failures",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "push-company-failures",
+      "id": "webhook-company-failures-001"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Extract data from webhook payload\nconst payload = $input.item.json.body;\n\n// Prepare rows for Google Sheets\nconst rows = [];\n\nfor (const row of payload.data_rows || []) {\n  rows.push({\n    json: {\n      company_id: row.company_id || '',\n      company_name: row.company_name || '',\n      fail_reason: row.fail_reason || '',\n      state: row.state || payload.state || '',\n      validation_timestamp: row.validation_timestamp || new Date().toISOString(),\n      pipeline_id: payload.pipeline_id || '',\n      sheet_name: payload.sheet_name || 'WV_Validation_Failures_2025',\n      tab_name: payload.tab_name || 'Company_Failures'\n    }\n  });\n}\n\nreturn rows;"
+      },
+      "name": "Parse Webhook Data",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "id": "parse-company-data-001"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1i9QNWBqMgY825fLg7lblszMs6X6f5tLxCnAP3Qchfeg",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Company_Failures",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "company_id": "={{$json.company_id}}",
+            "company_name": "={{$json.company_name}}",
+            "fail_reason": "={{$json.fail_reason}}",
+            "state": "={{$json.state}}",
+            "validation_timestamp": "={{$json.validation_timestamp}}",
+            "pipeline_id": "={{$json.pipeline_id}}"
+          }
+        },
+        "options": {}
+      },
+      "name": "Append to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [650, 300],
+      "id": "append-company-sheets-001"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"status\": \"success\", \"message\": \"Pushed \" + $json.company_id + \" to Google Sheets\", \"timestamp\": \"\" + new Date().toISOString() + \"\"}",
+        "options": {}
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [850, 300],
+      "id": "respond-company-webhook-001"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse Webhook Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Webhook Data": {
+      "main": [
+        [
+          {
+            "node": "Append to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append to Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

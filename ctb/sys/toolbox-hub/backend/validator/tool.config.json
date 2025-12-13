@@ -1,0 +1,43 @@
+{
+  "tool_id": "validator",
+  "name": "Validator (Neon Agent)",
+  "blueprint_id": "04.svg.marketing.outreach.v1",
+  "barton_id": "04.04.02.04.10000.002",
+  "altitude": 18000,
+  "version": "1.0.0",
+  "description": "Validation engine powered by Neon-stored rules. Validates company data, executive slots, and enrichment results.",
+  "neon_tables": {
+    "input": "marketing.company_master",
+    "output": "marketing.company_slot",
+    "rules": "marketing.validation_rules",
+    "audit": "shq.audit_log",
+    "error": "shq.error_master"
+  },
+  "dependencies": {
+    "neon_db": "required",
+    "validation_engine": "required"
+  },
+  "kill_switch": {
+    "enabled": true,
+    "condition": "validation_failures > 100",
+    "action": "halt_and_notify"
+  },
+  "environment_variables": [
+    "NEON_CONNECTION_STRING"
+  ],
+  "api_endpoints": {
+    "validate": "/api/validator/validate",
+    "rules": "/api/validator/rules",
+    "stats": "/api/validator/stats",
+    "health": "/api/validator/health"
+  },
+  "n8n_integration": {
+    "webhook_url": "/hooks/validator",
+    "event_types": [
+      "validation.requested",
+      "validation.completed",
+      "validation.failed"
+    ],
+    "response_format": "heir_orbt"
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "firecrawl": {
+    "tier": 0,
+    "category": "scrape",
+    "description": "Web scraping for email patterns and contact pages",
+    "use_cases": ["domain_scrape", "contact_page", "email_pattern"]
+  },
+  "scraperapi": {
+    "tier": 0,
+    "category": "scrape",
+    "description": "Proxy-based web scraping service",
+    "use_cases": ["domain_scrape", "contact_page"]
+  },
+  "googleplaces": {
+    "tier": 0,
+    "category": "business_info",
+    "description": "Google Places API for business verification",
+    "use_cases": ["business_lookup", "address_verify", "phone_lookup"]
+  },
+  "hunter": {
+    "tier": 1,
+    "category": "email_lookup",
+    "description": "Hunter.io email finder and pattern discovery",
+    "use_cases": ["email_pattern", "email_verify", "domain_search"]
+  },
+  "apollo": {
+    "tier": 1,
+    "category": "email_lookup",
+    "description": "Apollo.io contact and company enrichment",
+    "use_cases": ["email_lookup", "company_enrich", "contact_find"]
+  },
+  "clay": {
+    "tier": 1,
+    "category": "email_lookup",
+    "description": "Clay enrichment platform for email and company data",
+    "use_cases": ["email_lookup", "company_enrich", "waterfall"]
+  },
+  "prospeo": {
+    "tier": 1.5,
+    "category": "pattern_lookup",
+    "description": "Prospeo email pattern and verification service",
+    "use_cases": ["email_pattern", "email_verify", "bulk_verify"]
+  },
+  "snov": {
+    "tier": 1.5,
+    "category": "pattern_lookup",
+    "description": "Snov.io email finder and verification",
+    "use_cases": ["email_find", "email_verify", "drip_campaign"]
+  },
+  "clearbit": {
+    "tier": 2,
+    "category": "enrichment",
+    "description": "Clearbit company and person enrichment",
+    "use_cases": ["company_enrich", "person_enrich", "domain_intel"]
+  },
+  "pdl": {
+    "tier": 2,
+    "category": "enrichment",
+    "description": "People Data Labs for person and company data",
+    "use_cases": ["person_lookup", "company_lookup", "bulk_enrich"]
+  },
+  "zenrows": {
+    "tier": 2,
+    "category": "scrape",
+    "description": "ZenRows premium web scraping with anti-bot bypass",
+    "use_cases": ["premium_scrape", "javascript_render", "anti_bot"]
+  },
+  "zoominfo": {
+    "tier": 3,
+    "category": "enrichment",
+    "description": "ZoomInfo enterprise B2B intelligence",
+    "use_cases": ["enterprise_lookup", "org_chart", "intent_data"]
+  }
+}
