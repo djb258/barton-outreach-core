@@ -21,7 +21,9 @@
       "Bash(git rev-parse:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git merge:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []
