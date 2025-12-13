@@ -209,3 +209,43 @@ dol_form5500.csv
 dol_form5500sf.csv
 schedule_a.csv
 nul
+
+# === Enrichment Pipeline Output Files ===
+# These are generated data files, not source code
+ctb/sys/enrichment/output/
+ctb/sys/enrichment/pipeline_engine/output/
+
+# Specific output file patterns
+**/output/*.csv
+**/output/*.jsonl
+**/output/*.json
+!**/output/.gitkeep
+
+# Companies data files
+companies_with_urls.csv
+
+# DuckDB and matching output
+duckdb_matches.csv
+enriched_matches.csv
+
+# Firecrawl output
+firecrawl_*.csv
+
+# Free enrichment output
+free_enrichment_*.csv
+free_enrichment_*.jsonl
+
+# Splink matching output
+splink_*.csv
+
+# Review and cleanup files
+review_*.csv
+*_cleanup_*.csv
+*_cleanup_*.json
+
+# Stage progress files
+stage*_progress.csv
+
+# DOL exports (already have some patterns but be explicit)
+dol_*.csv
+dol_*.json
