@@ -1,0 +1,181 @@
+name: Lint
+
+on:
+  pull_request:
+    branches: ['main', 'node-*']
+  push:
+    branches: ['main', 'node-*']
+
+jobs:
+  lint-code:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          if [ -f "package.json" ]; then
+            npm ci || npm install
+          else
+            echo "No package.json found in root, checking subdirectories..."
+            if [ -f "barton-outreach-core/package.json" ]; then
+              cd barton-outreach-core
+              npm ci || npm install
+            fi
+          fi
+
+      - name: Check formatting (Prettier)
+        run: |
+          # Install prettier if not present
+          if ! command -v npx prettier &> /dev/null; then
+            npm install --save-dev prettier
+          fi
+          
+          echo "Checking code formatting..."
+          npx prettier --check "**/*.{js,jsx,ts,tsx,json,yaml,yml}" --ignore-path .gitignore || {
+            echo "❌ Formatting issues found. Run 'npx prettier --write' to fix."
+            exit 1
+          }
+
+      - name: Lint JavaScript/TypeScript
+        if: always()
+        run: |
+          # Check if ESLint is configured
+          if [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ] || [ -f "eslint.config.js" ]; then
+            echo "Running ESLint..."
+            npx eslint . --ext .js,.jsx,.ts,.tsx --max-warnings 0 || {
+              echo "❌ ESLint found issues"
+              exit 1
+            }
+          else
+            echo "⚠️ No ESLint configuration found, skipping JavaScript linting"
+          fi
+
+      - name: Lint SQL files
+        if: always()
+        run: |
+          # Install sqlfluff
+          pip install sqlfluff
+          
+          echo "Checking SQL files..."
+          
+          # Find all SQL files
+          sql_files=$(find . -name "*.sql" -type f | grep -v node_modules || true)
+          
+          if [ -n "$sql_files" ]; then
+            for file in $sql_files; do
+              echo "Linting: $file"
+              sqlfluff lint "$file" --dialect postgres || {
+                echo "⚠️ SQL linting issues found in $file (non-blocking)"
+              }
+            done
+          else
+            echo "No SQL files found to lint"
+          fi
+
+      - name: Lint YAML files
+        if: always()
+        run: |
+          # Install yamllint
+          pip install yamllint
+          
+          echo "Checking YAML files..."
+          
+          # Create basic yamllint config if not exists
+          if [ ! -f ".yamllint" ]; then
+            cat > .yamllint <<EOF
+extends: default
+rules:
+  line-length:
+    max: 150
+  truthy:
+    check-keys: false
+  comments:
+    min-spaces-from-content: 1
+EOF
+          fi
+          
+          yamllint . --format colored || {
+            echo "⚠️ YAML linting issues found (non-blocking)"
+          }
+
+      - name: Check file naming conventions
+        if: always()
+        run: |
+          echo "Checking file naming conventions..."
+          
+          # Check for spaces in filenames
+          files_with_spaces=$(find . -name "* *" -type f | grep -v node_modules | grep -v .git || true)
+          
+          if [ -n "$files_with_spaces" ]; then
+            echo "❌ Files with spaces found:"
+            echo "$files_with_spaces"
+            exit 1
+          fi
+          
+          echo "✅ File naming conventions check passed"
+
+      - name: Check for large files
+        if: always()
+        run: |
+          echo "Checking for large files..."
+          
+          # Find files larger than 1MB
+          large_files=$(find . -type f -size +1M | grep -v node_modules | grep -v .git || true)
+          
+          if [ -n "$large_files" ]; then
+            echo "⚠️ Large files detected (>1MB):"
+            echo "$large_files"
+            echo "Consider using Git LFS for large files"
+          fi
+
+      - name: Security check - No credentials
+        if: always()
+        run: |
+          echo "Checking for potential credentials..."
+          
+          # Basic patterns to check for credentials
+          patterns=(
+            "password.*=.*['\"].*['\"]"
+            "api[_-]?key.*=.*['\"].*['\"]"
+            "secret.*=.*['\"].*['\"]"
+            "token.*=.*['\"].*['\"]"
+            "aws[_-]?access"
+            "private[_-]?key"
+          )
+          
+          found_issues=false
+          
+          for pattern in "${patterns[@]}"; do
+            matches=$(grep -r -i "$pattern" . --exclude-dir=node_modules --exclude-dir=.git --exclude="*.md" --exclude="lint.yml" || true)
+            if [ -n "$matches" ]; then
+              echo "⚠️ Potential credential pattern found: $pattern"
+              echo "$matches"
+              found_issues=true
+            fi
+          done
+          
+          if [ "$found_issues" = true ]; then
+            echo "❌ Potential credentials detected. Please review and use environment variables instead."
+            exit 1
+          fi
+          
+          echo "✅ No obvious credentials found"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Linting Summary"
+          echo "- Code formatting check completed"
+          echo "- SQL linting completed"
+          echo "- YAML linting completed"
+          echo "- File naming conventions checked"
+          echo "- Security scan completed"
