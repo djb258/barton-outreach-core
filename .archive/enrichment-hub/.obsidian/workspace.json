@@ -1,0 +1,109 @@
+{
+  "main": {
+    "id": "enricha-vision-main",
+    "type": "split",
+    "children": [
+      {
+        "id": "ctb-docs-tab",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "readme-view",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "CTB_README.md",
+                "mode": "source"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "file-explorer-left",
+    "type": "split",
+    "children": [
+      {
+        "id": "file-explorer-pane",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "file-explorer",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {}
+            }
+          },
+          {
+            "id": "search",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "sidebar-right",
+    "type": "split",
+    "children": [
+      {
+        "id": "sidebar-right-tabs",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "backlinks",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "outline",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "active": "readme-view",
+  "lastOpenFiles": [
+    "CTB_README.md",
+    "README.md",
+    "ENV_SETUP.md",
+    "SECURITY.md",
+    "ctb/docs/README.md"
+  ]
+}

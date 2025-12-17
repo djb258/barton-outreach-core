@@ -1,0 +1,17 @@
+{
+  "composio": {
+    "enabled": true,
+    "mcp_url": "http://localhost:3001/tool",
+    "api_key_env": "COMPOSIO_API_KEY",
+    "user_id_env": "COMPOSIO_USER_ID",
+    "scenarios": {
+      "compliance": "CTB_Compliance_Cycle"
+    },
+    "timeout": 30000,
+    "retry": {
+      "enabled": true,
+      "max_attempts": 3,
+      "backoff": "exponential"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "promptDelete": false,
+  "alwaysUpdateLinks": true,
+  "newFileLocation": "current",
+  "attachmentFolderPath": "./",
+  "useMarkdownLinks": true,
+  "newLinkFormat": "relative",
+  "showFrontmatter": true,
+  "foldHeading": false,
+  "foldIndent": false,
+  "showLineNumber": true,
+  "spellcheck": true,
+  "spellcheckLanguages": ["en-US"],
+  "readableLineLength": true,
+  "strictLineBreaks": false,
+  "showIndentGuide": true,
+  "livePreview": true,
+  "focusNewTab": true
+}

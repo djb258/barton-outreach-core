@@ -1,0 +1,41 @@
+{
+  "ai": {
+    "providers": [
+      {
+        "name": "gemini",
+        "enabled": true,
+        "api_key_env": "GEMINI_API_KEY",
+        "models": [
+          "gemini-pro",
+          "gemini-pro-vision"
+        ],
+        "default_model": "gemini-pro"
+      },
+      {
+        "name": "openai",
+        "enabled": true,
+        "api_key_env": "OPENAI_API_KEY",
+        "models": [
+          "gpt-4",
+          "gpt-4-turbo",
+          "gpt-3.5-turbo"
+        ],
+        "default_model": "gpt-4-turbo"
+      }
+    ],
+    "default_provider": "gemini",
+    "prompts_directory": "ctb/ai/prompts/",
+    "models_directory": "ctb/ai/models/",
+    "settings": {
+      "temperature": 0.7,
+      "max_tokens": 2048,
+      "top_p": 0.9,
+      "frequency_penalty": 0,
+      "presence_penalty": 0
+    },
+    "rate_limiting": {
+      "enabled": true,
+      "requests_per_minute": 60
+    }
+  }
+}

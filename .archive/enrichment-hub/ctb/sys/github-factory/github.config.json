@@ -1,0 +1,27 @@
+{
+  "github": {
+    "enabled": true,
+    "factory_path": "ctb/sys/github-factory/",
+    "authentication": {
+      "token_env": "GITHUB_TOKEN",
+      "type": "personal_access_token"
+    },
+    "repository": {
+      "owner": "${GITHUB_OWNER}",
+      "name": "${GITHUB_REPO}"
+    },
+    "workflows": {
+      "enabled": true,
+      "auto_deploy": false
+    },
+    "branches": {
+      "main": "main",
+      "develop": "develop",
+      "protected": ["main", "master"]
+    },
+    "actions": {
+      "enabled": true,
+      "secrets_sync": false
+    }
+  }
+}

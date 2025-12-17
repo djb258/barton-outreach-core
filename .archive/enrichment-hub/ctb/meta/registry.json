@@ -1,0 +1,67 @@
+{
+  "registry": {
+    "version": "1.0.0",
+    "last_updated": "2025-11-07",
+    "total_components": 0,
+    "compliance_score": 100,
+    "components": {},
+    "branches": {
+      "sys": {
+        "description": "System integrations and infrastructure",
+        "components": [
+          "logging",
+          "composio",
+          "firebase",
+          "neon",
+          "github-factory",
+          "global-factory"
+        ]
+      },
+      "ai": {
+        "description": "AI models, prompts, and training",
+        "components": [
+          "prompts",
+          "models",
+          "ai-config"
+        ]
+      },
+      "data": {
+        "description": "Database schemas and migrations",
+        "components": [
+          "migrations"
+        ]
+      },
+      "docs": {
+        "description": "Documentation and guides",
+        "components": [
+          "api",
+          "architecture",
+          "guides",
+          "tutorials"
+        ]
+      },
+      "ui": {
+        "description": "User interfaces and components",
+        "components": [
+          "components",
+          "pages"
+        ]
+      },
+      "meta": {
+        "description": "CTB metadata and registry",
+        "components": [
+          "heir-orbt",
+          "registry",
+          "manifest"
+        ]
+      }
+    },
+    "statistics": {
+      "total_files": 0,
+      "tagged_files": 0,
+      "untagged_files": 0,
+      "compliance_issues": 0
+    },
+    "audit_history": []
+  }
+}

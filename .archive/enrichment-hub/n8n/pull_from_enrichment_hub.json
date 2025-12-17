@@ -1,0 +1,451 @@
+{
+  "name": "Pull from Enrichment Hub",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 2 * * *"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "notesInFlow": true,
+      "notes": "Runs daily at 2:00 AM"
+    },
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 450],
+      "notesInFlow": true,
+      "notes": "Manual execution for testing"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  id,\n  company_name,\n  domain,\n  industry,\n  employee_count,\n  revenue,\n  location,\n  linkedin_url,\n  enrichment_data,\n  validation_status,\n  enriched_at,\n  enriched_by\nFROM public.company_needs_enrichment \nWHERE validation_status = 'READY'\nORDER BY enriched_at ASC;",
+        "additionalFields": {}
+      },
+      "id": "query-companies",
+      "name": "Query Ready Companies",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [500, 300],
+      "credentials": {
+        "postgres": {
+          "id": "{{SUPABASE_CREDENTIALS_ID}}",
+          "name": "Supabase PostgreSQL"
+        }
+      },
+      "notesInFlow": true,
+      "notes": "Fetch READY companies from Supabase enrichment table"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  id,\n  first_name,\n  last_name,\n  email,\n  phone,\n  title,\n  company_id,\n  company_name,\n  linkedin_url,\n  enrichment_data,\n  validation_status,\n  enriched_at,\n  enriched_by\nFROM public.people_needs_enrichment \nWHERE validation_status = 'READY'\nORDER BY enriched_at ASC;",
+        "additionalFields": {}
+      },
+      "id": "query-people",
+      "name": "Query Ready People",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [500, 450],
+      "credentials": {
+        "postgres": {
+          "id": "{{SUPABASE_CREDENTIALS_ID}}",
+          "name": "Supabase PostgreSQL"
+        }
+      },
+      "notesInFlow": true,
+      "notes": "Fetch READY people from Supabase enrichment table"
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": "marketing",
+        "table": "company_master",
+        "columns": "company_name, domain, industry, employee_count, revenue, location, linkedin_url, enrichment_source, enriched_at, validation_status, metadata",
+        "options": {
+          "queryBatching": "independently"
+        }
+      },
+      "id": "insert-companies-neon",
+      "name": "Insert Companies to Neon",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [750, 300],
+      "credentials": {
+        "postgres": {
+          "id": "{{NEON_CREDENTIALS_ID}}",
+          "name": "Neon PostgreSQL"
+        }
+      },
+      "notesInFlow": true,
+      "notes": "Insert promoted companies into marketing.company_master"
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": "marketing",
+        "table": "people_master",
+        "columns": "first_name, last_name, email, phone, title, company_id, company_name, linkedin_url, enrichment_source, enriched_at, validation_status, metadata",
+        "options": {
+          "queryBatching": "independently"
+        }
+      },
+      "id": "insert-people-neon",
+      "name": "Insert People to Neon",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [750, 450],
+      "credentials": {
+        "postgres": {
+          "id": "{{NEON_CREDENTIALS_ID}}",
+          "name": "Neon PostgreSQL"
+        }
+      },
+      "notesInFlow": true,
+      "notes": "Insert promoted people into marketing.people_master"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE public.company_needs_enrichment\nSET validation_status = 'PASSED',\n    promoted_at = NOW(),\n    promoted_to_neon = TRUE\nWHERE id IN ({{ $json.company_ids }});",
+        "additionalFields": {}
+      },
+      "id": "update-companies-status",
+      "name": "Update Companies Status",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [1000, 300],
+      "credentials": {
+        "postgres": {
+          "id": "{{SUPABASE_CREDENTIALS_ID}}",
+          "name": "Supabase PostgreSQL"
+        }
+      },
+      "notesInFlow": true,
+      "notes": "Mark companies as PASSED in Supabase"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE public.people_needs_enrichment\nSET validation_status = 'PASSED',\n    promoted_at = NOW(),\n    promoted_to_neon = TRUE\nWHERE id IN ({{ $json.people_ids }});",
+        "additionalFields": {}
+      },
+      "id": "update-people-status",
+      "name": "Update People Status",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [1000, 450],
+      "credentials": {
+        "postgres": {
+          "id": "{{SUPABASE_CREDENTIALS_ID}}",
+          "name": "Supabase PostgreSQL"
+        }
+      },
+      "notesInFlow": true,
+      "notes": "Mark people as PASSED in Supabase"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=DELETE FROM public.company_needs_enrichment\nWHERE validation_status = 'PASSED'\n  AND promoted_at < NOW() - INTERVAL '7 days';",
+        "additionalFields": {}
+      },
+      "id": "cleanup-companies",
+      "name": "Cleanup Old Companies",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [1250, 300],
+      "credentials": {
+        "postgres": {
+          "id": "{{SUPABASE_CREDENTIALS_ID}}",
+          "name": "Supabase PostgreSQL"
+        }
+      },
+      "notesInFlow": true,
+      "notes": "Delete PASSED companies older than 7 days"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=DELETE FROM public.people_needs_enrichment\nWHERE validation_status = 'PASSED'\n  AND promoted_at < NOW() - INTERVAL '7 days';",
+        "additionalFields": {}
+      },
+      "id": "cleanup-people",
+      "name": "Cleanup Old People",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [1250, 450],
+      "credentials": {
+        "postgres": {
+          "id": "{{SUPABASE_CREDENTIALS_ID}}",
+          "name": "Supabase PostgreSQL"
+        }
+      },
+      "notesInFlow": true,
+      "notes": "Delete PASSED people older than 7 days"
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": "shq",
+        "table": "validation_log",
+        "columns": "workflow_name, entity_type, action, record_count, status, timestamp, metadata",
+        "options": {}
+      },
+      "id": "log-company-promotion",
+      "name": "Log Company Promotion",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [1500, 300],
+      "credentials": {
+        "postgres": {
+          "id": "{{NEON_CREDENTIALS_ID}}",
+          "name": "Neon PostgreSQL"
+        }
+      },
+      "notesInFlow": true,
+      "notes": "Write audit log for company promotion to shq.validation_log"
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": "shq",
+        "table": "validation_log",
+        "columns": "workflow_name, entity_type, action, record_count, status, timestamp, metadata",
+        "options": {}
+      },
+      "id": "log-people-promotion",
+      "name": "Log People Promotion",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [1500, 450],
+      "credentials": {
+        "postgres": {
+          "id": "{{NEON_CREDENTIALS_ID}}",
+          "name": "Neon PostgreSQL"
+        }
+      },
+      "notesInFlow": true,
+      "notes": "Write audit log for people promotion to shq.validation_log"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aggregate results from all branches\nconst companyResults = $input.item(0).json;\nconst peopleResults = $input.item(1).json;\n\nconst timestamp = new Date().toISOString();\nconst companiesPromoted = companyResults.record_count || 0;\nconst peoplePromoted = peopleResults.record_count || 0;\nconst totalPromoted = companiesPromoted + peoplePromoted;\n\n// Generate markdown summary table\nconst summary = `\n# Enrichment Hub → Neon Promotion Summary\n\n**Workflow:** Pull from Enrichment Hub  \n**Timestamp:** ${timestamp}  \n**Status:** ✅ Completed\n\n## Records Promoted\n\n| Entity Type | Records Promoted | Status |\n|-------------|------------------|--------|\n| Companies   | ${companiesPromoted}         | ✅ Success |\n| People      | ${peoplePromoted}         | ✅ Success |\n| **TOTAL**   | **${totalPromoted}**     | ✅ Success |\n\n## Destination\n\n- **Database:** Neon PostgreSQL (marketing schema)\n- **Tables:** \n  - \\`marketing.company_master\\`\n  - \\`marketing.people_master\\`\n- **Audit Log:** \\`shq.validation_log\\`\n\n## Next Steps\n\n- Records are now available in Neon for revalidation\n- Enrichment tables cleaned (7-day retention for PASSED records)\n- Ready for promotion to production tables\n\n---\n\n*Generated by n8n workflow: pull_from_enrichment_hub*\n`;\n\nreturn {\n  json: {\n    summary,\n    timestamp,\n    companiesPromoted,\n    peoplePromoted,\n    totalPromoted,\n    status: 'success'\n  }\n};"
+      },
+      "id": "generate-summary",
+      "name": "Generate Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1750, 375],
+      "notesInFlow": true,
+      "notes": "Aggregate results and generate markdown summary"
+    },
+    {
+      "parameters": {
+        "content": "={{ $json.summary }}",
+        "options": {}
+      },
+      "id": "output-summary",
+      "name": "Output Summary",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2000, 375],
+      "notesInFlow": true,
+      "notes": "Display final markdown summary"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Query Ready Companies",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Query Ready People",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Query Ready Companies",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Query Ready People",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Ready Companies": {
+      "main": [
+        [
+          {
+            "node": "Insert Companies to Neon",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Ready People": {
+      "main": [
+        [
+          {
+            "node": "Insert People to Neon",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Companies to Neon": {
+      "main": [
+        [
+          {
+            "node": "Update Companies Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert People to Neon": {
+      "main": [
+        [
+          {
+            "node": "Update People Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Companies Status": {
+      "main": [
+        [
+          {
+            "node": "Cleanup Old Companies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update People Status": {
+      "main": [
+        [
+          {
+            "node": "Cleanup Old People",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cleanup Old Companies": {
+      "main": [
+        [
+          {
+            "node": "Log Company Promotion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cleanup Old People": {
+      "main": [
+        [
+          {
+            "node": "Log People Promotion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Company Promotion": {
+      "main": [
+        [
+          {
+            "node": "Generate Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log People Promotion": {
+      "main": [
+        [
+          {
+            "node": "Generate Summary",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Generate Summary": {
+      "main": [
+        [
+          {
+            "node": "Output Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "enrichment",
+      "id": "enrichment-tag"
+    },
+    {
+      "name": "data-promotion",
+      "id": "promotion-tag"
+    },
+    {
+      "name": "marketing",
+      "id": "marketing-tag"
+    }
+  ],
+  "meta": {
+    "instanceId": "4.svg.marketing.enricha-vision"
+  },
+  "pinData": {},
+  "versionId": "1.0.0",
+  "triggerCount": 2,
+  "active": false
+}

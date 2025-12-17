@@ -1,0 +1,508 @@
+{
+  "name": "Pull from External Source",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule Trigger (Every 30 min)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [240, 500]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Pull company records from external source\nSELECT \n  *,\n  '{{$env.SOURCE_REPO}}' as source_repo,\n  '{{$env.SOURCE_ENVIRONMENT}}' as source_environment,\n  NOW() as pulled_at\nFROM {{$env.SOURCE_TABLE_COMPANY}}\n{{$env.SOURCE_FILTER}}\nLIMIT {{$env.BATCH_SIZE || 1000}}",
+        "options": {}
+      },
+      "id": "query-company-source",
+      "name": "Query Company Records",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [460, 300],
+      "credentials": {
+        "postgres": {
+          "id": "{{SOURCE_DB_CREDENTIALS_ID}}",
+          "name": "External Source PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Pull people records from external source\nSELECT \n  *,\n  '{{$env.SOURCE_REPO}}' as source_repo,\n  '{{$env.SOURCE_ENVIRONMENT}}' as source_environment,\n  NOW() as pulled_at\nFROM {{$env.SOURCE_TABLE_PEOPLE}}\n{{$env.SOURCE_FILTER}}\nLIMIT {{$env.BATCH_SIZE || 1000}}",
+        "options": {}
+      },
+      "id": "query-people-source",
+      "name": "Query People Records",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [460, 500],
+      "credentials": {
+        "postgres": {
+          "id": "{{SOURCE_DB_CREDENTIALS_ID}}",
+          "name": "External Source PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Transform Company Records with Metadata\nconst items = $input.all();\nconst batchId = `${process.env.BATCH_ID_PREFIX || 'EXT'}-${new Date().toISOString().split('T')[0]}-${Math.random().toString(36).substr(2, 9)}`;\nconst timestamp = new Date().toISOString();\n\nconst transformed = items.map((item, index) => {\n  const data = item.json;\n  \n  return {\n    json: {\n      // Original data\n      company_name: data.company_name,\n      domain: data.domain,\n      industry: data.industry,\n      employee_count: data.employee_count,\n      revenue: data.revenue,\n      location: data.location,\n      linkedin_url: data.linkedin_url,\n      \n      // Metadata fields\n      source_repo: process.env.SOURCE_REPO || data.source_repo,\n      source_environment: process.env.SOURCE_ENVIRONMENT || data.source_environment,\n      batch_id: batchId,\n      entity_type: 'company',\n      state_code: process.env.SOURCE_STATE_CODE || data.state_code || null,\n      pulled_at: timestamp,\n      \n      // Enrichment Hub fields\n      validation_status: process.env.DEFAULT_VALIDATION_STATUS || 'PENDING',\n      priority: process.env.DEFAULT_PRIORITY || 'medium',\n      needs_review: true,\n      enrichment_source: 'external-import',\n      \n      // Original enrichment data (if exists)\n      enrichment_data: data.enrichment_data || null,\n      \n      // Source tracking\n      source_id: data.id,\n      source_table: process.env.SOURCE_TABLE_COMPANY,\n      \n      // Timestamps\n      created_at: data.created_at || timestamp,\n      updated_at: timestamp,\n      imported_at: timestamp\n    }\n  };\n});\n\nreturn transformed;"
+      },
+      "id": "transform-company",
+      "name": "Transform Company Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Transform People Records with Metadata\nconst items = $input.all();\nconst batchId = `${process.env.BATCH_ID_PREFIX || 'EXT'}-${new Date().toISOString().split('T')[0]}-${Math.random().toString(36).substr(2, 9)}`;\nconst timestamp = new Date().toISOString();\n\nconst transformed = items.map((item, index) => {\n  const data = item.json;\n  \n  return {\n    json: {\n      // Original data\n      first_name: data.first_name,\n      last_name: data.last_name,\n      email: data.email,\n      phone: data.phone,\n      title: data.title,\n      company_id: data.company_id,\n      company_name: data.company_name,\n      linkedin_url: data.linkedin_url,\n      \n      // Metadata fields\n      source_repo: process.env.SOURCE_REPO || data.source_repo,\n      source_environment: process.env.SOURCE_ENVIRONMENT || data.source_environment,\n      batch_id: batchId,\n      entity_type: 'people',\n      state_code: process.env.SOURCE_STATE_CODE || data.state_code || null,\n      pulled_at: timestamp,\n      \n      // Enrichment Hub fields\n      validation_status: process.env.DEFAULT_VALIDATION_STATUS || 'PENDING',\n      priority: process.env.DEFAULT_PRIORITY || 'medium',\n      needs_review: true,\n      enrichment_source: 'external-import',\n      \n      // Original enrichment data (if exists)\n      enrichment_data: data.enrichment_data || null,\n      \n      // Source tracking\n      source_id: data.id,\n      source_table: process.env.SOURCE_TABLE_PEOPLE,\n      \n      // Timestamps\n      created_at: data.created_at || timestamp,\n      updated_at: timestamp,\n      imported_at: timestamp\n    }\n  };\n});\n\nreturn transformed;"
+      },
+      "id": "transform-people",
+      "name": "Transform People Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 500]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": "={{$env.SUPABASE_SCHEMA}}",
+        "table": "={{$env.DEST_TABLE_COMPANY}}",
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "skipOnConflict": true
+        }
+      },
+      "id": "insert-company-supabase",
+      "name": "Insert Companies to Supabase",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [900, 300],
+      "credentials": {
+        "postgres": {
+          "id": "{{SUPABASE_CREDENTIALS_ID}}",
+          "name": "Supabase PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": "={{$env.SUPABASE_SCHEMA}}",
+        "table": "={{$env.DEST_TABLE_PEOPLE}}",
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "skipOnConflict": true
+        }
+      },
+      "id": "insert-people-supabase",
+      "name": "Insert People to Supabase",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [900, 500],
+      "credentials": {
+        "postgres": {
+          "id": "{{SUPABASE_CREDENTIALS_ID}}",
+          "name": "Supabase PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$env.AUTO_UPDATE_SOURCE}}",
+              "value2": "true"
+            }
+          ]
+        }
+      },
+      "id": "check-auto-update",
+      "name": "Auto Update Source?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1120, 400]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Mark company records as promoted in source\nUPDATE {{$env.SOURCE_TABLE_COMPANY}}\nSET \n  {{$env.SOURCE_UPDATE_COLUMN}} = '{{$env.SOURCE_UPDATE_VALUE}}',\n  {{$env.SOURCE_UPDATE_TIMESTAMP_COLUMN}} = NOW()\n{{$env.SOURCE_FILTER}}",
+        "options": {}
+      },
+      "id": "update-company-source",
+      "name": "Update Company Source Status",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1340, 280],
+      "credentials": {
+        "postgres": {
+          "id": "{{SOURCE_DB_CREDENTIALS_ID}}",
+          "name": "External Source PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Mark people records as promoted in source\nUPDATE {{$env.SOURCE_TABLE_PEOPLE}}\nSET \n  {{$env.SOURCE_UPDATE_COLUMN}} = '{{$env.SOURCE_UPDATE_VALUE}}',\n  {{$env.SOURCE_UPDATE_TIMESTAMP_COLUMN}} = NOW()\n{{$env.SOURCE_FILTER}}",
+        "options": {}
+      },
+      "id": "update-people-source",
+      "name": "Update People Source Status",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1340, 420],
+      "credentials": {
+        "postgres": {
+          "id": "{{SOURCE_DB_CREDENTIALS_ID}}",
+          "name": "External Source PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate Audit Log Entry for Companies\nconst items = $input.all();\nconst batchId = items[0]?.json?.batch_id || `EXT-${Date.now()}`;\nconst timestamp = new Date().toISOString();\n\nreturn [{\n  json: {\n    workflow_name: 'Pull from External Source',\n    entity_type: 'company',\n    action: 'import',\n    record_count: items.length,\n    status: 'success',\n    batch_id: batchId,\n    source_repo: process.env.SOURCE_REPO,\n    source_table: process.env.SOURCE_TABLE_COMPANY,\n    destination_table: `${process.env.SUPABASE_SCHEMA}.${process.env.DEST_TABLE_COMPANY}`,\n    timestamp: timestamp,\n    metadata: {\n      source_environment: process.env.SOURCE_ENVIRONMENT,\n      state_code: process.env.SOURCE_STATE_CODE,\n      auto_update_source: process.env.AUTO_UPDATE_SOURCE === 'true',\n      batch_size: process.env.BATCH_SIZE,\n      ctb_project_id: process.env.CTB_PROJECT_ID || '4.svg.marketing.enricha-vision'\n    }\n  }\n}];"
+      },
+      "id": "audit-company",
+      "name": "Generate Company Audit Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate Audit Log Entry for People\nconst items = $input.all();\nconst batchId = items[0]?.json?.batch_id || `EXT-${Date.now()}`;\nconst timestamp = new Date().toISOString();\n\nreturn [{\n  json: {\n    workflow_name: 'Pull from External Source',\n    entity_type: 'people',\n    action: 'import',\n    record_count: items.length,\n    status: 'success',\n    batch_id: batchId,\n    source_repo: process.env.SOURCE_REPO,\n    source_table: process.env.SOURCE_TABLE_PEOPLE,\n    destination_table: `${process.env.SUPABASE_SCHEMA}.${process.env.DEST_TABLE_PEOPLE}`,\n    timestamp: timestamp,\n    metadata: {\n      source_environment: process.env.SOURCE_ENVIRONMENT,\n      state_code: process.env.SOURCE_STATE_CODE,\n      auto_update_source: process.env.AUTO_UPDATE_SOURCE === 'true',\n      batch_size: process.env.BATCH_SIZE,\n      ctb_project_id: process.env.CTB_PROJECT_ID || '4.svg.marketing.enricha-vision'\n    }\n  }\n}];"
+      },
+      "id": "audit-people",
+      "name": "Generate People Audit Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 500]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": "={{$env.AUDIT_SCHEMA}}",
+        "table": "={{$env.AUDIT_TABLE}}",
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": [],
+          "schema": []
+        }
+      },
+      "id": "log-company-audit",
+      "name": "Log Company Audit to Neon",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1340, 300],
+      "credentials": {
+        "postgres": {
+          "id": "{{AUDIT_DB_CREDENTIALS_ID}}",
+          "name": "Neon Audit PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": "={{$env.AUDIT_SCHEMA}}",
+        "table": "={{$env.AUDIT_TABLE}}",
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": [],
+          "schema": []
+        }
+      },
+      "id": "log-people-audit",
+      "name": "Log People Audit to Neon",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1340, 500],
+      "credentials": {
+        "postgres": {
+          "id": "{{AUDIT_DB_CREDENTIALS_ID}}",
+          "name": "Neon Audit PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge all workflow results and generate summary\nconst companyInput = $input.first();\nconst peopleInput = $input.last();\n\nconst companyCount = companyInput?.json?.record_count || 0;\nconst peopleCount = peopleInput?.json?.record_count || 0;\nconst totalCount = companyCount + peopleCount;\n\nconst timestamp = new Date().toISOString();\nconst sourceRepo = process.env.SOURCE_REPO || 'unknown';\nconst batchId = companyInput?.json?.batch_id || peopleInput?.json?.batch_id || 'N/A';\n\nconst summary = `# External Source → Enrichment Hub Import Summary\n\n**Workflow:** Pull from External Source  \n**Source Repository:** ${sourceRepo}  \n**Batch ID:** ${batchId}  \n**Timestamp:** ${timestamp}  \n**Status:** ✅ Completed\n\n## Records Pulled\n\n| Entity Type | Source Table | Rows Pulled | Destination | Status |\n|-------------|--------------|-------------|-------------|--------|\n| Companies   | ${process.env.SOURCE_TABLE_COMPANY || 'N/A'} | ${companyCount} | ${process.env.SUPABASE_SCHEMA}.${process.env.DEST_TABLE_COMPANY} | ✅ Success |\n| People      | ${process.env.SOURCE_TABLE_PEOPLE || 'N/A'} | ${peopleCount} | ${process.env.SUPABASE_SCHEMA}.${process.env.DEST_TABLE_PEOPLE} | ✅ Success |\n| **TOTAL**   | -            | **${totalCount}** | Enrichment Hub (Supabase) | ✅ Success |\n\n## Configuration\n\n- **Source Environment:** ${process.env.SOURCE_ENVIRONMENT || 'N/A'}\n- **State Code:** ${process.env.SOURCE_STATE_CODE || 'N/A'}\n- **Auto-Update Source:** ${process.env.AUTO_UPDATE_SOURCE || 'false'}\n- **Batch Size Limit:** ${process.env.BATCH_SIZE || '1000'}\n- **CTB Project:** ${process.env.CTB_PROJECT_ID || '4.svg.marketing.enricha-vision'}\n\n## Audit Trail\n\nAll operations logged to: \\`${process.env.AUDIT_SCHEMA}.${process.env.AUDIT_TABLE}\\`\n\n## Next Steps\n\n1. Review imported records in Enrichment Hub Supabase workspace\n2. Validate data quality and completeness\n3. Assign enrichment tasks as needed\n4. Monitor validation status updates\n\n---\n\n**Import Type:** Incremental Sync  \n**Compliance:** CTB Doctrine Enforced  \n**Generated:** ${timestamp}\n`;\n\nreturn [{\n  json: {\n    summary: summary,\n    company_count: companyCount,\n    people_count: peopleCount,\n    total_count: totalCount,\n    batch_id: batchId,\n    source_repo: sourceRepo,\n    timestamp: timestamp,\n    status: 'success'\n  }\n}];"
+      },
+      "id": "generate-summary",
+      "name": "Generate Import Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {
+          "responseBody": "={{ $json.summary }}"
+        }
+      },
+      "id": "output-summary",
+      "name": "Output Summary",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1780, 400]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Query Company Records",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Query People Records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger (Every 30 min)": {
+      "main": [
+        [
+          {
+            "node": "Query Company Records",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Query People Records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Company Records": {
+      "main": [
+        [
+          {
+            "node": "Transform Company Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query People Records": {
+      "main": [
+        [
+          {
+            "node": "Transform People Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Company Data": {
+      "main": [
+        [
+          {
+            "node": "Insert Companies to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform People Data": {
+      "main": [
+        [
+          {
+            "node": "Insert People to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Companies to Supabase": {
+      "main": [
+        [
+          {
+            "node": "Generate Company Audit Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert People to Supabase": {
+      "main": [
+        [
+          {
+            "node": "Generate People Audit Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Company Audit Log": {
+      "main": [
+        [
+          {
+            "node": "Log Company Audit to Neon",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Auto Update Source?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate People Audit Log": {
+      "main": [
+        [
+          {
+            "node": "Log People Audit to Neon",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Auto Update Source?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auto Update Source?": {
+      "main": [
+        [
+          {
+            "node": "Update Company Source Status",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update People Source Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Company Audit to Neon": {
+      "main": [
+        [
+          {
+            "node": "Generate Import Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log People Audit to Neon": {
+      "main": [
+        [
+          {
+            "node": "Generate Import Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Company Source Status": {
+      "main": [
+        [
+          {
+            "node": "Generate Import Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update People Source Status": {
+      "main": [
+        [
+          {
+            "node": "Generate Import Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Import Summary": {
+      "main": [
+        [
+          {
+            "node": "Output Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "enrichment-hub",
+      "id": "enrichment-hub"
+    },
+    {
+      "name": "data-import",
+      "id": "data-import"
+    },
+    {
+      "name": "external-source",
+      "id": "external-source"
+    }
+  ],
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "enrichment-hub-universal-receiver"
+  },
+  "id": "pull-from-external-source",
+  "versionId": "1.0.0"
+}

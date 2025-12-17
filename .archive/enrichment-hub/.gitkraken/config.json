@@ -1,0 +1,65 @@
+{
+  "project": {
+    "name": "enricha-vision",
+    "description": "AI-powered enrichment and vision tracking system with CTB architecture",
+    "repository": "https://github.com/djb258/enricha-vision.git",
+    "mainBranch": "main",
+    "developmentBranch": "develop"
+  },
+  "branches": {
+    "protected": ["main", "master"],
+    "prefixes": {
+      "feature": "feature/",
+      "bugfix": "bugfix/",
+      "hotfix": "hotfix/",
+      "release": "release/",
+      "ctb": "ctb/"
+    }
+  },
+  "commitTemplates": {
+    "feature": "feat: ",
+    "bugfix": "fix: ",
+    "docs": "docs: ",
+    "style": "style: ",
+    "refactor": "refactor: ",
+    "test": "test: ",
+    "chore": "chore: ",
+    "ctb": "ctb: "
+  },
+  "integrations": {
+    "github": {
+      "enabled": true,
+      "repository": "djb258/enricha-vision"
+    },
+    "jira": {
+      "enabled": false
+    },
+    "slack": {
+      "enabled": false
+    }
+  },
+  "gitflow": {
+    "enabled": true,
+    "feature": {
+      "prefix": "feature/"
+    },
+    "bugfix": {
+      "prefix": "bugfix/"
+    },
+    "release": {
+      "prefix": "release/"
+    },
+    "hotfix": {
+      "prefix": "hotfix/"
+    },
+    "support": {
+      "prefix": "support/"
+    }
+  },
+  "preferences": {
+    "autoFetch": true,
+    "autoPrune": true,
+    "defaultPullStrategy": "rebase",
+    "signCommits": false
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "security": {
+    "enabled": true,
+    "version": "1.0.0",
+    "env_vars_required": [
+      "DATABASE_URL",
+      "COMPOSIO_API_KEY",
+      "FIREBASE_API_KEY",
+      "FIREBASE_PROJECT_ID"
+    ],
+    "env_vars_optional": [
+      "GEMINI_API_KEY",
+      "OPENAI_API_KEY",
+      "GITHUB_TOKEN",
+      "VITE_SUPABASE_URL"
+    ],
+    "secrets_detection": {
+      "enabled": true,
+      "scan_on_commit": true,
+      "patterns": [
+        "api[_-]?key",
+        "api[_-]?secret",
+        "password",
+        "token",
+        "private[_-]?key",
+        "secret[_-]?key",
+        "access[_-]?token"
+      ],
+      "excluded_files": [
+        ".env.example",
+        "*.md",
+        "*.config.json"
+      ],
+      "alert_on_detection": true
+    },
+    "vulnerability_scanning": {
+      "enabled": true,
+      "scan_dependencies": true,
+      "scan_schedule": "0 0 * * 1",
+      "auto_fix_minor": false,
+      "alert_severity": ["critical", "high"],
+      "tools": ["npm audit", "snyk"]
+    },
+    "authentication": {
+      "enforce_mfa": false,
+      "session_timeout": 3600,
+      "password_policy": {
+        "min_length": 8,
+        "require_uppercase": true,
+        "require_lowercase": true,
+        "require_numbers": true,
+        "require_special": true
+      },
+      "rate_limiting": {
+        "enabled": true,
+        "max_attempts": 5,
+        "window_minutes": 15,
+        "lockout_minutes": 30
+      }
+    },
+    "api_security": {
+      "cors": {
+        "enabled": true,
+        "allowed_origins": ["http://localhost:5173"],
+        "allowed_methods": ["GET", "POST", "PUT", "DELETE"],
+        "allowed_headers": ["Content-Type", "Authorization"]
+      },
+      "rate_limiting": {
+        "enabled": true,
+        "requests_per_minute": 60,
+        "burst_size": 100
+      },
+      "input_validation": {
+        "enabled": true,
+        "sanitize_inputs": true,
+        "max_payload_size": "10mb"
+      }
+    },
+    "data_protection": {
+      "encryption_at_rest": true,
+      "encryption_in_transit": true,
+      "pii_detection": true,
+      "data_retention": {
+        "logs": 90,
+        "user_data": 730,
+        "temp_files": 7
+      }
+    },
+    "access_control": {
+      "rbac_enabled": true,
+      "roles": ["admin", "developer", "user"],
+      "default_role": "user",
+      "principle_of_least_privilege": true
+    },
+    "monitoring": {
+      "log_security_events": true,
+      "alert_on_suspicious_activity": true,
+      "track_failed_logins": true,
+      "track_api_usage": true
+    },
+    "compliance": {
+      "gdpr": true,
+      "ccpa": false,
+      "hipaa": false,
+      "sox": false
+    },
+    "incident_response": {
+      "enabled": true,
+      "notification_channels": ["email", "slack"],
+      "escalation_policy": "immediate",
+      "automated_response": false
+    }
+  }
+}

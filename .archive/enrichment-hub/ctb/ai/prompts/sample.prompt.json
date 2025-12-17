@@ -1,0 +1,48 @@
+{
+  "id": "sample-prompt",
+  "name": "Sample Prompt Template",
+  "version": "1.0.0",
+  "purpose": "Example prompt template for AI operations",
+  "provider": "gemini",
+  "fallback_provider": "openai",
+  "system_prompt": "You are a helpful AI assistant specialized in [DOMAIN]. Your responses should be accurate, concise, and helpful.",
+  "user_prompt_template": "Given the following context:\n\nContext: {{context}}\n\nPlease {{task}}.\n\nRequirements:\n- {{requirement_1}}\n- {{requirement_2}}\n\nProvide your response in {{format}} format.",
+  "variables": {
+    "context": {
+      "type": "string",
+      "required": true,
+      "description": "The context for the AI to consider"
+    },
+    "task": {
+      "type": "string",
+      "required": true,
+      "description": "The specific task to perform"
+    },
+    "requirement_1": {
+      "type": "string",
+      "required": false,
+      "default": "Be specific and accurate"
+    },
+    "requirement_2": {
+      "type": "string",
+      "required": false,
+      "default": "Provide examples when possible"
+    },
+    "format": {
+      "type": "string",
+      "required": false,
+      "default": "JSON",
+      "options": ["JSON", "markdown", "plain text"]
+    }
+  },
+  "settings": {
+    "temperature": 0.7,
+    "max_tokens": 1024,
+    "top_p": 0.9
+  },
+  "metadata": {
+    "created_at": "2025-10-23",
+    "updated_at": "2025-10-23",
+    "author": "CTB Standards Team"
+  }
+}

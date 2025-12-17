@@ -1,0 +1,59 @@
+{
+  "factory": {
+    "name": "CTB Global Factory",
+    "version": "1.0.0",
+    "enabled": true,
+    "doctrine_enforcement": {
+      "enabled": true,
+      "auto_sync": true,
+      "min_score": 70,
+      "composio_scenario": "CTB_Compliance_Cycle",
+      "auto_remediate": true,
+      "audit_frequency": "monthly",
+      "alert_threshold": 85
+    },
+    "operations": {
+      "compliance_check": {
+        "on_file_create": true,
+        "on_file_modify": true,
+        "on_pull_request": true,
+        "on_schedule": "0 0 1 * *"
+      },
+      "remediation": {
+        "auto_fix": true,
+        "create_issues": true,
+        "notify_maintainers": true
+      },
+      "registry": {
+        "auto_update": true,
+        "location": "ctb/meta/registry.json"
+      }
+    },
+    "integrations": {
+      "composio": {
+        "enabled": true,
+        "mcp_url": "http://localhost:3001/tool"
+      },
+      "github": {
+        "enabled": true,
+        "factory_path": "ctb/sys/github-factory/"
+      },
+      "logging": {
+        "enabled": true,
+        "directory": "logs/",
+        "audit_enabled": true
+      }
+    },
+    "notifications": {
+      "compliance_alerts": true,
+      "remediation_reports": true,
+      "audit_summaries": true,
+      "channels": ["log", "github_issues"]
+    },
+    "maintenance": {
+      "auto_tag_new_files": true,
+      "monthly_audit": true,
+      "cleanup_old_logs": true
+    }
+  }
+}
