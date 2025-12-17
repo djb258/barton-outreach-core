@@ -1,87 +1,77 @@
-# Pull Request: [Node-X] Brief Description
+# Pull Request
 
-## Summary
-<!-- Provide a brief summary of the changes -->
+## Description
+<!-- Brief description of what this PR does -->
 
-## Node / Altitude
-- Node: ☐1 ☐2 ☐3 ☐4
-- Altitude: ☐30k ☐20k ☐10k ☐5k
 
-## Changes
-<!-- List the key changes made -->
-- [ ] 
-- [ ] 
-- [ ] 
 
-## ORBT Checklist
+## Hub/Spoke Location
+<!-- Where in the Bicycle Wheel architecture does this change belong? -->
+- [ ] Company Hub (Master Node)
+- [ ] People Node Spoke
+- [ ] DOL Node Spoke
+- [ ] Email Verification SubWheel
+- [ ] BIT Engine
+- [ ] Failure Spoke
+- [ ] Other: ___________
 
-## Operate
-<!-- How will this be operated in production? -->
-- [ ] Logging configured for key operations
-- [ ] Metrics/monitoring points identified
-- [ ] Health checks implemented
-- [ ] Operational runbook updated
+## Type of Change
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Enhancement to existing feature
+- [ ] New Hub/Spoke/SubWheel
+- [ ] Documentation update
+- [ ] Refactoring
+- [ ] Other (please describe):
 
-## Repair
-<!-- How can issues be fixed? -->
-- [ ] Error handling implemented
-- [ ] Dead letter queue configured
-- [ ] Idempotent operations verified
-- [ ] Rollback strategy documented
+## Changes Made
+<!-- List the key changes in bullet points -->
 
-## Build
-<!-- Build and deployment considerations -->
-- [ ] Schema migrations versioned
-- [ ] CI checks pass (ddl-validate, orbt-check, lint)
-- [ ] Dependencies documented
-- [ ] Environment variables documented
+-
+-
+-
 
-## Train
-<!-- Knowledge transfer and documentation -->
-- [ ] README updated with new features
-- [ ] Code comments added for complex logic
-- [ ] Example usage provided
-- [ ] Team notified of breaking changes
+## Bicycle Wheel Doctrine Checklist
+- [ ] Changes respect Hub-and-Spoke hierarchy (spokes don't call other spokes directly)
+- [ ] Failures route to appropriate Failure Spoke
+- [ ] No sideways hub-to-hub calls
+- [ ] Tools are registered at hub level (not spoke level)
+- [ ] Kill switch tested (if applicable)
+
+## CTB Compliance Checklist
+- [ ] CTB enforcement passes: `bash global-config/scripts/ctb_enforce.sh`
+- [ ] Security scan passes: `bash global-config/scripts/security_lockdown.sh`
+- [ ] No hardcoded secrets (all secrets use MCP vault)
+- [ ] No `.env` files committed
+- [ ] Tests pass (if applicable): `pytest`
+- [ ] Branch follows CTB structure (if new branch)
+- [ ] Updated relevant documentation
 
 ## Testing
-- [ ] Unit tests added/updated
-- [ ] Integration tests pass
-- [ ] Manual testing completed
-- [ ] Edge cases considered
+<!-- How was this tested? -->
 
-## 30k Acceptance (Node 1)
-- [ ] Input declared (Apollo, CSV)
-- [ ] Orchestrator + sub-agents declared  
-- [ ] Tools declared (no SQL)
-- [ ] PLE & History stubs present
-- [ ] Seed CSV & schema placeholders present
-- [ ] README updated with IDs + acceptance
+- [ ] Tested locally
+- [ ] Pipeline executed successfully
+- [ ] Manual testing performed
+- [ ] Automated tests added/updated (if applicable)
 
-## Acceptance Criteria (General)
-<!-- From the node's README -->
-- [ ] Each new company gets a unique company_uid
-- [ ] Each company has exactly 3 slots with distinct slot_uids
-- [ ] Re-runs do not create duplicate slots
-- [ ] No credentials in repository
+## Test Results
+```bash
+# Paste test output or enforcement results here
+```
 
-## Database Changes
-- [ ] Schema changes reviewed
-- [ ] Migrations tested on dev
-- [ ] Rollback script provided
-- [ ] Indexes optimized
+## Screenshots (if applicable)
+<!-- Add screenshots for UI changes -->
 
-## Security
-- [ ] No hardcoded credentials
-- [ ] Input validation implemented
-- [ ] SQL injection prevention verified
-- [ ] Access controls reviewed
+## Additional Context
+<!-- Any other relevant information -->
 
-## Additional Notes
-<!-- Any additional context or notes -->
+## Related Issues
+<!-- Link to related issues: Fixes #123, Relates to #456 -->
 
 ---
-**Reviewer Checklist:**
-- [ ] Code follows project standards
-- [ ] ORBT sections adequately addressed
-- [ ] Tests provide sufficient coverage
-- [ ] Documentation is clear and complete
+
+**Reviewer Notes**: Please verify:
+1. CTB enforcement passes
+2. Bicycle Wheel Doctrine is followed (no sideways spoke calls)
+3. Failures route to Master Failure Hub

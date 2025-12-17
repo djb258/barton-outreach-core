@@ -1,0 +1,155 @@
+name: Bug Report
+description: Report a bug in Barton Outreach Core
+title: "[BUG]: "
+labels: ["bug", "needs-triage"]
+projects: ["djb258/barton-outreach-core"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Bug Report
+        Thank you for reporting a bug in Barton Outreach Core!
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which component has the bug?
+      options:
+        - Company Hub (company_hub.py)
+        - People Node Spoke (people_node/)
+        - DOL Node Spoke (dol_node/)
+        - Email Verification SubWheel
+        - BIT Engine (bit_engine.py)
+        - Pipeline Engine (phases/)
+        - Enrichment Pipeline
+        - Neon Database
+        - GitHub Actions / CI/CD
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: hub-spoke
+    attributes:
+      label: Hub/Spoke Location
+      description: Where in the Bicycle Wheel architecture does this bug occur?
+      options:
+        - Company Hub (Master Node)
+        - People Node Spoke
+        - DOL Node Spoke
+        - Blog Node Spoke (Planned)
+        - Talent Flow Spoke (Shell)
+        - BIT Engine Spoke
+        - Outreach Spoke (Planned)
+        - Email Verification SubWheel
+        - Failure Spoke
+        - Not Applicable
+    validations:
+      required: true
+
+  - type: dropdown
+    id: altitude
+    attributes:
+      label: CTB Altitude
+      description: At what altitude does this bug occur?
+      options:
+        - 40k ft - Strategic/Vision
+        - 20k ft - Architecture/Integration
+        - 10k ft - Implementation/Code
+        - 5k ft - Data/Database
+        - Ground - Operations/DevOps
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of the bug
+      placeholder: What went wrong?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this bug?
+      placeholder: |
+        1. Run pipeline with...
+        2. Process company data...
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should happen?
+      placeholder: Describe the expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: Describe what actually happened
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs
+      description: Include any relevant error messages or logs
+      placeholder: Paste error logs here
+      render: shell
+    validations:
+      required: false
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: Where did this bug occur?
+      options:
+        - Local Development
+        - Neon Database
+        - GitHub Actions
+        - Python Pipeline
+        - Enrichment Scripts
+      multiple: true
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How severe is this bug?
+      options:
+        - S0 - Critical (System down)
+        - S1 - High (Major functionality broken)
+        - S2 - Medium (Feature partially broken)
+        - S3 - Low (Minor issue)
+        - S4 - Cosmetic
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: integration
+    attributes:
+      label: Affected Integrations
+      description: Which integrations are affected?
+      options:
+        - label: Neon PostgreSQL Database
+        - label: MillionVerifier (Email Verification)
+        - label: Firecrawl (Web Scraping)
+        - label: Apify (LinkedIn)
+        - label: GitHub Actions
+        - label: Composio MCP Server
