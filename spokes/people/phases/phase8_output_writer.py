@@ -1,7 +1,7 @@
 """
 Phase 8: Output Writer
 ======================
-Final phase - writes pipeline results to CSV files.
+Final phase - writes pipeline results to CSV files and optionally to Neon.
 Generates summary reports and final output.
 
 Output Files (to /output/ folder):
@@ -10,17 +10,38 @@ Output Files (to /output/ folder):
 - enrichment_queue.csv: Items needing additional enrichment
 - pipeline_summary.txt: Human-readable run summary
 
-NO DATABASE WRITES - CSV output only for this implementation.
+Database Writes (optional, if NEON_WRITE_ENABLED=true):
+- marketing.people_master: Person records
+- marketing.company_slot: Slot assignments
+- marketing.data_enrichment_log: Enrichment queue
+
 All output anchored to company_id (Company-First doctrine).
 """
 
 import os
 import time
 import uuid
+import logging
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Tuple
 from datetime import datetime
 import pandas as pd
+
+# Doctrine enforcement imports
+from ops.enforcement.correlation_id import validate_correlation_id, CorrelationIDError
+
+# Neon database writer (optional)
+from .neon_writer import (
+    NeonDatabaseWriter,
+    NeonConfig,
+    NeonWriterStats,
+    WriteResult as NeonWriteResult,
+    write_to_neon,
+    check_neon_connection,
+)
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -77,24 +98,36 @@ class PipelineSummary:
 @dataclass
 class Phase8Stats:
     """Statistics for Phase 8 execution."""
+    # CSV output
     files_written: int = 0
     total_records: int = 0
     people_final_count: int = 0
     slot_assignments_count: int = 0
     enrichment_queue_count: int = 0
+    # Database output (Neon)
+    neon_write_enabled: bool = False
+    neon_write_success: bool = False
+    neon_people_written: int = 0
+    neon_slots_written: int = 0
+    neon_queue_written: int = 0
+    neon_errors: List[str] = field(default_factory=list)
+    # General
     errors: List[str] = field(default_factory=list)
     duration_seconds: float = 0.0
+    correlation_id: str = ""  # Propagated unchanged
 
 
 class Phase8OutputWriter:
     """
-    Phase 8: Write pipeline results to CSV files.
+    Phase 8: Write pipeline results to CSV files and optionally to Neon.
 
-    Output targets (CSV only, no database writes):
-    - people_final.csv
-    - slot_assignments.csv
-    - enrichment_queue.csv
-    - pipeline_summary.txt
+    Output targets:
+    - CSV (always): people_final.csv, slot_assignments.csv, enrichment_queue.csv, pipeline_summary.txt
+    - Neon (optional): marketing.people_master, marketing.company_slot, marketing.data_enrichment_log
+
+    Neon writes enabled via:
+    - NEON_WRITE_ENABLED=true environment variable, OR
+    - neon_write_enabled=True in config
 
     Movement Engine Integration:
     - Triggers APPOINTMENT event if meeting metadata exists in output
@@ -123,6 +156,8 @@ class Phase8OutputWriter:
                 - output_dir: Output directory path (default: ./output)
                 - run_id: Optional run ID (auto-generated if not provided)
                 - include_timestamp: Add timestamp to file names (default: True)
+                - neon_write_enabled: Enable Neon database writes (default: False)
+                - neon_config: Optional NeonConfig overrides
             movement_engine: Optional MovementEngine instance for event reporting
         """
         self.config = config or {}
@@ -130,6 +165,12 @@ class Phase8OutputWriter:
         self.run_id = self.config.get('run_id', self._generate_run_id())
         self.include_timestamp = self.config.get('include_timestamp', True)
         self.movement_engine = movement_engine
+
+        # Neon database write configuration
+        # Check env var first, then config
+        env_enabled = os.getenv("NEON_WRITE_ENABLED", "").lower() == "true"
+        self.neon_write_enabled = self.config.get('neon_write_enabled', env_enabled)
+        self.neon_config = self.config.get('neon_config', {})
 
         # Ensure output directory exists
         os.makedirs(self.output_dir, exist_ok=True)
@@ -141,10 +182,13 @@ class Phase8OutputWriter:
         unslotted_people_df: pd.DataFrame,
         slot_summary_df: pd.DataFrame,
         enrichment_queue_df: pd.DataFrame,
+        correlation_id: str,
         phase_stats: Dict[str, Any] = None
     ) -> Tuple[PipelineSummary, Phase8Stats]:
         """
         Run output writer phase.
+
+        DOCTRINE: correlation_id is MANDATORY. FAIL HARD if missing.
 
         Args:
             people_with_emails_df: People with generated emails (from Phase 5)
@@ -152,13 +196,21 @@ class Phase8OutputWriter:
             unslotted_people_df: People without slots (from Phase 6)
             slot_summary_df: Slot summary by company (from Phase 6)
             enrichment_queue_df: Enrichment queue (from Phase 7)
+            correlation_id: MANDATORY - End-to-end trace ID (UUID v4)
             phase_stats: Dictionary of stats from previous phases
 
         Returns:
             Tuple of (PipelineSummary, Phase8Stats)
+
+        Raises:
+            CorrelationIDError: If correlation_id is missing or invalid (FAIL HARD)
         """
+        # DOCTRINE ENFORCEMENT: Validate correlation_id (FAIL HARD)
+        process_id = "people.lifecycle.output.phase8"
+        correlation_id = validate_correlation_id(correlation_id, process_id, "Phase 8")
+
         start_time = time.time()
-        stats = Phase8Stats()
+        stats = Phase8Stats(correlation_id=correlation_id)
         phase_stats = phase_stats or {}
 
         # Create pipeline summary
@@ -202,7 +254,30 @@ class Phase8OutputWriter:
             stats.files_written += 1
             stats.enrichment_queue_count = result3.records_written
 
-        # 4. Write pipeline_summary.txt
+        # 4. Optionally write to Neon database
+        stats.neon_write_enabled = self.neon_write_enabled
+        if self.neon_write_enabled:
+            neon_stats, neon_results = self._write_to_neon(
+                people_final_df,
+                slotted_people_df,
+                enrichment_queue_df,
+                correlation_id
+            )
+            stats.neon_write_success = neon_stats.failed_writes == 0
+            stats.neon_people_written = neon_stats.people_inserted
+            stats.neon_slots_written = neon_stats.slots_assigned
+            stats.neon_queue_written = neon_stats.enrichment_logged
+            for neon_result in neon_results:
+                if neon_result.errors:
+                    stats.neon_errors.extend(neon_result.errors)
+            logger.info(
+                f"Neon database write complete: "
+                f"{stats.neon_people_written} people, "
+                f"{stats.neon_slots_written} slots, "
+                f"{stats.neon_queue_written} queue items"
+            )
+
+        # 5. Write pipeline_summary.txt
         summary.completed_at = datetime.now()
         summary.duration_seconds = time.time() - phase_stats.get('pipeline_start_time', start_time)
         summary.files_written = stats.files_written
@@ -356,6 +431,50 @@ class Phase8OutputWriter:
 
         result.duration_seconds = time.time() - start_time
         return result
+
+    def _write_to_neon(
+        self,
+        people_df: pd.DataFrame,
+        slotted_df: pd.DataFrame,
+        enrichment_queue_df: pd.DataFrame,
+        correlation_id: str
+    ) -> Tuple[NeonWriterStats, List[NeonWriteResult]]:
+        """
+        Write pipeline output to Neon PostgreSQL database.
+
+        Args:
+            people_df: People final output
+            slotted_df: Slot assignments
+            enrichment_queue_df: Enrichment queue
+            correlation_id: Pipeline trace ID
+
+        Returns:
+            Tuple of (NeonWriterStats, List of WriteResults)
+        """
+        try:
+            # Check connection first
+            if not check_neon_connection():
+                logger.warning("Neon database not available, skipping database writes")
+                return NeonWriterStats(correlation_id=correlation_id), []
+
+            # Write to Neon
+            return write_to_neon(
+                people_df=people_df,
+                slotted_df=slotted_df,
+                enrichment_queue_df=enrichment_queue_df,
+                correlation_id=correlation_id,
+                config=self.neon_config
+            )
+        except Exception as e:
+            logger.error(f"Neon database write failed: {e}")
+            stats = NeonWriterStats(correlation_id=correlation_id)
+            stats.failed_writes = 3
+            result = NeonWriteResult(
+                success=False,
+                table_name="*",
+                errors=[str(e)]
+            )
+            return stats, [result]
 
     def _write_summary(self, summary: PipelineSummary) -> str:
         """
@@ -632,6 +751,7 @@ def write_pipeline_output(
     unslotted_people_df: pd.DataFrame,
     slot_summary_df: pd.DataFrame,
     enrichment_queue_df: pd.DataFrame,
+    correlation_id: str,
     phase_stats: Dict[str, Any] = None,
     config: Dict[str, Any] = None
 ) -> Tuple[PipelineSummary, Phase8Stats]:
@@ -644,8 +764,9 @@ def write_pipeline_output(
         unslotted_people_df: Unslotted people from Phase 6
         slot_summary_df: Slot summary from Phase 6
         enrichment_queue_df: Enrichment queue from Phase 7
+        correlation_id: MANDATORY - Pipeline trace ID (UUID v4)
         phase_stats: Dictionary of stats from previous phases
-        config: Optional configuration
+        config: Optional configuration (neon_write_enabled=True enables DB writes)
 
     Returns:
         Tuple of (PipelineSummary, Phase8Stats)
@@ -657,5 +778,6 @@ def write_pipeline_output(
         unslotted_people_df,
         slot_summary_df,
         enrichment_queue_df,
-        phase_stats
+        correlation_id=correlation_id,
+        phase_stats=phase_stats
     )

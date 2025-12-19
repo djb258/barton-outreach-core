@@ -33,8 +33,23 @@ Failure Spokes:
     - FAILED_EMAIL_VERIFICATION: MV invalid
 """
 
-from .people_node_spoke import PeopleNodeSpoke
-from .hub_gate_spoke import HubGateSpoke
-from .slot_assignment_spoke import SlotAssignmentSpoke
+# Lazy imports to avoid circular dependency issues
+# The wheel module path needs to be adjusted for production
+def __getattr__(name):
+    """Lazy import for spoke classes."""
+    if name == 'PeopleNodeSpoke':
+        from .people_spoke import PeopleNodeSpoke
+        return PeopleNodeSpoke
+    elif name == 'PersonRecord':
+        from .people_spoke import PersonRecord
+        return PersonRecord
+    elif name == 'HubGateSpoke':
+        from .hub_gate import HubGateSpoke
+        return HubGateSpoke
+    elif name == 'SlotAssignmentSpoke':
+        from .slot_assignment import SlotAssignmentSpoke
+        return SlotAssignmentSpoke
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
-__all__ = ['PeopleNodeSpoke', 'HubGateSpoke', 'SlotAssignmentSpoke']
+
+__all__ = ['PeopleNodeSpoke', 'PersonRecord', 'HubGateSpoke', 'SlotAssignmentSpoke']

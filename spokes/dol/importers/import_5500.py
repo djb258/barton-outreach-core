@@ -9,11 +9,179 @@ Based on 2023 F_5500 data dictionary / file layout.
 
 Input: data/F_5500_2023_latest.csv (or f_5500_2023_latest.csv)
 Output: output/form_5500_2023_staging.csv
+
+Database: Loads to Neon PostgreSQL (marketing.form_5500_staging)
 """
 
 import pandas as pd
 import os
+import sys
+import argparse
 from pathlib import Path
+from typing import Optional
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# DATABASE LOADING
+# =============================================================================
+
+def load_to_neon(df: pd.DataFrame, table_name: str = "form_5500_staging") -> bool:
+    """
+    Load DataFrame to Neon PostgreSQL database.
+
+    Uses psycopg2 with COPY for efficient bulk loading.
+
+    Args:
+        df: DataFrame to load
+        table_name: Target table name (in marketing schema)
+
+    Returns:
+        True if successful, False otherwise
+    """
+    try:
+        import psycopg2
+        from psycopg2 import sql
+        from io import StringIO
+    except ImportError:
+        logger.error("psycopg2 not installed. Run: pip install psycopg2-binary")
+        return False
+
+    # Get connection string from environment
+    conn_string = os.getenv("DATABASE_URL") or os.getenv("NEON_CONNECTION_STRING")
+
+    if not conn_string:
+        # Build from individual env vars
+        host = os.getenv("NEON_HOST")
+        database = os.getenv("NEON_DATABASE")
+        user = os.getenv("NEON_USER")
+        password = os.getenv("NEON_PASSWORD")
+
+        if not all([host, database, user, password]):
+            logger.error("Database connection not configured. Set DATABASE_URL or NEON_* env vars")
+            return False
+
+        conn_string = f"postgresql://{user}:{password}@{host}:5432/{database}?sslmode=require"
+
+    try:
+        logger.info(f"Connecting to Neon database...")
+        conn = psycopg2.connect(conn_string)
+        cur = conn.cursor()
+
+        # Create staging table if not exists
+        logger.info(f"Ensuring table marketing.{table_name} exists...")
+        cur.execute(f"""
+            CREATE TABLE IF NOT EXISTS marketing.{table_name} (
+                ack_id VARCHAR(255) PRIMARY KEY,
+                form_plan_year_begin_date VARCHAR(20),
+                form_tax_prd VARCHAR(20),
+                type_plan_entity_cd VARCHAR(10),
+                type_dfe_plan_entity_cd VARCHAR(10),
+                initial_filing_ind VARCHAR(5),
+                amended_ind VARCHAR(5),
+                final_filing_ind VARCHAR(5),
+                short_plan_yr_ind VARCHAR(5),
+                collective_bargain_ind VARCHAR(5),
+                plan_name VARCHAR(500),
+                plan_number VARCHAR(20),
+                plan_eff_date VARCHAR(20),
+                sponsor_dfe_ein VARCHAR(20),
+                sponsor_dfe_name VARCHAR(500),
+                spons_dfe_dba_name VARCHAR(500),
+                spons_dfe_mail_us_address1 VARCHAR(255),
+                spons_dfe_mail_us_address2 VARCHAR(255),
+                spons_dfe_mail_us_city VARCHAR(100),
+                spons_dfe_mail_us_state VARCHAR(10),
+                spons_dfe_mail_us_zip VARCHAR(20),
+                spons_dfe_loc_us_address1 VARCHAR(255),
+                spons_dfe_loc_us_address2 VARCHAR(255),
+                spons_dfe_loc_us_city VARCHAR(100),
+                spons_dfe_loc_us_state VARCHAR(10),
+                spons_dfe_loc_us_zip VARCHAR(20),
+                spons_dfe_phone_num VARCHAR(30),
+                business_code VARCHAR(20),
+                tot_partcp_boy_cnt VARCHAR(20),
+                tot_active_partcp_cnt VARCHAR(20),
+                rtd_sep_partcp_rcvg_cnt VARCHAR(20),
+                rtd_sep_partcp_fut_cnt VARCHAR(20),
+                subtl_act_rtd_sep_cnt VARCHAR(20),
+                benef_rcvg_bnft_cnt VARCHAR(20),
+                tot_act_rtd_sep_benef_cnt VARCHAR(20),
+                partcp_account_bal_cnt VARCHAR(20),
+                sep_partcp_partl_vstd_cnt VARCHAR(20),
+                contrib_emplrs_cnt VARCHAR(20),
+                type_pension_bnft_code VARCHAR(20),
+                type_welfare_bnft_code VARCHAR(20),
+                funding_insurance_ind VARCHAR(5),
+                funding_sec412_ind VARCHAR(5),
+                funding_trust_ind VARCHAR(5),
+                funding_gen_asset_ind VARCHAR(5),
+                benefit_insurance_ind VARCHAR(5),
+                benefit_sec412_ind VARCHAR(5),
+                benefit_trust_ind VARCHAR(5),
+                benefit_gen_asset_ind VARCHAR(5),
+                sch_a_attached_ind VARCHAR(5),
+                num_sch_a_attached_cnt VARCHAR(10),
+                sch_c_attached_ind VARCHAR(5),
+                sch_d_attached_ind VARCHAR(5),
+                sch_g_attached_ind VARCHAR(5),
+                sch_h_attached_ind VARCHAR(5),
+                sch_i_attached_ind VARCHAR(5),
+                sch_mb_attached_ind VARCHAR(5),
+                sch_sb_attached_ind VARCHAR(5),
+                sch_r_attached_ind VARCHAR(5),
+                admin_name VARCHAR(255),
+                admin_ein VARCHAR(20),
+                admin_us_state VARCHAR(10),
+                filing_status VARCHAR(50),
+                date_received VARCHAR(30),
+                form_year VARCHAR(10),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.commit()
+
+        # Truncate existing data for this year
+        year = df['form_year'].iloc[0] if 'form_year' in df.columns else None
+        if year:
+            logger.info(f"Clearing existing {year} data from {table_name}...")
+            cur.execute(f"DELETE FROM marketing.{table_name} WHERE form_year = %s", (year,))
+            conn.commit()
+
+        # Use COPY for efficient bulk insert
+        logger.info(f"Loading {len(df):,} records to marketing.{table_name}...")
+
+        # Write DataFrame to in-memory buffer
+        buffer = StringIO()
+        df.to_csv(buffer, index=False, header=False)
+        buffer.seek(0)
+
+        # Get column list
+        columns = df.columns.tolist()
+
+        # COPY from buffer
+        cur.copy_expert(
+            f"COPY marketing.{table_name} ({', '.join(columns)}) FROM STDIN WITH CSV",
+            buffer
+        )
+        conn.commit()
+
+        # Verify count
+        cur.execute(f"SELECT COUNT(*) FROM marketing.{table_name} WHERE form_year = %s", (year,))
+        count = cur.fetchone()[0]
+
+        logger.info(f"Successfully loaded {count:,} records to marketing.{table_name}")
+
+        cur.close()
+        conn.close()
+        return True
+
+    except Exception as e:
+        logger.error(f"Database load failed: {e}")
+        return False
 
 # ============================================================================
 # CONFIGURATION - CHANGE YEAR HERE
@@ -353,5 +521,29 @@ print(f"""
 """)
 
 print("=" * 80)
-print("SCRIPT COMPLETE!")
-print("=" * 80)
+
+# ============================================================================
+# STEP 6: OPTIONAL DATABASE LOAD
+# ============================================================================
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="DOL Form 5500 Import Script")
+    parser.add_argument("--load-db", action="store_true",
+                        help="Load data to Neon PostgreSQL database")
+    parser.add_argument("--year", type=str, default=YEAR,
+                        help=f"Form year to import (default: {YEAR})")
+
+    args = parser.parse_args()
+
+    if args.load_db:
+        print("\n" + "=" * 80)
+        print("DATABASE LOADING")
+        print("=" * 80)
+
+        if load_to_neon(df_staging, "form_5500_staging"):
+            print("\n[OK] Database load successful!")
+        else:
+            print("\n[FAIL] Database load failed - check logs above")
+            sys.exit(1)
+
+    print("\nSCRIPT COMPLETE!")
+    print("=" * 80)

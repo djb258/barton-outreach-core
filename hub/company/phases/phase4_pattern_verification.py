@@ -9,6 +9,9 @@ Validates discovered email patterns:
 
 This is the final phase of the Company Identity Pipeline.
 Verified patterns are passed to the People Pipeline for email generation.
+
+DOCTRINE ENFORCEMENT:
+- correlation_id is MANDATORY (FAIL HARD if missing)
 """
 
 import time
@@ -17,6 +20,9 @@ from typing import Optional, List, Dict, Any, Tuple
 from datetime import datetime
 from enum import Enum
 import pandas as pd
+
+# Doctrine enforcement imports
+from ops.enforcement.correlation_id import validate_correlation_id, CorrelationIDError
 
 from ..utils.patterns import apply_pattern, validate_pattern_format
 from ..utils.verification import (
@@ -85,6 +91,7 @@ class Phase4Stats:
     fallbacks_required: int = 0
     avg_confidence: float = 0.0
     duration_seconds: float = 0.0
+    correlation_id: str = ""  # Propagated unchanged
 
 
 class Phase4PatternVerification:
@@ -134,20 +141,31 @@ class Phase4PatternVerification:
         # Cache for MX verification results
         self._mx_cache: Dict[str, bool] = {}
 
-    def run(self, pattern_df: pd.DataFrame) -> Tuple[pd.DataFrame, Phase4Stats]:
+    def run(self, pattern_df: pd.DataFrame,
+            correlation_id: str) -> Tuple[pd.DataFrame, Phase4Stats]:
         """
         Run pattern verification phase.
+
+        DOCTRINE: correlation_id is MANDATORY. FAIL HARD if missing.
 
         Args:
             pattern_df: DataFrame with patterns from Phase 3
                 Expected columns: person_id, resolved_domain, email_pattern,
                                   pattern_confidence, pattern_needs_verification
+            correlation_id: MANDATORY - End-to-end trace ID (UUID v4)
 
         Returns:
             Tuple of (result_df with verification results, Phase4Stats)
+
+        Raises:
+            CorrelationIDError: If correlation_id is missing or invalid (FAIL HARD)
         """
+        # DOCTRINE ENFORCEMENT: Validate correlation_id (FAIL HARD)
+        process_id = "company.identity.verification.phase4"
+        correlation_id = validate_correlation_id(correlation_id, process_id, "Phase 4")
+
         start_time = time.time()
-        stats = Phase4Stats(total_input=len(pattern_df))
+        stats = Phase4Stats(total_input=len(pattern_df), correlation_id=correlation_id)
 
         log_phase_start(self.logger, 4, "Pattern Verification", len(pattern_df))
 

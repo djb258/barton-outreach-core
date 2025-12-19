@@ -8,9 +8,15 @@ Matches input people to companies using doctrine-compliant matching hierarchy:
 
 Per doctrine: collision threshold = 0.03
 City guardrail: Required for scores 0.85-0.92, not required for >=0.92
+
+Neon Integration:
+- Can load company_master directly from Neon database
+- Supports real-time lookups against production data
+- Caches company data in-memory for batch processing
 """
 
 import time
+import logging
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Tuple
 from enum import Enum
@@ -38,6 +44,9 @@ from ..utils.logging import (
     log_phase_complete
 )
 from ..utils.config import MatchingConfig
+
+
+logger = logging.getLogger(__name__)
 
 
 class MatchType(Enum):
@@ -78,6 +87,10 @@ class Phase1Stats:
     collisions: int = 0
     unmatched: int = 0
     duration_seconds: float = 0.0
+    # Neon integration stats
+    neon_companies_loaded: int = 0
+    neon_lookup_time_seconds: float = 0.0
+    used_neon: bool = False
 
 
 class Phase1CompanyMatching:
@@ -92,18 +105,30 @@ class Phase1CompanyMatching:
        - Score 0.85-0.92: Match only if same city
        - Score < 0.85: No match
     4. Collision handling if top candidates within 0.03 score
+
+    Neon Integration:
+    - Set use_neon=True to load companies directly from Neon database
+    - Falls back to passed company_df if Neon connection fails
+    - Caches loaded companies for batch processing
     """
 
-    def __init__(self, config: Dict[str, Any] = None, logger: PipelineLogger = None):
+    def __init__(
+        self,
+        config: Dict[str, Any] = None,
+        logger: PipelineLogger = None,
+        use_neon: bool = False
+    ):
         """
         Initialize Phase 1.
 
         Args:
             config: Configuration dictionary with thresholds and settings
             logger: Pipeline logger instance
+            use_neon: If True, load companies from Neon database
         """
         self.config = config or {}
         self.logger = logger or PipelineLogger()
+        self.use_neon = use_neon
 
         # Load matching configuration
         matching_config = self.config.get('matching', {})
@@ -117,8 +142,15 @@ class Phase1CompanyMatching:
         self._domain_index: Dict[str, str] = {}  # domain -> company_id
         self._name_index: Dict[str, List[str]] = {}  # normalized_name -> [company_ids]
 
-    def run(self, people_df: pd.DataFrame,
-            company_df: pd.DataFrame) -> Tuple[pd.DataFrame, Phase1Stats]:
+        # Neon integration
+        self._neon_writer = None
+        self._neon_companies_cache: Optional[pd.DataFrame] = None
+
+    def run(
+        self,
+        people_df: pd.DataFrame,
+        company_df: pd.DataFrame = None
+    ) -> Tuple[pd.DataFrame, Phase1Stats]:
         """
         Run company matching phase.
 
@@ -127,6 +159,7 @@ class Phase1CompanyMatching:
                 - person_id, first_name, last_name, company_name, company_domain, city, state
             company_df: Company master DataFrame with columns:
                 - company_unique_id, company_name, website_url, address_city, address_state
+                (Optional if use_neon=True, will load from Neon)
 
         Returns:
             Tuple of (result_df with match results, Phase1Stats)
@@ -135,6 +168,25 @@ class Phase1CompanyMatching:
         stats = Phase1Stats(total_input=len(people_df))
 
         log_phase_start(self.logger, 1, "Company Matching", len(people_df))
+
+        # Load companies from Neon if enabled and no company_df provided
+        if self.use_neon and (company_df is None or len(company_df) == 0):
+            neon_start = time.time()
+            company_df = self._load_companies_from_neon()
+            stats.neon_lookup_time_seconds = time.time() - neon_start
+            stats.neon_companies_loaded = len(company_df) if company_df is not None else 0
+            stats.used_neon = True
+
+            if company_df is None or len(company_df) == 0:
+                logger.warning("No companies loaded from Neon, matching will fail")
+                company_df = pd.DataFrame(columns=[
+                    'company_unique_id', 'company_name', 'website_url',
+                    'address_city', 'address_state'
+                ])
+
+        # Ensure we have a company_df
+        if company_df is None:
+            raise ValueError("company_df is required when use_neon=False")
 
         # Build lookup indices
         self._build_indices(company_df)
@@ -201,6 +253,121 @@ class Phase1CompanyMatching:
                     if normalized_name not in self._name_index:
                         self._name_index[normalized_name] = []
                     self._name_index[normalized_name].append(company_id)
+
+    def _load_companies_from_neon(self) -> Optional[pd.DataFrame]:
+        """
+        Load company_master from Neon database.
+
+        Returns:
+            DataFrame with company data, or None if connection fails
+        """
+        # Return cached data if available
+        if self._neon_companies_cache is not None:
+            logger.debug("Using cached Neon companies data")
+            return self._neon_companies_cache
+
+        try:
+            # Lazy import to avoid circular dependencies
+            from hub.company.neon_writer import CompanyNeonWriter
+
+            logger.info("Loading companies from Neon database...")
+            self._neon_writer = CompanyNeonWriter()
+
+            companies = self._neon_writer.load_all_companies()
+
+            if not companies:
+                logger.warning("No companies found in Neon database")
+                return None
+
+            # Convert to DataFrame
+            df = pd.DataFrame(companies)
+
+            # Map Neon column names to expected Phase 1 column names
+            column_mapping = {
+                'domain': 'website_url',
+                'address_state': 'address_state',
+                'address_city': 'address_city',
+            }
+            for old_col, new_col in column_mapping.items():
+                if old_col in df.columns and new_col not in df.columns:
+                    df[new_col] = df[old_col]
+
+            # Ensure required columns exist
+            required_cols = ['company_unique_id', 'company_name', 'website_url',
+                             'address_city', 'address_state']
+            for col in required_cols:
+                if col not in df.columns:
+                    df[col] = None
+
+            # Cache for subsequent calls
+            self._neon_companies_cache = df
+
+            logger.info(f"Loaded {len(df)} companies from Neon")
+            return df
+
+        except Exception as e:
+            logger.error(f"Failed to load companies from Neon: {e}")
+            return None
+
+    def _get_neon_writer(self):
+        """Get or create Neon writer instance."""
+        if self._neon_writer is None:
+            from hub.company.neon_writer import CompanyNeonWriter
+            self._neon_writer = CompanyNeonWriter()
+        return self._neon_writer
+
+    def lookup_company_by_domain_neon(self, domain: str) -> Optional[Dict[str, Any]]:
+        """
+        Direct Neon lookup by domain (GOLD match - Tool 1).
+
+        This bypasses the in-memory index and queries Neon directly.
+        Useful for real-time lookups against the production database.
+
+        Args:
+            domain: Domain to lookup
+
+        Returns:
+            Company dict or None
+        """
+        if not self.use_neon:
+            logger.warning("Neon not enabled, use _domain_match instead")
+            return None
+
+        try:
+            writer = self._get_neon_writer()
+            return writer.find_company_by_domain(domain)
+        except Exception as e:
+            logger.error(f"Neon domain lookup failed: {e}")
+            return None
+
+    def lookup_company_by_ein_neon(self, ein: str) -> Optional[Dict[str, Any]]:
+        """
+        Direct Neon lookup by EIN (Tool 18: Exact EIN Match).
+
+        DOCTRINE: Exact match only. No fuzzy. Fail closed.
+
+        Args:
+            ein: EIN to lookup
+
+        Returns:
+            Company dict or None
+        """
+        if not self.use_neon:
+            logger.warning("Neon not enabled")
+            return None
+
+        try:
+            writer = self._get_neon_writer()
+            return writer.find_company_by_ein(ein)
+        except Exception as e:
+            logger.error(f"Neon EIN lookup failed: {e}")
+            return None
+
+    def close(self):
+        """Close Neon connection if open."""
+        if self._neon_writer:
+            self._neon_writer.close()
+            self._neon_writer = None
 
     def _match_person(self, person_row: pd.Series,
                       company_df: pd.DataFrame) -> CompanyMatchResult:
@@ -493,10 +660,15 @@ class Phase1CompanyMatching:
         return output_df
 
 
-def match_single_company(company_name: str, domain: str,
-                         city: str, state: str,
-                         company_df: pd.DataFrame,
-                         config: Dict[str, Any] = None) -> CompanyMatchResult:
+def match_single_company(
+    company_name: str,
+    domain: str,
+    city: str,
+    state: str,
+    company_df: pd.DataFrame = None,
+    config: Dict[str, Any] = None,
+    use_neon: bool = False
+) -> CompanyMatchResult:
     """
     Convenience function to match a single company.
 
@@ -505,13 +677,27 @@ def match_single_company(company_name: str, domain: str,
         domain: Company domain (optional)
         city: Company city (optional)
         state: Company state (optional)
-        company_df: Company master DataFrame
+        company_df: Company master DataFrame (optional if use_neon=True)
         config: Optional configuration
+        use_neon: If True, load companies from Neon database
 
     Returns:
         CompanyMatchResult
     """
-    phase1 = Phase1CompanyMatching(config=config)
+    phase1 = Phase1CompanyMatching(config=config, use_neon=use_neon)
+
+    # Load from Neon if enabled
+    if use_neon:
+        company_df = phase1._load_companies_from_neon()
+        if company_df is None:
+            company_df = pd.DataFrame(columns=[
+                'company_unique_id', 'company_name', 'website_url',
+                'address_city', 'address_state'
+            ])
+
+    if company_df is None:
+        raise ValueError("company_df is required when use_neon=False")
+
     phase1._build_indices(company_df)
 
     person_row = pd.Series({
@@ -522,4 +708,94 @@ def match_single_company(company_name: str, domain: str,
         'state': state
     })
 
-    return phase1._match_person(person_row, company_df)
+    result = phase1._match_person(person_row, company_df)
+    phase1.close()
+    return result
+
+
+def match_company_from_neon(
+    company_name: str = None,
+    domain: str = None,
+    ein: str = None,
+    city: str = None,
+    state: str = None,
+    config: Dict[str, Any] = None
+) -> CompanyMatchResult:
+    """
+    Match a company against Neon database (production lookup).
+
+    Priority order per doctrine:
+    1. Domain match (GOLD - Tool 1)
+    2. EIN match (Tool 18)
+    3. Name match (SILVER/BRONZE)
+
+    Args:
+        company_name: Company name to match
+        domain: Company domain (highest priority)
+        ein: Company EIN (second priority)
+        city: Company city (for fuzzy guardrail)
+        state: Company state (for fuzzy guardrail)
+        config: Optional configuration
+
+    Returns:
+        CompanyMatchResult
+    """
+    phase1 = Phase1CompanyMatching(config=config, use_neon=True)
+
+    # Priority 1: Domain lookup (GOLD)
+    if domain:
+        company = phase1.lookup_company_by_domain_neon(domain)
+        if company:
+            phase1.close()
+            return CompanyMatchResult(
+                person_id='neon_lookup',
+                input_company_name=company_name or '',
+                input_domain=domain,
+                matched_company_id=company['company_unique_id'],
+                matched_company_name=company.get('company_name', ''),
+                match_type=MatchType.DOMAIN,
+                match_tier=MatchTier.GOLD,
+                match_score=1.0,
+                confidence=1.0,
+                metadata={'match_method': 'neon_domain_lookup'}
+            )
+
+    # Priority 2: EIN lookup (Tool 18)
+    if ein:
+        company = phase1.lookup_company_by_ein_neon(ein)
+        if company:
+            phase1.close()
+            return CompanyMatchResult(
+                person_id='neon_lookup',
+                input_company_name=company_name or '',
+                input_domain=domain,
+                matched_company_id=company['company_unique_id'],
+                matched_company_name=company.get('company_name', ''),
+                match_type=MatchType.EXACT,
+                match_tier=MatchTier.SILVER,
+                match_score=0.98,  # EIN is very high confidence
+                confidence=0.98,
+                metadata={'match_method': 'neon_ein_lookup'}
+            )
+
+    # Priority 3: Name-based matching
+    if company_name:
+        result = match_single_company(
+            company_name=company_name,
+            domain=domain or '',
+            city=city or '',
+            state=state or '',
+            use_neon=True,
+            config=config
+        )
+        return result
+
+    phase1.close()
+    return CompanyMatchResult(
+        person_id='neon_lookup',
+        input_company_name=company_name or '',
+        input_domain=domain,
+        match_type=MatchType.NONE,
+        match_tier=MatchTier.NONE,
+        metadata={'error': 'No search criteria provided'}
+    )

@@ -12,6 +12,9 @@ HOLD Reasons:
 - low_confidence: Match score below threshold
 - collision: Multiple ambiguous matches
 - missing_data: Insufficient data for matching
+
+DOCTRINE ENFORCEMENT:
+- correlation_id is MANDATORY (FAIL HARD if missing)
 """
 
 import time
@@ -22,6 +25,9 @@ from pathlib import Path
 from enum import Enum
 import pandas as pd
 import json
+
+# Doctrine enforcement imports
+from ops.enforcement.correlation_id import validate_correlation_id, CorrelationIDError
 
 from ..utils.logging import (
     PipelineLogger,
@@ -38,6 +44,33 @@ class HoldReason(Enum):
     LOW_CONFIDENCE = "low_confidence"  # Match score below threshold
     COLLISION = "collision"          # Multiple ambiguous matches
     MISSING_DATA = "missing_data"    # Insufficient data for matching
+
+
+class HoldTTLLevel(Enum):
+    """
+    Hold Queue TTL Escalation Levels.
+
+    DOCTRINE: Records escalate through levels based on time in HOLD.
+    - INITIAL (7 days): First attempt at re-matching
+    - ESCALATED_1 (21 days): Second attempt with relaxed matching
+    - ESCALATED_2 (28 days): Manual review flag
+    - FINAL (30 days): Archive or purge decision required
+
+    No probabilistic logic. No ML. Deterministic time-based escalation.
+    """
+    INITIAL = "initial"           # 0-7 days in HOLD
+    ESCALATED_1 = "escalated_1"   # 7-21 days in HOLD
+    ESCALATED_2 = "escalated_2"   # 21-28 days in HOLD
+    FINAL = "final"               # 28+ days in HOLD (30 day purge)
+
+
+# TTL thresholds in days
+HOLD_TTL_DAYS = {
+    HoldTTLLevel.INITIAL: 7,      # First 7 days
+    HoldTTLLevel.ESCALATED_1: 21, # After 21 days
+    HoldTTLLevel.ESCALATED_2: 28, # After 28 days
+    HoldTTLLevel.FINAL: 30,       # After 30 days (archive/purge)
+}
 
 
 @dataclass
@@ -62,6 +95,7 @@ class Phase1bStats:
     missing_data_count: int = 0
     exported_count: int = 0
     duration_seconds: float = 0.0
+    correlation_id: str = ""  # Propagated unchanged
 
 
 class Phase1bUnmatchedHoldExport:
@@ -118,22 +152,33 @@ class Phase1bUnmatchedHoldExport:
         self.output_directory.mkdir(parents=True, exist_ok=True)
 
     def run(self, phase1_results_df: pd.DataFrame,
+            correlation_id: str,
             output_path: str = None,
             run_id: str = None) -> Tuple[HoldExportResult, Phase1bStats]:
         """
         Export unmatched/ambiguous people into a HOLD CSV.
 
+        DOCTRINE: correlation_id is MANDATORY. FAIL HARD if missing.
+
         Args:
             phase1_results_df: DataFrame from Phase 1 with match results
                 Expected columns: person_id, match_type, match_score, is_collision, etc.
+            correlation_id: MANDATORY - End-to-end trace ID (UUID v4)
             output_path: Destination CSV file path (optional)
             run_id: Pipeline run identifier for tracking
 
         Returns:
             Tuple of (HoldExportResult, Phase1bStats)
+
+        Raises:
+            CorrelationIDError: If correlation_id is missing or invalid (FAIL HARD)
         """
+        # DOCTRINE ENFORCEMENT: Validate correlation_id (FAIL HARD)
+        process_id = "company.identity.matching.phase1b"
+        correlation_id = validate_correlation_id(correlation_id, process_id, "Phase 1b")
+
         start_time = time.time()
-        stats = Phase1bStats(total_input=len(phase1_results_df))
+        stats = Phase1bStats(total_input=len(phase1_results_df), correlation_id=correlation_id)
 
         log_phase_start(self.logger, 1, "Unmatched Hold Export", len(phase1_results_df))
 
@@ -545,6 +590,7 @@ class Phase1bUnmatchedHoldExport:
                 'by_reason': {},
                 'by_source': {},
                 'retry_distribution': {},
+                'ttl_distribution': {},
                 'has_company_name': 0,
                 'has_domain': 0,
                 'has_email': 0
@@ -555,6 +601,7 @@ class Phase1bUnmatchedHoldExport:
             'by_reason': {},
             'by_source': {},
             'retry_distribution': {},
+            'ttl_distribution': {},
             'has_company_name': 0,
             'has_domain': 0,
             'has_email': 0
@@ -572,6 +619,10 @@ class Phase1bUnmatchedHoldExport:
         if 'retry_count' in df.columns:
             stats['retry_distribution'] = df['retry_count'].value_counts().to_dict()
 
+        # TTL level distribution
+        if 'ttl_level' in df.columns:
+            stats['ttl_distribution'] = df['ttl_level'].value_counts().to_dict()
+
         # Data completeness
         company_cols = ['company_name', 'input_company_name']
         for col in company_cols:
@@ -586,6 +637,165 @@ class Phase1bUnmatchedHoldExport:
             stats['has_email'] = df['email'].notna().sum()
 
         return stats
+
+    # =========================================================================
+    # TTL ESCALATION METHODS
+    # =========================================================================
+
+    def calculate_ttl_level(self, hold_timestamp: datetime) -> HoldTTLLevel:
+        """
+        Calculate TTL escalation level based on time in HOLD.
+
+        DOCTRINE: Deterministic time-based escalation (7/21/28/30 days).
+
+        Args:
+            hold_timestamp: When record was placed in HOLD
+
+        Returns:
+            HoldTTLLevel based on days in HOLD
+        """
+        now = datetime.now()
+        days_in_hold = (now - hold_timestamp).days
+
+        if days_in_hold >= HOLD_TTL_DAYS[HoldTTLLevel.FINAL]:
+            return HoldTTLLevel.FINAL
+        elif days_in_hold >= HOLD_TTL_DAYS[HoldTTLLevel.ESCALATED_2]:
+            return HoldTTLLevel.ESCALATED_2
+        elif days_in_hold >= HOLD_TTL_DAYS[HoldTTLLevel.ESCALATED_1]:
+            return HoldTTLLevel.ESCALATED_1
+        else:
+            return HoldTTLLevel.INITIAL
+
+    def apply_ttl_escalation(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Apply TTL escalation levels to HOLD records.
+
+        Adds/updates 'ttl_level' column based on hold_timestamp.
+
+        Args:
+            df: HOLD DataFrame with hold_timestamp column
+
+        Returns:
+            DataFrame with ttl_level column
+        """
+        if df.empty:
+            return df
+
+        df = df.copy()
+
+        if 'hold_timestamp' not in df.columns:
+            self.logger.warning("No hold_timestamp column - cannot calculate TTL levels")
+            df['ttl_level'] = HoldTTLLevel.INITIAL.value
+            return df
+
+        def get_level(row):
+            try:
+                ts = row['hold_timestamp']
+                if isinstance(ts, str):
+                    ts = datetime.fromisoformat(ts.replace('Z', '+00:00'))
+                return self.calculate_ttl_level(ts).value
+            except Exception:
+                return HoldTTLLevel.INITIAL.value
+
+        df['ttl_level'] = df.apply(get_level, axis=1)
+        df['days_in_hold'] = df['hold_timestamp'].apply(
+            lambda x: (datetime.now() - datetime.fromisoformat(str(x).replace('Z', '+00:00'))).days
+            if pd.notna(x) else 0
+        )
+
+        return df
+
+    def get_records_by_ttl_level(
+        self,
+        df: pd.DataFrame,
+        level: HoldTTLLevel
+    ) -> pd.DataFrame:
+        """
+        Filter HOLD records by TTL level.
+
+        Args:
+            df: HOLD DataFrame (must have ttl_level column)
+            level: HoldTTLLevel to filter by
+
+        Returns:
+            Filtered DataFrame
+        """
+        if 'ttl_level' not in df.columns:
+            df = self.apply_ttl_escalation(df)
+
+        return df[df['ttl_level'] == level.value]
+
+    def get_records_for_archive(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Get records that have reached FINAL TTL level (30+ days).
+
+        These records should be archived or purged per doctrine.
+
+        Args:
+            df: HOLD DataFrame
+
+        Returns:
+            DataFrame of records ready for archive
+        """
+        return self.get_records_by_ttl_level(df, HoldTTLLevel.FINAL)
+
+    def get_records_for_manual_review(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Get records at ESCALATED_2 level (28+ days).
+
+        These records require manual review before final decision.
+
+        Args:
+            df: HOLD DataFrame
+
+        Returns:
+            DataFrame of records needing manual review
+        """
+        return self.get_records_by_ttl_level(df, HoldTTLLevel.ESCALATED_2)
+
+    def get_ttl_summary(self, df: pd.DataFrame) -> Dict[str, Any]:
+        """
+        Get summary of records by TTL level.
+
+        Args:
+            df: HOLD DataFrame
+
+        Returns:
+            Dict with counts by TTL level and action recommendations
+        """
+        if 'ttl_level' not in df.columns:
+            df = self.apply_ttl_escalation(df)
+
+        summary = {
+            'total': len(df),
+            'by_level': {},
+            'actions_required': []
+        }
+
+        for level in HoldTTLLevel:
+            count = len(df[df['ttl_level'] == level.value])
+            summary['by_level'][level.value] = count
+
+            if level == HoldTTLLevel.FINAL and count > 0:
+                summary['actions_required'].append({
+                    'action': 'archive_or_purge',
+                    'count': count,
+                    'description': f"{count} records at 30+ days - archive or purge required"
+                })
+            elif level == HoldTTLLevel.ESCALATED_2 and count > 0:
+                summary['actions_required'].append({
+                    'action': 'manual_review',
+                    'count': count,
+                    'description': f"{count} records at 28+ days - manual review required"
+                })
+            elif level == HoldTTLLevel.ESCALATED_1 and count > 0:
+                summary['actions_required'].append({
+                    'action': 'retry_with_relaxed_matching',
+                    'count': count,
+                    'description': f"{count} records at 21+ days - retry with relaxed matching"
+                })
+
+        return summary
 
     def load_hold_file(self, file_path: str) -> pd.DataFrame:
         """

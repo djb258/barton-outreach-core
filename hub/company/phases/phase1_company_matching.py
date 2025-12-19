@@ -8,6 +8,10 @@ Matches input people to companies using doctrine-compliant matching hierarchy:
 
 Per doctrine: collision threshold = 0.03
 City guardrail: Required for scores 0.85-0.92, not required for >=0.92
+
+DOCTRINE ENFORCEMENT:
+- correlation_id is MANDATORY (FAIL HARD if missing)
+- All downstream calls must propagate correlation_id unchanged
 """
 
 import time
@@ -15,6 +19,9 @@ from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Tuple
 from enum import Enum
 import pandas as pd
+
+# Doctrine enforcement imports
+from ops.enforcement.correlation_id import validate_correlation_id, CorrelationIDError
 
 from ..utils.normalization import (
     normalize_company_name,
@@ -38,6 +45,12 @@ from ..utils.logging import (
     log_phase_complete
 )
 from ..utils.config import MatchingConfig
+from ..utils.fuzzy_arbitration import (
+    AbacusFuzzyArbitrator,
+    CollisionCandidate,
+    ArbitrationResult,
+    create_arbitrator
+)
 
 
 class MatchType(Enum):
@@ -78,6 +91,7 @@ class Phase1Stats:
     collisions: int = 0
     unmatched: int = 0
     duration_seconds: float = 0.0
+    correlation_id: str = ""  # Propagated unchanged
 
 
 class Phase1CompanyMatching:
@@ -117,22 +131,38 @@ class Phase1CompanyMatching:
         self._domain_index: Dict[str, str] = {}  # domain -> company_id
         self._name_index: Dict[str, List[str]] = {}  # normalized_name -> [company_ids]
 
+        # Tool 3: Abacus.ai Fuzzy Arbitrator for collision resolution
+        # Per doctrine: LLM is ONLY allowed for collision resolution when
+        # top 2 candidates are within 0.03 score threshold
+        self._arbitrator = create_arbitrator()
+
     def run(self, people_df: pd.DataFrame,
-            company_df: pd.DataFrame) -> Tuple[pd.DataFrame, Phase1Stats]:
+            company_df: pd.DataFrame,
+            correlation_id: str) -> Tuple[pd.DataFrame, Phase1Stats]:
         """
         Run company matching phase.
+
+        DOCTRINE: correlation_id is MANDATORY. FAIL HARD if missing.
 
         Args:
             people_df: Input people DataFrame with columns:
                 - person_id, first_name, last_name, company_name, company_domain, city, state
             company_df: Company master DataFrame with columns:
                 - company_unique_id, company_name, website_url, address_city, address_state
+            correlation_id: MANDATORY - End-to-end trace ID (UUID v4)
 
         Returns:
             Tuple of (result_df with match results, Phase1Stats)
+
+        Raises:
+            CorrelationIDError: If correlation_id is missing or invalid (FAIL HARD)
         """
+        # DOCTRINE ENFORCEMENT: Validate correlation_id (FAIL HARD)
+        process_id = "company.identity.matching.phase1"
+        correlation_id = validate_correlation_id(correlation_id, process_id, "Phase 1")
+
         start_time = time.time()
-        stats = Phase1Stats(total_input=len(people_df))
+        stats = Phase1Stats(total_input=len(people_df), correlation_id=correlation_id)
 
         log_phase_start(self.logger, 1, "Company Matching", len(people_df))
 
@@ -425,7 +455,40 @@ class Phase1CompanyMatching:
         )
 
         if resolution.is_ambiguous:
-            # Collision detected
+            # Collision detected - invoke Tool 3: Abacus.ai Fuzzy Arbitration
+            # Per doctrine: LLM is ONLY allowed here for collision resolution
+            collision_candidates = [
+                CollisionCandidate(
+                    company_id=c.candidate_id,
+                    company_name=c.candidate_name,
+                    score=c.score,
+                    city=c.city if hasattr(c, 'city') else None,
+                    state=c.state if hasattr(c, 'state') else None
+                )
+                for c in resolution.all_candidates[:5]
+            ]
+
+            # Attempt LLM arbitration
+            arbitration_result = self._arbitrator.arbitrate(
+                input_company_name=normalized_name,
+                candidates=collision_candidates,
+                input_city=city,
+                input_state=state
+            )
+
+            if arbitration_result.result == ArbitrationResult.SELECTED:
+                # LLM resolved the collision
+                return {
+                    'is_collision': False,
+                    'company_id': arbitration_result.selected_company_id,
+                    'company_name': arbitration_result.selected_company_name,
+                    'score': arbitration_result.confidence,
+                    'city_match': False,  # Unknown from arbitration
+                    'state_match': False,
+                    'method': 'llm_arbitration'
+                }
+
+            # LLM could not resolve or rejected - still a collision
             return {
                 'is_collision': True,
                 'candidates': [
@@ -438,7 +501,9 @@ class Phase1CompanyMatching:
                     }
                     for c in resolution.all_candidates[:5]
                 ],
-                'collision_reason': resolution.ambiguous_reason
+                'collision_reason': arbitration_result.reasoning or resolution.ambiguous_reason,
+                'arbitration_attempted': True,
+                'arbitration_result': arbitration_result.result.value
             }
 
         if resolution.matched and resolution.candidate:

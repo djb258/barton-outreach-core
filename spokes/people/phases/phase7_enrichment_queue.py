@@ -31,6 +31,10 @@ from datetime import datetime, timedelta
 from enum import Enum
 import pandas as pd
 
+# Doctrine enforcement imports
+from ops.enforcement.correlation_id import validate_correlation_id, CorrelationIDError
+from ops.enforcement.hub_gate import validate_company_anchor, GateLevel
+
 # Waterfall integration (optional - enabled via config)
 try:
     from .waterfall_integration import Phase7WaterfallProcessor, WaterfallStats
@@ -44,6 +48,13 @@ try:
     _PBE_AVAILABLE = True
 except ImportError:
     _PBE_AVAILABLE = False
+
+# n8n Queue Integration - Optional import
+try:
+    from .n8n_integration import N8NQueueTrigger, load_n8n_config
+    N8N_AVAILABLE = True
+except ImportError:
+    N8N_AVAILABLE = False
 
 
 class QueueReason(Enum):
@@ -113,12 +124,18 @@ class Phase7Stats:
     pattern_missing: int = 0
     slot_missing: int = 0
     email_issues: int = 0
+    hub_gate_failures: int = 0
     # Waterfall processing stats
     waterfall_processed: int = 0       # Items processed by waterfall
     waterfall_resolved: int = 0        # Patterns discovered via waterfall
     waterfall_exhausted: int = 0       # Items where all tiers failed
     waterfall_api_calls: int = 0       # Total API calls made
+    # n8n queue trigger stats
+    n8n_triggered: int = 0             # Items sent to n8n
+    n8n_failed: int = 0                # Items that failed to send
+    n8n_batches: int = 0               # Number of batches sent
     duration_seconds: float = 0.0
+    correlation_id: str = ""  # Propagated unchanged
 
 
 class Phase7EnrichmentQueue:
@@ -173,6 +190,8 @@ class Phase7EnrichmentQueue:
                 - waterfall_budget: float - Max budget for waterfall processing
                 - waterfall_batch_limit: int - Max items to process per run
                 - waterfall_config: dict - Config passed to waterfall processor
+                - enable_n8n: bool - Enable n8n queue triggers
+                - n8n_webhook_url: str - Override n8n webhook URL
             movement_engine: Optional MovementEngine instance for event reporting
         """
         self.config = config or {}
@@ -190,6 +209,15 @@ class Phase7EnrichmentQueue:
             waterfall_config['batch_limit'] = self.config.get('waterfall_batch_limit', 100)
             self.waterfall_processor = Phase7WaterfallProcessor(config=waterfall_config)
 
+        # n8n Queue Integration (optional)
+        self.enable_n8n = self.config.get('enable_n8n', False)
+        self.n8n_trigger = None
+        if self.enable_n8n and N8N_AVAILABLE:
+            n8n_config = load_n8n_config()
+            if self.config.get('n8n_webhook_url'):
+                n8n_config.webhook_url = self.config['n8n_webhook_url']
+            self.n8n_trigger = N8NQueueTrigger(config=n8n_config)
+
         # Provider Benchmark Engine reference
         self._pbe = None
         if _PBE_AVAILABLE:
@@ -205,23 +233,34 @@ class Phase7EnrichmentQueue:
         self,
         people_missing_pattern_df: pd.DataFrame,
         unslotted_people_df: pd.DataFrame,
-        slot_summary_df: pd.DataFrame
+        slot_summary_df: pd.DataFrame,
+        correlation_id: str
     ) -> Tuple[pd.DataFrame, pd.DataFrame, Phase7Stats]:
         """
         Run enrichment queue phase.
+
+        DOCTRINE: correlation_id is MANDATORY. FAIL HARD if missing.
 
         Args:
             people_missing_pattern_df: People without email patterns (from Phase 5)
             unslotted_people_df: People that couldn't be slotted (from Phase 6)
             slot_summary_df: Slot summary by company (from Phase 6)
+            correlation_id: MANDATORY - End-to-end trace ID (UUID v4)
 
         Returns:
             Tuple of (enrichment_queue_df, resolved_patterns_df, Phase7Stats)
             - enrichment_queue_df: Items still needing enrichment
             - resolved_patterns_df: Patterns discovered via waterfall (if enabled)
+
+        Raises:
+            CorrelationIDError: If correlation_id is missing or invalid (FAIL HARD)
         """
+        # DOCTRINE ENFORCEMENT: Validate correlation_id (FAIL HARD)
+        process_id = "people.lifecycle.enrichment.phase7"
+        correlation_id = validate_correlation_id(correlation_id, process_id, "Phase 7")
+
         start_time = time.time()
-        stats = Phase7Stats()
+        stats = Phase7Stats(correlation_id=correlation_id)
         resolved_patterns_df = pd.DataFrame()
 
         # Clear any existing queue
@@ -280,12 +319,52 @@ class Phase7EnrichmentQueue:
             else:
                 stats.person_items += 1
 
+        # 5. Trigger n8n queue processing (if enabled)
+        if self.n8n_trigger and self.queue:
+            n8n_result = self._trigger_n8n_queue(correlation_id)
+            stats.n8n_triggered = n8n_result.get('triggered', 0)
+            stats.n8n_failed = n8n_result.get('failed', 0)
+            stats.n8n_batches = len(n8n_result.get('batches', []))
+
         # Build output DataFrame
         queue_df = self._build_queue_dataframe()
 
         stats.duration_seconds = time.time() - start_time
 
         return queue_df, resolved_patterns_df, stats
+
+    def _trigger_n8n_queue(self, correlation_id: str) -> Dict[str, Any]:
+        """
+        Trigger n8n queue processing for pending items.
+
+        Args:
+            correlation_id: Correlation ID for tracing
+
+        Returns:
+            Dict with n8n trigger results
+        """
+        if not self.n8n_trigger:
+            return {'triggered': 0, 'failed': 0, 'batches': []}
+
+        # Convert queue items to dicts for n8n
+        queue_items = []
+        for item in self.queue:
+            if item.status == 'pending':
+                queue_items.append({
+                    'queue_id': item.queue_id,
+                    'entity_type': item.entity_type.value,
+                    'entity_id': item.entity_id,
+                    'company_id': item.company_id,
+                    'reason': item.reason.value,
+                    'priority': item.priority.name,
+                    'source_phase': item.source_phase,
+                    'metadata': item.metadata
+                })
+
+        if not queue_items:
+            return {'triggered': 0, 'failed': 0, 'batches': []}
+
+        return self.n8n_trigger.trigger_queue_items(queue_items, correlation_id)
 
     def _process_waterfall(
         self,

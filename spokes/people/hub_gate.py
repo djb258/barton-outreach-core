@@ -16,8 +16,8 @@ from typing import Any, Dict, List, Optional, Tuple
 from rapidfuzz import fuzz
 import logging
 
-from ...wheel.bicycle_wheel import Spoke, Hub
-from ...wheel.wheel_result import SpokeResult, ResultStatus, FailureType
+from ctb.sys.enrichment.pipeline_engine.wheel.bicycle_wheel import Spoke, Hub
+from ctb.sys.enrichment.pipeline_engine.wheel.wheel_result import SpokeResult, ResultStatus, FailureType
 
 
 logger = logging.getLogger(__name__)

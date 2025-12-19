@@ -11,6 +11,9 @@ Resolution hierarchy:
 2. Use domain from input person record
 3. Validate domain health (DNS/MX)
 4. Queue for enrichment if no valid domain
+
+DOCTRINE ENFORCEMENT:
+- correlation_id is MANDATORY (FAIL HARD if missing)
 """
 
 import time
@@ -19,6 +22,9 @@ from typing import Optional, Dict, Any, List, Tuple
 from datetime import datetime
 from enum import Enum
 import pandas as pd
+
+# Doctrine enforcement imports
+from ops.enforcement.correlation_id import validate_correlation_id, CorrelationIDError
 
 from ..utils.normalization import normalize_domain
 from ..utils.verification import (
@@ -83,6 +89,7 @@ class Phase2Stats:
     missing_domains: int = 0
     queued_for_enrichment: int = 0
     duration_seconds: float = 0.0
+    correlation_id: str = ""  # Propagated unchanged
 
 
 class Phase2DomainResolution:
@@ -125,21 +132,32 @@ class Phase2DomainResolution:
         self._domain_cache: Dict[str, DomainVerificationResult] = {}
 
     def run(self, matched_df: pd.DataFrame,
+            correlation_id: str,
             company_df: pd.DataFrame = None) -> Tuple[pd.DataFrame, Phase2Stats]:
         """
         Run domain resolution phase.
 
+        DOCTRINE: correlation_id is MANDATORY. FAIL HARD if missing.
+
         Args:
             matched_df: DataFrame with matched companies from Phase 1
                 Expected columns: person_id, matched_company_id, company_domain (optional)
+            correlation_id: MANDATORY - End-to-end trace ID (UUID v4)
             company_df: Optional company master DataFrame for domain lookup
                 Expected columns: company_unique_id, website_url, domain
 
         Returns:
             Tuple of (result_df with domain info, Phase2Stats)
+
+        Raises:
+            CorrelationIDError: If correlation_id is missing or invalid (FAIL HARD)
         """
+        # DOCTRINE ENFORCEMENT: Validate correlation_id (FAIL HARD)
+        process_id = "company.identity.domain.phase2"
+        correlation_id = validate_correlation_id(correlation_id, process_id, "Phase 2")
+
         start_time = time.time()
-        stats = Phase2Stats(total_input=len(matched_df))
+        stats = Phase2Stats(total_input=len(matched_df), correlation_id=correlation_id)
 
         log_phase_start(self.logger, 2, "Domain Resolution", len(matched_df))
 

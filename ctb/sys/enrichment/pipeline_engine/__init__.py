@@ -21,7 +21,10 @@ Usage:
     results = engine.run(input_df)
 """
 
-from .main import PipelineEngine, PipelineRun
+from .main import CompanyIdentityPipeline, PipelineRun, PipelineRunStats
+
+# Alias for backwards compatibility
+PipelineEngine = CompanyIdentityPipeline
 from .phases import (
     Phase1CompanyMatching,
     Phase1bUnmatchedHoldExport,

@@ -1,0 +1,206 @@
+{
+  "run_id": "7aed0b56-b274-44cb-973f-f9e4b3eecad3",
+  "run_timestamp": "2025-12-19T14:25:41.177738",
+  "duration_seconds": 0.09374308586120605,
+  "volume": {
+    "total_companies_processed": 1000,
+    "total_people_processed": 5000,
+    "total_emails_generated": 4419,
+    "total_signals_emitted": 6926,
+    "signals_by_type": {
+      "SLOT_FILLED": 2670,
+      "EMAIL_VERIFIED": 3753,
+      "FORM_5500_FILED": 241,
+      "LARGE_PLAN": 78,
+      "BROKER_CHANGE": 19,
+      "EXECUTIVE_CHANGE": 7,
+      "LAYOFFS": 16,
+      "FUNDING_ROUND": 12,
+      "ACQUISITION": 9,
+      "EXPANSION": 12,
+      "LATERAL_MOVE": 28,
+      "EXECUTIVE_HIRE": 30,
+      "EXECUTIVE_DEPARTURE": 27,
+      "PROMOTION": 24
+    },
+    "companies_matched": 921,
+    "companies_unmatched": 79,
+    "people_matched": 0,
+    "people_unmatched": 0
+  },
+  "cost": {
+    "cost_by_phase": {
+      "company_p1_p4": 0.2074,
+      "people_spoke": 53.8647,
+      "dol_spoke": 53.948499999999996,
+      "blog_spoke": 53.97409999999999,
+      "talent_flow_spoke": 53.985,
+      "outreach_spoke": 0.0
+    },
+    "cost_per_1k_records": 35.99661666666666,
+    "top_expensive_tools": [
+      [
+        "linkedin_enrichment",
+        30.92
+      ],
+      [
+        "email_verification",
+        22.095
+      ],
+      [
+        "bit_signal",
+        0.6926
+      ]
+    ],
+    "total_estimated_cost": 215.97969999999998,
+    "tool_invocations": {
+      "domain_match": 1200,
+      "fuzzy_match": 179,
+      "dns_lookup": 179,
+      "email_verification": 4419,
+      "bit_signal": 6926,
+      "linkedin_enrichment": 1546,
+      "ein_match": 500
+    }
+  },
+  "quality": {
+    "fuzzy_match_distribution": {
+      "90-100": 596,
+      "80-89": 276,
+      "70-79": 49,
+      "<70": 79
+    },
+    "email_verification_pass": 3753,
+    "email_verification_fail": 666,
+    "slot_fill_rates": {
+      "CEO": 0.432,
+      "CFO": 0.434,
+      "CHRO": 0.479,
+      "HR": 1.325
+    },
+    "bit_score_distribution": {
+      "0-24": 336,
+      "25-49": 392,
+      "50-74": 176,
+      "75+": 96
+    },
+    "domain_detection_rate": 0.7206703910614525,
+    "pattern_detection_rate": 0.7676767676767676
+  },
+  "risk": {
+    "emails_rejected_pct": 0.15071283095723015,
+    "companies_bit_above_50_pct": 0.448,
+    "signal_spikes_per_company": {},
+    "enrichment_queue_size": 1546,
+    "max_signals_single_company": 22,
+    "risky_companies": [
+      "04.04.01.11.30168.679",
+      "04.04.01.19.30506.982",
+      "04.04.01.41.30917.928"
+    ]
+  },
+  "kill_switches": [
+    {
+      "switch_name": "signal_flood_per_source",
+      "trigger_condition": "Source people_spoke exceeded signal limit",
+      "threshold": 500,
+      "actual_value": 501,
+      "fired": true,
+      "where_fired": "people_spoke._emit_signal",
+      "what_stopped": "Signals from people_spoke halted",
+      "timestamp": "2025-12-19T14:25:41.230277"
+    },
+    {
+      "switch_name": "daily_cost_ceiling",
+      "trigger_condition": "Daily cost $215.98 exceeds ceiling",
+      "threshold": 50.0,
+      "actual_value": 215.97969999999998,
+      "fired": true,
+      "where_fired": "orchestrator._validate_kill_switches",
+      "what_stopped": "Further processing halted",
+      "timestamp": "2025-12-19T14:25:41.271356"
+    },
+    {
+      "switch_name": "enrichment_queue_max",
+      "trigger_condition": "Queue size < 10000",
+      "threshold": 10000,
+      "actual_value": 1546,
+      "fired": false,
+      "where_fired": "N/A",
+      "what_stopped": "N/A",
+      "timestamp": "2025-12-19T14:25:41.271404"
+    },
+    {
+      "switch_name": "bit_spike_per_run",
+      "trigger_condition": "Max BIT < 100",
+      "threshold": 100,
+      "actual_value": 100,
+      "fired": false,
+      "where_fired": "N/A",
+      "what_stopped": "N/A",
+      "timestamp": "2025-12-19T14:25:41.271508"
+    }
+  ],
+  "phase_results": {
+    "company_pipeline": {
+      "duration_seconds": 0.0010924339294433594,
+      "companies_matched": 921,
+      "companies_unmatched": 79,
+      "domains_detected": 129,
+      "patterns_detected": 228,
+      "spoke_ready": 881
+    },
+    "people_spoke": {
+      "duration_seconds": 0.03478240966796875,
+      "emails_generated": 4419,
+      "emails_verified": 3753,
+      "emails_failed": 666,
+      "slot_assignments": {
+        "CEO": 432,
+        "CFO": 434,
+        "CHRO": 479,
+        "HR": 1325
+      },
+      "enrichment_queue": 1546
+    },
+    "dol_spoke": {
+      "duration_seconds": 0.004328012466430664,
+      "form_5500_processed": 500,
+      "matched_by_ein": 241,
+      "large_plans": 78,
+      "broker_changes": 19
+    },
+    "blog_spoke": {
+      "duration_seconds": 0.0010640621185302734,
+      "articles_processed": 200,
+      "matched_articles": 120,
+      "events_detected": 56
+    },
+    "talent_flow_spoke": {
+      "duration_seconds": 0.001094818115234375,
+      "movements_processed": 150,
+      "movements_detected": 109
+    },
+    "bit_engine": {
+      "duration_seconds": 0.0005846023559570312,
+      "total_signals": 6926,
+      "bit_distribution": {
+        "0-24": 336,
+        "25-49": 392,
+        "50-74": 176,
+        "75+": 96
+      },
+      "companies_above_50": 448
+    },
+    "outreach_spoke": {
+      "duration_seconds": 0.0001704692840576172,
+      "candidates_evaluated": 272,
+      "candidates_passed": 241,
+      "candidates_failed_anchor": 0,
+      "candidates_failed_bit": 0,
+      "candidates_cooling_off": 31,
+      "sends_blocked": true
+    }
+  },
+  "errors": []
+}

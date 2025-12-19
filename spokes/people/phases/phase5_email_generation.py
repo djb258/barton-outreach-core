@@ -19,6 +19,10 @@ Waterfall Integration:
 - When enable_waterfall=True, triggers pattern discovery for missing patterns
 - Tier 0 (free) → Tier 1 (low cost) → Tier 2 (premium)
 - Results cached to avoid duplicate API calls
+
+DOCTRINE ENFORCEMENT:
+- correlation_id is MANDATORY (FAIL HARD if missing)
+- hub_gate validation - company_id REQUIRED (FAIL HARD)
 """
 
 import re
@@ -28,6 +32,10 @@ from typing import Optional, Dict, Any, List, Tuple
 from datetime import datetime
 from enum import Enum
 import pandas as pd
+
+# Doctrine enforcement imports
+from ops.enforcement.correlation_id import validate_correlation_id, CorrelationIDError
+from ops.enforcement.hub_gate import validate_company_anchor_batch, GateLevel
 
 # Waterfall integration (optional - enabled via config)
 try:
@@ -80,7 +88,9 @@ class Phase5Stats:
     waterfall_api_calls: int = 0        # Total API calls made by waterfall
     missing_pattern: int = 0
     missing_name: int = 0
+    hub_gate_failures: int = 0          # Records rejected by hub_gate
     duration_seconds: float = 0.0
+    correlation_id: str = ""  # Propagated unchanged
 
 
 class Phase5EmailGeneration:
@@ -144,21 +154,43 @@ class Phase5EmailGeneration:
         }
 
     def run(self, matched_people_df: pd.DataFrame,
-            pattern_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, Phase5Stats]:
+            pattern_df: pd.DataFrame,
+            correlation_id: str) -> Tuple[pd.DataFrame, pd.DataFrame, Phase5Stats]:
         """
         Run email generation phase.
+
+        DOCTRINE: correlation_id is MANDATORY. FAIL HARD if missing.
+        HUB GATE: Records without company_id are rejected.
 
         Args:
             matched_people_df: DataFrame with matched people from Company Pipeline
                 Required columns: person_id, company_id, first_name, last_name
             pattern_df: DataFrame with verified patterns from Phase 4
                 Required columns: company_id, email_pattern, resolved_domain, pattern_confidence
+            correlation_id: MANDATORY - End-to-end trace ID (UUID v4)
 
         Returns:
             Tuple of (people_with_emails_df, people_missing_pattern_df, Phase5Stats)
+
+        Raises:
+            CorrelationIDError: If correlation_id is missing or invalid (FAIL HARD)
         """
+        # DOCTRINE ENFORCEMENT: Validate correlation_id (FAIL HARD)
+        process_id = "people.lifecycle.email.phase5"
+        correlation_id = validate_correlation_id(correlation_id, process_id, "Phase 5")
+
         start_time = time.time()
-        stats = Phase5Stats(total_input=len(matched_people_df))
+        stats = Phase5Stats(total_input=len(matched_people_df), correlation_id=correlation_id)
+
+        # HUB GATE: Pre-filter records without company_id
+        records_list = matched_people_df.to_dict('records')
+        valid_records, invalid_records = validate_company_anchor_batch(
+            records=records_list,
+            level=GateLevel.COMPANY_ID_ONLY,
+            process_id=process_id,
+            correlation_id=correlation_id
+        )
+        stats.hub_gate_failures = len(invalid_records)
 
         # Build pattern lookup by company_id
         pattern_map = self._build_pattern_map(pattern_df)
@@ -166,20 +198,18 @@ class Phase5EmailGeneration:
         people_with_emails = []
         people_missing_pattern = []
 
-        for idx, row in matched_people_df.iterrows():
-            person_id = str(row.get('person_id', idx))
-            company_id = str(row.get('company_id', '') or row.get('matched_company_id', ''))
-            first_name = str(row.get('first_name', '') or '').strip()
-            last_name = str(row.get('last_name', '') or '').strip()
+        # Add hub_gate failures to missing_pattern list
+        for invalid in invalid_records:
+            people_missing_pattern.append({
+                **invalid['record'],
+                'missing_reason': 'hub_gate_failed_no_company_id'
+            })
 
-            # Validate company anchor (Company-First doctrine)
-            if not company_id:
-                stats.missing_pattern += 1
-                people_missing_pattern.append({
-                    **row.to_dict(),
-                    'missing_reason': 'no_company_id'
-                })
-                continue
+        for record in valid_records:
+            person_id = str(record.get('person_id', ''))
+            company_id = str(record.get('company_id', '') or record.get('matched_company_id', ''))
+            first_name = str(record.get('first_name', '') or '').strip()
+            last_name = str(record.get('last_name', '') or '').strip()
 
             # Check for name
             if not first_name or not last_name:

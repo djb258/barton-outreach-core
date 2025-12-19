@@ -22,7 +22,7 @@ from .fuzzy import (
 from .providers import (
     ProviderBase,
     FirecrawlProvider,
-    ScraperAPIProvider,
+    WebScraperProvider,
     GooglePlacesProvider,
     HunterProvider,
     ClearbitProvider,
@@ -75,7 +75,7 @@ __all__ = [
     # Providers
     "ProviderBase",
     "FirecrawlProvider",
-    "ScraperAPIProvider",
+    "WebScraperProvider",
     "GooglePlacesProvider",
     "HunterProvider",
     "ClearbitProvider",

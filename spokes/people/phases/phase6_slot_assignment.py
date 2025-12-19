@@ -17,6 +17,10 @@ Slot Rules:
 - If conflicting → highest seniority wins
 - Empty slots → recorded in slot_enrichment_queue
 - REQUIRES: company_id anchor (Company-First doctrine)
+
+DOCTRINE ENFORCEMENT:
+- correlation_id is MANDATORY (FAIL HARD if missing)
+- hub_gate validation - company_id REQUIRED
 """
 
 import re
@@ -26,6 +30,10 @@ from typing import Optional, List, Dict, Any, Tuple
 from datetime import datetime
 from enum import Enum
 import pandas as pd
+
+# Doctrine enforcement imports
+from ops.enforcement.correlation_id import validate_correlation_id, CorrelationIDError
+from ops.enforcement.hub_gate import validate_company_anchor, GateLevel
 
 
 class SlotType(Enum):
@@ -79,7 +87,9 @@ class Phase6Stats:
     conflicts_resolved: int = 0
     missing_company_id: int = 0
     missing_title: int = 0
+    hub_gate_failures: int = 0
     duration_seconds: float = 0.0
+    correlation_id: str = ""  # Propagated unchanged
 
 
 class Phase6SlotAssignment:
@@ -168,14 +178,18 @@ class Phase6SlotAssignment:
         self.min_seniority_diff = self.config.get('min_seniority_diff', 10)
         self.movement_engine = movement_engine
 
-    def run(self, people_with_emails_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, Phase6Stats]:
+    def run(self, people_with_emails_df: pd.DataFrame,
+            correlation_id: str) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, Phase6Stats]:
         """
         Run slot assignment phase.
+
+        DOCTRINE: correlation_id is MANDATORY. FAIL HARD if missing.
 
         Args:
             people_with_emails_df: DataFrame with generated emails from Phase 5
                 Required columns: person_id, company_id, first_name, last_name,
                                  job_title (or title), generated_email
+            correlation_id: MANDATORY - End-to-end trace ID (UUID v4)
 
         Returns:
             Tuple of:
@@ -183,9 +197,16 @@ class Phase6SlotAssignment:
                 - unslotted_people_df: People that couldn't be slotted
                 - slot_summary_df: Summary of slots by company
                 - Phase6Stats
+
+        Raises:
+            CorrelationIDError: If correlation_id is missing or invalid (FAIL HARD)
         """
+        # DOCTRINE ENFORCEMENT: Validate correlation_id (FAIL HARD)
+        process_id = "people.lifecycle.slotting.phase6"
+        correlation_id = validate_correlation_id(correlation_id, process_id, "Phase 6")
+
         start_time = time.time()
-        stats = Phase6Stats(total_input=len(people_with_emails_df))
+        stats = Phase6Stats(total_input=len(people_with_emails_df), correlation_id=correlation_id)
 
         # Track slot assignments by company
         # company_id -> {slot_type -> SlotAssignment}
@@ -199,14 +220,24 @@ class Phase6SlotAssignment:
             company_id = str(row.get('company_id', '') or row.get('matched_company_id', ''))
             title = str(row.get('job_title', '') or row.get('title', '') or '').strip()
 
-            # Validate company anchor (Company-First doctrine)
-            if not company_id:
+            # HUB GATE: Validate company anchor (Company-First doctrine)
+            gate_result = validate_company_anchor(
+                record=row.to_dict(),
+                level=GateLevel.COMPANY_ID_ONLY,
+                process_id=process_id,
+                correlation_id=correlation_id,
+                fail_hard=False  # Phase 6 routes failures to unslotted
+            )
+
+            if not gate_result.passed:
+                stats.hub_gate_failures += 1
                 stats.missing_company_id += 1
                 unslotted_records.append({
                     **row.to_dict(),
                     'slot_type': SlotType.UNSLOTTED.value,
-                    'slot_reason': 'no_company_id',
-                    'seniority_score': 0
+                    'slot_reason': 'hub_gate_failed_no_company_id',
+                    'seniority_score': 0,
+                    'hub_gate_failure': gate_result.failure_reason
                 })
                 continue
 

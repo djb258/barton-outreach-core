@@ -14,6 +14,10 @@ Initial State Classification Logic:
 
 NO DATABASE WRITES - classification only.
 All output anchored to company_id (Company-First doctrine).
+
+DOCTRINE ENFORCEMENT:
+- correlation_id is MANDATORY (FAIL HARD if missing)
+- hub_gate validation for company anchor
 """
 
 import time
@@ -22,6 +26,10 @@ from typing import Optional, List, Dict, Any, Tuple
 from datetime import datetime
 from enum import Enum
 import pandas as pd
+
+# Doctrine enforcement imports
+from ops.enforcement.correlation_id import validate_correlation_id, CorrelationIDError
+from ops.enforcement.hub_gate import validate_company_anchor, HubGateError, GateLevel
 
 from ..movement_engine import LifecycleState, EventType as MovementEventType
 
@@ -88,7 +96,9 @@ class Phase0Stats:
     talentflow_movements_detected: int = 0
     bit_thresholds_met: int = 0
     past_meetings_detected: int = 0
+    hub_gate_failures: int = 0
     duration_seconds: float = 0.0
+    correlation_id: str = ""  # Propagated unchanged
 
 
 class Phase0PeopleIngest:
@@ -123,26 +133,52 @@ class Phase0PeopleIngest:
         self.config = config or {}
         self.bit_threshold = self.config.get('bit_warm_threshold', self.BIT_WARM_THRESHOLD)
 
-    def run(self, people_df: pd.DataFrame) -> Tuple[List[PeopleIngestResult], Phase0Stats]:
+    def run(self, people_df: pd.DataFrame,
+            correlation_id: str) -> Tuple[List[PeopleIngestResult], Phase0Stats]:
         """
         Run people ingest classification phase.
+
+        DOCTRINE: correlation_id is MANDATORY. FAIL HARD if missing.
+
+        Note: Phase 0 does NOT fail hard on missing company_id - it classifies
+        unanchored records as SUSPECT per PRD. Hub gate is validated but failure
+        results in SUSPECT classification, not hard failure.
 
         Args:
             people_df: DataFrame with people to classify
                 Expected columns: person_id, company_id, first_name, last_name
                 Optional columns: has_replied, talentflow_movement, bit_score,
                                  has_meeting, job_title, title
+            correlation_id: MANDATORY - End-to-end trace ID (UUID v4)
 
         Returns:
             Tuple of (List[PeopleIngestResult], Phase0Stats)
+
+        Raises:
+            CorrelationIDError: If correlation_id is missing or invalid (FAIL HARD)
         """
+        # DOCTRINE ENFORCEMENT: Validate correlation_id (FAIL HARD)
+        process_id = "people.lifecycle.ingest.phase0"
+        correlation_id = validate_correlation_id(correlation_id, process_id, "Phase 0")
+
         start_time = time.time()
-        stats = Phase0Stats(total_input=len(people_df))
+        stats = Phase0Stats(total_input=len(people_df), correlation_id=correlation_id)
         results = []
 
         for idx, row in people_df.iterrows():
             person_id = str(row.get('person_id', idx))
             company_id = str(row.get('company_id', '') or row.get('matched_company_id', '')).strip()
+
+            # Hub gate validation (soft - classify as SUSPECT if fails)
+            gate_result = validate_company_anchor(
+                record=row.to_dict(),
+                level=GateLevel.COMPANY_ID_ONLY,
+                process_id=process_id,
+                correlation_id=correlation_id,
+                fail_hard=False  # Phase 0 classifies failures as SUSPECT
+            )
+            if not gate_result.passed:
+                stats.hub_gate_failures += 1
 
             # Classify this person
             result = self._classify_person(person_id, company_id, row.to_dict(), stats)

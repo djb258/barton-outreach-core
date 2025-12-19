@@ -12,8 +12,8 @@ from typing import Any, Dict, List, Optional
 from datetime import datetime
 import logging
 
-from .....wheel.bicycle_wheel import Hub, SubWheel, Spoke
-from .....wheel.wheel_result import WheelResult, SpokeResult, FailureResult, ResultStatus, FailureType
+from ctb.sys.enrichment.pipeline_engine.wheel.bicycle_wheel import Hub, SubWheel, Spoke
+from ctb.sys.enrichment.pipeline_engine.wheel.wheel_result import WheelResult, SpokeResult, FailureResult, ResultStatus, FailureType
 
 
 logger = logging.getLogger(__name__)

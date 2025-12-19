@@ -60,6 +60,15 @@ from .config import (
     get_database_config
 )
 
+from .fuzzy_arbitration import (
+    ArbitrationResult,
+    CollisionCandidate,
+    ArbitrationResponse,
+    AbacusFuzzyArbitrator,
+    create_arbitrator,
+    arbitrate_collision
+)
+
 __all__ = [
     # Normalization
     "normalize_company_name",
@@ -103,4 +112,11 @@ __all__ = [
     "load_config",
     "get_provider_config",
     "get_database_config",
+    # Fuzzy Arbitration (Tool 3)
+    "ArbitrationResult",
+    "CollisionCandidate",
+    "ArbitrationResponse",
+    "AbacusFuzzyArbitrator",
+    "create_arbitrator",
+    "arbitrate_collision",
 ]

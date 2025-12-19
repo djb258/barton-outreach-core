@@ -8,6 +8,9 @@ Discovers email patterns using tiered approach:
 
 The waterfall stops as soon as a valid pattern is found.
 If no pattern found, suggests common patterns for verification in Phase 4.
+
+DOCTRINE ENFORCEMENT:
+- correlation_id is MANDATORY (FAIL HARD if missing)
 """
 
 import time
@@ -16,6 +19,9 @@ from typing import Optional, List, Dict, Any, Tuple
 from datetime import datetime
 from enum import Enum
 import pandas as pd
+
+# Doctrine enforcement imports
+from ops.enforcement.correlation_id import validate_correlation_id, CorrelationIDError
 
 from ..utils.normalization import normalize_domain
 from ..utils.patterns import (
@@ -98,6 +104,7 @@ class Phase3Stats:
     total_api_calls: int = 0
     total_cost_credits: float = 0.0
     duration_seconds: float = 0.0
+    correlation_id: str = ""  # Propagated unchanged
 
 
 class Phase3EmailPatternWaterfall:
@@ -155,19 +162,30 @@ class Phase3EmailPatternWaterfall:
             except Exception:
                 pass
 
-    def run(self, domain_df: pd.DataFrame) -> Tuple[pd.DataFrame, Phase3Stats]:
+    def run(self, domain_df: pd.DataFrame,
+            correlation_id: str) -> Tuple[pd.DataFrame, Phase3Stats]:
         """
         Run email pattern waterfall.
+
+        DOCTRINE: correlation_id is MANDATORY. FAIL HARD if missing.
 
         Args:
             domain_df: DataFrame with domains from Phase 2
                 Expected columns: person_id, resolved_domain, matched_company_id
+            correlation_id: MANDATORY - End-to-end trace ID (UUID v4)
 
         Returns:
             Tuple of (result_df with pattern info, Phase3Stats)
+
+        Raises:
+            CorrelationIDError: If correlation_id is missing or invalid (FAIL HARD)
         """
+        # DOCTRINE ENFORCEMENT: Validate correlation_id (FAIL HARD)
+        process_id = "company.identity.pattern.phase3"
+        correlation_id = validate_correlation_id(correlation_id, process_id, "Phase 3")
+
         start_time = time.time()
-        stats = Phase3Stats(total_input=len(domain_df))
+        stats = Phase3Stats(total_input=len(domain_df), correlation_id=correlation_id)
 
         log_phase_start(self.logger, 3, "Email Pattern Waterfall", len(domain_df))
 
