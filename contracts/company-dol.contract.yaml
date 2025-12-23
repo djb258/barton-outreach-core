@@ -1,0 +1,44 @@
+# Company <-> DOL Spoke Contract
+# Version: 1.0.0
+
+contract:
+  id: CONTRACT-CO-DOL
+  version: "1.0.0"
+  description: |
+    Bidirectional spoke between Company Intelligence Hub and DOL Filings Hub.
+    Handles EIN lookups (Company -> DOL) and filing signals (DOL -> Company).
+
+parties:
+  hub_a: HUB-CO-INTEL
+  hub_b: HUB-DOL
+
+ingress:  # Company -> DOL
+  name: ein_lookup_spoke
+  direction: "Company -> DOL"
+  identity_contract:
+    - company_id
+    - ein (optional)
+  payload_type: ein_lookup_request
+  data_flow:
+    - EIN lookup requests
+    - company name for fuzzy matching
+  trigger: new_company_needs_filing_data
+
+egress:  # DOL -> Company
+  name: filing_signal_spoke
+  direction: "DOL -> Company"
+  identity_contract:
+    - ein
+    - company_id
+  payload_type: filing_signal
+  data_flow:
+    - EIN match confirmation
+    - filing presence (has 5500)
+    - renewal date
+    - plan size signals
+  trigger: filing_matched_or_renewal_approaching
+
+rules:
+  - no_logic_in_spoke
+  - no_state_in_spoke
+  - directional_only

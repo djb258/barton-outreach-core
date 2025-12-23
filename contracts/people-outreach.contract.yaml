@@ -1,0 +1,45 @@
+# People <-> Outreach Spoke Contract
+# Version: 1.0.0
+
+contract:
+  id: CONTRACT-PEOPLE-OUTREACH
+  version: "1.0.0"
+  description: |
+    Bidirectional spoke between People Intelligence Hub and Outreach Execution Hub.
+    Handles contact selection (People -> Outreach) and contact state updates (Outreach -> People).
+
+parties:
+  hub_a: HUB-PEOPLE
+  hub_b: HUB-OUTREACH
+
+ingress:  # People -> Outreach
+  name: contact_selection_spoke
+  direction: "People -> Outreach"
+  identity_contract:
+    - company_id
+    - slot_type
+    - person_id
+  payload_type: contact_info
+  data_flow:
+    - contact info (email, name)
+    - slot type (for personalization)
+    - contact readiness status
+  trigger: contact_requested_for_campaign
+
+egress:  # Outreach -> People
+  name: contact_state_spoke
+  direction: "Outreach -> People"
+  identity_contract:
+    - person_id
+  payload_type: contact_state_update
+  data_flow:
+    - last contacted timestamp
+    - contact outcome
+    - bounce/invalid flag
+  trigger: send_completed_or_bounce_detected
+
+rules:
+  - no_logic_in_spoke
+  - no_state_in_spoke
+  - directional_only
+  - compound_identity_allowed

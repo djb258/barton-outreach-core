@@ -144,7 +144,11 @@
       "Bash(ctb/sys/enrichment/pipeline_engine/__init__.py )",
       "Bash(ctb/sys/enrichment/pipeline_engine/phases/__init__.py )",
       "Bash(ctb/sys/enrichment/pipeline_engine/phases/phase1_company_matching.py )",
-      "Bash(ctb/sys/enrichment/pipeline_engine/utils/__init__.py)"
+      "Bash(ctb/sys/enrichment/pipeline_engine/utils/__init__.py)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(git stash:*)",
+      "Bash(du:*)"
     ],
     "deny": []
   }

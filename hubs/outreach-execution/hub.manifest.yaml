@@ -1,0 +1,63 @@
+# Outreach Execution Hub Manifest
+# Altitude: 40k (System Infrastructure)
+# Version: 1.0.0
+
+hub:
+  id: HUB-OUTREACH
+  name: Outreach Execution Hub
+  doctrine_id: "04.04.04"
+  type: sub-hub
+  version: "1.0.0"
+  description: |
+    Owns campaign state, sequence execution, send logs, and engagement
+    tracking. Manages the state machine of outreach:
+    draft -> scheduled -> sent -> opened -> replied
+
+core_metric:
+  name: ENGAGEMENT_RATE
+  description: (opens + replies) / sends
+  aggregation: percentage
+  thresholds:
+    healthy: ">= 0.3"
+    degraded: ">= 0.1"
+    critical: "< 0.1"
+
+entities_owned:
+  - campaigns
+  - sequences
+  - send_log
+  - engagement_events
+  - reply_tracking
+
+imo:
+  input:
+    - company_spoke_receiver
+    - people_spoke_receiver
+    - webhook_receiver
+  middle:
+    - campaign_manager
+    - sequence_executor
+    - send_scheduler
+    - engagement_processor
+    - reply_classifier
+  output:
+    - company_spoke_out
+    - people_spoke_out
+
+spokes:
+  ingress_from:
+    - SPOKE-COMPANY-EGRESS
+    - SPOKE-PEOPLE-EGRESS
+  egress_to:
+    - SPOKE-COMPANY-INGRESS
+    - SPOKE-PEOPLE-INGRESS
+
+boundary_rules:
+  does_not_own:
+    - company_master        # Company Hub owns
+    - people_master         # People Hub owns
+    - bit_scores            # Company Hub owns
+    - slot_assignments      # People Hub owns
+  state_machine: |
+    Outreach has its own complex state machine.
+    Campaign progression is independent of company/people state.

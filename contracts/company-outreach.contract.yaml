@@ -1,0 +1,42 @@
+# Company <-> Outreach Spoke Contract
+# Version: 1.0.0
+
+contract:
+  id: CONTRACT-CO-OUTREACH
+  version: "1.0.0"
+  description: |
+    Bidirectional spoke between Company Intelligence Hub and Outreach Execution Hub.
+    Handles target selection (Company -> Outreach) and engagement signals (Outreach -> Company).
+
+parties:
+  hub_a: HUB-CO-INTEL
+  hub_b: HUB-OUTREACH
+
+ingress:  # Company -> Outreach
+  name: target_selection_spoke
+  direction: "Company -> Outreach"
+  identity_contract:
+    - company_id
+  payload_type: target_selection
+  data_flow:
+    - target selection (BIT qualified companies)
+    - BIT score and components
+    - campaign eligibility
+  trigger: bit_threshold_crossed
+
+egress:  # Outreach -> Company
+  name: engagement_signal_spoke
+  direction: "Outreach -> Company"
+  identity_contract:
+    - company_id
+  payload_type: engagement_signal
+  data_flow:
+    - engagement summary (opens, replies)
+    - campaign outcome
+    - response sentiment
+  trigger: engagement_event_or_campaign_completed
+
+rules:
+  - no_logic_in_spoke
+  - no_state_in_spoke
+  - directional_only

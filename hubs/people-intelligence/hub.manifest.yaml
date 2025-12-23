@@ -1,0 +1,64 @@
+# People Intelligence Hub Manifest
+# Altitude: 40k (System Infrastructure)
+# Version: 1.0.0
+
+hub:
+  id: HUB-PEOPLE
+  name: People Intelligence Hub
+  doctrine_id: "04.04.02"
+  type: sub-hub
+  version: "1.0.0"
+  description: |
+    Owns human identity, employment state, and slot ASSIGNMENTS.
+    Tracks the human lifecycle independently of companies.
+    People churn - they change jobs - that's a People Hub event.
+
+core_metric:
+  name: SLOT_FILL_RATE
+  description: Percentage of target slots filled with verified contacts
+  aggregation: percentage
+  thresholds:
+    healthy: ">= 0.8"
+    degraded: ">= 0.5"
+    critical: "< 0.5"
+
+entities_owned:
+  - people_master
+  - slot_assignments
+  - movement_history
+  - enrichment_state
+  - email_verification
+
+imo:
+  input:
+    - person_intake
+    - company_spoke_receiver
+    - linkedin_receiver
+    - movement_receiver
+  middle:
+    - person_dedup
+    - title_normalizer
+    - slot_assigner
+    - email_generator
+    - email_verifier
+    - movement_processor
+  output:
+    - company_spoke_out
+    - outreach_spoke_out
+
+spokes:
+  ingress_from:
+    - SPOKE-COMPANY-EGRESS
+  egress_to:
+    - SPOKE-COMPANY-INGRESS
+    - SPOKE-OUTREACH-INGRESS
+
+boundary_rules:
+  does_not_own:
+    - slot_requirements     # Company Hub owns (structure)
+    - company_master        # Company Hub owns
+    - bit_scores            # Company Hub owns
+    - email_pattern         # Company Hub owns (pattern discovery)
+  slot_split: |
+    Company Hub defines WHAT roles are needed (slot_requirements).
+    People Hub defines WHO fills those roles (slot_assignments).

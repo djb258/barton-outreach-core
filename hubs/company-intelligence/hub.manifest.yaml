@@ -1,0 +1,70 @@
+# Company Intelligence Hub Manifest
+# Altitude: 40k (System Infrastructure)
+# Version: 1.0.0
+
+hub:
+  id: HUB-CO-INTEL
+  name: Company Intelligence Hub
+  doctrine_id: "04.04.01"
+  type: axle
+  version: "1.0.0"
+  description: |
+    Central source of truth for company identity, structure, and buyer intent.
+    The axle of the hub-and-spoke architecture. Everything anchors here.
+
+core_metric:
+  name: BIT_SCORE
+  description: Buyer Intent Tool score
+  aggregation: weighted_average
+  thresholds:
+    healthy: ">= 0.7"
+    degraded: ">= 0.4"
+    critical: "< 0.4"
+
+entities_owned:
+  - company_master
+  - slot_requirements
+  - bit_scores
+  - domain
+  - email_pattern
+
+imo:
+  input:
+    - company_intake
+    - dol_signal_receiver
+    - people_signal_receiver
+    - outreach_signal_receiver
+    - external_signal_receiver
+  middle:
+    - identity_resolver
+    - domain_manager
+    - email_pattern
+    - slot_requirements
+    - bit_calculator
+  output:
+    - company_anchor
+    - people_spoke_out
+    - dol_spoke_out
+    - outreach_spoke_out
+
+spokes:
+  ingress_from:
+    - SPOKE-DOL-EGRESS
+    - SPOKE-PEOPLE-EGRESS
+    - SPOKE-OUTREACH-EGRESS
+    - SPOKE-SIGNAL-INGRESS
+  egress_to:
+    - SPOKE-PEOPLE-INGRESS
+    - SPOKE-DOL-INGRESS
+    - SPOKE-OUTREACH-INGRESS
+
+boundary_rules:
+  does_not_own:
+    - slot_assignments      # People Hub owns
+    - people_master         # People Hub owns
+    - movement_history      # People Hub owns
+    - form_5500             # DOL Hub owns
+    - campaigns             # Outreach Hub owns
+  golden_rule: |
+    No processing without company_id + domain + email_pattern.
+    All spokes must anchor to this hub.

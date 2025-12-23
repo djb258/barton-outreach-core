@@ -1,6 +1,0 @@
-company_name,company_domain,company_website,full_name,first_name,last_name,title,email,phone,linkedin_url,historical_open_count,historical_reply_count,historical_meeting_count,last_engaged_at,notes
-ACME CORPORATION INC,acme.com,https://www.acme.com,John Smith,John,Smith,VP of Sales,john.smith@acme.com,555-123-4567,https://linkedin.com/in/johnsmith,20,3,1,2024-11-01,Key decision maker
-TechCorp LLC,techcorp.io,https://techcorp.io,Jane Doe,Jane,Doe,Chief Technology Officer,jane.doe@techcorp.io,555-987-6543,https://linkedin.com/in/janedoe,15,2,0,2024-10-15,Responded to demo request
-Global Industries,global-ind.com,https://www.global-ind.com,Robert Johnson,Robert,Johnson,HR Director,rjohnson@global-ind.com,555-456-7890,https://linkedin.com/in/robertjohnson,5,1,0,2024-09-20,Interested in Q1 2025
-Innovate Solutions,innovate.co,,Sarah Williams,Sarah,Williams,v.p. operations,sarah.williams@innovate.co; swilliams@gmail.com,555-234-5678,https://linkedin.com/in/sarahwilliams,30,5,2,2024-11-10,High engagement
-DataTech Group,datatech.com,https://datatech.com,Michael Brown,Michael,Brown,Chief Financial Officer,mbrown@datatech.com,(555) 345-6789,https://linkedin.com/in/michaelbrown,10,0,0,2024-08-05,Cold lead

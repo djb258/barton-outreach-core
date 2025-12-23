@@ -1,0 +1,57 @@
+# DOL Filings Hub Manifest
+# Altitude: 40k (System Infrastructure)
+# Version: 1.0.0
+
+hub:
+  id: HUB-DOL
+  name: DOL Filings Hub
+  doctrine_id: "04.04.03"
+  type: sub-hub
+  version: "1.0.0"
+  description: |
+    Owns federal Form 5500 filing data, Schedule A insurance data,
+    and compliance intelligence. Source of truth for plan renewal
+    dates and broker relationships.
+
+core_metric:
+  name: FILING_MATCH_RATE
+  description: Percentage of filings matched to company_master
+  aggregation: percentage
+  thresholds:
+    healthy: ">= 0.9"
+    degraded: ">= 0.7"
+    critical: "< 0.7"
+
+entities_owned:
+  - form_5500
+  - form_5500_sf
+  - schedule_a
+  - renewal_calendar
+  - filing_history
+
+imo:
+  input:
+    - federal_data_loader
+    - company_spoke_receiver
+  middle:
+    - filing_parser
+    - schedule_a_extractor
+    - ein_matcher
+    - renewal_calculator
+  output:
+    - company_spoke_out
+
+spokes:
+  ingress_from:
+    - SPOKE-COMPANY-EGRESS
+  egress_to:
+    - SPOKE-COMPANY-INGRESS
+
+boundary_rules:
+  does_not_own:
+    - company_master        # Company Hub owns
+    - people_master         # People Hub owns
+    - bit_scores            # Company Hub owns
+  data_source: |
+    Federal DOL data downloads are authoritative.
+    EIN matching to companies is an egress spoke operation.

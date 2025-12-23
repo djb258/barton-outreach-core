@@ -1,0 +1,38 @@
+# Signal -> Company Spoke Contract
+# Version: 1.0.0
+
+contract:
+  id: CONTRACT-SIGNAL-CO
+  version: "1.0.0"
+  description: |
+    Unidirectional ingress spoke from Signal Intake to Company Intelligence Hub.
+    Handles external signals (news, blog mentions, competitor intel).
+    This is NOT a hub - it's a pure pass-through spoke.
+
+parties:
+  spoke: SPOKE-SIGNAL
+  hub: HUB-CO-INTEL
+
+ingress:  # Signal -> Company (one direction only)
+  name: external_signal_spoke
+  direction: "Signal -> Company"
+  identity_contract:
+    - domain
+    - company_name (optional)
+  payload_type: external_signal
+  data_flow:
+    - signal_type
+    - signal_source
+    - raw_content
+    - timestamp
+  trigger: signal_received
+
+egress: null  # No egress - ingress only spoke
+
+rules:
+  - no_logic_in_spoke
+  - no_state_in_spoke
+  - ingress_only
+  - no_transformation
+  - no_scoring
+  - no_storage

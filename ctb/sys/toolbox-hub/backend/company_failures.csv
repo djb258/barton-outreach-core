@@ -1,3 +1,0 @@
-company_id,company_name,fail_reason,state,validation_timestamp,pipeline_id,created_at,exported_to_sheets
-04.04.01.33.00033.033,WV SUPREME COURT,Missing industry,N/A,2025-11-17 16:28:27.647587+00:00,WV-VALIDATION-20251117-170715,2025-11-17 22:07:15.290725+00:00,False
-04.04.01.33.00033.033,WV SUPREME COURT,Missing industry,N/A,2025-11-17 16:28:27.647587+00:00,WV-VALIDATION-20251117-165228,2025-11-17 21:52:28.006020+00:00,False

@@ -1,0 +1,46 @@
+# Company <-> People Spoke Contract
+# Version: 1.0.0
+
+contract:
+  id: CONTRACT-CO-PEOPLE
+  version: "1.0.0"
+  description: |
+    Bidirectional spoke between Company Intelligence Hub and People Intelligence Hub.
+    Handles slot requirements (Company -> People) and slot assignments (People -> Company).
+
+parties:
+  hub_a: HUB-CO-INTEL
+  hub_b: HUB-PEOPLE
+
+ingress:  # Company -> People
+  name: slot_requirements_spoke
+  direction: "Company -> People"
+  identity_contract:
+    - company_id
+    - slot_type
+  payload_type: slot_requirement
+  data_flow:
+    - slot requirements (what roles needed)
+    - email pattern (for email generation)
+    - domain (for verification)
+  trigger: slot_requirement_created_or_updated
+
+egress:  # People -> Company
+  name: slot_assignments_spoke
+  direction: "People -> Company"
+  identity_contract:
+    - company_id
+    - slot_type
+    - person_id
+  payload_type: slot_assignment_status
+  data_flow:
+    - slot assignment status (filled/vacant)
+    - fill quality score
+    - movement alerts (person left)
+  trigger: slot_assigned_or_vacated
+
+rules:
+  - no_logic_in_spoke
+  - no_state_in_spoke
+  - directional_only
+  - compound_identity_allowed

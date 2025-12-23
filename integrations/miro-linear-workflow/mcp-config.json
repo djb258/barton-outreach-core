@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "MCP Configuration for Miro and Linear integration with Claude Code",
+  "mcpServers": {
+    "miro": {
+      "url": "https://mcp.miro.com",
+      "transport": "sse",
+      "description": "Miro MCP Server - allows Claude Code to interact with Miro boards",
+      "capabilities": [
+        "read_boards",
+        "create_items",
+        "update_items",
+        "delete_items",
+        "create_connectors"
+      ],
+      "authentication": {
+        "type": "oauth",
+        "note": "Authorize via Miro OAuth when connecting"
+      }
+    },
+    "linear": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/linear-mcp-server"],
+      "env": {
+        "LINEAR_API_KEY": "${LINEAR_API_KEY}"
+      },
+      "description": "Linear MCP Server - allows Claude Code to manage Linear issues",
+      "capabilities": [
+        "list_issues",
+        "create_issue",
+        "update_issue",
+        "list_teams",
+        "list_projects"
+      ]
+    }
+  },
+  "usage": {
+    "miro": {
+      "setup": [
+        "1. Go to https://miro.com/app/settings/user-profile/apps",
+        "2. Create a new app or use an existing one",
+        "3. Copy the Access Token",
+        "4. When Claude Code prompts, authorize via OAuth"
+      ],
+      "example_prompts": [
+        "Show me items on my Miro board",
+        "Create a sticky note on the board with text 'TODO: Implement HashAgent'",
+        "Draw a diagram of the hub-spoke architecture"
+      ]
+    },
+    "linear": {
+      "setup": [
+        "1. Go to https://linear.app/settings/api",
+        "2. Create a new Personal API Key",
+        "3. Set LINEAR_API_KEY environment variable",
+        "4. Restart Claude Code"
+      ],
+      "example_prompts": [
+        "Show me open issues in Linear",
+        "Create a new issue: Implement Talent Engine Shell",
+        "Mark issue ENG-123 as done",
+        "What issues are tagged claude-ready?"
+      ]
+    }
+  }
+}
+
+
