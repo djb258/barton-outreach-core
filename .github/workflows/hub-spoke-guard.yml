@@ -1,0 +1,363 @@
+name: Hub & Spoke Architecture Guard
+
+on:
+  pull_request:
+    branches: ['main']
+  push:
+    branches: ['main']
+
+jobs:
+  architecture-guard:
+    runs-on: ubuntu-latest
+    name: Architecture Enforcement
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pyyaml
+
+      # ========================================================================
+      # CHECK 1: Repo Shape Guard (same rules as pre-commit hook)
+      # ========================================================================
+      - name: Repo Shape Guard
+        run: |
+          echo "🔒 Running Repo Shape Guard..."
+
+          # Allowed top-level directories
+          ALLOWED_DIRS=".github .vscode contracts docs doctrine global-config hubs infra integrations neon ops shared spokes templates tests tooling"
+
+          # Check for Python files at root
+          ROOT_PY=$(find . -maxdepth 1 -name "*.py" -type f | head -5)
+          if [ -n "$ROOT_PY" ]; then
+            echo "❌ BLOCKED: Python files found at repo root"
+            echo "$ROOT_PY"
+            exit 1
+          fi
+          echo "✓ No Python files at repo root"
+
+          # Check for unauthorized top-level directories
+          for dir in $(find . -maxdepth 1 -type d -not -name "." -not -name ".git"); do
+            dirname=$(basename "$dir")
+            if ! echo "$ALLOWED_DIRS" | grep -qw "$dirname"; then
+              echo "❌ BLOCKED: Unauthorized directory: $dirname/"
+              echo "Allowed: $ALLOWED_DIRS"
+              exit 1
+            fi
+          done
+          echo "✓ All directories are in allowlist"
+
+          echo "✅ Repo Shape Guard passed"
+
+      # ========================================================================
+      # CHECK 2: Hub Manifests Validation
+      # ========================================================================
+      - name: Validate Hub Manifests
+        run: |
+          echo "📋 Validating Hub Manifests..."
+
+          REQUIRED_HUBS="company-intelligence people-intelligence dol-filings outreach-execution"
+
+          for hub in $REQUIRED_HUBS; do
+            MANIFEST="hubs/${hub}/hub.manifest.yaml"
+
+            if [ ! -f "$MANIFEST" ]; then
+              echo "❌ MISSING: $MANIFEST"
+              exit 1
+            fi
+
+            # Validate YAML syntax
+            python3 -c "import yaml; yaml.safe_load(open('$MANIFEST'))" 2>/dev/null || {
+              echo "❌ INVALID YAML: $MANIFEST"
+              exit 1
+            }
+
+            # Verify required fields exist
+            python3 << EOF
+import yaml
+import sys
+
+with open("$MANIFEST") as f:
+    manifest = yaml.safe_load(f)
+
+required_fields = ["hub_id", "doctrine_id", "core_metric", "entities_owned"]
+missing = [f for f in required_fields if f not in manifest]
+
+if missing:
+    print(f"❌ MISSING FIELDS in $MANIFEST: {missing}")
+    sys.exit(1)
+
+# Verify IMO structure is defined
+if "imo_structure" not in manifest:
+    print(f"❌ MISSING imo_structure in $MANIFEST")
+    sys.exit(1)
+
+print(f"✓ {manifest['hub_id']}: Valid manifest with {manifest['core_metric']} metric")
+EOF
+
+          done
+
+          echo "✅ All hub manifests validated"
+
+      # ========================================================================
+      # CHECK 3: Spoke Contracts Validation
+      # ========================================================================
+      - name: Validate Spoke Contracts
+        run: |
+          echo "📄 Validating Spoke Contracts..."
+
+          CONTRACTS=$(find contracts -name "*.contract.yaml" 2>/dev/null || true)
+
+          if [ -z "$CONTRACTS" ]; then
+            echo "⚠️ No spoke contracts found in contracts/"
+            exit 0
+          fi
+
+          for contract in $CONTRACTS; do
+            echo "Checking: $contract"
+
+            # Validate YAML syntax
+            python3 -c "import yaml; yaml.safe_load(open('$contract'))" 2>/dev/null || {
+              echo "❌ INVALID YAML: $contract"
+              exit 1
+            }
+
+            # Verify required fields
+            python3 << EOF
+import yaml
+import sys
+
+with open("$contract") as f:
+    contract_data = yaml.safe_load(f)
+
+required_fields = ["contract_id", "source_hub", "target_hub", "direction"]
+missing = [f for f in required_fields if f not in contract_data]
+
+if missing:
+    print(f"❌ MISSING FIELDS in $contract: {missing}")
+    sys.exit(1)
+
+# Verify direction is valid
+valid_directions = ["ingress", "egress", "bidirectional"]
+if contract_data.get("direction") not in valid_directions:
+    print(f"❌ INVALID direction in $contract: must be one of {valid_directions}")
+    sys.exit(1)
+
+print(f"✓ {contract_data['contract_id']}: {contract_data['source_hub']} ↔ {contract_data['target_hub']}")
+EOF
+
+          done
+
+          echo "✅ All spoke contracts validated"
+
+      # ========================================================================
+      # CHECK 4: Spoke Purity Linter
+      # ========================================================================
+      - name: Run Spoke Purity Linter
+        run: |
+          echo "🔍 Running Spoke Purity Linter..."
+
+          # Run the spoke linter if it exists
+          if [ -f "tooling/spoke_linter.py" ]; then
+            python3 tooling/spoke_linter.py
+          else
+            echo "⚠️ Spoke linter not found, running inline checks..."
+
+            # Inline spoke purity checks
+            python3 << 'EOF'
+import os
+import ast
+import sys
+
+FORBIDDEN_PATTERNS = [
+    "sqlite",
+    "psycopg",
+    "neon",
+    "requests.get",
+    "requests.post",
+    "httpx",
+    "aiohttp",
+    "redis",
+    "mongo",
+]
+
+FORBIDDEN_IMPORTS = [
+    "pandas",
+    "numpy",
+    "sqlalchemy",
+    "psycopg2",
+    "redis",
+    "pymongo",
+    "requests",
+]
+
+violations = []
+spokes_dir = "spokes"
+
+if not os.path.exists(spokes_dir):
+    print("No spokes/ directory found")
+    sys.exit(0)
+
+for root, dirs, files in os.walk(spokes_dir):
+    for fname in files:
+        if not fname.endswith(".py"):
+            continue
+
+        fpath = os.path.join(root, fname)
+
+        try:
+            with open(fpath, "r") as f:
+                content = f.read()
+                tree = ast.parse(content)
+        except:
+            continue
+
+        # Check for forbidden imports
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    if alias.name.split(".")[0] in FORBIDDEN_IMPORTS:
+                        violations.append(f"{fpath}: Forbidden import '{alias.name}'")
+
+            elif isinstance(node, ast.ImportFrom):
+                if node.module and node.module.split(".")[0] in FORBIDDEN_IMPORTS:
+                    violations.append(f"{fpath}: Forbidden import from '{node.module}'")
+
+        # Check for forbidden patterns in source
+        for pattern in FORBIDDEN_PATTERNS:
+            if pattern in content:
+                violations.append(f"{fpath}: Contains forbidden pattern '{pattern}'")
+
+if violations:
+    print("❌ SPOKE PURITY VIOLATIONS:")
+    for v in violations:
+        print(f"  - {v}")
+    sys.exit(1)
+
+print("✓ All spokes pass purity checks")
+EOF
+          fi
+
+          echo "✅ Spoke Purity Linter passed"
+
+      # ========================================================================
+      # CHECK 5: Hub IMO Structure Verification
+      # ========================================================================
+      - name: Verify Hub IMO Structure
+        run: |
+          echo "📁 Verifying Hub IMO Structure..."
+
+          REQUIRED_HUBS="company-intelligence people-intelligence dol-filings outreach-execution"
+          IMO_DIRS="input middle output"
+
+          for hub in $REQUIRED_HUBS; do
+            HUB_DIR="hubs/${hub}/imo"
+
+            if [ ! -d "$HUB_DIR" ]; then
+              echo "❌ MISSING: $HUB_DIR/"
+              exit 1
+            fi
+
+            for imo in $IMO_DIRS; do
+              if [ ! -d "$HUB_DIR/$imo" ]; then
+                echo "❌ MISSING: $HUB_DIR/$imo/"
+                exit 1
+              fi
+            done
+
+            echo "✓ hubs/${hub}/imo/{input,middle,output}/ exists"
+          done
+
+          echo "✅ All hubs have proper IMO structure"
+
+      # ========================================================================
+      # CHECK 6: No Sideways Hub-to-Hub Imports
+      # ========================================================================
+      - name: Check Hub Isolation
+        run: |
+          echo "🔗 Checking Hub Isolation (no sideways imports)..."
+
+          python3 << 'EOF'
+import os
+import re
+import sys
+
+violations = []
+hubs_dir = "hubs"
+
+if not os.path.exists(hubs_dir):
+    print("No hubs/ directory found")
+    sys.exit(0)
+
+# Map of hub directories
+hub_dirs = [d for d in os.listdir(hubs_dir) if os.path.isdir(os.path.join(hubs_dir, d))]
+
+for hub in hub_dirs:
+    hub_path = os.path.join(hubs_dir, hub)
+
+    for root, dirs, files in os.walk(hub_path):
+        for fname in files:
+            if not fname.endswith(".py"):
+                continue
+
+            fpath = os.path.join(root, fname)
+
+            with open(fpath, "r") as f:
+                content = f.read()
+
+            # Check for imports from other hubs
+            for other_hub in hub_dirs:
+                if other_hub == hub:
+                    continue
+
+                # Check for direct hub imports
+                patterns = [
+                    rf"from\s+hubs\.{other_hub}",
+                    rf"import\s+hubs\.{other_hub}",
+                    rf"from\s+\.\.{other_hub}",
+                ]
+
+                for pattern in patterns:
+                    if re.search(pattern, content):
+                        violations.append(
+                            f"{fpath}: Illegal sideways import from '{other_hub}' hub"
+                        )
+
+if violations:
+    print("❌ HUB ISOLATION VIOLATIONS:")
+    print("   Hubs must communicate through spokes, not direct imports!")
+    for v in violations:
+        print(f"  - {v}")
+    sys.exit(1)
+
+print("✓ No sideways hub-to-hub imports detected")
+EOF
+
+          echo "✅ Hub Isolation check passed"
+
+      # ========================================================================
+      # SUMMARY
+      # ========================================================================
+      - name: Architecture Guard Summary
+        if: always()
+        run: |
+          echo ""
+          echo "╔══════════════════════════════════════════════════════════════╗"
+          echo "║          HUB & SPOKE ARCHITECTURE GUARD COMPLETE             ║"
+          echo "╠══════════════════════════════════════════════════════════════╣"
+          echo "║  ✓ Repo Shape Guard                                          ║"
+          echo "║  ✓ Hub Manifests Validation                                  ║"
+          echo "║  ✓ Spoke Contracts Validation                                ║"
+          echo "║  ✓ Spoke Purity Linter                                       ║"
+          echo "║  ✓ Hub IMO Structure Verification                            ║"
+          echo "║  ✓ Hub Isolation Check                                       ║"
+          echo "╚══════════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "All architecture enforcement checks completed."

@@ -1,0 +1,221 @@
+#!/bin/bash
+# ============================================================================
+# HUB & SPOKE ARCHITECTURE - REPO SHAPE GUARD
+# ============================================================================
+# Pre-commit hook that enforces repository structure rules.
+#
+# FAILS if:
+#   1. Any *.py file is added at repo root
+#   2. Any new top-level directory is not in the allowlist
+#   3. Any file larger than 5MB is committed outside approved data locations
+#
+# Install: cp tooling/git-hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+# ============================================================================
+
+set -e
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+echo "🔒 Running Hub & Spoke Repo Shape Guard..."
+
+# ============================================================================
+# ALLOWLISTS
+# ============================================================================
+
+# Allowed top-level directories
+ALLOWED_DIRS=(
+    ".github"
+    ".vscode"
+    "contracts"
+    "docs"
+    "doctrine"
+    "global-config"
+    "hubs"
+    "infra"
+    "integrations"
+    "neon"
+    "ops"
+    "shared"
+    "spokes"
+    "templates"
+    "tests"
+    "tooling"
+)
+
+# Allowed root files (non-Python)
+ALLOWED_ROOT_FILES=(
+    ".env"
+    ".env.example"
+    ".gitignore"
+    ".prettierrc"
+    "CLAUDE.md"
+    "LICENSE"
+    "MIGRATION_COMPLETE.md"
+    "README.md"
+    "package.json"
+    "package-lock.json"
+    "requirements.txt"
+    "tsconfig.json"
+)
+
+# Approved locations for large files (>5MB)
+LARGE_FILE_ALLOWED_PATHS=(
+    "data/"
+    "infra/data/"
+    "tests/fixtures/"
+)
+
+# Maximum file size in bytes (5MB)
+MAX_FILE_SIZE=5242880
+
+# ============================================================================
+# HELPER FUNCTIONS
+# ============================================================================
+
+is_in_array() {
+    local needle="$1"
+    shift
+    local item
+    for item in "$@"; do
+        [[ "$item" == "$needle" ]] && return 0
+    done
+    return 1
+}
+
+is_allowed_large_file_path() {
+    local filepath="$1"
+    for allowed_path in "${LARGE_FILE_ALLOWED_PATHS[@]}"; do
+        if [[ "$filepath" == "$allowed_path"* ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# ============================================================================
+# CHECK 1: No Python files at repo root
+# ============================================================================
+
+echo "  Checking for Python files at repo root..."
+
+ROOT_PY_FILES=$(git diff --cached --name-only --diff-filter=A | grep -E '^[^/]+\.py$' || true)
+
+if [[ -n "$ROOT_PY_FILES" ]]; then
+    echo -e "${RED}❌ BLOCKED: Python files cannot be added at repo root${NC}"
+    echo ""
+    echo "   The following Python files violate Hub & Spoke architecture:"
+    echo "$ROOT_PY_FILES" | while read -r file; do
+        echo "     - $file"
+    done
+    echo ""
+    echo "   Python code must live inside:"
+    echo "     - hubs/<hub-name>/imo/{input,middle,output}/"
+    echo "     - spokes/<spoke-name>/"
+    echo "     - tooling/"
+    echo "     - tests/"
+    echo ""
+    exit 1
+fi
+
+echo -e "  ${GREEN}✓${NC} No Python files at repo root"
+
+# ============================================================================
+# CHECK 2: Only allowed top-level directories
+# ============================================================================
+
+echo "  Checking for unauthorized top-level directories..."
+
+# Get all new directories being added at root level
+NEW_DIRS=$(git diff --cached --name-only --diff-filter=A | cut -d'/' -f1 | sort -u | while read -r item; do
+    # Check if it's a directory (has a slash in any staged file path)
+    if git diff --cached --name-only --diff-filter=A | grep -q "^${item}/"; then
+        echo "$item"
+    fi
+done)
+
+VIOLATIONS=""
+for dir in $NEW_DIRS; do
+    if ! is_in_array "$dir" "${ALLOWED_DIRS[@]}"; then
+        VIOLATIONS="$VIOLATIONS$dir\n"
+    fi
+done
+
+if [[ -n "$VIOLATIONS" ]]; then
+    echo -e "${RED}❌ BLOCKED: Unauthorized top-level directory${NC}"
+    echo ""
+    echo "   The following directories are not in the allowlist:"
+    echo -e "$VIOLATIONS" | while read -r dir; do
+        [[ -n "$dir" ]] && echo "     - $dir/"
+    done
+    echo ""
+    echo "   Allowed directories:"
+    for allowed in "${ALLOWED_DIRS[@]}"; do
+        echo "     - $allowed/"
+    done
+    echo ""
+    echo "   To add a new top-level directory, update:"
+    echo "     tooling/git-hooks/pre-commit"
+    echo ""
+    exit 1
+fi
+
+echo -e "  ${GREEN}✓${NC} All directories are in allowlist"
+
+# ============================================================================
+# CHECK 3: No large files outside approved locations
+# ============================================================================
+
+echo "  Checking for large files (>5MB)..."
+
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+LARGE_FILE_VIOLATIONS=""
+
+for file in $STAGED_FILES; do
+    # Skip if file doesn't exist (deleted)
+    if [[ ! -f "$file" ]]; then
+        continue
+    fi
+
+    # Get file size
+    FILE_SIZE=$(wc -c < "$file" 2>/dev/null || echo 0)
+
+    if [[ "$FILE_SIZE" -gt "$MAX_FILE_SIZE" ]]; then
+        if ! is_allowed_large_file_path "$file"; then
+            SIZE_MB=$(echo "scale=2; $FILE_SIZE / 1048576" | bc 2>/dev/null || echo "?")
+            LARGE_FILE_VIOLATIONS="$LARGE_FILE_VIOLATIONS  - $file (${SIZE_MB}MB)\n"
+        fi
+    fi
+done
+
+if [[ -n "$LARGE_FILE_VIOLATIONS" ]]; then
+    echo -e "${RED}❌ BLOCKED: Large files outside approved locations${NC}"
+    echo ""
+    echo "   The following files exceed 5MB and are not in approved paths:"
+    echo -e "$LARGE_FILE_VIOLATIONS"
+    echo ""
+    echo "   Approved locations for large files:"
+    for path in "${LARGE_FILE_ALLOWED_PATHS[@]}"; do
+        echo "     - $path"
+    done
+    echo ""
+    echo "   Options:"
+    echo "     1. Move the file to an approved location"
+    echo "     2. Add the file to .gitignore"
+    echo "     3. Update the allowlist in tooling/git-hooks/pre-commit"
+    echo ""
+    exit 1
+fi
+
+echo -e "  ${GREEN}✓${NC} No unauthorized large files"
+
+# ============================================================================
+# ALL CHECKS PASSED
+# ============================================================================
+
+echo -e "${GREEN}✅ Repo Shape Guard: All checks passed${NC}"
+echo ""
+
+exit 0
