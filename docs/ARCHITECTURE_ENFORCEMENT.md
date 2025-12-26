@@ -86,13 +86,15 @@ git commit --no-verify -m "EMERGENCY: <reason>"
 Each hub must have `hub.manifest.yaml` with:
 
 ```yaml
-hub_id: company-intelligence
+hub_id: HUB-COMPANY-TARGET
 doctrine_id: "04.04.01"
+type: sub-hub
+parent:
+  hub_id: HUB-COMPANY-LIFECYCLE
+  relationship: child
 core_metric: BIT_SCORE
 entities_owned:
-  - company_master
-  - domain
-  - email_pattern
+  - outreach.company_target
 imo_structure:
   input: receivers/
   middle: processors/
@@ -105,7 +107,7 @@ Each spoke contract must have:
 
 ```yaml
 contract_id: CONTRACT-CO-PEOPLE
-source_hub: company-intelligence
+source_hub: company-target
 target_hub: people-intelligence
 direction: bidirectional  # or ingress, egress
 ```
@@ -193,7 +195,7 @@ IF company_id IS NULL OR domain IS NULL OR email_pattern IS NULL:
 1. **Hubs own entities** - All business logic lives in hub middle layers
 2. **Hubs have IMO structure** - input/, middle/, output/ subdirectories
 3. **No sideways imports** - Hubs communicate through spokes only
-4. **Company Hub is AXLE** - All other hubs connect through it
+4. **Company Target is internal anchor** - Receives identity from CL parent hub
 
 ### Spoke Rules
 

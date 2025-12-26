@@ -8,18 +8,21 @@
     "ssl_mode": "require"
   },
   "architecture": {
-    "type": "hub_and_spoke",
-    "version": "1.0",
-    "axle": "company_intelligence",
-    "doctrine": "barton_doctrine_v1"
+    "type": "cl_parent_child",
+    "version": "2.0",
+    "parent_hub": "company_lifecycle_cl",
+    "internal_anchor": "company_target",
+    "doctrine": "cl_parent_child_v1"
   },
   "hubs": {
-    "company_intelligence": {
+    "company_target": {
       "doctrine_id": "04.04.01",
-      "type": "axle",
+      "type": "sub-hub",
+      "parent": "HUB-COMPANY-LIFECYCLE",
       "core_metric": "BIT_SCORE",
-      "tables": ["company_master", "company_slot", "company_events", "pipeline_events"],
-      "description": "Central source of truth for company identity, structure, and buyer intent"
+      "tables": ["outreach.company_target"],
+      "reads_from": ["cl.company_identity", "cl.lifecycle_state", "marketing.company_master"],
+      "description": "Internal anchor for Outreach Hub. Receives company_unique_id from CL. Never mints identity."
     },
     "people_intelligence": {
       "doctrine_id": "04.04.02",

@@ -59,7 +59,7 @@ def log_hub_event(
     """Log a hub processing event.
 
     Args:
-        hub_name: Name of the hub (e.g., 'company-intelligence')
+        hub_name: Name of the hub (e.g., 'company-target')
         event_type: Type of event (e.g., 'phase_start', 'phase_complete')
         message: Event message
         company_id: Optional company ID for tracing

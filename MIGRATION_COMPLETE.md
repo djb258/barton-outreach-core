@@ -24,7 +24,7 @@ barton-outreach-core/
 ```
 barton-outreach-core/
 ├── hubs/                  # All hub logic properly separated
-│   ├── company-intelligence/  # AXLE - master node
+│   ├── company-target/        # Sub-hub (child of CL)
 │   ├── people-intelligence/   # Sub-hub
 │   ├── dol-filings/           # Sub-hub
 │   └── outreach-execution/    # Sub-hub
@@ -44,10 +44,12 @@ barton-outreach-core/
 
 | Hub | Doctrine ID | Core Metric | Entities Owned |
 |-----|-------------|-------------|----------------|
-| Company Intelligence (AXLE) | 04.04.01 | BIT_SCORE | company_master, slot_requirements, bit_scores, domain, email_pattern |
+| Company Target (child of CL) | 04.04.01 | BIT_SCORE | outreach.company_target, local_bit_scores |
 | People Intelligence | 04.04.02 | SLOT_FILL_RATE | people_master, slot_assignments, movement_history, enrichment_state |
 | DOL Filings | 04.04.03 | FILING_MATCH_RATE | form_5500, form_5500_sf, schedule_a, renewal_calendar |
 | Outreach Execution | 04.04.04 | ENGAGEMENT_RATE | campaigns, sequences, send_log, engagement_events |
+
+**Parent Hub (External)**: Company Lifecycle (CL) - Owns company_unique_id, cl.* schema
 
 ---
 
@@ -123,9 +125,10 @@ barton-outreach-core/
 ## Golden Rule Reminder
 
 ```
-IF company_id IS NULL OR domain IS NULL OR email_pattern IS NULL:
+IF company_unique_id IS NULL:
     STOP. DO NOT PROCEED.
-    → Route to Company Identity Pipeline first.
+    → Request identity from Company Lifecycle (CL) parent hub first.
 ```
 
-**The Company Intelligence Hub is the AXLE. All roads lead through it.**
+**Company Lifecycle (CL) is the PARENT HUB. Company Target is the internal anchor.**
+**All Outreach sub-hubs (People, DOL, Blog) connect through Company Target.**

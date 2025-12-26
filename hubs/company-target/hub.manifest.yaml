@@ -1,0 +1,121 @@
+# Company Target Sub-Hub Manifest
+# Internal anchor for Outreach Execution Hub
+# CHILD of Company Lifecycle (CL) - receives identity, never mints
+# Version: 2.0.0
+
+hub:
+  id: HUB-COMPANY-TARGET
+  name: Company Target Sub-Hub
+  doctrine_id: "04.04.01"
+  type: sub-hub
+  version: "2.0.0"
+  description: |
+    Internal anchor table for Outreach Execution Hub.
+    Receives company_unique_id from Company Lifecycle (CL).
+    NEVER mints, merges, retires, or overrides company identity.
+    Provides local FK join point for Outreach sub-hubs.
+
+# Parent Hub Declaration (MANDATORY)
+parent:
+  hub_id: HUB-COMPANY-LIFECYCLE
+  relationship: child
+  identity_flow: downstream
+  receives:
+    - company_unique_id   # Sovereign ID from CL
+    - legal_name          # Canonical name from CL
+  signals_to_parent:
+    - engagement_events   # Open, click, reply signals
+    - bit_threshold       # BIT score crossed threshold
+
+# Authority Constraints (Non-Negotiable)
+authority:
+  can_do:
+    - Receive company_unique_id from CL
+    - Create outreach.company_target records (internal anchor)
+    - Signal engagement events back to CL
+    - Calculate and store BIT scores locally
+    - Join People/DOL/Blog sub-hubs via target_id
+  cannot_do:
+    - Mint company_unique_id (CL ONLY)
+    - Merge company identities (CL ONLY)
+    - Retire company identities (CL ONLY)
+    - Promote lifecycle state (CL ONLY)
+    - Write to cl.* schema (CL ONLY)
+    - Perform fuzzy matching to create new identities (CL ONLY)
+
+# Core Metric
+core_metric:
+  name: BIT_SCORE
+  description: Buyer Intent Tool score (local copy, CL may override)
+  aggregation: weighted_average
+  thresholds:
+    healthy: ">= 0.7"
+    degraded: ">= 0.4"
+    critical: "< 0.4"
+
+# Entities Owned (LOCAL to Outreach)
+entities_owned:
+  - outreach.company_target    # Internal anchor with FK to CL
+  - local_bit_scores           # Cached BIT scores
+  - target_metadata            # Outreach-specific company metadata
+
+# Entities NOT Owned (Read-Only Reference)
+entities_read_only:
+  - cl.company_identity        # Sovereign - CL owns
+  - cl.lifecycle_state         # Current state - CL owns
+  - marketing.company_master   # Legacy - migrating to CL
+
+# IMO Pattern
+imo:
+  input:
+    - cl_identity_receiver     # Receives company_unique_id from CL
+    - dol_signal_receiver      # Receives DOL signals
+    - people_signal_receiver   # Receives People signals
+    - engagement_receiver      # Receives engagement events
+  middle:
+    - target_linker            # Links incoming data to target_id
+    - bit_calculator           # Calculates local BIT score
+    - readiness_evaluator      # Checks outreach readiness
+  output:
+    - engagement_signaler      # Signals back to CL
+    - people_spoke_out         # Routes to People sub-hub
+    - dol_spoke_out            # Routes to DOL sub-hub
+
+# Spoke Connections
+spokes:
+  ingress_from:
+    - SPOKE-CL-IDENTITY        # Receives identity from CL
+    - SPOKE-DOL-EGRESS         # DOL signals
+    - SPOKE-PEOPLE-EGRESS      # People signals
+    - SPOKE-ENGAGEMENT-INGRESS # Engagement events
+  egress_to:
+    - SPOKE-CL-SIGNAL          # Signals back to CL
+    - SPOKE-PEOPLE-INGRESS     # To People sub-hub
+    - SPOKE-DOL-INGRESS        # To DOL sub-hub
+
+# Boundary Rules
+boundary_rules:
+  does_not_own:
+    - company_unique_id       # CL owns - we receive only
+    - cl.*                    # CL schema - read only
+    - lifecycle_state         # CL owns
+    - slot_assignments        # People Hub owns
+    - people_master           # People Hub owns
+    - movement_history        # People Hub owns
+    - form_5500               # DOL Hub owns
+    - campaigns               # Outreach Hub owns
+  golden_rule: |
+    No processing without company_unique_id FROM CL.
+    Never mint identity. Never infer identity.
+    All sub-hubs anchor through outreach.company_target.
+
+# Database Schema Alignment
+schema:
+  primary_table: outreach.company_target
+  foreign_key:
+    column: company_unique_id
+    references: cl.company_identity(company_unique_id)
+    on_delete: RESTRICT
+  indexes:
+    - idx_target_company (company_unique_id)
+    - idx_target_status (outreach_status)

@@ -3,22 +3,26 @@ Hub & Spoke Architecture - Hubs Registry
 =========================================
 Central registry for all hubs in the Barton Outreach system.
 
-Architecture follows the Bicycle Wheel Doctrine:
-    - Company Intelligence Hub is the AXLE (master node)
-    - All other hubs are spoke-connected to Company Hub
-    - No sideways hub-to-hub calls (all routing through AXLE)
+Architecture follows CL Parent-Child Doctrine:
+    - Company Lifecycle (CL) is the PARENT HUB (external repo)
+    - Company Target is internal anchor (child sub-hub)
+    - All other hubs are spoke-connected through Company Target
+    - No sideways hub-to-hub calls
 
 Hub Registry:
-    - company-intelligence: AXLE - Core metric: BIT_SCORE
+    - company-target: Sub-hub (child of CL) - Core metric: BIT_SCORE
     - people-intelligence: Sub-hub - Core metric: SLOT_FILL_RATE
     - dol-filings: Sub-hub - Core metric: FILING_MATCH_RATE
     - outreach-execution: Sub-hub - Core metric: ENGAGEMENT_RATE
 
+Parent Hub (External):
+    - company-lifecycle-cl: PARENT - Mints company_unique_id
+
 Doctrine ID Format: 04.04.XX (where XX is hub number)
 """
 
-# AXLE Hub
-from .company_intelligence import (
+# Company Target Sub-Hub (receives identity from CL)
+from .company_target import (
     CompanyHub,
     CompanyPipeline,
     BITEngine,

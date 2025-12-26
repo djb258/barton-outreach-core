@@ -63,7 +63,7 @@ jobs:
         run: |
           echo "📋 Validating Hub Manifests..."
 
-          REQUIRED_HUBS="company-intelligence people-intelligence dol-filings outreach-execution"
+          REQUIRED_HUBS="company-target people-intelligence dol-filings outreach-execution"
 
           for hub in $REQUIRED_HUBS; do
             MANIFEST="hubs/${hub}/hub.manifest.yaml"
@@ -254,7 +254,7 @@ EOF
         run: |
           echo "📁 Verifying Hub IMO Structure..."
 
-          REQUIRED_HUBS="company-intelligence people-intelligence dol-filings outreach-execution"
+          REQUIRED_HUBS="company-target people-intelligence dol-filings outreach-execution"
           IMO_DIRS="input middle output"
 
           for hub in $REQUIRED_HUBS; do

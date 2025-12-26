@@ -3,80 +3,84 @@
 ## INSTANT REPO OVERVIEW
 
 **Repository Name**: Barton Outreach Core
-**Architecture**: Hub & Spoke (Bicycle Wheel Doctrine)
+**Architecture**: CL Parent-Child Doctrine
 **Primary Purpose**: Marketing intelligence & executive enrichment platform
 **Database**: Neon PostgreSQL (serverless)
-**Last Refactored**: 2025-12-23
+**Last Refactored**: 2025-12-26
 
 ---
 
-## CORE ARCHITECTURE: HUB & SPOKE
+## CORE ARCHITECTURE: CL PARENT-CHILD
 
 ### The Golden Rule
 
 ```
-IF company_id IS NULL OR domain IS NULL OR email_pattern IS NULL:
+IF company_unique_id IS NULL:
     STOP. DO NOT PROCEED.
-    → Route to Company Identity Pipeline first.
+    → Request identity from Company Lifecycle (CL) parent hub first.
 ```
 
 ### Architecture Diagram
 
 ```
-                         SPOKES (I/O Only - No Logic)
+                    COMPANY LIFECYCLE (CL) - PARENT HUB
+                    https://github.com/djb258/company-lifecycle-cl.git
+                    ─────────────────────────────────────────────
+                    • Mints company_unique_id (SOVEREIGN)
+                    • Owns cl.* schema (company_identity, lifecycle_state)
+                    • Promotes lifecycle: OUTREACH → SALES → CLIENT
+                                    │
+                                    │ company_unique_id (downstream)
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        BARTON OUTREACH CORE                                  │
+│                        (Child Hub - Outreach Execution)                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                         COMPANY TARGET (Internal Anchor)
+                         ────────────────────────────────
+                         • outreach.company_target table
+                         • FK to cl.company_identity
+                         • BIT score calculation
                                     │
     ┌───────────────────────────────┼───────────────────────────────┐
     │                               │                               │
     ▼                               ▼                               ▼
 ┌─────────┐                   ┌─────────┐                   ┌─────────┐
-│ People  │◄─────────────────►│   DOL   │                   │Outreach │
-│  Hub    │                   │   Hub   │                   │   Hub   │
-│04.04.02 │                   │04.04.03 │                   │04.04.04 │
-└────┬────┘                   └────┬────┘                   └────┬────┘
-     │                             │                             │
-     │         ┌───────────────────┼───────────────────┐         │
-     │         │                   │                   │         │
-     └─────────┤      COMPANY INTELLIGENCE HUB         ├─────────┘
-               │           (AXLE - 04.04.01)           │
-               │                                       │
-               │  • company_master    • bit_scores     │
-               │  • slot_requirements • domain         │
-               │  • email_pattern                      │
-               └───────────────────────────────────────┘
-                                    ▲
-                                    │
-                            ┌───────┴───────┐
-                            │ Signal Intake │
-                            │ (Ingress Only)│
-                            └───────────────┘
+│ People  │                   │   DOL   │                   │  Blog   │
+│Sub-Hub  │                   │ Sub-Hub │                   │ Sub-Hub │
+│04.04.02 │                   │04.04.03 │                   │04.04.05 │
+└─────────┘                   └─────────┘                   └─────────┘
 ```
 
 ### Hub Registry
 
 | Hub | Doctrine ID | Core Metric | Entities Owned |
 |-----|-------------|-------------|----------------|
-| **Company Intelligence** (AXLE) | 04.04.01 | BIT_SCORE | company_master, slot_requirements, bit_scores, domain, email_pattern |
-| **People Intelligence** | 04.04.02 | SLOT_FILL_RATE | people_master, slot_assignments, movement_history, enrichment_state |
-| **DOL Filings** | 04.04.03 | FILING_MATCH_RATE | form_5500, form_5500_sf, schedule_a, renewal_calendar |
-| **Outreach Execution** | 04.04.04 | ENGAGEMENT_RATE | campaigns, sequences, send_log, engagement_events |
+| **Company Target** (child of CL) | 04.04.01 | BIT_SCORE | outreach.company_target, local_bit_scores |
+| **People Intelligence** | 04.04.02 | SLOT_FILL_RATE | people_master, slot_assignments, movement_history |
+| **DOL Filings** | 04.04.03 | FILING_MATCH_RATE | form_5500, form_5500_sf, schedule_a |
+| **Outreach Execution** | 04.04.04 | ENGAGEMENT_RATE | campaigns, sequences, send_log |
+
+**Parent Hub (External)**: Company Lifecycle (CL) - Owns company_unique_id, cl.* schema
 
 ### Spoke Contracts
 
 | Contract | Direction | Trigger |
 |----------|-----------|---------|
-| company-people | Bidirectional | slot_requirement / slot_assignment |
-| company-dol | Bidirectional | ein_lookup / filing_signal |
-| company-outreach | Bidirectional | target_selection / engagement_signal |
+| target-people | Bidirectional | slot_requirement / slot_assignment |
+| target-dol | Bidirectional | ein_lookup / filing_signal |
+| target-outreach | Bidirectional | target_selection / engagement_signal |
 | people-outreach | Bidirectional | contact_selection / contact_state |
-| signal-company | Ingress Only | external_signal |
+| cl-identity | Ingress Only | company_unique_id from CL |
 
 ### Key Doctrine Rules
 
-1. **Company Hub is AXLE** - All data anchors to company_master first
-2. **Slots are SPLIT** - Requirements in Company Hub, Assignments in People Hub
+1. **CL is PARENT** - Mints company_unique_id, Outreach receives only
+2. **Company Target is internal anchor** - FK join point for sub-hubs
 3. **Spokes are I/O ONLY** - No logic, no state, no transformation
-4. **No sideways hub calls** - All routing through AXLE
-5. **Movement Engine in People Hub** - Tracks people, not companies
+4. **No identity minting** - NEVER create company_unique_id
+5. **Signal to CL** - Engagement events flow back to parent
 
 ---
 
@@ -87,7 +91,7 @@ barton-outreach-core/
 │
 ├── hubs/                              # HUB LOGIC (IMO Pattern)
 │   ├── __init__.py                    # Hub registry
-│   ├── company-intelligence/          # AXLE (04.04.01)
+│   ├── company-target/                # Internal anchor (04.04.01)
 │   │   ├── hub.manifest.yaml
 │   │   ├── __init__.py
 │   │   └── imo/
@@ -262,9 +266,9 @@ SSL Mode: require
 ### Import Paths
 
 ```python
-# Company Intelligence Hub
-from hubs.company_intelligence import CompanyHub, BITEngine, CompanyPipeline
-from hubs.company_intelligence.imo.middle.phases import Phase1CompanyMatching
+# Company Target Sub-Hub (child of CL)
+from hubs.company_target import CompanyHub, BITEngine, CompanyPipeline
+from hubs.company_target.imo.middle.phases import Phase1CompanyMatching
 
 # People Intelligence Hub
 from hubs.people_intelligence import PeopleHub, SlotAssignment
@@ -277,25 +281,25 @@ from hubs.dol_filings import DOLHub, EINMatcher
 from hubs.outreach_execution import OutreachHub
 
 # Spokes (I/O only)
-from spokes.company_people import SlotRequirementsIngress, SlotAssignmentsEgress
+from spokes.target_people import SlotRequirementsIngress, SlotAssignmentsEgress
 ```
 
 ### Contract Files
 
 ```yaml
 # View spoke contracts
-contracts/company-people.contract.yaml
-contracts/company-dol.contract.yaml
-contracts/company-outreach.contract.yaml
+contracts/target-people.contract.yaml
+contracts/target-dol.contract.yaml
+contracts/target-outreach.contract.yaml
 contracts/people-outreach.contract.yaml
-contracts/signal-company.contract.yaml
+contracts/cl-identity.contract.yaml
 ```
 
 ### Hub Manifests
 
 ```yaml
 # View hub definitions
-hubs/company-intelligence/hub.manifest.yaml
+hubs/company-target/hub.manifest.yaml
 hubs/people-intelligence/hub.manifest.yaml
 hubs/dol-filings/hub.manifest.yaml
 hubs/outreach-execution/hub.manifest.yaml
@@ -321,7 +325,7 @@ hubs/outreach-execution/hub.manifest.yaml
 ### Run Pipeline for Company
 
 ```python
-from hubs.company_intelligence import CompanyPipeline
+from hubs.company_target import CompanyPipeline
 
 pipeline = CompanyPipeline(persist_to_neon=True)
 pipeline.bootstrap()
@@ -331,7 +335,7 @@ result = pipeline.run()
 ### Check BIT Score
 
 ```python
-from hubs.company_intelligence import BITEngine, SignalType
+from hubs.company_target import BITEngine, SignalType
 
 engine = BITEngine()
 score = engine.calculate_bit_score(company_id)
@@ -391,14 +395,14 @@ DOCTRINE_VERSION=04
 
 ## REMEMBER
 
-1. **Company Hub is the AXLE** - Everything anchors here first
-2. **Spokes are DUMB** - I/O only, no logic, no state
-3. **Contracts define interfaces** - Check YAML before implementing
-4. **Phases are hub-owned** - 1-4 Company, 5-8 People
+1. **CL is PARENT** - Mints company_unique_id, Outreach receives only
+2. **Company Target is internal anchor** - FK join point for all sub-hubs
+3. **Spokes are DUMB** - I/O only, no logic, no state
+4. **Contracts define interfaces** - Check YAML before implementing
 5. **BIT_SCORE drives outreach** - No score, no campaign
 
 ---
 
-**Last Updated**: 2025-12-23
-**Architecture**: Hub & Spoke v1.0
-**Status**: Refactored and Streamlined
+**Last Updated**: 2025-12-26
+**Architecture**: CL Parent-Child Doctrine v1.0
+**Status**: Doctrine-Compliant

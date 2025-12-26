@@ -57,16 +57,23 @@ Status: ✅ Production-Ready
   🏗️ ARCHITECTURE OVERVIEW
 ═══════════════════════════════════════════════════════════
 
+NOTE: Architecture updated to CL Parent-Child Doctrine (2025-12-26)
+
+Parent Hub (External - company-lifecycle-cl repo):
+  cl.company_identity    (SOVEREIGN - mints company_unique_id)
+  cl.lifecycle_state     (Lifecycle truth)
+
+Internal Anchor (company-target sub-hub):
+  outreach.company_target (04.04.01) - FK to CL
+
 Hub (Foundation):
-  marketing.company_master (04.04.01)
+  marketing.company_master (04.04.01) - LEGACY, migrating to CL
   marketing.people_master (04.04.02)
   marketing.company_slot (04.04.05)
 
 Spokes (Data Collection):
   intake.raw_loads → vault.contacts
   marketing.data_enrichment_log (NEW)
-  marketing.company_intelligence
-  marketing.people_intelligence
 
 Axle (Scoring Engine):
   bit.rule_reference → bit.events → bit.scores (NEW)
