@@ -1,0 +1,295 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at": "2025-12-26",
+  "database": {
+    "type": "postgresql",
+    "host": "ep-ancient-waterfall-a42vy0du-pooler.us-east-1.aws.neon.tech",
+    "database": "Marketing DB",
+    "ssl_mode": "require"
+  },
+  "architecture": {
+    "type": "hub_and_spoke",
+    "version": "1.0",
+    "axle": "company_intelligence",
+    "doctrine": "barton_doctrine_v1"
+  },
+  "hubs": {
+    "company_intelligence": {
+      "doctrine_id": "04.04.01",
+      "type": "axle",
+      "core_metric": "BIT_SCORE",
+      "tables": ["company_master", "company_slot", "company_events", "pipeline_events"],
+      "description": "Central source of truth for company identity, structure, and buyer intent"
+    },
+    "people_intelligence": {
+      "doctrine_id": "04.04.02",
+      "type": "sub-hub",
+      "core_metric": "SLOT_FILL_RATE",
+      "tables": ["people_master", "person_scores", "person_movement_history", "people_resolution_queue"],
+      "description": "Owns human identity, employment state, and slot assignments"
+    },
+    "dol_filings": {
+      "doctrine_id": "04.04.03",
+      "type": "sub-hub",
+      "core_metric": "FILING_MATCH_RATE",
+      "tables": ["form_5500", "form_5500_sf", "schedule_a"],
+      "description": "Owns federal Form 5500 filing data and compliance intelligence"
+    },
+    "outreach_execution": {
+      "doctrine_id": "04.04.04",
+      "type": "sub-hub",
+      "core_metric": "ENGAGEMENT_RATE",
+      "tables": ["campaigns", "sequences", "send_log", "engagement_events"],
+      "description": "Owns campaign state, sequence execution, and engagement tracking"
+    }
+  },
+  "schemas": {
+    "marketing": {
+      "description": "Company Hub data",
+      "tables": {
+        "company_master": {
+          "description": "Central anchor table for all company data",
+          "primary_key": "company_unique_id",
+          "columns": {
+            "company_unique_id": {"type": "TEXT", "nullable": false, "description": "Barton ID: 04.04.01.XX.XXXXX.XXX"},
+            "company_name": {"type": "TEXT", "nullable": false, "description": "Normalized company name"},
+            "website_url": {"type": "TEXT", "nullable": true, "description": "Primary website URL"},
+            "domain": {"type": "VARCHAR", "nullable": false, "description": "ANCHOR FIELD - Validated domain"},
+            "email_pattern": {"type": "VARCHAR", "nullable": false, "description": "ANCHOR FIELD - Email pattern"},
+            "ein": {"type": "VARCHAR", "nullable": true, "description": "Federal EIN (links to DOL)"},
+            "employee_count": {"type": "INTEGER", "nullable": false, "description": "Must be >= 50"},
+            "address_state": {"type": "TEXT", "nullable": false, "description": "PA, VA, MD, OH, WV, KY only"},
+            "industry": {"type": "TEXT", "nullable": true, "description": "Industry classification"},
+            "founded_year": {"type": "INTEGER", "nullable": true, "description": "Year founded"},
+            "linkedin_url": {"type": "TEXT", "nullable": true, "description": "Company LinkedIn page"},
+            "data_quality_score": {"type": "NUMERIC", "nullable": true, "description": "Overall quality 0-100"},
+            "email_pattern_source": {"type": "VARCHAR", "nullable": true, "description": "hunter, manual, enrichment"},
+            "created_at": {"type": "TIMESTAMP", "nullable": false, "description": "Record creation"},
+            "updated_at": {"type": "TIMESTAMP", "nullable": false, "description": "Last modification"},
+            "validated_at": {"type": "TIMESTAMP", "nullable": true, "description": "When validated"}
+          },
+          "indexes": ["company_master_pkey", "idx_company_domain", "idx_company_ein", "idx_company_state"],
+          "row_count_estimate": 453
+        },
+        "company_slot": {
+          "description": "Executive position slots per company",
+          "primary_key": "company_slot_unique_id",
+          "foreign_keys": {
+            "company_unique_id": "company_master.company_unique_id",
+            "person_unique_id": "people_master.unique_id"
+          },
+          "columns": {
+            "company_slot_unique_id": {"type": "TEXT", "nullable": false, "description": "Barton ID: 04.04.05.XX.XXXXX"},
+            "company_unique_id": {"type": "TEXT", "nullable": false, "description": "Links to company_master"},
+            "person_unique_id": {"type": "TEXT", "nullable": true, "description": "Links to people_master"},
+            "slot_type": {"type": "TEXT", "nullable": false, "description": "CHRO, HR_MANAGER, BENEFITS_LEAD, PAYROLL_ADMIN, HR_SUPPORT"},
+            "is_filled": {"type": "BOOLEAN", "nullable": false, "description": "Is slot occupied?"},
+            "status": {"type": "VARCHAR", "nullable": false, "description": "open, filled, vacated"},
+            "confidence_score": {"type": "NUMERIC", "nullable": true, "description": "Assignment confidence 0-100"},
+            "filled_at": {"type": "TIMESTAMP", "nullable": true, "description": "When slot was filled"},
+            "vacated_at": {"type": "TIMESTAMP", "nullable": true, "description": "When person left"},
+            "enrichment_attempts": {"type": "INTEGER", "nullable": true, "description": "Enrichment attempt count"},
+            "last_refreshed_at": {"type": "TIMESTAMP", "nullable": true, "description": "Last enrichment refresh"}
+          },
+          "row_count_estimate": 1359
+        },
+        "company_events": {
+          "description": "News/blog signals that impact BIT scores",
+          "primary_key": "id",
+          "foreign_keys": {
+            "company_unique_id": "company_master.company_unique_id"
+          },
+          "columns": {
+            "id": {"type": "INTEGER", "nullable": false, "description": "Auto-increment"},
+            "company_unique_id": {"type": "TEXT", "nullable": false, "description": "Links to company_master"},
+            "event_type": {"type": "TEXT", "nullable": false, "description": "funding, acquisition, layoff, expansion"},
+            "event_date": {"type": "DATE", "nullable": true, "description": "When event occurred"},
+            "source_url": {"type": "TEXT", "nullable": true, "description": "Source article"},
+            "summary": {"type": "TEXT", "nullable": true, "description": "Event summary"},
+            "detected_at": {"type": "TIMESTAMP", "nullable": false, "description": "When detected"},
+            "impacts_bit": {"type": "BOOLEAN", "nullable": false, "description": "Affects BIT score?"},
+            "bit_impact_score": {"type": "INTEGER", "nullable": true, "description": "Impact: -100 to +100"}
+          },
+          "row_count_estimate": 0
+        },
+        "pipeline_events": {
+          "description": "Audit trail for all pipeline operations",
+          "primary_key": "id",
+          "columns": {
+            "id": {"type": "INTEGER", "nullable": false, "description": "Auto-increment"},
+            "event_type": {"type": "TEXT", "nullable": false, "description": "phase_start, phase_complete, error"},
+            "phase": {"type": "INTEGER", "nullable": true, "description": "Pipeline phase 1-8"},
+            "correlation_id": {"type": "TEXT", "nullable": true, "description": "Request tracing ID"},
+            "company_id": {"type": "TEXT", "nullable": true, "description": "Links to company_master"},
+            "person_id": {"type": "TEXT", "nullable": true, "description": "Links to people_master"},
+            "timestamp": {"type": "TIMESTAMP", "nullable": false, "description": "Event time"},
+            "metadata": {"type": "JSONB", "nullable": true, "description": "Event details"},
+            "duration_ms": {"type": "INTEGER", "nullable": true, "description": "Processing time in ms"}
+          },
+          "row_count_estimate": 2185
+        }
+      }
+    },
+    "people": {
+      "description": "People Hub data",
+      "tables": {
+        "people_master": {
+          "description": "Human identity and employment state",
+          "primary_key": "unique_id",
+          "foreign_keys": {
+            "company_unique_id": "company_master.company_unique_id",
+            "company_slot_unique_id": "company_slot.company_slot_unique_id"
+          },
+          "columns": {
+            "unique_id": {"type": "TEXT", "nullable": false, "description": "Barton ID: 04.04.02.XX.XXXXX"},
+            "company_unique_id": {"type": "TEXT", "nullable": false, "description": "Links to company_master (REQUIRED)"},
+            "company_slot_unique_id": {"type": "TEXT", "nullable": false, "description": "Links to company_slot (REQUIRED)"},
+            "first_name": {"type": "TEXT", "nullable": false, "description": "First name"},
+            "last_name": {"type": "TEXT", "nullable": false, "description": "Last name"},
+            "full_name": {"type": "TEXT", "nullable": true, "description": "Display name"},
+            "title": {"type": "TEXT", "nullable": true, "description": "Job title"},
+            "seniority": {"type": "TEXT", "nullable": true, "description": "CHRO > VP > Director > Manager"},
+            "department": {"type": "TEXT", "nullable": true, "description": "HR, Finance, etc."},
+            "email": {"type": "TEXT", "nullable": true, "description": "Verified email address"},
+            "email_verified": {"type": "BOOLEAN", "nullable": false, "description": "Verification status"},
+            "email_verified_at": {"type": "TIMESTAMP", "nullable": true, "description": "When verified"},
+            "email_verification_src": {"type": "TEXT", "nullable": true, "description": "millionverifier, manual"},
+            "work_phone_e164": {"type": "TEXT", "nullable": true, "description": "Work phone (E.164)"},
+            "linkedin_url": {"type": "TEXT", "nullable": true, "description": "LinkedIn profile URL"},
+            "created_at": {"type": "TIMESTAMP", "nullable": false, "description": "Record creation"},
+            "updated_at": {"type": "TIMESTAMP", "nullable": false, "description": "Last modification"}
+          },
+          "row_count_estimate": 170
+        },
+        "person_scores": {
+          "description": "BIT scores per person",
+          "primary_key": "id",
+          "foreign_keys": {
+            "person_unique_id": "people_master.unique_id"
+          },
+          "columns": {
+            "id": {"type": "INTEGER", "nullable": false, "description": "Auto-increment"},
+            "person_unique_id": {"type": "TEXT", "nullable": false, "description": "Links to people_master (UNIQUE)"},
+            "bit_score": {"type": "INTEGER", "nullable": true, "description": "BIT score 0-100"},
+            "confidence_score": {"type": "INTEGER", "nullable": true, "description": "Data confidence 0-100"},
+            "calculated_at": {"type": "TIMESTAMP", "nullable": true, "description": "When calculated"},
+            "score_factors": {"type": "JSONB", "nullable": true, "description": "Breakdown of factors"}
+          },
+          "row_count_estimate": 0
+        },
+        "person_movement_history": {
+          "description": "Tracks job changes and company movements",
+          "primary_key": "id",
+          "foreign_keys": {
+            "person_unique_id": "people_master.unique_id",
+            "company_from_id": "company_master.company_unique_id",
+            "company_to_id": "company_master.company_unique_id"
+          },
+          "columns": {
+            "id": {"type": "INTEGER", "nullable": false, "description": "Auto-increment"},
+            "person_unique_id": {"type": "TEXT", "nullable": false, "description": "Links to people_master"},
+            "linkedin_url": {"type": "TEXT", "nullable": true, "description": "LinkedIn URL at detection"},
+            "company_from_id": {"type": "TEXT", "nullable": true, "description": "Source company"},
+            "company_to_id": {"type": "TEXT", "nullable": true, "description": "Destination company"},
+            "title_from": {"type": "TEXT", "nullable": true, "description": "Previous title"},
+            "title_to": {"type": "TEXT", "nullable": true, "description": "New title"},
+            "movement_type": {"type": "TEXT", "nullable": false, "description": "company_change, title_change"},
+            "detected_at": {"type": "TIMESTAMP", "nullable": false, "description": "Detection time"},
+            "raw_payload": {"type": "JSONB", "nullable": true, "description": "Raw enrichment data"}
+          },
+          "row_count_estimate": 0
+        }
+      }
+    },
+    "dol": {
+      "description": "DOL Filings Hub data",
+      "tables": {
+        "form_5500": {
+          "description": "Large retirement plan filings (100+ participants)",
+          "primary_key": "ack_id",
+          "columns": {
+            "ack_id": {"type": "TEXT", "nullable": false, "description": "DOL acknowledgment ID"},
+            "ein": {"type": "VARCHAR", "nullable": false, "description": "Employer ID"},
+            "plan_number": {"type": "VARCHAR", "nullable": true, "description": "Plan identifier"},
+            "plan_name": {"type": "TEXT", "nullable": true, "description": "Plan name"},
+            "sponsor_dfe_name": {"type": "TEXT", "nullable": true, "description": "Sponsor/employer name"},
+            "sponsor_dfe_ein": {"type": "VARCHAR", "nullable": true, "description": "Sponsor EIN"},
+            "spons_dfe_mail_us_city": {"type": "TEXT", "nullable": true, "description": "City"},
+            "spons_dfe_mail_us_state": {"type": "TEXT", "nullable": true, "description": "State"},
+            "tot_partcp_boy_cnt": {"type": "INTEGER", "nullable": true, "description": "Participant count"},
+            "tot_assets_boy_amt": {"type": "NUMERIC", "nullable": true, "description": "Total assets"},
+            "plan_eff_date": {"type": "DATE", "nullable": true, "description": "Plan effective date"},
+            "form_plan_year_begin": {"type": "DATE", "nullable": true, "description": "Plan year begin"},
+            "form_plan_year_end": {"type": "DATE", "nullable": true, "description": "Plan year end (renewal)"},
+            "type_pension_bnft_code": {"type": "VARCHAR", "nullable": true, "description": "Pension benefit type"},
+            "type_welfare_bnft_code": {"type": "VARCHAR", "nullable": true, "description": "Welfare benefit type"}
+          },
+          "row_count_estimate": 230009
+        },
+        "form_5500_sf": {
+          "description": "Small retirement plan filings (<100 participants)",
+          "primary_key": "ack_id",
+          "row_count_estimate": 759569
+        },
+        "schedule_a": {
+          "description": "Insurance contract information from Form 5500",
+          "primary_key": "ack_id",
+          "columns": {
+            "ack_id": {"type": "TEXT", "nullable": false, "description": "DOL acknowledgment ID"},
+            "insurance_company_name": {"type": "TEXT", "nullable": true, "description": "Insurance carrier"},
+            "prov_contract_num": {"type": "VARCHAR", "nullable": true, "description": "Contract number"},
+            "covered_persons_cnt": {"type": "INTEGER", "nullable": true, "description": "Covered lives"},
+            "premium_amount": {"type": "NUMERIC", "nullable": true, "description": "Premium information"},
+            "commission_amount": {"type": "NUMERIC", "nullable": true, "description": "Broker commission"}
+          },
+          "row_count_estimate": 336817
+        }
+      }
+    },
+    "intake": {
+      "description": "Raw data staging",
+      "tables": {
+        "company_raw_intake": {
+          "description": "Raw company imports before validation",
+          "primary_key": "id",
+          "row_count_estimate": 563
+        },
+        "people_raw_intake": {
+          "description": "Raw people imports before validation",
+          "primary_key": "id",
+          "row_count_estimate": 0
+        },
+        "quarantine": {
+          "description": "Invalid/rejected company records",
+          "primary_key": "id",
+          "row_count_estimate": 114
+        }
+      }
+    },
+    "public": {
+      "description": "System tables",
+      "tables": {
+        "shq_error_log": {
+          "description": "System-wide error tracking",
+          "primary_key": "error_id"
+        }
+      }
+    }
+  },
+  "relationships": [
+    {"from": "company_master.company_unique_id", "to": "company_slot.company_unique_id", "type": "one_to_many"},
+    {"from": "company_master.company_unique_id", "to": "people_master.company_unique_id", "type": "one_to_many"},
+    {"from": "company_master.company_unique_id", "to": "company_events.company_unique_id", "type": "one_to_many"},
+    {"from": "company_slot.company_slot_unique_id", "to": "people_master.company_slot_unique_id", "type": "one_to_one"},
+    {"from": "company_slot.person_unique_id", "to": "people_master.unique_id", "type": "one_to_one"},
+    {"from": "people_master.unique_id", "to": "person_scores.person_unique_id", "type": "one_to_one"},
+    {"from": "people_master.unique_id", "to": "person_movement_history.person_unique_id", "type": "one_to_many"},
+    {"from": "company_master.ein", "to": "form_5500.sponsor_dfe_ein", "type": "one_to_many", "join_type": "ein_lookup"}
+  ],
+  "golden_rule": "IF company_id IS NULL OR domain IS NULL OR email_pattern IS NULL: STOP. DO NOT PROCEED. Route to Company Identity Pipeline first.",
+  "barton_id_format": {
+    "company": "04.04.01.XX.XXXXX.XXX",
+    "person": "04.04.02.XX.XXXXX.XXX",
+    "slot": "04.04.05.XX.XXXXX.XXX"
+  }
+}

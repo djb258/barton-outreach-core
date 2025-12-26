@@ -1,17 +1,39 @@
 # Outreach Execution Hub Manifest
 # Altitude: 40k (System Infrastructure)
-# Version: 1.0.0
+# Version: 1.1.0
+#
+# DOCTRINE: CL Parent-Child Model
+# This is a CHILD SUB-HUB of Company Lifecycle (CL)
 
 hub:
   id: HUB-OUTREACH
   name: Outreach Execution Hub
   doctrine_id: "04.04.04"
   type: sub-hub
-  version: "1.0.0"
+  version: "1.1.0"
   description: |
     Owns campaign state, sequence execution, send logs, and engagement
     tracking. Manages the state machine of outreach:
     draft -> scheduled -> sent -> opened -> replied
+
+# =============================================================================
+# PARENT-CHILD RELATIONSHIP
+# =============================================================================
+parent:
+  hub_id: HUB-COMPANY-LIFECYCLE
+  hub_name: Company Lifecycle
+  relationship: child
+  identity_source: parent
+  notes: |
+    Company Lifecycle (CL) is the sovereign owner of company identity.
+    Outreach receives company_unique_id from CL and NEVER mints its own.
+
+identity:
+  owns_company_id: false
+  mints_company_id: false
+  infers_company_id: false
+  source: "Received from CL via spoke"
+  failure_mode: "HARD_FAIL on missing or invalid company_unique_id"
 
 core_metric:
   name: ENGAGEMENT_RATE
@@ -58,6 +80,44 @@ boundary_rules:
     - people_master         # People Hub owns
     - bit_scores            # Company Hub owns
     - slot_assignments      # People Hub owns
+    - lifecycle_state       # CL owns - Outreach cannot change
+    - company_status        # CL owns - prospect/active/churned
   state_machine: |
     Outreach has its own complex state machine.
     Campaign progression is independent of company/people state.
+
+# =============================================================================
+# NON-GOALS (What Outreach Will NOT Do)
+# =============================================================================
+non_goals:
+  - mint_company_id: "CL owns identity"
+  - infer_company_from_domain: "CL resolves identity"
+  - create_shadow_companies: "If CL doesn't have it, it doesn't exist"
+  - decide_lifecycle_transitions: "Outreach signals inform, CL decides"
+  - promote_to_sales: "CL makes promotion decisions"
+  - promote_to_client: "CL makes promotion decisions"
+  - override_company_status: "CL is authoritative"
+  - store_company_metadata: "CL owns company attributes"
+
+# =============================================================================
+# DATA CONTRACT
+# =============================================================================
+data_contract:
+  foreign_keys:
+    - table: campaigns
+      column: company_unique_id
+      references: marketing.company_master.company_unique_id
+      nullable: false
+    - table: send_log
+      column: company_unique_id
+      references: marketing.company_master.company_unique_id
+      nullable: false
+    - table: engagement_events
+      column: company_unique_id
+      references: marketing.company_master.company_unique_id
+      nullable: false
+  local_ids:
+    - campaign_id: "Outreach-local, no meaning outside Outreach"
+    - message_id: "Outreach-local"
+    - sequence_id: "Outreach-local"
+    - engagement_id: "Outreach-local"
