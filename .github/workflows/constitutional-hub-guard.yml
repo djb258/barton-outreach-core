@@ -1,0 +1,585 @@
+name: Constitutional Hub Non-Operational Guard
+
+# Enforces: CL DECIDES. CL RECORDS. CL NEVER EXECUTES.
+# Applies to: Company Lifecycle (CL), Sales, Client (constitutional parent hubs)
+
+on:
+  pull_request:
+    branches: ['main']
+    paths:
+      - 'hubs/company-lifecycle/**'
+      - 'hubs/sales/**'
+      - 'hubs/client/**'
+      - 'cl/**'
+  push:
+    branches: ['main']
+    paths:
+      - 'hubs/company-lifecycle/**'
+      - 'hubs/sales/**'
+      - 'hubs/client/**'
+      - 'cl/**'
+
+jobs:
+  constitutional-guard:
+    runs-on: ubuntu-latest
+    name: Constitutional Hub Enforcement
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      # ========================================================================
+      # CHECK 1: Forbidden Import Guard
+      # Constitutional hubs cannot import operational libraries
+      # ========================================================================
+      - name: Forbidden Import Guard
+        run: |
+          echo "🚫 Checking for forbidden imports in constitutional hubs..."
+
+          python3 << 'EOF'
+import os
+import re
+import sys
+
+# Constitutional hub directories to check
+CONSTITUTIONAL_DIRS = [
+    "hubs/company-lifecycle",
+    "hubs/sales",
+    "hubs/client",
+    "cl",
+]
+
+# Forbidden imports - indicate operational logic
+FORBIDDEN_IMPORTS = [
+    # HTTP clients
+    r"import\s+requests",
+    r"from\s+requests\s+import",
+    r"import\s+httpx",
+    r"from\s+httpx\s+import",
+    r"import\s+aiohttp",
+    r"from\s+aiohttp\s+import",
+    r"import\s+urllib\.request",
+
+    # Task queues / workers
+    r"import\s+celery",
+    r"from\s+celery\s+import",
+    r"import\s+rq",
+    r"from\s+rq\s+import",
+    r"import\s+dramatiq",
+    r"from\s+dramatiq\s+import",
+    r"import\s+huey",
+
+    # Schedulers
+    r"import\s+apscheduler",
+    r"from\s+apscheduler\s+import",
+    r"import\s+schedule",
+
+    # External service SDKs
+    r"from\s+salesforce",
+    r"from\s+hubspot",
+    r"from\s+slack_sdk",
+    r"import\s+tweepy",
+    r"from\s+google\.cloud",
+    r"from\s+azure\.",
+    r"from\s+aws_",
+    r"import\s+boto3",
+
+    # Enrichment / scraping
+    r"from\s+apify",
+    r"import\s+scrapy",
+    r"from\s+selenium",
+    r"from\s+playwright",
+    r"import\s+beautifulsoup",
+    r"from\s+bs4",
+
+    # Fuzzy matching (identity resolution)
+    r"from\s+rapidfuzz",
+    r"import\s+rapidfuzz",
+    r"from\s+fuzzywuzzy",
+    r"import\s+fuzzywuzzy",
+    r"from\s+thefuzz",
+]
+
+violations = []
+
+for const_dir in CONSTITUTIONAL_DIRS:
+    if not os.path.exists(const_dir):
+        continue
+
+    for root, dirs, files in os.walk(const_dir):
+        for fname in files:
+            if not fname.endswith(".py"):
+                continue
+
+            fpath = os.path.join(root, fname)
+
+            with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+
+            for pattern in FORBIDDEN_IMPORTS:
+                matches = re.findall(pattern, content)
+                if matches:
+                    violations.append(f"{fpath}: Forbidden import pattern '{pattern}'")
+
+if violations:
+    print("❌ CONSTITUTIONAL HUB VIOLATION: Forbidden Imports")
+    print("")
+    print("Constitutional hubs (CL, Sales, Client) cannot import operational libraries.")
+    print("These imports indicate execution logic, which must live in child hubs.")
+    print("")
+    for v in violations:
+        print(f"  - {v}")
+    print("")
+    print("DOCTRINE: CL DECIDES. CL RECORDS. CL NEVER EXECUTES.")
+    sys.exit(1)
+
+print("✓ No forbidden imports in constitutional hubs")
+EOF
+
+      # ========================================================================
+      # CHECK 2: Forbidden Function Pattern Guard
+      # Constitutional hubs cannot have execution functions
+      # ========================================================================
+      - name: Forbidden Function Pattern Guard
+        run: |
+          echo "🚫 Checking for forbidden function patterns..."
+
+          python3 << 'EOF'
+import os
+import re
+import sys
+
+CONSTITUTIONAL_DIRS = [
+    "hubs/company-lifecycle",
+    "hubs/sales",
+    "hubs/client",
+    "cl",
+]
+
+# Forbidden function name patterns - indicate operational logic
+FORBIDDEN_FUNCTION_PATTERNS = [
+    r"def\s+run_\w+\s*\(",
+    r"def\s+process_\w+\s*\(",
+    r"def\s+execute_\w+\s*\(",
+    r"def\s+handle_\w+\s*\(",
+    r"def\s+fetch_\w+\s*\(",
+    r"def\s+sync_\w+\s*\(",
+    r"def\s+trigger_\w+\s*\(",
+    r"def\s+enrich_\w+\s*\(",
+    r"def\s+scrape_\w+\s*\(",
+    r"def\s+crawl_\w+\s*\(",
+    r"def\s+pull_\w+\s*\(",
+    r"def\s+push_\w+\s*\(",
+    r"def\s+send_\w+\s*\(",
+    r"def\s+call_\w+\s*\(",
+    r"def\s+invoke_\w+\s*\(",
+    r"def\s+dispatch_\w+\s*\(",
+    r"def\s+orchestrate_\w+\s*\(",
+    r"def\s+schedule_\w+\s*\(",
+]
+
+# Allowed function patterns (for reference)
+ALLOWED_PATTERNS_NOTE = """
+Allowed patterns in constitutional hubs:
+  - def evaluate_*()
+  - def record_*()
+  - def authorize_*()
+  - def block_*()
+  - def validate_*()
+  - def audit_*()
+  - def get_*() (read-only)
+  - def check_*()
+"""
+
+violations = []
+
+for const_dir in CONSTITUTIONAL_DIRS:
+    if not os.path.exists(const_dir):
+        continue
+
+    for root, dirs, files in os.walk(const_dir):
+        for fname in files:
+            if not fname.endswith(".py"):
+                continue
+
+            fpath = os.path.join(root, fname)
+
+            with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
+                lines = f.readlines()
+
+            for line_num, line in enumerate(lines, 1):
+                for pattern in FORBIDDEN_FUNCTION_PATTERNS:
+                    if re.search(pattern, line):
+                        func_match = re.search(r"def\s+(\w+)", line)
+                        func_name = func_match.group(1) if func_match else "unknown"
+                        violations.append(f"{fpath}:{line_num}: Forbidden function '{func_name}'")
+
+if violations:
+    print("❌ CONSTITUTIONAL HUB VIOLATION: Forbidden Function Patterns")
+    print("")
+    print("Constitutional hubs cannot have execution functions.")
+    print("Functions like run_*, process_*, execute_*, handle_* indicate operational logic.")
+    print("")
+    for v in violations:
+        print(f"  - {v}")
+    print("")
+    print(ALLOWED_PATTERNS_NOTE)
+    print("DOCTRINE: CL DECIDES. CL RECORDS. CL NEVER EXECUTES.")
+    sys.exit(1)
+
+print("✓ No forbidden function patterns in constitutional hubs")
+EOF
+
+      # ========================================================================
+      # CHECK 3: Forbidden Class Pattern Guard
+      # Constitutional hubs cannot have operational classes
+      # ========================================================================
+      - name: Forbidden Class Pattern Guard
+        run: |
+          echo "🚫 Checking for forbidden class patterns..."
+
+          python3 << 'EOF'
+import os
+import re
+import sys
+
+CONSTITUTIONAL_DIRS = [
+    "hubs/company-lifecycle",
+    "hubs/sales",
+    "hubs/client",
+    "cl",
+]
+
+# Forbidden class name patterns
+FORBIDDEN_CLASS_PATTERNS = [
+    r"class\s+\w*Worker\s*[:\(]",
+    r"class\s+\w*Pipeline\s*[:\(]",
+    r"class\s+\w*Task\s*[:\(]",
+    r"class\s+\w*Job\s*[:\(]",
+    r"class\s+\w*Engine\s*[:\(]",
+    r"class\s+\w*Processor\s*[:\(]",
+    r"class\s+\w*Handler\s*[:\(]",
+    r"class\s+\w*Executor\s*[:\(]",
+    r"class\s+\w*Runner\s*[:\(]",
+    r"class\s+\w*Orchestrator\s*[:\(]",
+    r"class\s+\w*Scheduler\s*[:\(]",
+    r"class\s+\w*Fetcher\s*[:\(]",
+    r"class\s+\w*Syncer\s*[:\(]",
+    r"class\s+\w*Enricher\s*[:\(]",
+    r"class\s+\w*Scraper\s*[:\(]",
+    r"class\s+\w*Crawler\s*[:\(]",
+]
+
+# Allowed class patterns (for reference)
+ALLOWED_PATTERNS_NOTE = """
+Allowed patterns in constitutional hubs:
+  - class *State
+  - class *Validator
+  - class *Guard
+  - class *Recorder
+  - class *Evaluator
+  - class *Auditor
+"""
+
+violations = []
+
+for const_dir in CONSTITUTIONAL_DIRS:
+    if not os.path.exists(const_dir):
+        continue
+
+    for root, dirs, files in os.walk(const_dir):
+        for fname in files:
+            if not fname.endswith(".py"):
+                continue
+
+            fpath = os.path.join(root, fname)
+
+            with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
+                lines = f.readlines()
+
+            for line_num, line in enumerate(lines, 1):
+                for pattern in FORBIDDEN_CLASS_PATTERNS:
+                    if re.search(pattern, line):
+                        class_match = re.search(r"class\s+(\w+)", line)
+                        class_name = class_match.group(1) if class_match else "unknown"
+                        violations.append(f"{fpath}:{line_num}: Forbidden class '{class_name}'")
+
+if violations:
+    print("❌ CONSTITUTIONAL HUB VIOLATION: Forbidden Class Patterns")
+    print("")
+    print("Constitutional hubs cannot have operational classes.")
+    print("Classes like *Worker, *Pipeline, *Task, *Engine indicate operational logic.")
+    print("")
+    for v in violations:
+        print(f"  - {v}")
+    print("")
+    print(ALLOWED_PATTERNS_NOTE)
+    print("DOCTRINE: CL DECIDES. CL RECORDS. CL NEVER EXECUTES.")
+    sys.exit(1)
+
+print("✓ No forbidden class patterns in constitutional hubs")
+EOF
+
+      # ========================================================================
+      # CHECK 4: Docstring Language Guard
+      # Constitutional hub docstrings cannot use execution language
+      # ========================================================================
+      - name: Docstring Language Guard
+        run: |
+          echo "🚫 Checking for forbidden language in docstrings..."
+
+          python3 << 'EOF'
+import os
+import re
+import sys
+
+CONSTITUTIONAL_DIRS = [
+    "hubs/company-lifecycle",
+    "hubs/sales",
+    "hubs/client",
+    "cl",
+]
+
+# Forbidden language patterns in docstrings/comments
+FORBIDDEN_LANGUAGE = [
+    r"(?i)\bruns\s+",
+    r"(?i)\bprocesses\s+",
+    r"(?i)\bexecutes\s+",
+    r"(?i)\bhandles\s+",
+    r"(?i)\bfetches\s+",
+    r"(?i)\bsyncs\s+",
+    r"(?i)\btriggers\s+",
+    r"(?i)\borchestrates\s+",
+    r"(?i)\bpipeline\s+execution",
+    r"(?i)\bworker\s+",
+    r"(?i)\bjob\s+queue",
+    r"(?i)\btask\s+queue",
+]
+
+# Allowed language
+ALLOWED_LANGUAGE_NOTE = """
+Use instead:
+  - "evaluates" not "processes"
+  - "records" not "runs"
+  - "authorizes" not "handles"
+  - "blocks" not "executes"
+"""
+
+violations = []
+
+for const_dir in CONSTITUTIONAL_DIRS:
+    if not os.path.exists(const_dir):
+        continue
+
+    for root, dirs, files in os.walk(const_dir):
+        for fname in files:
+            if not fname.endswith((".py", ".md", ".yaml", ".yml")):
+                continue
+
+            fpath = os.path.join(root, fname)
+
+            with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
+                lines = f.readlines()
+
+            for line_num, line in enumerate(lines, 1):
+                # Skip if it's clearly talking about child hubs
+                if "child hub" in line.lower() or "delegated to" in line.lower():
+                    continue
+
+                for pattern in FORBIDDEN_LANGUAGE:
+                    if re.search(pattern, line):
+                        # Extract context
+                        context = line.strip()[:60]
+                        violations.append(f"{fpath}:{line_num}: '{context}...'")
+
+if violations:
+    print("⚠️ CONSTITUTIONAL HUB WARNING: Potentially Forbidden Language")
+    print("")
+    print("Constitutional hubs should not use execution language in docs.")
+    print("Review these lines for doctrine compliance:")
+    print("")
+    for v in violations[:20]:  # Limit output
+        print(f"  - {v}")
+    if len(violations) > 20:
+        print(f"  ... and {len(violations) - 20} more")
+    print("")
+    print(ALLOWED_LANGUAGE_NOTE)
+    print("")
+    print("NOTE: This is a WARNING, not a blocking error.")
+    print("      Manual review required for doctrine compliance.")
+
+print("✓ Docstring language check complete")
+EOF
+
+      # ========================================================================
+      # CHECK 5: AXLE Terminology Prohibition
+      # Constitutional hubs cannot use "AXLE" terminology
+      # ========================================================================
+      - name: AXLE Terminology Guard
+        run: |
+          echo "🚫 Checking for prohibited AXLE terminology..."
+
+          python3 << 'EOF'
+import os
+import re
+import sys
+
+CONSTITUTIONAL_DIRS = [
+    "hubs/company-lifecycle",
+    "hubs/sales",
+    "hubs/client",
+    "cl",
+]
+
+# Also check child hubs for AXLE terminology
+CHILD_HUBS = [
+    "hubs/company-target",
+    "hubs/people-intelligence",
+    "hubs/dol-filings",
+    "hubs/outreach-execution",
+]
+
+ALL_DIRS = CONSTITUTIONAL_DIRS + CHILD_HUBS
+
+violations = []
+
+for hub_dir in ALL_DIRS:
+    if not os.path.exists(hub_dir):
+        continue
+
+    for root, dirs, files in os.walk(hub_dir):
+        for fname in files:
+            if not fname.endswith((".py", ".md", ".yaml", ".yml")):
+                continue
+
+            fpath = os.path.join(root, fname)
+
+            with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
+                lines = f.readlines()
+
+            for line_num, line in enumerate(lines, 1):
+                # Check for AXLE in any context
+                if re.search(r"\bAXLE\b", line, re.IGNORECASE):
+                    context = line.strip()[:60]
+                    violations.append(f"{fpath}:{line_num}: '{context}...'")
+
+if violations:
+    print("❌ DOCTRINE VIOLATION: AXLE Terminology Prohibited")
+    print("")
+    print("The term 'AXLE' is forbidden. Use correct terminology:")
+    print("  - Constitutional Parent Hub (CL, Sales)")
+    print("  - Sub-Hub (Company Target, People Intelligence)")
+    print("  - Spoke (I/O connectors)")
+    print("")
+    for v in violations:
+        print(f"  - {v}")
+    print("")
+    print("DOCTRINE: There is no 'axle'. Only parent hubs and child hubs.")
+    sys.exit(1)
+
+print("✓ No AXLE terminology found")
+EOF
+
+      # ========================================================================
+      # CHECK 6: Fuzzy Matching Prohibition (CL-Only Authority)
+      # Constitutional hubs MUST NOT perform identity resolution
+      # ========================================================================
+      - name: Identity Resolution Guard
+        run: |
+          echo "🚫 Checking for prohibited identity resolution logic..."
+
+          python3 << 'EOF'
+import os
+import re
+import sys
+
+# All hubs except CL are prohibited from identity resolution
+PROHIBITED_DIRS = [
+    "hubs/company-target",
+    "hubs/people-intelligence",
+    "hubs/dol-filings",
+    "hubs/outreach-execution",
+    "hubs/sales",
+    "hubs/client",
+]
+
+# Patterns that indicate identity resolution
+IDENTITY_RESOLUTION_PATTERNS = [
+    r"fuzzy_match",
+    r"fuzzy_threshold",
+    r"similarity_score",
+    r"match_company",
+    r"find_company_by_name",
+    r"resolve_identity",
+    r"deduplicate_companies",
+    r"company_matching",
+    r"name_matching",
+    r"entity_resolution",
+    r"record_linkage",
+]
+
+violations = []
+
+for hub_dir in PROHIBITED_DIRS:
+    if not os.path.exists(hub_dir):
+        continue
+
+    for root, dirs, files in os.walk(hub_dir):
+        for fname in files:
+            if not fname.endswith(".py"):
+                continue
+
+            fpath = os.path.join(root, fname)
+
+            with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+
+            for pattern in IDENTITY_RESOLUTION_PATTERNS:
+                if re.search(pattern, content, re.IGNORECASE):
+                    violations.append(f"{fpath}: Contains identity resolution pattern '{pattern}'")
+
+if violations:
+    print("❌ DOCTRINE VIOLATION: Identity Resolution in Child Hub")
+    print("")
+    print("Identity resolution (fuzzy matching, company matching) is CL-ONLY authority.")
+    print("Child hubs MUST receive identity from CL, not resolve it themselves.")
+    print("")
+    for v in violations:
+        print(f"  - {v}")
+    print("")
+    print("DOCTRINE: CL is the SOLE identity authority. Child hubs defer to CL.")
+    sys.exit(1)
+
+print("✓ No identity resolution logic in child hubs")
+EOF
+
+      # ========================================================================
+      # SUMMARY
+      # ========================================================================
+      - name: Constitutional Guard Summary
+        if: always()
+        run: |
+          echo ""
+          echo "╔══════════════════════════════════════════════════════════════╗"
+          echo "║       CONSTITUTIONAL HUB NON-OPERATIONAL GUARD COMPLETE      ║"
+          echo "╠══════════════════════════════════════════════════════════════╣"
+          echo "║                                                              ║"
+          echo "║  Doctrine Enforced:                                          ║"
+          echo "║                                                              ║"
+          echo "║    CL DECIDES. CL RECORDS. CL NEVER EXECUTES.               ║"
+          echo "║                                                              ║"
+          echo "║  Checks Performed:                                           ║"
+          echo "║    ✓ Forbidden Import Guard                                  ║"
+          echo "║    ✓ Forbidden Function Pattern Guard                        ║"
+          echo "║    ✓ Forbidden Class Pattern Guard                           ║"
+          echo "║    ✓ Docstring Language Guard                                ║"
+          echo "║    ✓ AXLE Terminology Guard                                  ║"
+          echo "║    ✓ Identity Resolution Guard                               ║"
+          echo "║                                                              ║"
+          echo "╚══════════════════════════════════════════════════════════════╝"
+          echo ""
