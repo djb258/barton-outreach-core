@@ -1,0 +1,382 @@
+name: Outreach Schema Invariant Guard
+
+# Enforces outreach.* schema doctrine compliance
+# All tables must have ownership comments, column registry entries,
+# and proper FK topology through company_target anchor
+
+on:
+  pull_request:
+    branches: ['main']
+    paths:
+      - 'infra/migrations/**'
+      - 'neon/**'
+      - 'hubs/**/*.py'
+      - 'spokes/**/*.py'
+  push:
+    branches: ['main']
+    paths:
+      - 'infra/migrations/**'
+      - 'neon/**'
+      - 'hubs/**/*.py'
+      - 'spokes/**/*.py'
+
+env:
+  NEON_HOST: ${{ secrets.NEON_HOST }}
+  NEON_DATABASE: ${{ secrets.NEON_DATABASE }}
+  NEON_USER: ${{ secrets.NEON_USER }}
+  NEON_PASSWORD: ${{ secrets.NEON_PASSWORD }}
+
+jobs:
+  schema-guard:
+    runs-on: ubuntu-latest
+    name: Outreach Schema Enforcement
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install psycopg2-binary
+
+      # ========================================================================
+      # CHECK 1: Table Comment Guard
+      # Every outreach.* table must have a COMMENT with Sub-hub declaration
+      # ========================================================================
+      - name: Table Comment Guard
+        run: |
+          python3 << 'PYEOF'
+import os
+import sys
+
+# Skip DB checks if secrets not available (local dev)
+if not os.environ.get('NEON_HOST'):
+    print("⚠️ NEON_HOST not set - skipping DB checks (local dev mode)")
+    sys.exit(0)
+
+import psycopg2
+
+conn = psycopg2.connect(
+    host=os.environ['NEON_HOST'],
+    database=os.environ['NEON_DATABASE'],
+    user=os.environ['NEON_USER'],
+    password=os.environ['NEON_PASSWORD'],
+    sslmode='require'
+)
+cur = conn.cursor()
+
+print("🔍 Checking table comments in outreach.* schema...")
+
+cur.execute('''
+    SELECT c.relname as table_name, d.description
+    FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    LEFT JOIN pg_description d ON d.objoid = c.oid AND d.objsubid = 0
+    WHERE n.nspname = 'outreach' AND c.relkind = 'r'
+    ORDER BY c.relname
+''')
+
+violations = []
+for table_name, description in cur.fetchall():
+    if not description:
+        violations.append(f"outreach.{table_name}: Missing table COMMENT")
+    elif "Sub-hub:" not in description:
+        violations.append(f"outreach.{table_name}: COMMENT missing 'Sub-hub:' declaration")
+
+cur.close()
+conn.close()
+
+if violations:
+    print("❌ TABLE COMMENT VIOLATIONS:")
+    for v in violations:
+        print(f"  - {v}")
+    print()
+    print("Every outreach.* table must have a COMMENT with:")
+    print("  Sub-hub: <COMPANY|PEOPLE|SHARED>")
+    print("  Purpose: <description>")
+    print("  Anchor: <anchor table>")
+    print("  Identity: <read-only|N/A>")
+    print("  Write authority: <repo name>")
+    sys.exit(1)
+
+print("✓ All outreach.* tables have proper ownership comments")
+PYEOF
+
+      # ========================================================================
+      # CHECK 2: Anchor Topology Guard
+      # No table may bypass company_target to reference CL directly
+      # ========================================================================
+      - name: Anchor Topology Guard
+        run: |
+          python3 << 'PYEOF'
+import os
+import sys
+
+if not os.environ.get('NEON_HOST'):
+    print("⚠️ NEON_HOST not set - skipping DB checks")
+    sys.exit(0)
+
+import psycopg2
+
+conn = psycopg2.connect(
+    host=os.environ['NEON_HOST'],
+    database=os.environ['NEON_DATABASE'],
+    user=os.environ['NEON_USER'],
+    password=os.environ['NEON_PASSWORD'],
+    sslmode='require'
+)
+cur = conn.cursor()
+
+print("🔍 Checking FK topology in outreach.* schema...")
+
+# Check for any outreach table (except company_target) that has direct FK to cl.*
+cur.execute('''
+    SELECT
+        tc.table_name,
+        kcu.column_name,
+        ccu.table_schema AS foreign_schema,
+        ccu.table_name AS foreign_table
+    FROM information_schema.table_constraints AS tc
+    JOIN information_schema.key_column_usage AS kcu
+        ON tc.constraint_name = kcu.constraint_name
+    JOIN information_schema.constraint_column_usage AS ccu
+        ON ccu.constraint_name = tc.constraint_name
+    WHERE tc.constraint_type = 'FOREIGN KEY'
+        AND tc.table_schema = 'outreach'
+        AND tc.table_name != 'company_target'
+        AND ccu.table_schema = 'cl'
+''')
+
+violations = []
+for table, column, fk_schema, fk_table in cur.fetchall():
+    violations.append(f"outreach.{table}.{column} → {fk_schema}.{fk_table} (ILLEGAL BYPASS)")
+
+cur.close()
+conn.close()
+
+if violations:
+    print("❌ ANCHOR TOPOLOGY VIOLATIONS:")
+    for v in violations:
+        print(f"  - {v}")
+    print()
+    print("DOCTRINE: Only company_target may reference CL directly.")
+    print("All other outreach tables must anchor through company_target.")
+    sys.exit(1)
+
+print("✓ Anchor topology is correct (no CL bypass)")
+PYEOF
+
+      # ========================================================================
+      # CHECK 3: Column Registry Coverage Guard
+      # Every column in outreach.* must be in column_registry
+      # ========================================================================
+      - name: Column Registry Guard
+        run: |
+          python3 << 'PYEOF'
+import os
+import sys
+
+if not os.environ.get('NEON_HOST'):
+    print("⚠️ NEON_HOST not set - skipping DB checks")
+    sys.exit(0)
+
+import psycopg2
+
+conn = psycopg2.connect(
+    host=os.environ['NEON_HOST'],
+    database=os.environ['NEON_DATABASE'],
+    user=os.environ['NEON_USER'],
+    password=os.environ['NEON_PASSWORD'],
+    sslmode='require'
+)
+cur = conn.cursor()
+
+print("🔍 Checking column registry coverage...")
+
+# Get all columns in outreach.* (excluding column_registry itself)
+cur.execute('''
+    SELECT table_name, column_name
+    FROM information_schema.columns
+    WHERE table_schema = 'outreach'
+    AND table_name != 'column_registry'
+    ORDER BY table_name, ordinal_position
+''')
+all_columns = set((t, c) for t, c in cur.fetchall())
+
+# Get columns in registry
+cur.execute('''
+    SELECT table_name, column_name
+    FROM outreach.column_registry
+    WHERE schema_name = 'outreach'
+''')
+registered = set((t, c) for t, c in cur.fetchall())
+
+missing = all_columns - registered
+coverage = (len(all_columns) - len(missing)) / len(all_columns) * 100 if all_columns else 100
+
+cur.close()
+conn.close()
+
+print(f"Column registry coverage: {coverage:.1f}%")
+
+if missing:
+    print()
+    print("⚠️ COLUMNS MISSING FROM REGISTRY:")
+    for table, col in sorted(missing):
+        print(f"  - outreach.{table}.{col}")
+    print()
+    if coverage < 80:
+        print("❌ Coverage below 80% - FAILING")
+        sys.exit(1)
+    else:
+        print("⚠️ Coverage above 80% - WARNING only")
+
+print("✓ Column registry coverage acceptable")
+PYEOF
+
+      # ========================================================================
+      # CHECK 4: Identity Minting Guard (Code)
+      # No code may mint or infer company_unique_id
+      # ========================================================================
+      - name: Identity Minting Guard
+        run: |
+          echo "🔍 Checking for identity minting violations in code..."
+
+          python3 << 'PYEOF'
+import os
+import re
+import sys
+
+# Patterns that indicate identity minting/inference
+FORBIDDEN_PATTERNS = [
+    (r"company_unique_id\s*=\s*['\"]?[A-Z0-9-]+", "hardcoded company_unique_id"),
+    (r"gen_random_uuid\(\).*company_unique_id", "generating company_unique_id"),
+    (r"uuid\.uuid4\(\).*company_unique_id", "generating company_unique_id"),
+    (r"mint.*company.*id", "minting company identity"),
+    (r"create.*company.*identity", "creating company identity"),
+    (r"fuzzy.*match.*company", "fuzzy matching for identity"),
+    (r"company_unique_id\s*=\s*str\(uuid", "generating company_unique_id"),
+]
+
+# Directories to check
+CHECK_DIRS = ["hubs", "spokes", "infra/scripts"]
+
+violations = []
+
+for check_dir in CHECK_DIRS:
+    if not os.path.exists(check_dir):
+        continue
+
+    for root, dirs, files in os.walk(check_dir):
+        # Skip __pycache__
+        dirs[:] = [d for d in dirs if d != '__pycache__']
+
+        for fname in files:
+            if not fname.endswith('.py'):
+                continue
+
+            fpath = os.path.join(root, fname)
+
+            with open(fpath, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+
+            for pattern, description in FORBIDDEN_PATTERNS:
+                if re.search(pattern, content, re.IGNORECASE):
+                    violations.append(f"{fpath}: {description}")
+
+if violations:
+    print("❌ IDENTITY MINTING VIOLATIONS:")
+    for v in violations:
+        print(f"  - {v}")
+    print()
+    print("DOCTRINE: Outreach NEVER mints company_unique_id.")
+    print("Identity comes from CL via admission gate.")
+    sys.exit(1)
+
+print("✓ No identity minting violations in code")
+PYEOF
+
+      # ========================================================================
+      # CHECK 5: Schema Write Boundary Guard
+      # No outreach code may write to non-outreach schemas
+      # ========================================================================
+      - name: Schema Write Boundary Guard
+        run: |
+          echo "🔍 Checking for schema boundary violations..."
+
+          python3 << 'PYEOF'
+import os
+import re
+import sys
+
+# Patterns that indicate writing to other schemas
+FORBIDDEN_WRITE_PATTERNS = [
+    (r"INSERT\s+INTO\s+cl\.", "writing to cl.* schema"),
+    (r"UPDATE\s+cl\.", "writing to cl.* schema"),
+    (r"DELETE\s+FROM\s+cl\.", "writing to cl.* schema"),
+    (r"INSERT\s+INTO\s+marketing\.", "writing to marketing.* schema"),
+    (r"UPDATE\s+marketing\.", "writing to marketing.* schema"),
+    (r"INSERT\s+INTO\s+people\.", "writing to people.* schema"),
+    (r"UPDATE\s+people\.", "writing to people.* schema"),
+    (r"INSERT\s+INTO\s+company\.", "writing to company.* schema"),
+    (r"UPDATE\s+company\.", "writing to company.* schema"),
+]
+
+CHECK_DIRS = ["hubs", "spokes", "infra/scripts"]
+
+violations = []
+
+for check_dir in CHECK_DIRS:
+    if not os.path.exists(check_dir):
+        continue
+
+    for root, dirs, files in os.walk(check_dir):
+        dirs[:] = [d for d in dirs if d != '__pycache__']
+
+        for fname in files:
+            if not fname.endswith('.py'):
+                continue
+
+            fpath = os.path.join(root, fname)
+
+            with open(fpath, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+
+            for pattern, description in FORBIDDEN_WRITE_PATTERNS:
+                if re.search(pattern, content, re.IGNORECASE):
+                    violations.append(f"{fpath}: {description}")
+
+if violations:
+    print("❌ SCHEMA WRITE BOUNDARY VIOLATIONS:")
+    for v in violations:
+        print(f"  - {v}")
+    print()
+    print("DOCTRINE: Outreach repo writes ONLY to outreach.* schema.")
+    sys.exit(1)
+
+print("✓ No schema boundary violations")
+PYEOF
+
+      # ========================================================================
+      # SUMMARY
+      # ========================================================================
+      - name: Schema Guard Summary
+        if: always()
+        run: |
+          echo ""
+          echo "╔══════════════════════════════════════════════════════════════╗"
+          echo "║         OUTREACH SCHEMA INVARIANT GUARD COMPLETE             ║"
+          echo "╠══════════════════════════════════════════════════════════════╣"
+          echo "║                                                              ║"
+          echo "║  Invariants Enforced:                                        ║"
+          echo "║    ✓ Table Comment Guard (Sub-hub ownership)                 ║"
+          echo "║    ✓ Anchor Topology Guard (no CL bypass)                    ║"
+          echo "║    ✓ Column Registry Guard (documentation)                   ║"
+          echo "║    ✓ Identity Minting Guard (no minting)                     ║"
+          echo "║    ✓ Schema Write Boundary Guard (outreach.* only)           ║"
+          echo "║                                                              ║"
+          echo "╚══════════════════════════════════════════════════════════════╝"

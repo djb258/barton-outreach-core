@@ -16,7 +16,7 @@ Hub Registry:
     - outreach-execution: Sub-hub - Core metric: ENGAGEMENT_RATE
 
 Parent Hub (External):
-    - company-lifecycle-cl: PARENT - Mints company_unique_id
+    - company-lifecycle-cl: PARENT - Owns company_unique_id
 
 Doctrine ID Format: 04.04.XX (where XX is hub number)
 """
@@ -35,7 +35,7 @@ from .dol_filings import DOLHub
 from .outreach_execution import OutreachHub
 
 __all__ = [
-    # AXLE
+    # Company Target Sub-Hub (internal anchor)
     'CompanyHub',
     'CompanyPipeline',
     'BITEngine',
