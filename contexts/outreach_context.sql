@@ -25,6 +25,17 @@
 CREATE SCHEMA IF NOT EXISTS outreach_ctx;
 
 -- =============================================================================
+-- ENUM TYPES
+-- =============================================================================
+
+-- Final state enum (immutable once set)
+CREATE TYPE outreach_ctx.final_state_enum AS ENUM (
+    'PASS',     -- Pipeline completed successfully
+    'FAIL',     -- Pipeline failed with blocking error
+    'ABORTED'   -- Context killed (manual or SLA expiry)
+);
+
+-- =============================================================================
 -- OUTREACH CONTEXT TABLE
 -- =============================================================================
 
@@ -48,6 +59,13 @@ CREATE TABLE IF NOT EXISTS outreach_ctx.context (
     killed_at TIMESTAMPTZ,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
 
+    -- SLA aging (auto-ABORT on expiry)
+    sla_expires_at TIMESTAMPTZ,  -- NULL = no SLA, non-NULL = hard deadline
+
+    -- Final state (immutable once set)
+    final_state outreach_ctx.final_state_enum,  -- NULL while in-flight
+    finalized_at TIMESTAMPTZ,
+
     -- Cost tracking
     total_cost_credits DECIMAL(12, 4) NOT NULL DEFAULT 0,
     tier0_calls INTEGER NOT NULL DEFAULT 0,
@@ -63,7 +81,15 @@ CREATE TABLE IF NOT EXISTS outreach_ctx.context (
     CONSTRAINT valid_lifecycle_state CHECK (lifecycle_state_at_creation IN (
         'INTAKE', 'SOVEREIGN_MINTED', 'ACTIVE', 'TARGETABLE', 'ENGAGED', 'CLIENT', 'DORMANT', 'DEAD'
     )),
-    CONSTRAINT expires_after_created CHECK (expires_at > created_at)
+    CONSTRAINT expires_after_created CHECK (expires_at > created_at),
+    -- Final state can only be set once
+    CONSTRAINT final_state_immutable CHECK (
+        finalized_at IS NULL OR final_state IS NOT NULL
+    ),
+    -- SLA must be after creation
+    CONSTRAINT sla_after_created CHECK (
+        sla_expires_at IS NULL OR sla_expires_at > created_at
+    )
 );
 
 -- Index for company lookups
@@ -176,7 +202,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Kill a context (with reason)
+-- Kill a context (with reason) - sets final_state to ABORTED
 CREATE OR REPLACE FUNCTION outreach_ctx.kill_context(
     p_context_id UUID,
     p_reason TEXT DEFAULT 'Manual kill'
@@ -185,11 +211,70 @@ BEGIN
     UPDATE outreach_ctx.context
     SET is_active = FALSE,
         killed_at = NOW(),
-        kill_reason = p_reason
+        kill_reason = p_reason,
+        final_state = 'ABORTED',
+        finalized_at = NOW()
     WHERE outreach_context_id = p_context_id
-      AND is_active = TRUE;
+      AND is_active = TRUE
+      AND final_state IS NULL;  -- Cannot re-finalize
 
     RETURN FOUND;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Finalize a context with PASS state
+CREATE OR REPLACE FUNCTION outreach_ctx.finalize_pass(
+    p_context_id UUID
+) RETURNS BOOLEAN AS $$
+BEGIN
+    UPDATE outreach_ctx.context
+    SET is_active = FALSE,
+        final_state = 'PASS',
+        finalized_at = NOW()
+    WHERE outreach_context_id = p_context_id
+      AND is_active = TRUE
+      AND final_state IS NULL;  -- Cannot re-finalize
+
+    RETURN FOUND;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Finalize a context with FAIL state (called when error emitted)
+CREATE OR REPLACE FUNCTION outreach_ctx.finalize_fail(
+    p_context_id UUID,
+    p_reason TEXT DEFAULT 'Pipeline failure'
+) RETURNS BOOLEAN AS $$
+BEGIN
+    UPDATE outreach_ctx.context
+    SET is_active = FALSE,
+        final_state = 'FAIL',
+        finalized_at = NOW(),
+        kill_reason = p_reason
+    WHERE outreach_context_id = p_context_id
+      AND final_state IS NULL;  -- Cannot re-finalize
+
+    RETURN FOUND;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Auto-ABORT contexts that have exceeded SLA
+CREATE OR REPLACE FUNCTION outreach_ctx.abort_expired_sla() RETURNS INTEGER AS $$
+DECLARE
+    v_count INTEGER;
+BEGIN
+    UPDATE outreach_ctx.context
+    SET is_active = FALSE,
+        killed_at = NOW(),
+        kill_reason = 'SLA expiry auto-abort',
+        final_state = 'ABORTED',
+        finalized_at = NOW()
+    WHERE sla_expires_at IS NOT NULL
+      AND sla_expires_at < NOW()
+      AND is_active = TRUE
+      AND final_state IS NULL;
+
+    GET DIAGNOSTICS v_count = ROW_COUNT;
+    RETURN v_count;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -291,14 +376,55 @@ SELECT
     c.lifecycle_state_at_creation,
     c.created_at,
     c.expires_at,
+    c.sla_expires_at,
     c.total_cost_credits,
     c.tier0_calls,
     c.tier1_calls,
     c.tier2_calls,
-    EXTRACT(EPOCH FROM (c.expires_at - NOW())) / 3600 AS hours_remaining
+    EXTRACT(EPOCH FROM (c.expires_at - NOW())) / 3600 AS hours_remaining,
+    CASE
+        WHEN c.sla_expires_at IS NOT NULL
+        THEN EXTRACT(EPOCH FROM (c.sla_expires_at - NOW())) / 3600
+        ELSE NULL
+    END AS sla_hours_remaining
 FROM outreach_ctx.context c
 WHERE c.is_active = TRUE
-  AND c.expires_at > NOW();
+  AND c.expires_at > NOW()
+  AND c.final_state IS NULL;
+
+-- Finalized contexts (PASS/FAIL/ABORTED)
+CREATE OR REPLACE VIEW outreach_ctx.finalized_contexts AS
+SELECT
+    c.outreach_context_id,
+    c.company_sov_id,
+    c.context_type,
+    c.context_name,
+    c.final_state,
+    c.finalized_at,
+    c.created_at,
+    c.total_cost_credits,
+    c.tier0_calls,
+    c.tier1_calls,
+    c.tier2_calls,
+    c.kill_reason,
+    EXTRACT(EPOCH FROM (c.finalized_at - c.created_at)) / 60 AS duration_minutes
+FROM outreach_ctx.context c
+WHERE c.final_state IS NOT NULL;
+
+-- Contexts approaching SLA expiry (warning threshold: 1 hour)
+CREATE OR REPLACE VIEW outreach_ctx.sla_warning AS
+SELECT
+    c.outreach_context_id,
+    c.company_sov_id,
+    c.sla_expires_at,
+    EXTRACT(EPOCH FROM (c.sla_expires_at - NOW())) / 60 AS minutes_until_abort,
+    c.total_cost_credits
+FROM outreach_ctx.context c
+WHERE c.is_active = TRUE
+  AND c.final_state IS NULL
+  AND c.sla_expires_at IS NOT NULL
+  AND c.sla_expires_at < NOW() + INTERVAL '1 hour'
+  AND c.sla_expires_at > NOW();
 
 -- Spend by company
 CREATE OR REPLACE VIEW outreach_ctx.spend_by_company AS
@@ -327,3 +453,18 @@ COMMENT ON TABLE outreach_ctx.spend_log IS
 
 COMMENT ON FUNCTION outreach_ctx.can_attempt_tier2 IS
     'Check if Tier-2 tool can be attempted in this context. Returns FALSE if already attempted.';
+
+COMMENT ON FUNCTION outreach_ctx.finalize_pass IS
+    'Mark context as PASS. Can only be called once per context.';
+
+COMMENT ON FUNCTION outreach_ctx.finalize_fail IS
+    'Mark context as FAIL. Called when blocking error emitted.';
+
+COMMENT ON FUNCTION outreach_ctx.abort_expired_sla IS
+    'Auto-ABORT all contexts past SLA deadline. Run on schedule (e.g., every 5 min).';
+
+COMMENT ON VIEW outreach_ctx.finalized_contexts IS
+    'All contexts with final_state set (PASS/FAIL/ABORTED).';
+
+COMMENT ON VIEW outreach_ctx.sla_warning IS
+    'Contexts within 1 hour of SLA auto-abort. Use for alerting.';

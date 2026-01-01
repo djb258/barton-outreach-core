@@ -82,6 +82,34 @@ These are **expected** and logged but do not block:
 
 ---
 
+## 8. Kill-Switch Compliance
+
+### UNKNOWN_ERROR Doctrine
+
+- [ ] `BC_UNKNOWN_ERROR` triggers immediate FAIL
+- [ ] Context is finalized with `final_state = 'FAIL'`
+- [ ] Spend is frozen for that context
+- [ ] Alert sent to on-call (PagerDuty/Slack)
+- [ ] Stack trace captured in error table
+- [ ] Human investigation required before retry
+
+### Cross-Hub Repair Rules
+
+This hub operates independently with no cross-hub dependencies.
+
+| Error Type | Resolution |
+|------------|------------|
+| `BC_COMPANY_NOT_FOUND` | N/A (cannot mint companies) |
+| `BC_SOURCE_UNAVAILABLE` | Agent: Retry with new context |
+
+### SLA Aging
+
+- [ ] `sla_expires_at` enforced for all contexts
+- [ ] Auto-ABORT on SLA expiry
+- [ ] `outreach_ctx.abort_expired_sla()` runs every 5 minutes
+
+---
+
 ## Compliance Rule
 
 **If any box is unchecked, this hub may not ship.**

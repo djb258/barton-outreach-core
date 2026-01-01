@@ -163,6 +163,74 @@
 
 ---
 
+## Cross-Hub Repair Rules
+
+Some errors in one hub require resolution in another hub first. This defines the repair dependency chain.
+
+### Repair Dependency Matrix
+
+| Error in Hub | Requires Resolution in | Reason |
+|--------------|----------------------|--------|
+| `PI_NO_PATTERN_AVAILABLE` | Company Target | Pattern must be discovered first |
+| `OE_MISSING_DOMAIN` | Company Target | Domain resolution is CT's job |
+| `OE_MISSING_PATTERN` | Company Target | Pattern discovery is CT's job |
+| `OE_NO_CONTACTS_AVAILABLE` | People Intelligence | Contacts must be slotted first |
+| `OE_BIT_BELOW_THRESHOLD` | Company Target (BIT) | BIT score improvement needed |
+
+### Cross-Hub Repair Constraints
+
+1. **Upstream First** — Always resolve upstream hub errors before downstream
+2. **No Sideways Repairs** — Hubs cannot fix each other's errors directly
+3. **Context Isolation** — Each repair attempt requires new `outreach_context_id`
+4. **Spend Inheritance** — New context starts fresh; old context spend is frozen
+
+### Repair Order
+
+```
+Company Target (CT) errors → MUST resolve first
+        ↓
+People Intelligence (PI) errors → Resolve second
+        ↓
+Outreach Execution (OE) errors → Resolve last
+```
+
+DOL Filings and Blog Content operate independently (no cross-hub dependencies).
+
+---
+
+## UNKNOWN_ERROR Kill-Switch Doctrine
+
+> **Any `*_UNKNOWN_ERROR` is an immediate FAIL with mandatory human investigation.**
+
+### Kill-Switch Enforcement
+
+| Error Code | Action | Consequence |
+|------------|--------|-------------|
+| `CT_UNKNOWN_ERROR` | Immediate FAIL | Context finalized, spend frozen |
+| `PI_UNKNOWN_ERROR` | Immediate FAIL | Context finalized, spend frozen |
+| `DOL_UNKNOWN_ERROR` | Immediate FAIL | Context finalized, spend frozen |
+| `OE_UNKNOWN_ERROR` | Immediate FAIL | Context finalized, spend frozen |
+| `BC_UNKNOWN_ERROR` | Immediate FAIL | Context finalized, spend frozen |
+
+### Why Kill-Switch?
+
+1. **Unknown errors indicate code bugs** — Not data issues, not transient failures
+2. **Continuing is dangerous** — Could corrupt data or burn unlimited spend
+3. **Immediate visibility** — Forces investigation, prevents silent failures
+4. **Cost protection** — Frozen spend prevents runaway costs
+
+### Response Protocol
+
+1. **Alert** — `UNKNOWN_ERROR` triggers immediate alert (PagerDuty, Slack, etc.)
+2. **Investigate** — Human must inspect `stack_trace` and `raw_input` columns
+3. **Classify** — Either:
+   - Add new error code if this is a known failure mode
+   - Fix code bug if this is a code defect
+4. **Document** — Update error_codes.md with new code if applicable
+5. **Resume** — Create new context after fix deployed
+
+---
+
 ## Monitoring Queries
 
 ```sql

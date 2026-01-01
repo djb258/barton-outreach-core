@@ -247,6 +247,45 @@ Pending: Schema FK constraint verification
 
 ---
 
+## 9. Kill-Switch Compliance
+
+### UNKNOWN_ERROR Doctrine
+
+| Requirement | Status |
+|-------------|--------|
+| `OE_UNKNOWN_ERROR` triggers immediate FAIL | ⚠ VERIFY |
+| Context is finalized with `final_state = 'FAIL'` | ⚠ VERIFY |
+| Spend is frozen for that context | ⚠ VERIFY |
+| Alert sent to on-call (PagerDuty/Slack) | ⚠ VERIFY |
+| Stack trace captured in error table | ⚠ VERIFY |
+| Human investigation required before retry | ⚠ VERIFY |
+
+### Cross-Hub Repair Rules
+
+| Upstream Dependency | Requirement |
+|---------------------|-------------|
+| Company Target | Domain must be resolved |
+| Company Target | Pattern must exist |
+| People Intelligence | Contacts must be slotted |
+| Company Target (BIT) | BIT score >= 25 |
+
+| Error | Resolution |
+|-------|------------|
+| `OE_MISSING_DOMAIN` | Resolve Company Target first |
+| `OE_MISSING_PATTERN` | Resolve Company Target first |
+| `OE_NO_CONTACTS_AVAILABLE` | Resolve People Intelligence first |
+| `OE_BIT_BELOW_THRESHOLD` | Wait for BIT improvement |
+
+### SLA Aging
+
+| Requirement | Status |
+|-------------|--------|
+| `sla_expires_at` enforced for all contexts | ⚠ VERIFY |
+| Auto-ABORT on SLA expiry | ⚠ VERIFY |
+| `outreach_ctx.abort_expired_sla()` runs every 5 minutes | ⚠ VERIFY |
+
+---
+
 *Audit Date: 2025-12-26*
 *Auditor: Doctrine Alignment Engineer*
 *Doctrine Version: CL Parent-Child Model v1.0*

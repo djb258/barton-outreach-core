@@ -82,6 +82,36 @@ A failure is **blocking** if:
 
 ---
 
+## 8. Kill-Switch Compliance
+
+### UNKNOWN_ERROR Doctrine
+
+- [ ] `PI_UNKNOWN_ERROR` triggers immediate FAIL
+- [ ] Context is finalized with `final_state = 'FAIL'`
+- [ ] Spend is frozen for that context
+- [ ] Alert sent to on-call (PagerDuty/Slack)
+- [ ] Stack trace captured in error table
+- [ ] Human investigation required before retry
+
+### Cross-Hub Repair Rules
+
+| Upstream Dependency | Requirement |
+|---------------------|-------------|
+| Company Target | Pattern must exist before email generation |
+| Company Target | Domain must be resolved before processing |
+
+| Downstream Error | Resolution Required |
+|------------------|---------------------|
+| `OE_NO_CONTACTS_AVAILABLE` | Resolve PI slot assignment first |
+
+### SLA Aging
+
+- [ ] `sla_expires_at` enforced for all contexts
+- [ ] Auto-ABORT on SLA expiry
+- [ ] `outreach_ctx.abort_expired_sla()` runs every 5 minutes
+
+---
+
 ## Compliance Rule
 
 **If any box is unchecked, this hub may not ship.**
