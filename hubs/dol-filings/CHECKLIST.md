@@ -84,7 +84,45 @@ These are **expected** and logged but do not block:
 
 ---
 
-## 8. Kill-Switch Compliance
+## 8. Signal Validity Compliance
+
+### Execution Order
+
+- [ ] Executes SECOND in canonical order (after CT)
+- [ ] Verifies Company Target PASS before proceeding
+- [ ] Verifies company_sov_id exists before EIN matching
+
+### Signal Origin
+
+- [ ] company_sov_id sourced via Company Target (origin: CL)
+- [ ] domain sourced from Company Target only
+- [ ] No signals consumed from People Intelligence
+- [ ] No signals consumed from Blog Content
+
+### Signal Validity
+
+- [ ] Signals are origin-bound (declared source only)
+- [ ] Signals are run-bound to current outreach_context_id
+- [ ] Signals from prior contexts are NOT authoritative
+- [ ] Signal age does NOT justify action
+
+### Non-Refreshing
+
+- [ ] Does NOT fix Company Target errors
+- [ ] Does NOT retry EIN matches (exact match or FAIL)
+- [ ] Does NOT refresh signals from prior contexts
+- [ ] Missing upstream signal → FAIL (not retry)
+
+### Downstream Effects
+
+- [ ] On PASS: People Intelligence may execute
+- [ ] On FAIL: People, Blog do NOT execute
+- [ ] FAIL propagates forward (no skip-and-continue)
+- [ ] Does NOT unlock People alone (CT must also PASS)
+
+---
+
+## 9. Kill-Switch Compliance
 
 ### UNKNOWN_ERROR Doctrine
 

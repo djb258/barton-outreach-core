@@ -82,7 +82,55 @@ These are **expected** and logged but do not block:
 
 ---
 
-## 8. Kill-Switch Compliance
+## 8. Signal Validity Compliance
+
+### Execution Order
+
+- [ ] Executes LAST in canonical order (after CT, DOL, PI)
+- [ ] Verifies all upstream hubs PASS before proceeding
+- [ ] Halts on any upstream FAIL
+
+### Signal Origin
+
+- [ ] company_sov_id sourced via Company Target (origin: CL)
+- [ ] domain sourced from Company Target only
+- [ ] BIT_SCORE sourced from Company Target only
+- [ ] regulatory_signals sourced from DOL Filings only
+- [ ] slot_assignments sourced from People Intelligence only
+
+### Signal Validity
+
+- [ ] Signals are origin-bound (declared source only)
+- [ ] Signals are run-bound to current outreach_context_id
+- [ ] Signals from prior contexts are NOT authoritative
+- [ ] Signal age does NOT justify action
+- [ ] Signal age does NOT trigger enrichment
+- [ ] Signal age does NOT trigger spend
+
+### Non-Refreshing
+
+- [ ] Does NOT fix upstream errors
+- [ ] Does NOT refresh signals from prior contexts
+- [ ] Does NOT re-enrich upstream data
+- [ ] Missing upstream signal → FAIL (not retry)
+
+### Downstream Effects
+
+- [ ] On PASS: Context finalized as PASS
+- [ ] On FAIL: Context finalized as FAIL
+- [ ] No downstream hubs (last in order)
+- [ ] Emits timing signals to BIT Engine only
+
+### Blog-Specific Prohibitions
+
+- [ ] Does NOT trigger enrichment
+- [ ] Does NOT trigger spend
+- [ ] Does NOT mint or revive companies
+- [ ] Timing signals only — no authority signals
+
+---
+
+## 9. Kill-Switch Compliance
 
 ### UNKNOWN_ERROR Doctrine
 

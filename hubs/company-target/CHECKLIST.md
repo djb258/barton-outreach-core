@@ -107,7 +107,42 @@ A failure is **blocking** if:
 
 ---
 
-## 8. Kill-Switch Compliance
+## 8. Signal Validity Compliance
+
+### Execution Order
+
+- [ ] Executes FIRST in canonical order
+- [ ] No upstream sub-hub dependencies (CL is external)
+- [ ] Verifies CL lifecycle_state >= ACTIVE before proceeding
+
+### Signal Origin
+
+- [ ] company_sov_id sourced from Company Lifecycle only
+- [ ] lifecycle_state sourced from Company Lifecycle only
+- [ ] No signals consumed from DOL, People, or Blog
+
+### Signal Validity
+
+- [ ] Signals are origin-bound (declared source only)
+- [ ] Signals are run-bound to current outreach_context_id
+- [ ] Signals from prior contexts are NOT authoritative
+- [ ] Signal age does NOT justify action
+
+### Non-Refreshing
+
+- [ ] Does NOT re-query CL for "fresher" data within same context
+- [ ] Does NOT re-enrich on stale signal
+- [ ] Missing signal → FAIL (not retry)
+
+### Downstream Effects
+
+- [ ] On PASS: DOL Filings may execute
+- [ ] On FAIL: DOL, People, Blog do NOT execute
+- [ ] FAIL propagates forward (no skip-and-continue)
+
+---
+
+## 9. Kill-Switch Compliance
 
 ### UNKNOWN_ERROR Doctrine
 

@@ -82,7 +82,45 @@ A failure is **blocking** if:
 
 ---
 
-## 8. Kill-Switch Compliance
+## 8. Signal Validity Compliance
+
+### Execution Order
+
+- [ ] Executes THIRD in canonical order (after CT, DOL)
+- [ ] Verifies Company Target PASS before proceeding
+- [ ] Verifies verified_pattern exists before proceeding
+
+### Signal Origin
+
+- [ ] company_sov_id sourced via Company Target (origin: CL)
+- [ ] verified_pattern sourced from Company Target only
+- [ ] domain sourced from Company Target only
+- [ ] regulatory_signals sourced from DOL Filings only
+- [ ] No signals consumed from Blog Content
+
+### Signal Validity
+
+- [ ] Signals are origin-bound (declared source only)
+- [ ] Signals are run-bound to current outreach_context_id
+- [ ] Signals from prior contexts are NOT authoritative
+- [ ] Signal age does NOT justify action
+
+### Non-Refreshing
+
+- [ ] Does NOT fix Company Target errors (pattern missing → FAIL)
+- [ ] Does NOT re-enrich Company Target domain
+- [ ] Does NOT use stale pattern from prior context
+- [ ] Missing upstream signal → FAIL (not retry)
+
+### Downstream Effects
+
+- [ ] On PASS: Blog Content may execute
+- [ ] On FAIL: Blog does NOT execute
+- [ ] FAIL propagates forward (no skip-and-continue)
+
+---
+
+## 9. Kill-Switch Compliance
 
 ### UNKNOWN_ERROR Doctrine
 

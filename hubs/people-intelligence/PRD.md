@@ -102,6 +102,55 @@ Healthy Threshold: >= 80%
 
 ---
 
+## 11. Upstream Dependencies, Signal Validity, and Downstream Effects
+
+### Execution Position
+
+**Third in canonical order** — After Company Target and DOL Filings.
+
+### Required Upstream PASS Conditions
+
+| Upstream | Condition |
+|----------|-----------|
+| Company Target | PASS with verified_pattern |
+| Company Target | domain resolved |
+| DOL Filings | PASS (or no filings) |
+
+### Signals Consumed (Origin-Bound)
+
+| Signal | Origin | Validity |
+|--------|--------|----------|
+| company_sov_id | Company Lifecycle (via CT) | Run-bound to outreach_context_id |
+| verified_pattern | Company Target | Run-bound to outreach_context_id |
+| domain | Company Target | Run-bound to outreach_context_id |
+| pattern_confidence | Company Target | Run-bound to outreach_context_id |
+| regulatory_signals | DOL Filings | Run-bound to outreach_context_id |
+
+### Signals Emitted
+
+| Signal | Consumers | Validity |
+|--------|-----------|----------|
+| slot_assignments | Blog, Outreach Execution | Run-bound to outreach_context_id |
+| people_records | Blog, Outreach Execution | Run-bound to outreach_context_id |
+| SLOT_FILL_RATE | Monitoring | Run-bound to outreach_context_id |
+
+### Downstream Effects
+
+| If This Hub | Then |
+|-------------|------|
+| PASS | Blog Content may execute |
+| FAIL | Blog does NOT execute |
+
+### Explicit Prohibitions
+
+- [ ] May NOT consume Blog Content signals
+- [ ] May NOT fix Company Target errors (pattern missing → FAIL, not retry)
+- [ ] May NOT re-enrich Company Target domain
+- [ ] May NOT refresh signals from prior contexts
+- [ ] May NOT use stale pattern from prior context
+
+---
+
 ## Approval
 
 | Role | Name | Date |

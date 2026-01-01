@@ -104,6 +104,52 @@ Healthy Threshold: >= 90%
 
 ---
 
+## 12. Upstream Dependencies, Signal Validity, and Downstream Effects
+
+### Execution Position
+
+**Second in canonical order** — After Company Target, before People Intelligence.
+
+### Required Upstream PASS Conditions
+
+| Upstream | Condition |
+|----------|-----------|
+| Company Target | PASS (company exists with company_sov_id) |
+| Company Target | Domain resolved (for cross-reference) |
+
+### Signals Consumed (Origin-Bound)
+
+| Signal | Origin | Validity |
+|--------|--------|----------|
+| company_sov_id | Company Lifecycle (via CT) | Run-bound to outreach_context_id |
+| domain | Company Target | Run-bound to outreach_context_id |
+
+### Signals Emitted
+
+| Signal | Consumers | Validity |
+|--------|-----------|----------|
+| FORM_5500_FILED | People, Blog | Run-bound to outreach_context_id |
+| LARGE_PLAN | People, Blog | Run-bound to outreach_context_id |
+| BROKER_CHANGE | People, Blog | Run-bound to outreach_context_id |
+| filing_data | Monitoring | Run-bound to outreach_context_id |
+
+### Downstream Effects
+
+| If This Hub | Then |
+|-------------|------|
+| PASS | People Intelligence may execute |
+| FAIL | People, Blog do NOT execute |
+
+### Explicit Prohibitions
+
+- [ ] May NOT consume People Intelligence or Blog signals
+- [ ] May NOT unlock People Intelligence alone (CT must also PASS)
+- [ ] May NOT fix Company Target errors
+- [ ] May NOT refresh signals from prior contexts
+- [ ] May NOT retry EIN matches (exact match or FAIL)
+
+---
+
 ## Approval
 
 | Role | Name | Date |

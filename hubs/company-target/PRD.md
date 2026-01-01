@@ -122,6 +122,51 @@ Pattern found?
 
 ---
 
+## 12. Upstream Dependencies, Signal Validity, and Downstream Effects
+
+### Execution Position
+
+**First in canonical order** — No upstream sub-hub dependencies.
+
+### Required Upstream PASS Conditions
+
+| Upstream | Condition |
+|----------|-----------|
+| Company Lifecycle (CL) | company_sov_id exists and is valid |
+| Company Lifecycle (CL) | lifecycle_state >= ACTIVE |
+
+### Signals Consumed (Origin-Bound)
+
+| Signal | Origin | Validity |
+|--------|--------|----------|
+| company_sov_id | Company Lifecycle | Run-bound to outreach_context_id |
+| lifecycle_state | Company Lifecycle | Run-bound to outreach_context_id |
+
+### Signals Emitted
+
+| Signal | Consumers | Validity |
+|--------|-----------|----------|
+| domain | DOL, People, Blog | Run-bound to outreach_context_id |
+| email_pattern | People Intelligence | Run-bound to outreach_context_id |
+| pattern_confidence | People Intelligence | Run-bound to outreach_context_id |
+| BIT_SCORE | All downstream | Run-bound to outreach_context_id |
+
+### Downstream Effects
+
+| If This Hub | Then |
+|-------------|------|
+| PASS | DOL Filings may execute |
+| FAIL | DOL, People, Blog do NOT execute |
+
+### Explicit Prohibitions
+
+- [ ] May NOT consume signals from DOL, People, or Blog
+- [ ] May NOT repair downstream failures
+- [ ] May NOT re-query CL for "fresher" data within same context
+- [ ] May NOT refresh signals from prior contexts
+
+---
+
 ## Approval
 
 | Role | Name | Date |
