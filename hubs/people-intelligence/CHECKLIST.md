@@ -44,6 +44,44 @@
 
 ---
 
+## Error Handling Compliance
+
+### When Errors Are Emitted
+
+- [ ] Phase 5 email generation failure → `PI_EMAIL_GEN_FAIL` or `PI_NO_PATTERN_AVAILABLE`
+- [ ] Phase 6 slot assignment failure → `PI_SLOT_COLLISION` or `PI_INVALID_TITLE`
+- [ ] Phase 7 enrichment failure → `PI_TIER2_EXHAUSTED` or `PI_ENRICHMENT_NO_DEFICIT`
+- [ ] Phase 8 output failure → `PI_OUTPUT_WRITE_FAIL`
+- [ ] Verification failure → `PI_VERIFICATION_FAIL` or `PI_MILLIONVERIFIER_ERROR`
+- [ ] Missing anchor → `PI_MISSING_COMPANY_ANCHOR` or `PI_MISSING_CONTEXT_ID`
+
+### Blocking Failures
+
+A failure is **blocking** if:
+- [ ] No pattern available from Company Target
+- [ ] Cannot generate valid email
+- [ ] Slot collision unresolved
+- [ ] Lifecycle gate not met (< TARGETABLE)
+- [ ] Missing company anchor or context ID
+
+### Resolution Authority
+
+| Error Type | Resolver |
+|------------|----------|
+| Pattern errors | Resolve Company Target first |
+| Slot errors | Human (choose winner) |
+| Enrichment errors | Agent (new context) or Human |
+| Verification errors | Agent (retry) or Human |
+| Output errors | Agent (retry with new context) |
+
+### Error Table
+
+- [ ] All failures written to `outreach_errors.people_intelligence_errors`
+- [ ] Error terminates execution immediately
+- [ ] Spend frozen for context on blocking error
+
+---
+
 ## Compliance Rule
 
 **If any box is unchecked, this hub may not ship.**

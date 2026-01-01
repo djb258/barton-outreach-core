@@ -171,6 +171,50 @@ Company Lifecycle (CL) parent-child doctrine.
 
 ---
 
+## 8. Error Handling Compliance
+
+### 8.1 When Errors Are Emitted
+
+| Stage | Error Codes |
+|-------|-------------|
+| Golden Rule validation | `OE_MISSING_SOV_ID`, `OE_MISSING_DOMAIN`, `OE_MISSING_PATTERN` |
+| BIT evaluation | `OE_BIT_BELOW_THRESHOLD`, `OE_BIT_ENGINE_ERROR` |
+| Contact selection | `OE_NO_CONTACTS_AVAILABLE`, `OE_COOLING_OFF_ACTIVE`, `OE_RATE_LIMIT_EXCEEDED` |
+| Campaign creation | `OE_CAMPAIGN_CREATE_FAIL`, `OE_SEQUENCE_NOT_FOUND` |
+| Send execution | `OE_SEND_FAIL`, `OE_BOUNCE_DETECTED`, `OE_SPAM_FLAGGED` |
+
+### 8.2 Blocking Failures
+
+A failure is **blocking** if:
+
+| Requirement | Status |
+|-------------|--------|
+| Golden Rule violation (missing ID/domain/pattern) | BLOCKING |
+| Lifecycle gate not met (< TARGETABLE) | BLOCKING |
+| BIT score below threshold | BLOCKING |
+| No contacts available | BLOCKING |
+| Missing context ID | BLOCKING |
+
+### 8.3 Resolution Authority
+
+| Error Type | Resolver |
+|------------|----------|
+| Golden Rule errors | Resolve upstream hub first |
+| BIT errors | Wait for BIT improvement |
+| Contact errors | Resolve People Intelligence first |
+| Send errors | Agent (retry with new context) |
+| Bounce/spam | Human (investigate sender reputation) |
+
+### 8.4 Error Table
+
+| Requirement | Status |
+|-------------|--------|
+| All failures written to `outreach_errors.outreach_execution_errors` | REQUIRED |
+| Error terminates execution immediately | REQUIRED |
+| Spend frozen for context on blocking error | REQUIRED |
+
+---
+
 ## Summary
 
 | Category | Pass | Fail | Verify |

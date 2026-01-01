@@ -69,6 +69,44 @@ No exceptions. No partial compliance.
 
 ---
 
+## Error Handling Compliance
+
+### When Errors Are Emitted
+
+- [ ] Phase 1 match failure → `CT_MATCH_*` error
+- [ ] Phase 2 domain failure → `CT_DOMAIN_*` error
+- [ ] Phase 3 pattern failure → `CT_PATTERN_*` or `CT_TIER2_EXHAUSTED`
+- [ ] Phase 4 verification failure → `CT_VERIFICATION_*` error
+- [ ] Lifecycle gate failure → `CT_LIFECYCLE_GATE_FAIL`
+- [ ] Missing identity → `CT_MISSING_SOV_ID` or `CT_MISSING_CONTEXT_ID`
+
+### Blocking Failures
+
+A failure is **blocking** if:
+- [ ] No company match found (cannot proceed without anchor)
+- [ ] Domain unresolved after all attempts
+- [ ] Pattern not found after Tier-2 exhausted
+- [ ] Lifecycle gate not met
+- [ ] Missing sovereign ID or context ID
+
+### Resolution Authority
+
+| Error Type | Resolver |
+|------------|----------|
+| Match errors | Human (investigate source) |
+| Domain errors | Agent (retry with new context) |
+| Pattern errors | Human (manual research) |
+| Lifecycle errors | Wait (automatic on state change) |
+| Provider errors | Agent (retry with new context) |
+
+### Error Table
+
+- [ ] All failures written to `outreach_errors.company_target_errors`
+- [ ] Error terminates execution immediately
+- [ ] Spend frozen for context on blocking error
+
+---
+
 ## Compliance Rule
 
 **If any box is unchecked, this hub may not ship.**

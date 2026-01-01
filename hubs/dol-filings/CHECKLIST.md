@@ -43,6 +43,47 @@
 
 ---
 
+## Error Handling Compliance
+
+### When Errors Are Emitted
+
+- [ ] CSV ingest failure → `DOL_CSV_NOT_FOUND` or `DOL_CSV_FORMAT_ERROR`
+- [ ] Parse failure → `DOL_MISSING_EIN` or `DOL_INVALID_EIN_FORMAT`
+- [ ] EIN match failure → `DOL_EIN_NO_MATCH` (expected for some)
+- [ ] Attach failure → `DOL_ATTACH_DUPLICATE` or `DOL_NEON_WRITE_FAIL`
+- [ ] Lifecycle gate failure → `DOL_LIFECYCLE_GATE_FAIL`
+
+### Blocking Failures
+
+A failure is **blocking** if:
+- [ ] CSV file not found or corrupted
+- [ ] Database write fails
+- [ ] Multiple companies match same EIN (data integrity issue)
+
+### Non-Blocking Failures
+
+These are **expected** and logged but do not block:
+- [ ] EIN not found in company_master (skip record)
+- [ ] Filing already attached (idempotent)
+- [ ] Missing non-critical field (skip record)
+
+### Resolution Authority
+
+| Error Type | Resolver |
+|------------|----------|
+| CSV errors | Human (locate/fix file) |
+| EIN no match | N/A (expected) |
+| Multiple match | Human (fix duplicate companies) |
+| Write errors | Agent (retry with new context) |
+
+### Error Table
+
+- [ ] All failures written to `outreach_errors.dol_filings_errors`
+- [ ] EIN no-match logged as `info` severity (not blocking)
+- [ ] Duplicates logged as `info` severity (idempotent)
+
+---
+
 ## Compliance Rule
 
 **If any box is unchecked, this hub may not ship.**

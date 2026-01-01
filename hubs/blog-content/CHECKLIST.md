@@ -41,6 +41,47 @@
 
 ---
 
+## Error Handling Compliance
+
+### When Errors Are Emitted
+
+- [ ] Content ingest failure → `BC_SOURCE_UNAVAILABLE` or `BC_PARSE_ERROR`
+- [ ] Company match failure → `BC_COMPANY_NOT_FOUND` (expected for some)
+- [ ] Classification failure → `BC_UNKNOWN_EVENT_TYPE`
+- [ ] Lifecycle gate failure → `BC_LIFECYCLE_GATE_FAIL`
+- [ ] Signal emission failure → `BC_SIGNAL_EMIT_FAIL`
+
+### Blocking Failures
+
+A failure is **blocking** if:
+- [ ] Content source completely unavailable
+- [ ] BIT engine error prevents signal emission
+- [ ] Critical parse error
+
+### Non-Blocking Failures
+
+These are **expected** and logged but do not block:
+- [ ] Company not found (cannot mint, just skip)
+- [ ] Unknown event type (log and skip)
+- [ ] Company not in ACTIVE lifecycle (skip signal)
+
+### Resolution Authority
+
+| Error Type | Resolver |
+|------------|----------|
+| Source errors | Agent (retry with new context) |
+| Company not found | N/A (cannot mint) |
+| Classification errors | Human (update rules) |
+| Signal errors | Agent (retry with new context) |
+
+### Error Table
+
+- [ ] All failures written to `outreach_errors.blog_content_errors`
+- [ ] Company not found logged as `info` (not blocking)
+- [ ] Unknown event type logged as `warning`
+
+---
+
 ## Compliance Rule
 
 **If any box is unchecked, this hub may not ship.**
