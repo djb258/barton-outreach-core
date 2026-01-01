@@ -1,45 +1,106 @@
 # Hub Change
 
-## Hub
+## Hub Identity
 
-- **Name:**
-- **Doctrine ID:**
+| Field | Value |
+|-------|-------|
+| **Hub Name** | |
+| **Hub ID** | |
+| **Process ID** | |
+
+---
 
 ## Change Type
 
 - [ ] New Hub
-- [ ] Tool Addition
+- [ ] Ingress Change (I layer)
+- [ ] Middle Change (M layer — logic, state, tools)
+- [ ] Egress Change (O layer)
 - [ ] Guard Rail Change
 - [ ] Kill Switch Change
-- [ ] Other
-
-## Summary
-
-_What changed and why?_
 
 ---
 
-## Checklist
+## Scope Declaration
 
-- [ ] Hub PRD updated
-- [ ] Compliance checklist satisfied
-- [ ] ADR submitted (if new tool)
+### IMO Layers Affected
+
+| Layer | Modified |
+|-------|----------|
+| I — Ingress | [ ] |
+| M — Middle | [ ] |
+| O — Egress | [ ] |
+
+### Spokes Affected
+
+| Spoke Name | Type | Direction |
+|------------|------|-----------|
+| | I | Inbound |
+| | O | Outbound |
+
+---
+
+## Summary
+
+_What changed and why? Reference the approved PRD/ADR — do not define architecture here._
+
+---
+
+## Traceability
+
+| Artifact | Reference |
+|----------|-----------|
+| PRD | |
+| Sub-PRD | |
+| ADR | |
+| Linear Issue | |
+
+---
+
+## Compliance Checklist
+
+### Structure Compliance
+- [ ] Hub PRD exists and is current
+- [ ] ADR approved (if decision required)
+- [ ] Linear issue linked
+- [ ] No cross-hub logic introduced
+- [ ] No sideways hub calls introduced
+- [ ] Spokes contain no logic, tools, or state
 - [ ] Kill switch tested
 - [ ] Rollback plan documented
-- [ ] No sideways hub calls introduced
+
+### Sovereign ID Compliance
+- [ ] Uses Company Sovereign ID only (no hub-specific company ID)
+- [ ] Company Lifecycle treated as read-only
+- [ ] Context IDs are disposable (not permanent identity)
+- [ ] No minting/reviving/mutating company existence
+
+### Lifecycle Gate Compliance
+- [ ] Minimum lifecycle state enforced before processing
+- [ ] Lifecycle state never modified by this change
+- [ ] BIT signals do not mutate lifecycle
+
+### Cost Discipline
+- [ ] All tools in approved tool_registry.md
+- [ ] Tier-2 tools: max ONE attempt per outreach_context
+- [ ] All spend logged against context + company
+- [ ] No paid tools before lifecycle allows
+- [ ] No enrichment without measured deficit
 
 ---
 
 ## Promotion Gates
 
-- [ ] G1: Tests pass
-- [ ] G2: Compliance complete
-- [ ] G3: ADR approved (if applicable)
-- [ ] G4: Kill switch verified
-- [ ] G5: Rollback tested
+| Gate | Requirement | Passed |
+|------|-------------|--------|
+| G1 | PRD approved | [ ] |
+| G2 | ADR approved (if applicable) | [ ] |
+| G3 | Linear issue assigned | [ ] |
+| G4 | Tests pass | [ ] |
+| G5 | Compliance checklist complete | [ ] |
 
 ---
 
 ## Rollback
 
-_How do we undo this if it fails?_
+_How is this change reversed if it fails?_

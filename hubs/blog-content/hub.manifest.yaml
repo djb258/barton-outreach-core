@@ -1,0 +1,73 @@
+# Blog Content Sub-Hub Manifest
+# Doctrine ID: 04.04.05
+# Status: Doctrine-Compliant
+
+hub:
+  name: blog-content
+  doctrine_id: "04.04.05"
+  type: sub-hub
+  parent: company-lifecycle-cl
+
+identity:
+  hub_id: "HUB-BLOG-001"
+  process_id: null  # Set at runtime
+
+purpose: |
+  Provide timing signals from news, funding events, and content sources.
+  BIT modulation only - cannot mint, revive, or trigger enrichment.
+
+lifecycle_gate:
+  minimum_state: ACTIVE
+  description: "Requires lifecycle >= ACTIVE"
+
+authority:
+  owns:
+    - timing_signals
+    - content_events
+  reads:
+    - company_sov_id (from Company Lifecycle)
+    - lifecycle_state (from Company Lifecycle)
+  cannot:
+    - mint_companies
+    - revive_companies
+    - trigger_enrichment
+    - mutate_lifecycle
+
+imo:
+  ingress:
+    - news_feeds
+    - funding_alerts
+    - content_webhooks
+  middle:
+    - event_processor
+    - bit_signal_emitter
+  egress:
+    - bit_signal_output
+
+signals_emitted:
+  - name: FUNDING_EVENT
+    bit_impact: +15.0
+  - name: ACQUISITION
+    bit_impact: +12.0
+  - name: LEADERSHIP_CHANGE
+    bit_impact: +8.0
+  - name: EXPANSION
+    bit_impact: +7.0
+  - name: PRODUCT_LAUNCH
+    bit_impact: +5.0
+  - name: PARTNERSHIP
+    bit_impact: +5.0
+  - name: LAYOFF
+    bit_impact: -3.0
+  - name: NEGATIVE_NEWS
+    bit_impact: -5.0
+
+constraints:
+  - "Cannot mint or revive companies"
+  - "Cannot trigger enrichment"
+  - "BIT modulation only"
+  - "Requires company_sov_id"
+  - "Lifecycle read-only"
+
+version: "1.0.0"
+last_updated: "2026-01-01"
