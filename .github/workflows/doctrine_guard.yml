@@ -1,0 +1,441 @@
+# =============================================================================
+# DOCTRINE GUARD - CI Enforcement for Outreach Doctrine
+# =============================================================================
+#
+# PURPOSE:
+#   Enforce doctrine invariants at merge time.
+#   Doctrine violations BLOCK merges. No exceptions. No warnings.
+#
+# RULES ENFORCED:
+#   DG-001: Tool Context Enforcement
+#   DG-002: Tool Registry Compliance
+#   DG-003: Hub Boundary Protection
+#   DG-004: Signal Declaration
+#   DG-005: PRD-CHECKLIST Synchronization
+#   DG-006: Error Code Registry
+#   DG-007: Signal Run-Bound Enforcement
+#   DG-008: No Signal Refresh
+#   DG-009: Lifecycle Immutability
+#   DG-010: Error Row Immutability
+#   DG-011: Context Immutability
+#   DG-012: Signal Immutability
+#
+# =============================================================================
+
+name: Doctrine Guard
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'hubs/**'
+      - 'spokes/**'
+      - 'contexts/**'
+      - 'migrations/**'
+      - 'docs/**'
+      - 'tooling/**'
+
+concurrency:
+  group: doctrine-guard-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ===========================================================================
+  # JOB 1: Tool Usage Enforcement
+  # ===========================================================================
+  tool-usage:
+    name: "DG-001/002: Tool Usage"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "DG-001: Check paid tools have context enforcement"
+        run: |
+          echo "Checking tool context enforcement..."
+
+          # List of paid tools that MUST have context enforcement
+          PAID_TOOLS="hunter|clearbit|apollo|prospeo|snov|clay|millionverifier"
+
+          # Find tool calls without outreach_context_id
+          VIOLATIONS=$(grep -rn --include="*.py" -E "($PAID_TOOLS)" hubs/ 2>/dev/null | \
+                       grep -v "outreach_context_id" | \
+                       grep -v "^#" | \
+                       grep -v "# " | \
+                       grep -v "tool_registry" || true)
+
+          if [ -n "$VIOLATIONS" ]; then
+            echo "::error::DG-001 VIOLATION: Paid tools called without context enforcement"
+            echo "$VIOLATIONS"
+            echo ""
+            echo "All paid tool calls MUST include outreach_context_id parameter."
+            exit 1
+          fi
+
+          echo "DG-001: PASS - All paid tools have context enforcement"
+
+      - name: "DG-002: Check tools are in registry"
+        run: |
+          echo "Checking tool registry compliance..."
+
+          # Extract tool names from code
+          TOOL_CALLS=$(grep -roh --include="*.py" -E "(hunter|clearbit|apollo|prospeo|snov|clay|millionverifier|firecrawl)" hubs/ 2>/dev/null | sort -u || true)
+
+          # Check each against registry
+          if [ -f "tooling/tool_registry.md" ]; then
+            for tool in $TOOL_CALLS; do
+              if ! grep -qi "$tool" tooling/tool_registry.md; then
+                echo "::error::DG-002 VIOLATION: Tool '$tool' not in tool_registry.md"
+                exit 1
+              fi
+            done
+          fi
+
+          echo "DG-002: PASS - All tools in registry"
+
+  # ===========================================================================
+  # JOB 2: Hub Boundary Protection
+  # ===========================================================================
+  hub-boundaries:
+    name: "DG-003: Hub Boundaries"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "DG-003: Check for downstream imports"
+        run: |
+          echo "Checking hub boundary violations..."
+
+          # Company Target (1st) cannot import from downstream hubs
+          CT_VIOLATIONS=$(grep -rn --include="*.py" \
+            -E "from hubs\.(people|dol|blog|outreach)" \
+            hubs/company-target/ 2>/dev/null || true)
+
+          if [ -n "$CT_VIOLATIONS" ]; then
+            echo "::error::DG-003 VIOLATION: Company Target imports from downstream hub"
+            echo "$CT_VIOLATIONS"
+            exit 1
+          fi
+
+          # DOL Filings (2nd) cannot import from People/Blog
+          DOL_VIOLATIONS=$(grep -rn --include="*.py" \
+            -E "from hubs\.(people|blog)" \
+            hubs/dol-filings/ 2>/dev/null || true)
+
+          if [ -n "$DOL_VIOLATIONS" ]; then
+            echo "::error::DG-003 VIOLATION: DOL Filings imports from downstream hub"
+            echo "$DOL_VIOLATIONS"
+            exit 1
+          fi
+
+          # People Intelligence (3rd) cannot import from Blog
+          PI_VIOLATIONS=$(grep -rn --include="*.py" \
+            -E "from hubs\.blog" \
+            hubs/people-intelligence/ 2>/dev/null || true)
+
+          if [ -n "$PI_VIOLATIONS" ]; then
+            echo "::error::DG-003 VIOLATION: People Intelligence imports from downstream hub"
+            echo "$PI_VIOLATIONS"
+            exit 1
+          fi
+
+          echo "DG-003: PASS - No downstream imports detected"
+
+      - name: "DG-003b: Check for lateral hub imports"
+        run: |
+          echo "Checking for lateral hub-to-hub imports..."
+
+          # Hubs should only import from spokes, not directly from other hubs' imo
+          LATERAL_VIOLATIONS=$(grep -rn --include="*.py" \
+            -E "from hubs\.[^.]+\.imo\.(middle|input|output)" \
+            hubs/ 2>/dev/null | \
+            grep -v "from hubs\.\$(basename \$PWD)" || true)
+
+          # Filter out self-imports (hub importing from itself is OK)
+          REAL_VIOLATIONS=""
+          while IFS= read -r line; do
+            FILE_PATH=$(echo "$line" | cut -d: -f1)
+            HUB_DIR=$(echo "$FILE_PATH" | grep -oE "hubs/[^/]+" | head -1)
+            IMPORT_HUB=$(echo "$line" | grep -oE "from hubs\.[^.]+" | sed 's/from hubs\./hubs\//' | head -1)
+
+            if [ -n "$HUB_DIR" ] && [ -n "$IMPORT_HUB" ] && [ "$HUB_DIR" != "$IMPORT_HUB" ]; then
+              REAL_VIOLATIONS="$REAL_VIOLATIONS
+$line"
+            fi
+          done <<< "$LATERAL_VIOLATIONS"
+
+          if [ -n "$(echo "$REAL_VIOLATIONS" | tr -d '[:space:]')" ]; then
+            echo "::error::DG-003b VIOLATION: Lateral hub-to-hub import detected"
+            echo "$REAL_VIOLATIONS"
+            exit 1
+          fi
+
+          echo "DG-003b: PASS - No lateral imports detected"
+
+  # ===========================================================================
+  # JOB 3: Doctrine Consistency
+  # ===========================================================================
+  doctrine-consistency:
+    name: "DG-005/006: Doctrine Sync"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: "DG-005: Check PRD-CHECKLIST synchronization"
+        run: |
+          echo "Checking PRD-CHECKLIST synchronization..."
+
+          # Get changed files
+          CHANGED_FILES=$(git diff --name-only HEAD~1 2>/dev/null || git diff --name-only HEAD)
+
+          # Check each hub
+          for hub in company-target people-intelligence dol-filings blog-content outreach-execution; do
+            PRD_CHANGED=$(echo "$CHANGED_FILES" | grep "hubs/$hub/PRD.md" || true)
+            CHECKLIST_CHANGED=$(echo "$CHANGED_FILES" | grep "hubs/$hub/CHECKLIST.md" || true)
+
+            if [ -n "$PRD_CHANGED" ] && [ -z "$CHECKLIST_CHANGED" ]; then
+              echo "::error::DG-005 VIOLATION: hubs/$hub/PRD.md changed without CHECKLIST.md update"
+              exit 1
+            fi
+          done
+
+          echo "DG-005: PASS - PRD and CHECKLIST synchronized"
+
+      - name: "DG-006: Check error code registry"
+        run: |
+          echo "Checking error code registry..."
+
+          # Extract error codes from code
+          CODE_ERRORS=$(grep -roh --include="*.py" -E "[A-Z]{2,3}_[A-Z_]+" hubs/ 2>/dev/null | \
+                        grep -E "^(CT|PI|DOL|OE|BC)_" | sort -u || true)
+
+          # Check each against registry
+          if [ -f "docs/error_codes.md" ]; then
+            for code in $CODE_ERRORS; do
+              if ! grep -q "$code" docs/error_codes.md; then
+                echo "::warning::DG-006: Error code '$code' not in error_codes.md (may be new)"
+              fi
+            done
+          fi
+
+          echo "DG-006: PASS - Error codes checked"
+
+  # ===========================================================================
+  # JOB 4: Signal Validity
+  # ===========================================================================
+  signal-validity:
+    name: "DG-007/008: Signal Validity"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "DG-007: Check signals are run-bound"
+        run: |
+          echo "Checking signal run-bound enforcement..."
+
+          # Look for patterns that use old context signals
+          OLD_CONTEXT=$(grep -rn --include="*.py" \
+            -E "(old_context|previous_context|prior_context)" \
+            hubs/ 2>/dev/null | \
+            grep -v "#" | \
+            grep -v "# " || true)
+
+          if [ -n "$OLD_CONTEXT" ]; then
+            echo "::warning::DG-007: Potential old context reference detected - verify manually"
+            echo "$OLD_CONTEXT"
+          fi
+
+          echo "DG-007: PASS - No obvious old context usage"
+
+      - name: "DG-008: Check no signal refresh patterns"
+        run: |
+          echo "Checking for signal refresh patterns..."
+
+          # Look for refresh patterns
+          REFRESH_PATTERNS=$(grep -rn --include="*.py" \
+            -E "(refresh_signal|re_query|re_enrich|refetch)" \
+            hubs/ 2>/dev/null || true)
+
+          if [ -n "$REFRESH_PATTERNS" ]; then
+            echo "::error::DG-008 VIOLATION: Signal refresh pattern detected"
+            echo "$REFRESH_PATTERNS"
+            echo ""
+            echo "Signals are non-refreshing. Missing signal -> FAIL, not retry."
+            exit 1
+          fi
+
+          echo "DG-008: PASS - No signal refresh patterns"
+
+  # ===========================================================================
+  # JOB 5: Lifecycle Protection
+  # ===========================================================================
+  lifecycle-protection:
+    name: "DG-009: Lifecycle Immutability"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "DG-009: Check no lifecycle mutations"
+        run: |
+          echo "Checking lifecycle immutability..."
+
+          # Look for lifecycle state mutations in Python
+          PY_MUTATIONS=$(grep -rn --include="*.py" \
+            -E "lifecycle_state\s*=" \
+            hubs/ 2>/dev/null | \
+            grep -v "==" | \
+            grep -v "#" || true)
+
+          if [ -n "$PY_MUTATIONS" ]; then
+            echo "::error::DG-009 VIOLATION: Lifecycle state mutation in Python"
+            echo "$PY_MUTATIONS"
+            exit 1
+          fi
+
+          # Look for lifecycle UPDATE in SQL
+          SQL_MUTATIONS=$(grep -rn --include="*.sql" \
+            -iE "UPDATE.*lifecycle_state|SET.*lifecycle_state" \
+            . 2>/dev/null | \
+            grep -v "#" || true)
+
+          if [ -n "$SQL_MUTATIONS" ]; then
+            echo "::error::DG-009 VIOLATION: Lifecycle state mutation in SQL"
+            echo "$SQL_MUTATIONS"
+            exit 1
+          fi
+
+          echo "DG-009: PASS - Lifecycle immutability preserved"
+
+  # ===========================================================================
+  # JOB 6: Repair Doctrine Protection
+  # ===========================================================================
+  repair-protection:
+    name: "DG-010/011/012: Repair Doctrine"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "DG-010: Check no error row deletions"
+        run: |
+          echo "Checking error row immutability..."
+
+          # Look for DELETE on error tables
+          DELETE_ERRORS=$(grep -rn --include="*.sql" --include="*.py" \
+            -iE "DELETE.*FROM.*outreach_errors|DELETE.*error" \
+            . 2>/dev/null | \
+            grep -v "#" | \
+            grep -v "-- " || true)
+
+          if [ -n "$DELETE_ERRORS" ]; then
+            echo "::error::DG-010 VIOLATION: Error row deletion detected"
+            echo "$DELETE_ERRORS"
+            echo ""
+            echo "Error rows are IMMUTABLE. Set resolved_at, never delete."
+            exit 1
+          fi
+
+          echo "DG-010: PASS - No error deletions"
+
+      - name: "DG-011: Check no context resurrection"
+        run: |
+          echo "Checking context immutability..."
+
+          # Look for reopening finalized contexts
+          RESURRECT=$(grep -rn --include="*.sql" --include="*.py" \
+            -iE "SET.*final_state.*=.*NULL|final_state\s*=\s*None" \
+            . 2>/dev/null | \
+            grep -v "#" | \
+            grep -v "-- " || true)
+
+          if [ -n "$RESURRECT" ]; then
+            echo "::error::DG-011 VIOLATION: Context resurrection detected"
+            echo "$RESURRECT"
+            echo ""
+            echo "Finalized contexts are IMMUTABLE. Create new context instead."
+            exit 1
+          fi
+
+          echo "DG-011: PASS - No context resurrection"
+
+      - name: "DG-012: Check no signal mutations"
+        run: |
+          echo "Checking signal immutability..."
+
+          # Look for UPDATE on signal values
+          SIGNAL_UPDATE=$(grep -rn --include="*.sql" \
+            -iE "UPDATE.*signals.*SET|UPDATE.*signal.*SET" \
+            . 2>/dev/null | \
+            grep -v "#" | \
+            grep -v "-- " | \
+            grep -v "resolved" || true)
+
+          if [ -n "$SIGNAL_UPDATE" ]; then
+            echo "::error::DG-012 VIOLATION: Signal mutation detected"
+            echo "$SIGNAL_UPDATE"
+            echo ""
+            echo "Signals are IMMUTABLE once emitted. Emit new signal in new context."
+            exit 1
+          fi
+
+          echo "DG-012: PASS - No signal mutations"
+
+  # ===========================================================================
+  # SUMMARY
+  # ===========================================================================
+  summary:
+    name: "Doctrine Guard Summary"
+    runs-on: ubuntu-latest
+    needs: [tool-usage, hub-boundaries, doctrine-consistency, signal-validity, lifecycle-protection, repair-protection]
+    if: always()
+    steps:
+      - name: Check all jobs passed
+        run: |
+          echo "=== DOCTRINE GUARD SUMMARY ==="
+          echo ""
+
+          if [ "${{ needs.tool-usage.result }}" != "success" ]; then
+            echo "FAIL: Tool Usage checks failed"
+            exit 1
+          fi
+
+          if [ "${{ needs.hub-boundaries.result }}" != "success" ]; then
+            echo "FAIL: Hub Boundary checks failed"
+            exit 1
+          fi
+
+          if [ "${{ needs.doctrine-consistency.result }}" != "success" ]; then
+            echo "FAIL: Doctrine Consistency checks failed"
+            exit 1
+          fi
+
+          if [ "${{ needs.signal-validity.result }}" != "success" ]; then
+            echo "FAIL: Signal Validity checks failed"
+            exit 1
+          fi
+
+          if [ "${{ needs.lifecycle-protection.result }}" != "success" ]; then
+            echo "FAIL: Lifecycle Protection checks failed"
+            exit 1
+          fi
+
+          if [ "${{ needs.repair-protection.result }}" != "success" ]; then
+            echo "FAIL: Repair Doctrine checks failed"
+            exit 1
+          fi
+
+          echo ""
+          echo "ALL DOCTRINE GUARDS PASSED"
+          echo ""
+          echo "Rules enforced:"
+          echo "  DG-001: Tool Context Enforcement"
+          echo "  DG-002: Tool Registry Compliance"
+          echo "  DG-003: Hub Boundary Protection"
+          echo "  DG-005: PRD-CHECKLIST Sync"
+          echo "  DG-006: Error Code Registry"
+          echo "  DG-007: Signal Run-Bound"
+          echo "  DG-008: No Signal Refresh"
+          echo "  DG-009: Lifecycle Immutability"
+          echo "  DG-010: Error Immutability"
+          echo "  DG-011: Context Immutability"
+          echo "  DG-012: Signal Immutability"

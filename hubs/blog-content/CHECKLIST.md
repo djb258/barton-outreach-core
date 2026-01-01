@@ -158,6 +158,60 @@ This hub operates independently with no cross-hub dependencies.
 
 ---
 
+## 10. Repair Doctrine Compliance
+
+### History Immutability
+
+- [ ] Error rows are never deleted (only `resolved_at` set)
+- [ ] Signals once emitted are never modified
+- [ ] Prior contexts are never edited or reopened
+- [ ] Cost logs are never adjusted retroactively
+
+### Repair Scope
+
+- [ ] This hub repairs only BC_* errors
+- [ ] Does NOT repair CT_*, PI_*, DOL_*, OE_* errors
+- [ ] Repairs unblock, they do not rewrite
+
+### Context Lineage
+
+- [ ] All retries create new `outreach_context_id`
+- [ ] New contexts do NOT inherit signals from prior contexts
+- [ ] Prior context remains for audit (never deleted)
+
+---
+
+## 11. CI Doctrine Compliance
+
+### Tool Usage (DG-001, DG-002)
+
+- [ ] No paid tools in this hub (signal processing only)
+- [ ] All tools listed in `tooling/tool_registry.md`
+
+### Hub Boundaries (DG-003)
+
+- [ ] Last in order — no downstream hubs to import from
+- [ ] No lateral hub-to-hub imports (only spoke imports)
+
+### Doctrine Sync (DG-005, DG-006)
+
+- [ ] PRD changes accompanied by CHECKLIST changes
+- [ ] Error codes registered in `docs/error_codes.md`
+
+### Signal Validity (DG-007, DG-008)
+
+- [ ] No old/prior context signal usage
+- [ ] No signal refresh patterns
+
+### Immutability (DG-009, DG-010, DG-011, DG-012)
+
+- [ ] No lifecycle state mutations
+- [ ] No error row deletions
+- [ ] No context resurrection
+- [ ] No signal mutations
+
+---
+
 ## Compliance Rule
 
 **If any box is unchecked, this hub may not ship.**
