@@ -147,22 +147,72 @@ Check operational sections:
 
 ---
 
-#### 🔴 Spoke 3: Compliance Monitor (Regulatory Events)
+#### 🔴 Company Target: Identity Resolution
 
 | Document | Barton ID | Description | Status |
 |----------|-----------|-------------|--------|
-| **Compliance-Doctrine.md** (to be created) | `01.04.02.04.22000.001` | DOL violations, OSHA citations, EEOC complaints | 📅 Planned |
+| **[COMPANY_TARGET_IDENTITY.md](./ple/COMPANY_TARGET_IDENTITY.md)** | `01.04.02.04.21000.001` | Identity resolution with EIN fuzzy matching | ✅ Active |
 
-**Planned Contents**:
-- Compliance data sources (DOL website, feeds)
-- Event classification (violation types)
-- BIT event creation (dol_violation)
-- Pain point scoring
-- Regulatory monitoring
+**SCOPE**:
+- EIN fuzzy matching (ONLY place fuzzy logic is allowed)
+- EIN_NOT_RESOLVED failure → ENRICHMENT routing
+- Execution gate for DOL Subhub
+- Company identity validation
 
-**When Available**: Q2 2026 (target)
+**CANONICAL RULE**:
+- ✅ Fuzzy logic allowed ONLY in Company Target
+- ❌ DOL Subhub must NEVER see fuzzy logic
+- ❌ Analytics views must NEVER see fuzzy logic
 
-**Related Schema**: `schemas/compliance-schema.sql` (to be created)
+**Related Code**: [`ctb/sys/company-target/identity_validator.js`](../ctb/sys/company-target/identity_validator.js)
+
+---
+
+#### 🔴 Spoke 3: DOL EIN Resolution (EIN Linkage ONLY)
+
+| Document | Barton ID | Description | Status |
+|----------|-----------|-------------|--------|
+| **[DOL_EIN_RESOLUTION.md](./ple/DOL_EIN_RESOLUTION.md)** | `01.04.02.04.22000.001` | EIN ↔ company_unique_id linkage (ISOLATED) | ✅ Active |
+
+**SCOPE (Refactored 2025-01-01)**:
+- EIN resolution from DOL/EBSA filings (Form 5500)
+- Identity gate validation (FAIL HARD)
+- Append-only storage (no updates, no overwrites)
+- AIR event logging for all operations
+
+**EXECUTION GATE (CRITICAL)**:
+- DOL requires: `ein IS NOT NULL` AND `company_target_status = PASS`
+- If EIN not resolved → blocked until ENRICHMENT completes
+
+**EXPLICIT NON-GOALS (REMOVED)**:
+- ❌ NO buyer intent scoring
+- ❌ NO BIT event creation
+- ❌ NO OSHA/EEOC tracking
+- ❌ NO Slack/Salesforce/Grafana integration
+- ❌ NO outreach triggers
+- ❌ NO fuzzy matching (Company Target only)
+
+**Related Schema**: [`schemas/dol_ein_linkage-schema.sql`](./schemas/dol_ein_linkage-schema.sql)
+
+---
+
+#### 📊 Form 5500 Projection Layer (Read-Only Analytics)
+
+| Document | Barton ID | Description | Status |
+|----------|-----------|-------------|--------|
+| **[5500_PROJECTION_LAYER.md](./ple/5500_PROJECTION_LAYER.md)** | `01.04.02.04.22100.001` | Read-only views for renewal month + insurance facts | ✅ Active |
+
+**SCOPE (READ-ONLY VIEWS ONLY)**:
+- `analytics.v_5500_renewal_month` — Renewal month extraction with confidence flags
+- `analytics.v_5500_insurance_facts` — Schedule A / EZ facts on demand
+- No writes, no scoring, no behavior
+
+**EXPLICIT NON-GOALS**:
+- ❌ Does NOT modify DOL Subhub
+- ❌ Does NOT trigger campaigns
+- ❌ Does NOT add scoring
+
+**Related Migration**: `ctb/data/infra/migrations/011_5500_projection_views.sql`
 
 ---
 
@@ -217,8 +267,8 @@ Check operational sections:
 |--------|-------------|----------|--------|
 | **bit-schema.sql** | BIT scoring engine (rules, events, scores) | [View](./schemas/bit-schema.sql) | ✅ Production |
 | **talent_flow-schema.sql** | Talent Flow spoke (movements, audit) | [View](./schemas/talent_flow-schema.sql) | ✅ Production |
+| **dol_ein_linkage-schema.sql** | DOL EIN Resolution spoke (EIN linkage ONLY) | [View](./schemas/dol_ein_linkage-schema.sql) | ✅ Production |
 | **renewal-schema.sql** | Renewal Intelligence spoke | (to be created) | 📅 Planned |
-| **compliance-schema.sql** | Compliance Monitor spoke | (to be created) | 📅 Planned |
 
 ### Schema Deployment
 

@@ -42,7 +42,6 @@ Traditional B2B lead generation suffers from three critical failures:
 2. **Signal Fragmentation**: Valuable buying signals are scattered across systems
    - LinkedIn profile changes (Talent Flow)
    - Contract renewal dates (Renewal Intelligence)
-   - DOL violations (Compliance Monitor)
    - Result: No single system connects the dots
 
 3. **Manual Qualification**: Sales reps waste 60% of time on unqualified leads
@@ -219,21 +218,29 @@ See: `/doctrine/diagrams/PLE-Hub-Spoke-Axle.mmd` (Mermaid diagram)
 
 ---
 
-##### Spoke 3: Compliance Monitor (Planned)
-**Doctrine**: `/doctrine/ple/Compliance-Doctrine.md` (to be created)
-**Schema**: `/doctrine/schemas/compliance-schema.sql` (to be created)
+##### Spoke 3: DOL EIN Resolution (Active)
+**Doctrine**: `/doctrine/ple/DOL_EIN_RESOLUTION.md`
+**Schema**: `/doctrine/schemas/dol_ein_linkage-schema.sql`
 **Barton ID**: `01.04.02.04.22000`
 
-**Function**: Monitor DOL violations, regulatory events, compliance failures
+**Function**: Link EIN numbers to sovereign company identities using DOL/EBSA filings
 
-**Events Generated**:
-- DOL violation detected → 30 BIT points
-- OSHA citation → 25 BIT points
-- EEOC complaint → 20 BIT points
+**EXPLICIT SCOPE (EIN Resolution ONLY)**:
+- EIN ↔ company_unique_id linkage
+- Source verification (Form 5500, EBSA filings)
+- Identity gate validation (FAIL HARD)
+- Append-only storage (no updates, no overwrites)
 
-**Data Sources**: DOL website, compliance databases, news feeds
+**EXPLICIT NON-GOALS (REMOVED)**:
+- ❌ NO buyer intent scoring
+- ❌ NO BIT event creation
+- ❌ NO OSHA/EEOC tracking
+- ❌ NO Slack/Salesforce/Grafana integration
+- ❌ NO outreach triggers
 
-**Key Metric**: Coverage = 100% of target companies
+**Data Sources**: DOL EFAST2, EBSA filings
+
+**Key Metric**: EIN linkage accuracy = 100% (FAIL HARD on ambiguity)
 
 ---
 
@@ -330,7 +337,7 @@ Cap: MAX(Total Intent Score, 100)
 | **Hub** | Company Slot | `04.04.02.04.10000` | - | Job slot tracking | ✅ Active |
 | **Spoke 1** | Talent Flow | `01.04.02.04.20000` | 20,000 ft | Movement detection | ✅ Active |
 | **Spoke 2** | Renewal Intelligence | `01.04.02.04.21000` | 20,000 ft | Contract tracking | 📅 Planned |
-| **Spoke 3** | Compliance Monitor | `01.04.02.04.22000` | 20,000 ft | Regulatory events | 📅 Planned |
+| **Spoke 3** | DOL EIN Resolution | `01.04.02.04.22000` | 20,000 ft | EIN linkage (ISOLATED) | ✅ Active |
 | **Spoke 4** | Tech Stack Tracker | `01.04.02.04.23000` | 20,000 ft | Infrastructure changes | 🔮 Future |
 | **Spoke 5** | Funding Rounds | `01.04.02.04.24000` | 20,000 ft | Investment events | 🔮 Future |
 | **Axle** | BIT (Buyer Intent Tool) | `01.04.03.04.10000` | 10,000 ft | Intent scoring | ✅ Active |
@@ -382,17 +389,21 @@ Cap: MAX(Total Intent Score, 100)
 └────────────────────────────────────────────────────────────────┘
                             │
         ┌───────────────────┼───────────────────┐
-        ▼                   ▼                   ▼
-  Talent Flow          Renewal              Compliance
-  - Executive hire     - 90d renewal        - DOL violation
-  - VP departure       - Contract expiry    - OSHA citation
+        ▼                   ▼                   │
+  Talent Flow          Renewal                  │
+  - Executive hire     - 90d renewal            │
+  - VP departure       - Contract expiry        │
+                                                │
+                                          (DOL EIN spoke
+                                           is ISOLATED -
+                                           no BIT events)
                             │
                             ▼
 ┌────────────────────────────────────────────────────────────────┐
 │  STAGE 2: Event Logging (Hub)                                  │
 │  - talent_flow.movements                                       │
 │  - renewal.contract_windows (planned)                          │
-│  - compliance.violations (planned)                             │
+│  NOTE: DOL EIN spoke is ISOLATED (no event logging to BIT)     │
 └────────────────────────────────────────────────────────────────┘
                             │
                             ▼
@@ -401,7 +412,7 @@ Cap: MAX(Total Intent Score, 100)
 │  Triggers create bit.events records:                           │
 │  - executive_movement (40 pts, 365d decay)                     │
 │  - renewal_window_90d (45 pts, 90d decay)                      │
-│  - dol_violation (30 pts, 180d decay)                          │
+│  NOTE: DOL spoke does NOT create BIT events (EIN only)         │
 └────────────────────────────────────────────────────────────────┘
                             │
                             ▼

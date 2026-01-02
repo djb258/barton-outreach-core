@@ -27,6 +27,7 @@ graph TB
     classDef spokeStyle fill:#DC143C,stroke:#8B0000,stroke-width:2px,color:#fff
     classDef rimStyle fill:#20B2AA,stroke:#008B8B,stroke-width:2px,color:#fff
     classDef futureStyle fill:#999,stroke:#666,stroke-width:1px,color:#fff,stroke-dasharray: 5 5
+    classDef isolatedStyle fill:#8B4513,stroke:#654321,stroke-width:3px,color:#fff,stroke-dasharray: 3 3
 
     %% ═══════════════════════════════════════════════════════════════════
     %% LAYER 1: WHEEL RIM (Outreach Layer) - TEAL
@@ -51,7 +52,7 @@ graph TB
 
     SPOKE2["📍 SPOKE 2: Renewal Intelligence<br/>────────────<br/>Contract Tracking<br/>120d / 90d / 60d / 30d Windows<br/>Expiration Alerts<br/>────────────<br/>ID: 01.04.02.04.21000<br/>Status: 📅 Planned"]:::futureStyle
 
-    SPOKE3["📍 SPOKE 3: Compliance Monitor<br/>────────────<br/>DOL Violations<br/>OSHA Citations<br/>EEOC Complaints<br/>────────────<br/>ID: 01.04.02.04.22000<br/>Status: 📅 Planned"]:::futureStyle
+    SPOKE3["📍 SPOKE 3: DOL EIN Resolution<br/>────────────<br/>EIN Linkage ONLY<br/>NO BIT Events<br/>NO Outreach Triggers<br/>────────────<br/>ID: 01.04.02.04.22000<br/>Status: ✅ ISOLATED"]:::isolatedStyle
 
     SPOKE4["📍 SPOKE 4: Tech Stack<br/>────────────<br/>Infrastructure Changes<br/>HR Software Adoption<br/>Cloud Migrations<br/>────────────<br/>ID: 01.04.02.04.23000<br/>Status: 🔮 Future"]:::futureStyle
 
@@ -112,12 +113,13 @@ graph TB
     %% Spokes → Hub (Event Logging)
     SPOKE1 -->|"talent_flow.movements<br/>hire/departure/promotion"| HUB
     SPOKE2 -.->|"renewal.contract_windows<br/>120d/90d/60d/30d"| HUB
-    SPOKE3 -.->|"compliance.violations<br/>DOL/OSHA/EEOC"| HUB
+    SPOKE3 -.->|"dol.ein_linkage<br/>EIN ONLY (ISOLATED)"| HUB
 
     %% Hub → Axle (BIT Event Creation)
     SPOKE1 -->|"Trigger:<br/>create_bit_event_from_movement()"| EVENTS
     SPOKE2 -.->|"Trigger:<br/>create_bit_event_from_renewal()"| EVENTS
-    SPOKE3 -.->|"Trigger:<br/>create_bit_event_from_violation()"| EVENTS
+    %% SPOKE3 ISOLATED - NO BIT CONNECTION
+    %% SPOKE3 -.->|"REMOVED: No BIT events"| EVENTS
 
     %% Axle Internal Flow
     RULES -->|"Weight + Decay rules"| EVENTS

@@ -382,3 +382,158 @@ ORDER BY signal_count DESC;
 -- 4. Monitor BIT scores and enrichment ROI
 --
 -- ═══════════════════════════════════════════════════════════
+
+-- ═══════════════════════════════════════════════════════════
+-- 11. TALENT FLOW SPOKE VERIFICATION
+-- ═══════════════════════════════════════════════════════════
+-- Purpose: Verify Talent Flow spoke integration with BIT axle
+-- Run after: 2025-11-10-talent-flow.sql migration
+-- ═══════════════════════════════════════════════════════════
+
+-- Verify svg_marketing schema exists
+SELECT schema_name
+FROM information_schema.schemata
+WHERE schema_name = 'svg_marketing';
+-- Expected: 1 row (svg_marketing)
+
+-- Verify talent_flow_movements table created
+SELECT table_schema, table_name
+FROM information_schema.tables
+WHERE table_schema = 'svg_marketing'
+  AND table_name = 'talent_flow_movements';
+-- Expected: 1 row
+
+-- Verify vw_talent_flow_summary view created
+SELECT table_schema, table_name
+FROM information_schema.views
+WHERE table_schema = 'svg_marketing'
+  AND table_name = 'vw_talent_flow_summary';
+-- Expected: 1 row
+
+-- Verify talent_flow_movements indexes (should have 9)
+SELECT indexname, indexdef
+FROM pg_indexes
+WHERE schemaname = 'svg_marketing' AND tablename = 'talent_flow_movements'
+ORDER BY indexname;
+-- Expected: 9 rows
+
+-- Verify fn_insert_bit_event() function exists
+SELECT
+    routine_schema,
+    routine_name,
+    routine_type
+FROM information_schema.routines
+WHERE routine_schema = 'svg_marketing'
+  AND routine_name = 'fn_insert_bit_event';
+-- Expected: 1 row
+
+-- Verify trg_talent_flow_to_bit trigger exists
+SELECT
+    trigger_name,
+    event_manipulation,
+    event_object_table
+FROM information_schema.triggers
+WHERE event_object_schema = 'svg_marketing'
+  AND event_object_table = 'talent_flow_movements'
+  AND trigger_name = 'trg_talent_flow_to_bit';
+-- Expected: 1 row
+
+-- Verify Talent Flow BIT rules seeded (should have 6 new rules)
+SELECT
+    rule_id,
+    rule_name,
+    category,
+    weight,
+    is_active
+FROM bit.rule_reference
+WHERE category = 'executive'
+   OR rule_name IN ('vp_hire', 'executive_backfill')
+ORDER BY weight DESC;
+-- Expected: 6 rows
+
+-- Verify Barton audit log entry
+SELECT
+    audit_id,
+    event_type,
+    entity_type,
+    description,
+    created_at
+FROM shq.audit_log
+WHERE audit_id = '04.01.02.04.20000.001';
+-- Expected: 1 row
+
+-- Test: Insert Executive Movement and Verify BIT Event Creation
+INSERT INTO marketing.company_master (
+    company_unique_id, company_name, website_url, industry, employee_count, source_system
+)
+VALUES (
+    '04.04.01.01.00002.001', 'TechCorp Innovations', 'https://techcorp.example.com', 'Technology', 1000, 'test'
+)
+ON CONFLICT (company_unique_id) DO NOTHING;
+
+INSERT INTO marketing.people_master (
+    unique_id, full_name, email, linkedin_url, title, company_unique_id
+)
+VALUES (
+    '04.04.02.04.20001.001', 'Jane Smith', 'jane.smith@techcorp.example.com', 
+    'https://linkedin.com/in/janesmith', 'Chief Financial Officer', '04.04.01.01.00002.001'
+)
+ON CONFLICT (unique_id) DO NOTHING;
+
+INSERT INTO svg_marketing.talent_flow_movements (
+    company_unique_id, person_unique_id, movement_type, position_title, position_level,
+    department, previous_company, movement_date, detection_source, confidence_score,
+    verification_status, source_url
+)
+VALUES (
+    '04.04.01.01.00002.001', '04.04.02.04.20001.001', 'hire', 'Chief Financial Officer',
+    'C-suite', 'Finance', 'Global Finance Corp', CURRENT_DATE - INTERVAL '7 days',
+    'linkedin_enrichment', 0.95, 'verified', 'https://linkedin.com/in/janesmith'
+);
+
+-- Verify BIT event auto-created
+SELECT e.event_id, r.rule_name, e.weight, e.detection_source
+FROM bit.events e
+JOIN bit.rule_reference r ON e.rule_id = r.rule_id
+WHERE e.company_unique_id = '04.04.01.01.00002.001'
+  AND e.detection_source = 'talent_flow_spoke'
+ORDER BY e.detected_at DESC;
+-- Expected: 1 row with rule_name = 'executive_movement', weight = 25
+
+-- Test vw_talent_flow_summary view
+SELECT company_name, total_movements, hire_count, csuite_movements, 
+       bit_events_created, bit_creation_rate_pct
+FROM svg_marketing.vw_talent_flow_summary
+WHERE company_unique_id = '04.04.01.01.00002.001';
+-- Expected: 1 row with total_movements = 1, bit_creation_rate_pct = 100.0
+
+
+-- ═══════════════════════════════════════════════════════════
+-- 12. SLOTWATCH MODULE VERIFICATION
+-- ═══════════════════════════════════════════════════════════
+
+-- Verify slot_tracker table
+SELECT table_name FROM information_schema.tables
+WHERE table_schema = 'svg_marketing' AND table_name = 'slot_tracker';
+
+-- Verify indexes (9 expected)
+SELECT COUNT(*) FROM pg_indexes
+WHERE schemaname = 'svg_marketing' AND tablename = 'slot_tracker';
+
+-- Verify BIT rules
+SELECT rule_name, weight FROM bit.rule_reference
+WHERE rule_name IN ('ceo_slot_filled', 'cfo_slot_filled', 'hr_slot_filled');
+
+-- TEST: Fill slot and verify BIT event
+INSERT INTO svg_marketing.slot_tracker (company_id, role, status)
+VALUES ('04.04.01.01.00003.001', 'CFO', 'vacant')
+ON CONFLICT DO NOTHING;
+
+UPDATE svg_marketing.slot_tracker
+SET status = 'filled', contact_id = '04.04.02.04.20001.010', filled_at = NOW()
+WHERE company_id = '04.04.01.01.00003.001' AND role = 'CFO';
+
+-- Verify marketing_triggered = true
+SELECT marketing_triggered FROM svg_marketing.slot_tracker
+WHERE company_id = '04.04.01.01.00003.001' AND role = 'CFO';
+

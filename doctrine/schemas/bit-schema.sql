@@ -477,16 +477,18 @@ VALUES
     true
   ),
 
-  -- Compliance Events (Rule ID: 106)
-  (
-    '01.04.03.04.10000.106',
-    'dol_violation',
-    'dol_violation',
-    30,
-    180,
-    'Department of Labor violation detected. Compliance pain point creates buying urgency.',
-    true
-  ),
+  -- REMOVED: dol_violation rule (Rule ID: 106)
+  -- DOL Subhub refactored to EIN Resolution ONLY (2025-01-01)
+  -- DOL no longer creates BIT events per doctrine
+  -- (
+  --   '01.04.03.04.10000.106',
+  --   'dol_violation',
+  --   'dol_violation',
+  --   30,
+  --   180,
+  --   'DEPRECATED: DOL Subhub is now EIN Resolution only - no buyer intent scoring',
+  --   false
+  -- ),
 
   -- Growth Signals (Rule IDs: 107-108)
   (
