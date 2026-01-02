@@ -1,9 +1,10 @@
 # Barton Outreach Core - Complete System ERD
 ## Hub-and-Spoke Architecture with All Tables and Pipelines
 
-**Version:** 2.1.0
-**Last Updated:** 2025-12-18
+**Version:** 3.0.0
+**Last Updated:** 2025-01-02
 **Architecture:** Bicycle Wheel Doctrine v1.1
+**DOL Subhub:** EIN Resolution + Violation Discovery
 
 ---
 
@@ -22,10 +23,21 @@
     +-------+-------+           +-------+-------+           +---------------+
             |                           |
             v                           v
-    +---------------+           +---------------+
-    | Email Verify  |           | EIN Matcher   |
-    |  (Sub-wheel)  |           | (Sub-wheel)   |
-    +---------------+           +---------------+
+    +---------------+           +---------------------------+
+    | Email Verify  |           |      DOL SUBHUB           |
+    |  (Sub-wheel)  |           | ┌───────────────────────┐ |
+    +---------------+           | │ EIN Resolution Spoke  │ |
+            |                   | │ • ein_linkage table   │ |
+            |                   | │ • Filing discovery    │ |
+            |                   | │ • Hash verification   │ |
+            |                   | └───────────────────────┘ |
+            |                   | ┌───────────────────────┐ |
+            |                   | │ Violation Discovery   │ |
+            |                   | │ • violations table    │ |
+            |                   | │ • OSHA, EBSA, WHD     │ |
+            |                   | │ • Outreach views      │ |
+            |                   | └───────────────────────┘ |
+            |                   +---------------------------+
             |                           |
             +---------------------------+
                            |
@@ -47,6 +59,57 @@
             |        (Spoke #6)         |
             |       [PLANNED]           |
             +---------------------------+
+```
+
+---
+
+## DOL Subhub Data Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          DOL SUBHUB DATA FLOW                                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Company Target (PASS, EIN resolved)
+        │
+        ▼
+┌───────────────────────────────────────┐
+│         DOL SUBHUB                     │
+│                                        │
+│  ┌──────────────────────────────────┐ │
+│  │ 1. EIN Resolution                │ │
+│  │    • Fuzzy filing discovery      │ │
+│  │    • Deterministic EIN check     │ │
+│  │    • Hash verification           │ │
+│  │            ↓                     │ │
+│  │    → dol.ein_linkage             │ │
+│  └──────────────────────────────────┘ │
+│                                        │
+│  ┌──────────────────────────────────┐ │
+│  │ 2. Violation Discovery           │ │
+│  │    • Pull from OSHA, EBSA, WHD   │ │
+│  │    • Match to ein_linkage        │ │
+│  │    • Store facts                 │ │
+│  │            ↓                     │ │
+│  │    → dol.violations              │ │
+│  └──────────────────────────────────┘ │
+│                                        │
+└───────────────────────────────────────┘
+        │
+        ▼
+┌───────────────────────────────────────┐
+│         OUTREACH VIEWS                 │
+│  • v_companies_with_violations         │
+│  • v_violation_summary                 │
+│  • v_recent_violations                 │
+│  • v_5500_renewal_month                │
+└───────────────────────────────────────┘
+        │
+        ▼
+┌───────────────────────────────────────┐
+│     DOWNSTREAM OUTREACH               │
+│  (Reads facts, triggers campaigns)    │
+└───────────────────────────────────────┘
 ```
 
 ---
@@ -266,11 +329,17 @@ The **absolute central anchor** - all data gravitates here.
 
 ### 3. DOL NODE - Spoke #2 (dol schema)
 
+The DOL Subhub handles **EIN Resolution** and **Violation Discovery** (facts only).
+
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                            DOL NODE TABLES                                   │
 │                        (2.4M+ rows total)                                    │
 ├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ════════════════════════════════════════════════════════════════════════   │
+│  █ DOL FILING TABLES (Source Data)                                          │
+│  ════════════════════════════════════════════════════════════════════════   │
 │                                                                             │
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
 │  │ form_5500 (230,009 rows) - LARGE RETIREMENT PLANS                   │   │
@@ -309,13 +378,231 @@ The **absolute central anchor** - all data gravitates here.
 │  │ commission_amount      NUMERIC        Broker commission             │   │
 │  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
+│  ════════════════════════════════════════════════════════════════════════   │
+│  █ EIN RESOLUTION TABLES (Company → EIN Linkage)                            │
+│  ════════════════════════════════════════════════════════════════════════   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ dol.ein_linkage (APPEND-ONLY) - EIN ↔ COMPANY LINKAGE               │   │
+│  ├─────────────────────────────────────────────────────────────────────┤   │
+│  │ linkage_id             VARCHAR(50)  PK  Barton ID: 01.04.02.04.22XXX│   │
+│  │ company_unique_id      VARCHAR(50)  FK  → company_master (IMMUTABLE)│   │
+│  │ ein                    VARCHAR(10)  REQ EIN format: XX-XXXXXXX      │   │
+│  │ source                 VARCHAR(50)  REQ DOL_FORM_5500, DOL_5500_EZ  │   │
+│  │ source_url             TEXT         REQ URL to source filing        │   │
+│  │ filing_year            INTEGER      REQ Year of filing (2015-2025)  │   │
+│  │ hash_fingerprint       VARCHAR(64)  REQ SHA-256 for verification    │   │
+│  │ outreach_context_id    VARCHAR(100)     Context from Company Target │   │
+│  │ created_at             TIMESTAMPTZ      Record creation timestamp   │   │
+│  │                                                                     │   │
+│  │ CONSTRAINTS:                                                        │   │
+│  │ • ein ~ '^\d{2}-\d{7}$' (EIN format)                               │   │
+│  │ • filing_year BETWEEN 2015 AND 2025                                │   │
+│  │ • TRIGGER: Prevents UPDATE/DELETE (append-only)                    │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ════════════════════════════════════════════════════════════════════════   │
+│  █ VIOLATION TABLES (DOL Violator Facts)                                    │
+│  ════════════════════════════════════════════════════════════════════════   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ dol.violations (APPEND-ONLY) - DOL VIOLATION FACTS                  │   │
+│  ├─────────────────────────────────────────────────────────────────────┤   │
+│  │ violation_id           VARCHAR(50)  PK  Barton ID: 01.04.02.04.5XXX │   │
+│  │ ein                    VARCHAR(10)  REQ Links to ein_linkage        │   │
+│  │ company_unique_id      VARCHAR(50)      From ein_linkage join       │   │
+│  │ source_agency          VARCHAR(20)  REQ OSHA|EBSA|WHD|OFCCP|MSHA    │   │
+│  │ case_number            VARCHAR(50)      Agency case number          │   │
+│  │ violation_type         VARCHAR(100) REQ Type of violation           │   │
+│  │ violation_date         DATE             When violation occurred     │   │
+│  │ discovery_date         DATE         REQ When we discovered it       │   │
+│  │ site_name              VARCHAR(255)     Site/establishment name     │   │
+│  │ site_address           TEXT             Site address                │   │
+│  │ site_city              VARCHAR(100)     City                        │   │
+│  │ site_state             VARCHAR(2)       State                       │   │
+│  │ site_zip               VARCHAR(10)      ZIP code                    │   │
+│  │ severity               VARCHAR(20)      WILLFUL|SERIOUS|OTHER|REPEAT│   │
+│  │ penalty_initial        DECIMAL(12,2)    Initial penalty amount      │   │
+│  │ penalty_current        DECIMAL(12,2)    Current penalty amount      │   │
+│  │ penalty_paid           DECIMAL(12,2)    Amount paid                 │   │
+│  │ status                 VARCHAR(30)  REQ OPEN|CONTESTED|SETTLED|PAID │   │
+│  │ citation_id            VARCHAR(100)     Citation identifier         │   │
+│  │ citation_url           TEXT             URL to citation             │   │
+│  │ violation_description  TEXT             Raw description from DOL    │   │
+│  │ source_url             TEXT         REQ Source URL                  │   │
+│  │ source_record_id       VARCHAR(100)     Source record identifier    │   │
+│  │ hash_fingerprint       VARCHAR(64)  REQ SHA-256 for deduplication   │   │
+│  │ outreach_context_id    VARCHAR(100)     Context ID                  │   │
+│  │ created_at             TIMESTAMPTZ      Record creation             │   │
+│  │                                                                     │   │
+│  │ CONSTRAINTS:                                                        │   │
+│  │ • source_agency IN (OSHA, EBSA, WHD, OFCCP, MSHA, OTHER)           │   │
+│  │ • status IN (OPEN, CONTESTED, SETTLED, PAID, ABATED, DELETED)      │   │
+│  │ • UNIQUE INDEX on (ein, source_agency, case_number)                │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ dol.violation_categories (REFERENCE) - VIOLATION TYPES              │   │
+│  ├─────────────────────────────────────────────────────────────────────┤   │
+│  │ category_code          VARCHAR(20)  PK  e.g., OSHA_WILLFUL          │   │
+│  │ category_name          VARCHAR(100) REQ Human-readable name         │   │
+│  │ agency                 VARCHAR(20)  REQ OSHA|EBSA|WHD|OFCCP         │   │
+│  │ description            TEXT             Category description        │   │
+│  │ outreach_relevant      BOOLEAN          Use for outreach targeting? │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ════════════════════════════════════════════════════════════════════════   │
+│  █ VIEWS (Read-Only Projections)                                            │
+│  ════════════════════════════════════════════════════════════════════════   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ dol.v_companies_with_violations (VIEW) - OUTREACH TARGETING         │   │
+│  ├─────────────────────────────────────────────────────────────────────┤   │
+│  │ company_unique_id, ein, violation_id, source_agency, violation_type,│   │
+│  │ violation_date, discovery_date, severity, penalty_initial,          │   │
+│  │ penalty_current, status, site_state, citation_url,                  │   │
+│  │ violation_description, ein_source, ein_filing_year                  │   │
+│  │                                                                     │   │
+│  │ PURPOSE: Companies with open/contested violations for outreach      │   │
+│  │ JOINS: ein_linkage → violations (WHERE status IN OPEN, CONTESTED)   │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ dol.v_violation_summary (VIEW) - AGGREGATE STATS                    │   │
+│  ├─────────────────────────────────────────────────────────────────────┤   │
+│  │ company_unique_id, ein, total_violations, open_violations,          │   │
+│  │ agencies_with_violations, total_initial_penalties,                  │   │
+│  │ total_current_penalties, earliest_violation, latest_violation,      │   │
+│  │ last_discovery_date, violation_agencies[], severity_levels[]        │   │
+│  │                                                                     │   │
+│  │ PURPOSE: Aggregate violation stats by company                       │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ dol.v_recent_violations (VIEW) - LAST 90 DAYS                       │   │
+│  ├─────────────────────────────────────────────────────────────────────┤   │
+│  │ (All violation columns) + company_unique_id, days_since_discovery   │   │
+│  │                                                                     │   │
+│  │ PURPOSE: Recent violations to prioritize for outreach               │   │
+│  │ FILTER: discovery_date >= NOW() - 90 days                           │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ════════════════════════════════════════════════════════════════════════   │
+│  █ ANALYTICS VIEWS (5500 Projections)                                       │
+│  ════════════════════════════════════════════════════════════════════════   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ analytics.v_5500_renewal_month (VIEW) - RENEWAL MONTH SIGNALS       │   │
+│  ├─────────────────────────────────────────────────────────────────────┤   │
+│  │ company_unique_id, ein, filing_year, source_form, coverage_end_date,│   │
+│  │ renewal_month (1-12), confidence (DECLARED|INFERRED|AMBIGUOUS),     │   │
+│  │ source_record_id, created_at                                        │   │
+│  │                                                                     │   │
+│  │ PURPOSE: Project renewal month from 5500 filings                    │   │
+│  │ NOTE: renewal_month is NOT contractual renewal date                 │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ analytics.v_5500_insurance_facts (VIEW) - SCHEDULE A/EZ FACTS       │   │
+│  ├─────────────────────────────────────────────────────────────────────┤   │
+│  │ company_unique_id, ein, filing_year, source_form, insurer_name,     │   │
+│  │ insurer_ein, policy_number, coverage_start_date, coverage_end_date, │   │
+│  │ funding_type, commissions, source_record_id                         │   │
+│  │                                                                     │   │
+│  │ PURPOSE: Insurance contract facts from Schedule A/EZ                │   │
+│  │ NOTE: No transformations, no scoring, raw filed facts               │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
 │  ── Link to Company Hub via EIN ──                                         │
 │  company_master.ein = form_5500.sponsor_dfe_ein                            │
+│  ein_linkage.company_unique_id = company_master.company_unique_id          │
+│  violations.ein = ein_linkage.ein                                          │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 4. INTAKE/QUARANTINE (intake schema)
+### 4. SHQ NODE - Error & Operations (shq schema)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            SHQ NODE TABLES                                   │
+│                        (Operations & Triage)                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ shq.error_master - CANONICAL ERROR TABLE                            │   │
+│  ├─────────────────────────────────────────────────────────────────────┤   │
+│  │ error_id               UUID         PK   Auto-generated             │   │
+│  │ process_id             VARCHAR(50)  REQ  Barton process ID          │   │
+│  │ agent_name             VARCHAR(50)  REQ  DOL_EIN_SUBHUB, COMPANY_   │   │
+│  │ severity               VARCHAR(20)  REQ  HARD_FAIL (always)         │   │
+│  │ source_system          VARCHAR(50)  REQ  Source system name         │   │
+│  │ message                TEXT         REQ  Error message              │   │
+│  │ stack_trace            TEXT             Full stack/context          │   │
+│  │ error_type             VARCHAR(50)      Error code enum             │   │
+│  │ hdo_snapshot           JSONB            Payload at time of error    │   │
+│  │ context                JSONB            Additional context          │   │
+│  │ occurred_at            TIMESTAMPTZ REQ  When error occurred         │   │
+│  │ unique_id              VARCHAR(50)      Related unique ID           │   │
+│  │ escalation_level       INTEGER          0, 1, 2, 3                  │   │
+│  │ occurrence_count       INTEGER          Number of times occurred    │   │
+│  │ first_occurred_at      TIMESTAMPTZ      First occurrence            │   │
+│  │ resolved               BOOLEAN          Is it resolved?             │   │
+│  │ resolution_notes       TEXT             How it was resolved         │   │
+│  │ resolved_by            VARCHAR(100)     Who resolved it             │   │
+│  │ resolved_at            TIMESTAMPTZ      When resolved               │   │
+│  │ resolution_method      VARCHAR(50)      manual, auto, enrichment    │   │
+│  │ escalated_at           TIMESTAMPTZ      When escalated              │   │
+│  │ escalation_reason      TEXT             Why escalated               │   │
+│  │ created_at             TIMESTAMPTZ      Record creation             │   │
+│  │                                                                     │   │
+│  │ ERROR CODES (DOL Subhub):                                           │   │
+│  │ • IDENTITY_GATE_FAILED - Missing identity anchors                  │   │
+│  │ • MULTI_EIN_FOUND - Multiple EINs in filings                       │   │
+│  │ • EIN_MISMATCH - EIN doesn't match across filings                  │   │
+│  │ • FILING_TTL_EXCEEDED - Filing too old                             │   │
+│  │ • SOURCE_UNAVAILABLE - DOL source offline                          │   │
+│  │ • CROSS_CONTEXT_CONTAMINATION - Context bleeding                   │   │
+│  │ • EIN_FORMAT_INVALID - Bad EIN format                              │   │
+│  │ • HASH_VERIFICATION_FAILED - Document tampering                    │   │
+│  │ • COMPANY_TARGET_NOT_PASS - Upstream not ready                     │   │
+│  │ • DOL_FILING_NOT_CONFIRMED - Fuzzy found but deterministic failed  │   │
+│  │ • EIN_NOT_RESOLVED - Company Target couldn't resolve EIN           │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ dol.air_log - AIR EVENT LOG (Truth/Audit)                           │   │
+│  ├─────────────────────────────────────────────────────────────────────┤   │
+│  │ event_id               UUID         PK   Auto-generated             │   │
+│  │ event_type             VARCHAR(50)  REQ  Event type enum            │   │
+│  │ event_status           VARCHAR(20)  REQ  SUCCESS, FAIL, INFO        │   │
+│  │ event_message          TEXT         REQ  Human-readable message     │   │
+│  │ event_payload          JSONB            Detailed payload            │   │
+│  │ company_unique_id      VARCHAR(50)      Related company             │   │
+│  │ outreach_context_id    VARCHAR(100)     Context ID                  │   │
+│  │ created_at             TIMESTAMPTZ      Event timestamp             │   │
+│  │                                                                     │   │
+│  │ AUDIT INVARIANT:                                                    │   │
+│  │ Every FAIL HARD writes to BOTH air_log AND shq.error_master        │   │
+│  │ air_log = authoritative truth                                       │   │
+│  │ error_master = operations/triage                                    │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ analytics.v_company_target_ein_enrichment_queue (VIEW)              │   │
+│  ├─────────────────────────────────────────────────────────────────────┤   │
+│  │ error_id, process_id, agent_name, severity, error_type, message,    │   │
+│  │ occurred_at, company_details, handoff_target, remediation_required, │   │
+│  │ fuzzy_candidates, fuzzy_method, threshold_used                      │   │
+│  │                                                                     │   │
+│  │ PURPOSE: Queue for EIN_NOT_RESOLVED errors needing enrichment       │   │
+│  │ FILTER: process_id = Company Target, error_type = EIN_NOT_RESOLVED  │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 5. INTAKE/QUARANTINE (intake schema)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -456,15 +743,25 @@ The **absolute central anchor** - all data gravitates here.
 
 ```mermaid
 erDiagram
+    %% Company Hub Relationships
     COMPANY_MASTER ||--o{ COMPANY_SLOT : "has"
     COMPANY_MASTER ||--o{ COMPANY_EVENTS : "has"
     COMPANY_MASTER ||--o{ PEOPLE_MASTER : "employs"
-    COMPANY_MASTER ||--o| DOL_FORM_5500 : "EIN links to"
-
+    COMPANY_MASTER ||--o{ DOL_EIN_LINKAGE : "has EIN"
+    
+    %% DOL Subhub Relationships
+    DOL_EIN_LINKAGE ||--o{ DOL_VIOLATIONS : "has violations"
+    DOL_EIN_LINKAGE ||--o{ DOL_FORM_5500 : "links to filings"
+    DOL_EIN_LINKAGE ||--o{ DOL_SCHEDULE_A : "has insurance"
+    
+    %% People Spoke Relationships
     COMPANY_SLOT ||--o| PEOPLE_MASTER : "filled by"
-
     PEOPLE_MASTER ||--o| PERSON_SCORES : "has"
     PEOPLE_MASTER ||--o{ PERSON_MOVEMENT : "has history"
+    
+    %% Error/Audit Relationships
+    COMPANY_MASTER ||--o{ SHQ_ERROR_MASTER : "may have errors"
+    DOL_EIN_LINKAGE ||--o{ DOL_AIR_LOG : "audit trail"
 
     COMPANY_MASTER {
         text company_unique_id PK
@@ -516,6 +813,33 @@ erDiagram
         timestamp detected_at
     }
 
+    DOL_EIN_LINKAGE {
+        varchar linkage_id PK
+        varchar company_unique_id FK
+        varchar ein
+        varchar source
+        text source_url
+        integer filing_year
+        varchar hash_fingerprint
+        timestamp created_at
+    }
+
+    DOL_VIOLATIONS {
+        varchar violation_id PK
+        varchar ein FK
+        varchar company_unique_id FK
+        varchar source_agency
+        varchar case_number
+        varchar violation_type
+        date violation_date
+        varchar severity
+        decimal penalty_initial
+        decimal penalty_current
+        varchar status
+        text violation_description
+        varchar hash_fingerprint
+    }
+
     DOL_FORM_5500 {
         text ack_id PK
         varchar ein
@@ -523,6 +847,36 @@ erDiagram
         integer participant_count
         numeric total_assets
         date plan_year_end
+    }
+
+    DOL_SCHEDULE_A {
+        text ack_id PK
+        text insurance_company
+        integer covered_lives
+        numeric premium_amount
+        numeric commission
+    }
+
+    DOL_AIR_LOG {
+        uuid event_id PK
+        varchar event_type
+        varchar event_status
+        text event_message
+        jsonb event_payload
+        varchar company_unique_id FK
+        timestamp created_at
+    }
+
+    SHQ_ERROR_MASTER {
+        uuid error_id PK
+        varchar process_id
+        varchar agent_name
+        varchar severity
+        varchar error_type
+        text message
+        jsonb hdo_snapshot
+        boolean resolved
+        timestamp occurred_at
     }
 
     COMPANY_EVENTS {
@@ -538,24 +892,75 @@ erDiagram
 
 ## Complete Table Summary
 
+### Core Hub Tables
+
 | Schema | Table | Rows | Purpose | Key Relationships |
 |--------|-------|------|---------|-------------------|
 | **marketing** | company_master | 453 | **MASTER HUB** | PK: company_unique_id |
 | **marketing** | company_slot | 1,359 | Slot assignments | FK: company_unique_id, person_unique_id |
 | **marketing** | company_events | 0 | News/blog signals | FK: company_unique_id |
 | **marketing** | pipeline_events | 2,185 | Audit trail | FK: company_id, person_id |
+
+### People Spoke Tables
+
+| Schema | Table | Rows | Purpose | Key Relationships |
+|--------|-------|------|---------|-------------------|
 | **people** | people_master | 170 | People records | FK: company_unique_id, company_slot_unique_id |
 | **people** | person_scores | 0 | BIT scores | FK: person_unique_id |
 | **people** | person_movement_history | 0 | Job changes | FK: person_unique_id, company_from_id, company_to_id |
 | **people** | people_resolution_queue | 1,206 | Manual review | FK: various |
-| **dol** | form_5500 | 230,009 | Large plans | Join: ein → company_master.ein |
-| **dol** | form_5500_sf | 759,569 | Small plans | Join: ein → company_master.ein |
-| **dol** | schedule_a | 336,817 | Insurance info | Join: ack_id → form_5500.ack_id |
+
+### DOL Subhub Tables (EIN Resolution + Violations)
+
+| Schema | Table | Rows | Purpose | Key Relationships |
+|--------|-------|------|---------|-------------------|
+| **dol** | form_5500 | 230,009 | Large plans (source) | Join: ein → ein_linkage.ein |
+| **dol** | form_5500_sf | 759,569 | Small plans (source) | Join: ein → ein_linkage.ein |
+| **dol** | schedule_a | 336,817 | Insurance info (source) | Join: ack_id → form_5500.ack_id |
+| **dol** | ein_linkage | NEW | **EIN ↔ Company Linkage** | FK: company_unique_id → company_master |
+| **dol** | violations | NEW | **DOL Violation Facts** | FK: ein → ein_linkage.ein |
+| **dol** | violation_categories | NEW | Violation type reference | - |
+| **dol** | air_log | NEW | Audit trail (truth) | FK: company_unique_id |
+
+### DOL Subhub Views
+
+| Schema | View | Purpose | Key Joins |
+|--------|------|---------|-----------|
+| **dol** | v_companies_with_violations | Outreach targeting | ein_linkage → violations |
+| **dol** | v_violation_summary | Aggregate stats | ein_linkage → violations (grouped) |
+| **dol** | v_recent_violations | Last 90 days | violations → ein_linkage |
+| **analytics** | v_5500_renewal_month | Renewal month signals | ein_linkage → form_5500 |
+| **analytics** | v_5500_insurance_facts | Schedule A/EZ facts | ein_linkage → schedule_a |
+| **analytics** | v_company_target_ein_enrichment_queue | Enrichment queue | shq.error_master filtered |
+
+### Operations & Error Tables
+
+| Schema | Table | Rows | Purpose | Key Relationships |
+|--------|-------|------|---------|-------------------|
+| **shq** | error_master | NEW | **Canonical error table** | process_id, company_unique_id |
+
+### Intake/Quarantine Tables
+
+| Schema | Table | Rows | Purpose | Key Relationships |
+|--------|-------|------|---------|-------------------|
 | **intake** | quarantine | 114 | Invalid records | - |
 | **intake** | company_raw_intake | 563 | Raw imports | Pipeline input |
 | **intake** | people_raw_intake | 0 | Raw imports | Pipeline input |
 
-**Total: 31 tables, 2.4M+ rows across 5 schemas**
+---
+
+**Total: 35+ tables/views, 2.4M+ rows across 6 schemas**
+
+### Schema Summary
+
+| Schema | Purpose | Key Tables |
+|--------|---------|------------|
+| `marketing` | Company Hub | company_master, company_slot |
+| `people` | People Spoke | people_master, person_scores |
+| `dol` | DOL Subhub | ein_linkage, violations, form_5500 |
+| `analytics` | Projection Views | v_5500_renewal_month, v_5500_insurance_facts |
+| `shq` | Operations | error_master |
+| `intake` | Raw Data | quarantine, company_raw_intake |
 
 ---
 
