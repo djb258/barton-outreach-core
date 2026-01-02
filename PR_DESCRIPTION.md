@@ -1,74 +1,116 @@
-# Pull Request: DOL EIN Refactor + Fuzzy Filing Discovery
+# PR: DOL Subhub — Violation Discovery (Fact Storage)
 
 ## Summary
 
-Complete refactor of the DOL Subhub to EIN Resolution Only, with the addition of fuzzy filing discovery for Form 5500 matching.
+Adds violation discovery capability to the DOL Subhub. This enables:
+1. Pull violator data from DOL sources (OSHA, EBSA, WHD, OFCCP)
+2. Match violations to existing EIN linkages
+3. Store violation facts for downstream outreach
+
+**This is FACT STORAGE ONLY — no scoring, no outreach triggers in DOL.**
+
+---
 
 ## Changes
 
 ### New Files
 
-| File | Description |
-|------|-------------|
-| `ctb/sys/dol-ein/findCandidateFilings.js` | Fuzzy filing discovery + deterministic validation |
-| `ctb/sys/company-target/identity_validator.js` | Company Target EIN resolution with ENRICHMENT routing |
-| `ctb/data/infra/migrations/011_5500_projection_views.sql` | 5500 renewal month + insurance facts views |
-| `ctb/data/infra/migrations/012_company_target_ein_error_routing.sql` | Error routing indexes |
-| `doctrine/ple/COMPANY_TARGET_IDENTITY.md` | Company Target identity doctrine |
-| `doctrine/ple/5500_PROJECTION_LAYER.md` | 5500 projection layer doctrine |
-| `ctb/docs/prd/PRD-DOL-EIN-FUZZY-FILING-DISCOVERY.md` | Product requirements |
-| `ctb/docs/adr/ADR-DOL-FUZZY-BOUNDARY.md` | Architecture decision record |
-| `ctb/docs/obsidian-vault/architecture/DOL-EIN-Fuzzy-Discovery.md` | Obsidian documentation |
+| File | Purpose |
+|------|---------|
+| `ctb/sys/dol-ein/findViolations.js` | Violation discovery + EIN matching |
+| `doctrine/schemas/dol_violations-schema.sql` | Violations table + views |
+| `ctb/docs/tasks/hub_tasks.md` | Task checklist |
 
-### Modified Files
+### Updated Files
 
 | File | Changes |
 |------|---------|
-| `ctb/sys/dol-ein/ein_validator.js` | Added `DOL_FILING_NOT_CONFIRMED`, `validateEINResolutionGate`, `failHardFilingNotConfirmed` |
-| `doctrine/ple/DOL_EIN_RESOLUTION.md` | Added Section 9: Fuzzy Matching Boundary |
-| `doctrine/README.md` | Updated index with Company Target + DOL execution gate |
-| `ctb/docs/tasks/hub_tasks.md` | Updated task completion status |
-| `ctb/docs/obsidian-vault/README.md` | Updated structure |
+| `doctrine/ple/DOL_EIN_RESOLUTION.md` | Added Section 12: Violation Discovery |
+| `ctb/docs/prd/PRD-DOL-EIN-FUZZY-FILING-DISCOVERY.md` | Added Part 2: Violation Discovery requirements |
+| `ctb/docs/adr/ADR-DOL-FUZZY-BOUNDARY.md` | Added Part 2: Violation architecture decision |
 
-## Execution Flow
+---
+
+## Violation Architecture
 
 ```
-Company Target (PASS, EIN locked)
+DOL Sources (OSHA, EBSA, WHD, OFCCP)
         ↓
-DOL Subhub
-  ├─ fuzzy → candidate filings
-  ├─ deterministic validation
-        ├─ PASS → append-only write
-        └─ FAIL → DOL_FILING_NOT_CONFIRMED
+findViolations.js
+  ├─ normalizeViolation() → Standard schema
+  ├─ matchViolationToEIN() → Link to ein_linkage
+  │
+  └─ Result
+        ├─ MATCHED → INSERT dol.violations
+        │     ↓
+        │   dol.v_companies_with_violations
+        │     ↓
+        │   Downstream Outreach (reads facts)
+        │
+        └─ UNMATCHED → Log for enrichment
 ```
 
-## Error Codes Added
+---
 
-| Code | Layer | Trigger |
-|------|-------|---------|
-| `EIN_NOT_RESOLVED` | Company Target | Fuzzy EIN resolution failed |
-| `DOL_FILING_NOT_CONFIRMED` | DOL | Deterministic validation rejected all candidates |
+## Views for Outreach Targeting
 
-## Doctrine Compliance
+| View | What It Shows |
+|------|---------------|
+| `dol.v_companies_with_violations` | Companies with **open/contested** violations |
+| `dol.v_violation_summary` | Aggregate stats (total, penalties, severity) |
+| `dol.v_recent_violations` | Last 90 days — prioritize for outreach |
 
-- [x] DOL Subhub is EIN Resolution ONLY
-- [x] Fuzzy matching for filing discovery only (not EIN resolution)
-- [x] Deterministic EIN validation before any write
-- [x] All failures dual-write to AIR + `shq.error_master`
-- [x] No fuzzy logic in analytics views
-- [x] No changes to Company Target execution boundary
+---
+
+## Source Agencies Supported
+
+| Agency | Description | Data Source |
+|--------|-------------|-------------|
+| OSHA | Workplace safety violations | enforcedata.dol.gov |
+| EBSA | Benefits plan violations (ERISA) | dol.gov/agencies/ebsa |
+| WHD | Wage and hour violations (FLSA, FMLA) | dol.gov/agencies/whd |
+| OFCCP | Federal contractor compliance | dol.gov/agencies/ofccp |
+| MSHA | Mine safety violations | msha.gov |
+
+---
+
+## Boundary Enforcement
+
+### DOL Subhub DOES
+- ✅ Discover violations from DOL sources
+- ✅ Match violations to existing EIN
+- ✅ Store violations as facts
+- ✅ Provide views for downstream
+
+### DOL Subhub DOES NOT
+- ❌ Score violations
+- ❌ Trigger outreach
+- ❌ Create EIN linkages from violations
+- ❌ Modify violation records
+
+---
 
 ## Testing Checklist
 
-- [ ] Deploy schema migrations to Neon
-- [ ] Test identity gate validation
-- [ ] Test fuzzy filing discovery with sample data
-- [ ] Verify deterministic validation rejects mismatched EINs
-- [ ] Confirm error routing to `shq.error_master`
-- [ ] Verify AIR logging
+- [x] Violation normalization handles all source agencies
+- [x] EIN matching links to existing ein_linkage records
+- [x] Invalid EINs are filtered out
+- [x] Batch processing returns correct stats
+- [x] Views created in schema
+- [ ] Schema deployed to Neon PostgreSQL
+- [ ] DOL source integrations connected
+
+---
 
 ## Related Documents
 
-- PRD: `ctb/docs/prd/PRD-DOL-EIN-FUZZY-FILING-DISCOVERY.md`
-- ADR: `ctb/docs/adr/ADR-DOL-FUZZY-BOUNDARY.md`
-- Doctrine: `doctrine/ple/DOL_EIN_RESOLUTION.md`
+- [DOL_EIN_RESOLUTION.md](doctrine/ple/DOL_EIN_RESOLUTION.md) - Core doctrine
+- [PRD](barton-outreach-core/ctb/docs/prd/PRD-DOL-EIN-FUZZY-FILING-DISCOVERY.md) - Requirements
+- [ADR](barton-outreach-core/ctb/docs/adr/ADR-DOL-FUZZY-BOUNDARY.md) - Architecture decisions
+- [Schema](doctrine/schemas/dol_violations-schema.sql) - Violations table
+
+---
+
+## Commits
+
+1. `feat: Add DOL Violation Discovery (Fact Storage)`

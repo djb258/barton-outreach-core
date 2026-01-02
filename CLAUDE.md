@@ -403,6 +403,30 @@ DOCTRINE_VERSION=04
 
 ---
 
-**Last Updated**: 2025-12-26
+**Last Updated**: 2026-01-02
 **Architecture**: CL Parent-Child Doctrine v1.0
-**Status**: Doctrine-Compliant
+**Status**: REMEDIATION IN PROGRESS
+
+---
+
+## AUDIT STATUS
+
+> **CERTIFICATION: FAIL** (as of 2025-12-26 audit)
+> See `OUTREACH_REPO_REAUDIT_CERTIFICATION.md` for full details.
+
+| Severity | Count | Status |
+|----------|-------|--------|
+| CRITICAL | 12 | P0 - Immediate |
+| HIGH | 13 | P1 - Short-term |
+| MEDIUM | 5 | P2 - Medium-term |
+
+### Priority Remediation Items
+
+| Priority | Issue | Action Required |
+|----------|-------|-----------------|
+| P0-1 | DV-016: funnel.* schema empty | Create tables OR remove references |
+| P0-2 | DV-003,008,009,025: Broken imports | Fix Python import paths |
+| P0-3 | DV-011,012,013: Fuzzy matching | Remove OR move to CL repo |
+| P1-1 | DV-002,004-007: AXLE terminology | Replace with "Sub-Hub" |
+| P1-2 | DV-017: Missing FK constraint | Add FK to cl.company_identity |
+| P1-3 | DV-027-030: CI guard gaps | Fix pattern matching in workflows |

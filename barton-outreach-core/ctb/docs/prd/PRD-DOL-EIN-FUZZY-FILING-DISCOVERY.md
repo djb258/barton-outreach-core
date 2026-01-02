@@ -1,8 +1,8 @@
-# PRD: DOL EIN Fuzzy Filing Discovery
+# PRD: DOL Subhub — Filing Discovery & Violation Tracking
 ## Product Requirements Document
 
 **Document ID**: `PRD-DOL-2025-001`
-**Version**: 1.0.0
+**Version**: 2.0.0
 **Date**: 2025-01-02
 **Status**: Approved
 **Owner**: Barton Outreach Team
@@ -11,7 +11,12 @@
 
 ## Executive Summary
 
-This PRD defines the requirements for implementing fuzzy filing discovery within the DOL Subhub. The feature enables the DOL EIN Resolution Spoke to locate candidate Form 5500 filings using fuzzy matching against sponsor names, while maintaining strict deterministic validation before any data writes.
+This PRD defines the requirements for the DOL Subhub capabilities:
+
+1. **Fuzzy Filing Discovery** — Locate Form 5500 filings using approximate string matching
+2. **Violation Discovery** — Pull DOL violator data (OSHA, EBSA, WHD) and match to EIN
+
+Both features store **facts only** — downstream systems handle outreach and scoring.
 
 ---
 
@@ -126,13 +131,91 @@ DOL Subhub
 
 ---
 
+## Part 2: Violation Discovery
+
+### Problem Statement
+
+DOL agencies (OSHA, EBSA, WHD) publish violation data for employers. Companies with violations are prime targets for outreach about remediation services. The DOL Subhub needs to:
+
+1. Pull violator data from DOL sources
+2. Match violations to existing EIN linkages
+3. Store violation facts for downstream outreach
+
+### Goals
+
+1. Enable violation discovery from multiple DOL agencies
+2. Match violations to companies via resolved EIN
+3. Store violations as append-only facts
+4. Provide views for outreach targeting
+
+### Non-Goals
+
+1. ❌ Scoring violations (downstream handles)
+2. ❌ Triggering outreach (downstream handles)
+3. ❌ Creating new EIN linkages from violations
+
+### Functional Requirements
+
+#### FR-4: Violation Discovery
+| ID | Requirement | Priority |
+|----|-------------|----------|
+| FR-4.1 | System SHALL pull violations from OSHA, EBSA, WHD, OFCCP | P0 |
+| FR-4.2 | System SHALL normalize violations to standard schema | P0 |
+| FR-4.3 | System SHALL match violations to EIN via `dol.ein_linkage` | P0 |
+| FR-4.4 | System SHALL store violations in append-only table | P0 |
+| FR-4.5 | System SHALL NOT create EIN linkages from violations | P0 |
+
+#### FR-5: Violation Views
+| ID | Requirement | Priority |
+|----|-------------|----------|
+| FR-5.1 | System SHALL provide `v_companies_with_violations` view | P0 |
+| FR-5.2 | System SHALL provide `v_violation_summary` view | P0 |
+| FR-5.3 | System SHALL provide `v_recent_violations` view (90 days) | P0 |
+
+### Violation Architecture
+
+```
+DOL Sources (OSHA, EBSA, WHD, OFCCP)
+        ↓
+findViolations.js
+  ├─ normalizeViolation() → Standard schema
+  ├─ matchViolationToEIN() → Link to ein_linkage
+  │
+  └─ Result
+        ├─ MATCHED → INSERT dol.violations
+        └─ UNMATCHED → Log for enrichment
+        
+Downstream Outreach
+        ↓
+READ from dol.v_companies_with_violations
+        ↓
+Message about remediation services
+```
+
+### Violation Files
+
+| File | Purpose |
+|------|---------|
+| `ctb/sys/dol-ein/findViolations.js` | Violation discovery + EIN matching |
+| `doctrine/schemas/dol_violations-schema.sql` | Violations table + views |
+
+---
+
 ## Success Metrics
 
+### Filing Discovery
 | Metric | Target | Measurement |
 |--------|--------|-------------|
 | Filing discovery rate | > 85% | Filings found / companies with EIN |
 | False positive rate | < 1% | Rejected by deterministic / found by fuzzy |
 | Error visibility | 100% | All failures in `shq.error_master` |
+
+### Violation Discovery
+| Metric | Target | Measurement |
+|--------|--------|-------------|
+| Violation match rate | > 70% | Violations matched to EIN / total violations |
+| Agency coverage | 4+ | OSHA, EBSA, WHD, OFCCP minimum |
+| Outreach view freshness | < 24h | Time from DOL publish to view availability |
 
 ---
 
@@ -141,9 +224,11 @@ DOL Subhub
 | Milestone | Date | Status |
 |-----------|------|--------|
 | PRD Approval | 2025-01-02 | ✅ Complete |
-| Implementation | 2025-01-02 | ✅ Complete |
+| Fuzzy Filing Implementation | 2025-01-02 | ✅ Complete |
+| Violation Discovery Implementation | 2025-01-02 | ✅ Complete |
 | Documentation | 2025-01-02 | ✅ Complete |
-| Deployment | TBD | Pending |
+| Schema Deployment | TBD | Pending |
+| DOL Source Integration | TBD | Pending |
 
 ---
 
