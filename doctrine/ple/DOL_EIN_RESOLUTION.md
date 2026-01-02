@@ -678,10 +678,121 @@ SELECT * FROM dol.air_log WHERE air_log_id = '01.04.02.04.22000.902';
 
 ---
 
+## Section 12: DOL Violation Discovery (Fact Storage)
+
+### Purpose
+
+The DOL Subhub includes violation discovery capability to:
+1. **Pull violator data** from DOL sources (OSHA, EBSA, WHD, OFCCP)
+2. **Match violations to EIN** using existing EIN linkages
+3. **Store violation facts** for downstream outreach systems
+
+**This is FACT STORAGE ONLY — no scoring, no outreach triggers in DOL.**
+
+### Architecture
+
+```
+DOL Violation Sources
+        ↓
+[OSHA, EBSA, WHD, OFCCP]
+        ↓
+DOL Violation Discovery
+        ↓
+Match to EIN Linkage
+        ↓
+        ├─ MATCHED → Store in dol.violations
+        │              ↓
+        │           Downstream systems READ facts
+        │           for outreach about remediation
+        │
+        └─ UNMATCHED → Log for enrichment
+                       (violation has no EIN linkage)
+```
+
+### Source Agencies (LOCKED ENUM)
+
+| Agency | Description | Data Source |
+|--------|-------------|-------------|
+| `OSHA` | Occupational Safety & Health | enforcedata.dol.gov |
+| `EBSA` | Employee Benefits Security | dol.gov/agencies/ebsa |
+| `WHD` | Wage and Hour Division | dol.gov/agencies/whd |
+| `OFCCP` | Federal Contract Compliance | dol.gov/agencies/ofccp |
+| `MSHA` | Mine Safety & Health | msha.gov |
+
+### Violation Matching Rules
+
+| Rule | Requirement |
+|------|-------------|
+| EIN Required | Violation must have valid EIN (XX-XXXXXXX) |
+| Match to Linkage | EIN must exist in `dol.ein_linkage` |
+| No New EINs | Violations do NOT create EIN linkages |
+| Append-Only | Violations are facts, not mutable |
+
+### Data Model
+
+**Table: `dol.violations`** (Append-Only)
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `violation_id` | VARCHAR(50) | Barton ID: `01.04.02.04.22000.5#####` |
+| `ein` | VARCHAR(10) | EIN (must exist in ein_linkage) |
+| `company_unique_id` | VARCHAR(50) | Linked company ID |
+| `source_agency` | VARCHAR(20) | OSHA, EBSA, WHD, etc. |
+| `case_number` | VARCHAR(50) | Agency case number |
+| `violation_type` | VARCHAR(100) | Type of violation |
+| `severity` | VARCHAR(20) | WILLFUL, SERIOUS, etc. |
+| `penalty_initial` | DECIMAL | Initial penalty amount |
+| `penalty_current` | DECIMAL | Current penalty amount |
+| `status` | VARCHAR(30) | OPEN, CONTESTED, SETTLED, etc. |
+| `site_state` | VARCHAR(2) | Location state |
+| `violation_description` | TEXT | Description from DOL |
+| `source_url` | TEXT | Source citation URL |
+| `hash_fingerprint` | VARCHAR(64) | SHA-256 for deduplication |
+| `created_at` | TIMESTAMPTZ | Discovery timestamp |
+
+### Views for Outreach
+
+| View | Purpose |
+|------|---------|
+| `dol.v_companies_with_violations` | Companies with open/contested violations |
+| `dol.v_violation_summary` | Aggregate stats by company |
+| `dol.v_recent_violations` | Last 90 days discoveries |
+
+### AIR Event Types (Violations)
+
+| Event Type | Trigger |
+|------------|---------|
+| `VIOLATION_DISCOVERED` | New violation found |
+| `VIOLATION_EIN_MATCHED` | Matched to existing EIN |
+| `VIOLATION_EIN_NOT_FOUND` | No EIN linkage exists |
+| `VIOLATION_DUPLICATE` | Duplicate skipped |
+| `VIOLATION_BATCH_COMPLETE` | Batch processing done |
+
+### Downstream Consumption
+
+Outreach systems MAY:
+- READ from `dol.violations`
+- READ from violation views
+- Use facts for messaging about remediation
+
+Outreach systems MAY NOT:
+- Write to DOL tables
+- Modify violation records
+- Trigger DOL operations
+
+### Schema File
+- [`doctrine/schemas/dol_violations-schema.sql`](../schemas/dol_violations-schema.sql)
+
+### Implementation File
+- [`ctb/sys/dol-ein/findViolations.js`](../../ctb/sys/dol-ein/findViolations.js)
+
+---
+
 ## Document History
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 2.1.0 | 2025-01-02 | Barton Outreach Team | Added violation discovery (fact storage) |
 | 2.0.0 | 2025-01-01 | Barton Outreach Team | Complete refactor: EIN Resolution only, removed buyer intent |
 | 1.0.0 | 2025-11-07 | Barton Outreach Team | Initial Compliance Monitor doctrine (DEPRECATED) |
 
@@ -689,8 +800,9 @@ SELECT * FROM dol.air_log WHERE air_log_id = '01.04.02.04.22000.902';
 
 ## Cross-References
 
-### Schema File
-- [`doctrine/schemas/dol_ein_linkage-schema.sql`](../schemas/dol_ein_linkage-schema.sql)
+### Schema Files
+- [`doctrine/schemas/dol_ein_linkage-schema.sql`](../schemas/dol_ein_linkage-schema.sql) - EIN linkage
+- [`doctrine/schemas/dol_violations-schema.sql`](../schemas/dol_violations-schema.sql) - Violations
 
 ### Related Doctrines (NO INTEGRATION)
 - [`PLE-Doctrine.md`](./PLE-Doctrine.md) - Master PLE overview (DOL isolated)
