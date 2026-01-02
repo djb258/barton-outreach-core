@@ -27,6 +27,88 @@ Track human lifecycle independently from company lifecycle.
 
 ---
 
+## 3.1 Waterfall Position
+
+**Position**: 4th in canonical waterfall (after DOL, before Blog)
+
+```
+1. CL ──────────► PASS ──┐  (EXTERNAL)
+                         │ company_unique_id
+                         ▼
+2. COMPANY TARGET ► PASS ──┐
+                           │ verified_pattern, domain
+                           ▼
+3. DOL FILINGS ───► PASS ──┐
+                           │ ein, filing_signals
+                           ▼
+4. PEOPLE ────────► PASS ──┐  ◄── YOU ARE HERE
+                           │ slot_assignments
+                           ▼
+5. BLOG ──────────► PASS
+```
+
+### Upstream Dependencies
+
+| Upstream | Required Signal | Gate |
+|----------|-----------------|------|
+| Company Target | verified_pattern | MUST have PASS |
+| Company Target | domain | MUST be resolved |
+| DOL Filings | regulatory_signals | MUST have PASS |
+
+### Downstream Consumers
+
+| Downstream | Signals Emitted | Binding |
+|------------|-----------------|---------|
+| Blog Content | slot_assignments, people_records | outreach_context_id |
+| Outreach Execution | slot_assignments, people_records | outreach_context_id |
+
+### Waterfall Rules (LOCKED)
+
+- DOL Filings must PASS before this hub executes
+- This hub must PASS before Blog Content executes
+- No retry/rescue from downstream hubs
+- Failures stay local — downstream sees FAIL, not partial data
+
+---
+
+## 3.2 External Dependencies & Program Scope
+
+### CL is EXTERNAL to Outreach
+
+| Boundary | System | Ownership |
+|----------|--------|-----------|
+| **External** | Company Lifecycle (CL) | Mints company_unique_id, shared across all programs |
+| **Program** | Outreach Orchestration | Mints outreach_context_id, program-scoped |
+| **Sub-Hub** | People Intelligence (this hub) | Third enrichment sub-hub in waterfall |
+
+### Key Doctrine
+
+- **CL is external** — Outreach CONSUMES company_unique_id, does NOT invoke CL
+- **Consumer-Only** — This hub CONSUMES patterns from CT, NOT discovers them
+- **Run identity** — All operations bound by outreach_context_id from Orchestration
+- **Context table** — outreach.outreach_context is the root audit record
+
+### Consumer-Only Compliance (CRITICAL)
+
+This hub is a **CONSUMER** of upstream data, not a **PRODUCER**:
+
+| Data | Source | This Hub |
+|------|--------|----------|
+| Email patterns | Company Target | CONSUME (not discover) |
+| Domain resolution | Company Target | CONSUME (not resolve) |
+| Regulatory signals | DOL Filings | CONSUME (not fetch) |
+| Company existence | CL (external) | CONSUME via CT |
+
+### Explicit Prohibitions
+
+- [ ] Does NOT invoke Company Lifecycle (CL is external)
+- [ ] Does NOT mint company_unique_id (CL does)
+- [ ] Does NOT discover email patterns (CT does)
+- [ ] Does NOT resolve domains (CT does)
+- [ ] Does NOT create outreach_context_id (Orchestration does)
+
+---
+
 ## 4. Lifecycle Gate
 
 | Minimum Lifecycle State | Gate Condition |
@@ -321,4 +403,4 @@ outreach.company_target (Company Target Hub)
 
 **Last Updated**: 2026-01-02
 **Hub**: People Intelligence (04.04.02)
-**Doctrine**: CL Parent-Child v1.0
+**Doctrine**: External CL + Outreach Program v1.0

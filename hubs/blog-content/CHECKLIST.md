@@ -212,6 +212,56 @@ This hub operates independently with no cross-hub dependencies.
 
 ---
 
+## 12. External CL + Program Scope Compliance
+
+### CL is External
+
+- [ ] Understands CL is NOT part of Outreach program
+- [ ] Does NOT invoke Company Lifecycle (CL is external)
+- [ ] Does NOT gate on CL operations (CL already verified existence)
+- [ ] Receives company_unique_id via Company Target (not directly from CL)
+
+### Outreach Context Authority
+
+- [ ] outreach_context_id sourced from Outreach Orchestration (not CL)
+- [ ] All operations bound by outreach_context_id
+- [ ] Does NOT mint outreach_context_id (Orchestration does)
+- [ ] Reads from outreach.outreach_context table
+
+### Consumer-Only Compliance
+
+- [ ] CONSUMES all upstream data (does NOT enrich)
+- [ ] Provides TIMING signals only (no authority signals)
+- [ ] Does NOT trigger enrichment
+- [ ] Does NOT trigger spend
+- [ ] Does NOT duplicate upstream enrichment
+
+### Program Boundary Compliance
+
+| Boundary | This Hub | Action |
+|----------|----------|--------|
+| CL (external) | Blog Content | NO DIRECT ACCESS |
+| Company Target (upstream) | Blog Content | CONSUME company_unique_id, domain |
+| DOL Filings (upstream) | Blog Content | CONSUME regulatory_signals |
+| People Intelligence (upstream) | Blog Content | CONSUME slot_assignments |
+| BIT Engine (downstream) | Blog Content | EMIT timing_signals |
+
+### Explicit Prohibitions
+
+- [ ] Does NOT call CL APIs or endpoints
+- [ ] Does NOT verify company existence (CL did that)
+- [ ] Does NOT retry CL operations
+- [ ] Does NOT create outreach_context_id
+- [ ] Does NOT trigger any paid enrichment
+
+---
+
 ## Compliance Rule
 
 **If any box is unchecked, this hub may not ship.**
+
+---
+
+**Last Updated**: 2026-01-02
+**Hub**: Blog Content (04.04.05)
+**Doctrine Version**: External CL + Outreach Program v1.0

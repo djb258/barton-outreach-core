@@ -27,6 +27,90 @@ Receives `company_sov_id` from Company Lifecycle parent — does NOT mint compan
 
 ---
 
+## 3.1 Waterfall Position
+
+**Position**: 2nd in canonical waterfall (after CL, before DOL)
+
+```
+1. CL ──────────► PASS ──┐
+                         │ company_unique_id
+                         ▼
+2. COMPANY TARGET ► PASS ──┐  ◄── YOU ARE HERE
+                           │ verified_pattern, domain
+                           ▼
+3. DOL FILINGS ───► PASS ──┐
+                           │ ein, filing_signals
+                           ▼
+4. PEOPLE ────────► PASS ──┐
+                           ▼
+5. BLOG ──────────► PASS
+```
+
+### Upstream Dependencies
+
+| Upstream | Required Signal | Gate |
+|----------|-----------------|------|
+| Company Lifecycle (CL) | company_unique_id | MUST exist in cl.company_identity |
+| Company Lifecycle (CL) | lifecycle_state | MUST be >= ACTIVE |
+
+### Downstream Consumers
+
+| Downstream | Signals Emitted | Binding |
+|------------|-----------------|---------|
+| DOL Filings | company_unique_id, domain | outreach_context_id |
+| People Intelligence | verified_pattern, domain | outreach_context_id |
+| Blog Content | company_unique_id | outreach_context_id |
+
+### Waterfall Rules (LOCKED)
+
+- This hub must PASS before DOL Filings executes
+- No retry/rescue from downstream hubs
+- Failures stay local — downstream sees FAIL, not partial data
+- May re-run if CL upstream unchanged
+
+---
+
+## 3.2 External Dependencies & Program Scope
+
+### CL is EXTERNAL to Outreach
+
+| Boundary | System | Ownership |
+|----------|--------|-----------|
+| **External** | Company Lifecycle (CL) | Mints company_unique_id, shared across all programs |
+| **Program** | Outreach Orchestration | Mints outreach_context_id, program-scoped |
+| **Sub-Hub** | Company Target (this hub) | First enrichment sub-hub in waterfall |
+
+### Key Doctrine
+
+- **CL is external** — Outreach CONSUMES company_unique_id, does NOT invoke CL
+- **No CL gating** — Outreach does NOT verify company existence (CL already did)
+- **Run identity** — All operations bound by outreach_context_id from Orchestration
+- **Context table** — outreach.outreach_context is the root audit record
+
+### outreach_context_id Source
+
+This hub receives `outreach_context_id` from **Outreach Orchestration** (Context Authority):
+
+```sql
+-- outreach.outreach_context (owned by Orchestration, read by sub-hubs)
+outreach_context_id   UUID PRIMARY KEY
+company_unique_id     TEXT NOT NULL      -- from CL (external)
+program_name          TEXT NOT NULL DEFAULT 'outreach'
+run_reason            TEXT NULL          -- campaign, retry, refresh, etc.
+initiated_by          TEXT NOT NULL      -- human / agent
+initiated_at          TIMESTAMP NOT NULL
+status                TEXT NOT NULL      -- OPEN | COMPLETE | FAILED
+```
+
+### Explicit Prohibitions
+
+- [ ] Does NOT invoke Company Lifecycle (CL is external)
+- [ ] Does NOT mint company_unique_id (CL does)
+- [ ] Does NOT verify company existence (CL already did)
+- [ ] Does NOT create outreach_context_id (Orchestration does)
+
+---
+
 ## 4. Lifecycle Gate
 
 | Minimum Lifecycle State | Gate Condition |
@@ -280,4 +364,4 @@ This sub-hub owns or writes to the following tables:
 
 **Last Updated**: 2026-01-02
 **Hub**: Company Target (04.04.01)
-**Doctrine**: CL Parent-Child v1.0
+**Doctrine**: External CL + Outreach Program v1.0

@@ -204,6 +204,46 @@ This hub operates independently with no cross-hub dependencies.
 
 ---
 
+## 12. External CL + Program Scope Compliance
+
+### CL is External
+
+- [ ] Understands CL is NOT part of Outreach program
+- [ ] Does NOT invoke Company Lifecycle (CL is external)
+- [ ] Does NOT gate on CL operations (CL already verified existence)
+- [ ] Receives company_unique_id via Company Target (not directly from CL)
+
+### Outreach Context Authority
+
+- [ ] outreach_context_id sourced from Outreach Orchestration (not CL)
+- [ ] All operations bound by outreach_context_id
+- [ ] Does NOT mint outreach_context_id (Orchestration does)
+- [ ] Reads from outreach.outreach_context table
+
+### Program Boundary Compliance
+
+| Boundary | This Hub | Action |
+|----------|----------|--------|
+| CL (external) | DOL Filings | NO DIRECT ACCESS |
+| Company Target (upstream) | DOL Filings | CONSUME company_unique_id, domain |
+| People Intelligence (downstream) | DOL Filings | EMIT filing_signals, regulatory_data |
+| Blog Content (downstream) | DOL Filings | EMIT filing_signals |
+
+### Explicit Prohibitions
+
+- [ ] Does NOT call CL APIs or endpoints
+- [ ] Does NOT verify company existence (CL did that)
+- [ ] Does NOT retry CL operations
+- [ ] Does NOT create outreach_context_id
+
+---
+
 ## Compliance Rule
 
 **If any box is unchecked, this hub may not ship.**
+
+---
+
+**Last Updated**: 2026-01-02
+**Hub**: DOL Filings (04.04.03)
+**Doctrine Version**: External CL + Outreach Program v1.0

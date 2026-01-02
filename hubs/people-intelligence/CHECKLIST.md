@@ -205,6 +205,40 @@ A failure is **blocking** if:
 
 ---
 
+## 12. External CL + Program Scope Compliance
+
+### CL is External
+
+- [ ] Understands CL is NOT part of Outreach program
+- [ ] Does NOT invoke Company Lifecycle (CL is external)
+- [ ] Does NOT gate on CL operations (CL already verified existence)
+- [ ] Receives company_unique_id via Company Target (not directly from CL)
+
+### Outreach Context Authority
+
+- [ ] outreach_context_id sourced from Outreach Orchestration (not CL)
+- [ ] All operations bound by outreach_context_id
+- [ ] Does NOT mint outreach_context_id (Orchestration does)
+- [ ] Reads from outreach.outreach_context table
+
+### Consumer-Only Compliance
+
+- [ ] CONSUMES verified_pattern from Company Target (does NOT discover patterns)
+- [ ] CONSUMES domain from Company Target (does NOT resolve domains)
+- [ ] CONSUMES regulatory_signals from DOL Filings (does NOT fetch DOL data)
+- [ ] Does NOT duplicate upstream enrichment
+
+### Program Boundary Compliance
+
+| Boundary | This Hub | Action |
+|----------|----------|--------|
+| CL (external) | People Intelligence | NO DIRECT ACCESS |
+| Company Target (upstream) | People Intelligence | CONSUME pattern, domain |
+| DOL Filings (upstream) | People Intelligence | CONSUME regulatory_signals |
+| Blog Content (downstream) | People Intelligence | EMIT slot_assignments |
+
+---
+
 ## Compliance Rule
 
 **If any box is unchecked, this hub may not ship.**
@@ -213,4 +247,4 @@ A failure is **blocking** if:
 
 **Last Updated**: 2026-01-02
 **Hub**: People Intelligence (04.04.02)
-**Doctrine Version**: 1.0
+**Doctrine Version**: External CL + Outreach Program v1.0

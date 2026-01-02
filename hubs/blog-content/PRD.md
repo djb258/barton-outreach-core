@@ -26,6 +26,88 @@ BIT modulation only — cannot mint, revive, or trigger enrichment.
 
 ---
 
+## 3.1 Waterfall Position
+
+**Position**: 5th (LAST) in canonical waterfall
+
+```
+1. CL ──────────► PASS ──┐  (EXTERNAL)
+                         │ company_unique_id
+                         ▼
+2. COMPANY TARGET ► PASS ──┐
+                           │ verified_pattern, domain
+                           ▼
+3. DOL FILINGS ───► PASS ──┐
+                           │ ein, filing_signals
+                           ▼
+4. PEOPLE ────────► PASS ──┐
+                           │ slot_assignments
+                           ▼
+5. BLOG ──────────► PASS    ◄── YOU ARE HERE (FINAL)
+```
+
+### Upstream Dependencies
+
+| Upstream | Required Signal | Gate |
+|----------|-----------------|------|
+| Company Target | company_unique_id, domain | MUST have PASS |
+| DOL Filings | regulatory_signals | MUST have PASS |
+| People Intelligence | slot_assignments | MUST have PASS |
+
+### Downstream Consumers
+
+| Downstream | Signals Emitted | Binding |
+|------------|-----------------|---------|
+| BIT Engine | timing_signals | outreach_context_id |
+| Context Finalization | final_state | outreach_context_id |
+
+### Waterfall Rules (LOCKED)
+
+- People Intelligence must PASS before this hub executes
+- This is the FINAL hub — context is finalized after this hub
+- No retry/rescue from this hub (nothing downstream)
+- Failures stay local — context finalized as FAIL
+
+---
+
+## 3.2 External Dependencies & Program Scope
+
+### CL is EXTERNAL to Outreach
+
+| Boundary | System | Ownership |
+|----------|--------|-----------|
+| **External** | Company Lifecycle (CL) | Mints company_unique_id, shared across all programs |
+| **Program** | Outreach Orchestration | Mints outreach_context_id, program-scoped |
+| **Sub-Hub** | Blog Content (this hub) | FINAL sub-hub in waterfall |
+
+### Key Doctrine
+
+- **CL is external** — Outreach CONSUMES company_unique_id, does NOT invoke CL
+- **Timing Only** — This hub provides TIMING signals, NOT enrichment
+- **Run identity** — All operations bound by outreach_context_id from Orchestration
+- **Context table** — outreach.outreach_context is the root audit record
+
+### Consumer-Only Compliance (CRITICAL)
+
+This hub is a **CONSUMER** of upstream data, not a **PRODUCER**:
+
+| Data | Source | This Hub |
+|------|--------|----------|
+| Company identity | Company Target | CONSUME (not mint) |
+| Domain resolution | Company Target | CONSUME (not resolve) |
+| Email patterns | People Intelligence | CONSUME (not generate) |
+| Slot assignments | People Intelligence | CONSUME (not assign) |
+
+### Explicit Prohibitions
+
+- [ ] Does NOT invoke Company Lifecycle (CL is external)
+- [ ] Does NOT mint company_unique_id (CL does)
+- [ ] Does NOT trigger enrichment (timing only)
+- [ ] Does NOT trigger spend (free signals only)
+- [ ] Does NOT create outreach_context_id (Orchestration does)
+
+---
+
 ## 4. Lifecycle Gate
 
 | Minimum Lifecycle State | Gate Condition |
@@ -139,3 +221,9 @@ No paid enrichment tools. Signal processing only.
 |------|------|------|
 | Owner | | |
 | Reviewer | | |
+
+---
+
+**Last Updated**: 2026-01-02
+**Hub**: Blog Content (04.04.05)
+**Doctrine**: External CL + Outreach Program v1.0

@@ -20,49 +20,97 @@ IF company_unique_id IS NULL:
     → Request identity from Company Lifecycle (CL) parent hub first.
 ```
 
-### Architecture Diagram
+### Architecture Diagram — External CL + Outreach Program
 
 ```
-                    COMPANY LIFECYCLE (CL) - PARENT HUB
-                    https://github.com/djb258/company-lifecycle-cl.git
-                    ─────────────────────────────────────────────
-                    • Mints company_unique_id (SOVEREIGN)
-                    • Owns cl.* schema (company_identity, lifecycle_state)
-                    • Promotes lifecycle: OUTREACH → SALES → CLIENT
-                                    │
-                                    │ company_unique_id (downstream)
-                                    ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                        BARTON OUTREACH CORE                                  │
-│                        (Child Hub - Outreach Execution)                      │
+│                         EXTERNAL SYSTEM (NOT OUTREACH)                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  COMPANY LIFECYCLE (CL)                                                      │
+│  https://github.com/djb258/company-lifecycle-cl.git                          │
+│  • Mints company_unique_id (SOVEREIGN, IMMUTABLE)                            │
+│  • Owns cl.* schema (company_identity, lifecycle_state)                      │
+│  • Shared across programs (Outreach, Client Intake, Analytics)               │
+│  • Outreach does NOT invoke or gate CL                                       │
 └─────────────────────────────────────────────────────────────────────────────┘
                                     │
-                         COMPANY TARGET (Internal Anchor)
-                         ────────────────────────────────
-                         • outreach.company_target table
-                         • FK to cl.company_identity
-                         • BIT score calculation
-                                    │
-    ┌───────────────────────────────┼───────────────────────────────┐
-    │                               │                               │
-    ▼                               ▼                               ▼
-┌─────────┐                   ┌─────────┐                   ┌─────────┐
-│ People  │                   │   DOL   │                   │  Blog   │
-│Sub-Hub  │                   │ Sub-Hub │                   │ Sub-Hub │
-│04.04.02 │                   │04.04.03 │                   │04.04.05 │
-└─────────┘                   └─────────┘                   └─────────┘
+                                    │ company_unique_id (consumed)
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      OUTREACH PROGRAM (PROGRAM-SCOPED)                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  0. OUTREACH ORCHESTRATION (Context Authority) ─────────────► RUN CREATED   │
+│     • Mints outreach_context_id (program-scoped)                             │
+│     • Binds outreach_context_id ⇄ company_unique_id                          │
+│     • Establishes execution + audit boundary                                 │
+│     • Performs NO enrichment, discovery, or scoring                          │
+│     • Table: outreach.outreach_context                                       │
+│                                    │                                         │
+│                                    │ outreach_context_id                     │
+│                                    ▼                                         │
+│  1. COMPANY TARGET (04.04.01) ──────────────────────────────► PASS REQUIRED │
+│     • Domain resolution                                                      │
+│     • Email pattern discovery                                                │
+│     • EMITS: verified_pattern, domain                                        │
+│                                    │                                         │
+│                                    ▼                                         │
+│  2. DOL FILINGS (04.04.03) ─────────────────────────────────► PASS REQUIRED │
+│     • EIN resolution                                                         │
+│     • Form 5500 + Schedule A                                                 │
+│     • EMITS: ein, filing_signals                                             │
+│                                    │                                         │
+│                                    ▼                                         │
+│  3. PEOPLE INTELLIGENCE (04.04.02) ─────────────────────────► PASS REQUIRED │
+│     • CONSUMER ONLY - Does NOT discover patterns or EINs                     │
+│     • CONSUMES: verified_pattern (CT), ein/signals (DOL)                     │
+│     • EMITS: slot_assignments, people_records                                │
+│                                    │                                         │
+│                                    ▼                                         │
+│  4. BLOG CONTENT (04.04.05) ────────────────────────────────► PASS          │
+│     • Content signals, news monitoring                                       │
+│     • CONSUMER ONLY                                                          │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Hub Registry
+### External Dependencies & Program Scope
 
-| Hub | Doctrine ID | Core Metric | Entities Owned |
-|-----|-------------|-------------|----------------|
-| **Company Target** (child of CL) | 04.04.01 | BIT_SCORE | outreach.company_target, local_bit_scores |
-| **People Intelligence** | 04.04.02 | SLOT_FILL_RATE | people_master, slot_assignments, movement_history |
-| **DOL Filings** | 04.04.03 | FILING_MATCH_RATE | form_5500, form_5500_sf, schedule_a |
-| **Outreach Execution** | 04.04.04 | ENGAGEMENT_RATE | campaigns, sequences, send_log |
+| Boundary | System | Ownership |
+|----------|--------|-----------|
+| **External** | Company Lifecycle (CL) | Mints company_unique_id, shared across all programs |
+| **Program** | Outreach Orchestration | Mints outreach_context_id, program-scoped |
+| **Sub-Hub** | CT, DOL, People, Blog | Reference outreach_context_id for all operations |
 
-**Parent Hub (External)**: Company Lifecycle (CL) - Owns company_unique_id, cl.* schema
+### Key Doctrine (LOCKED)
+
+- **CL is external** — Outreach consumes company_unique_id, does NOT invoke CL
+- **Outreach run identity** — All operations bound by outreach_context_id
+- **Context table** — outreach.outreach_context is the root audit record
+- **No sub-hub writes without valid outreach_context_id**
+
+### Waterfall Doctrine Rules (LOCKED)
+
+| Rule | Enforcement |
+|------|-------------|
+| Each sub-hub must PASS before next executes | Gate validation |
+| No lateral reads between hubs | Spoke contracts only |
+| No speculative execution | PASS gate blocks downstream |
+| No retry/rescue from downstream | Failures stay local |
+| Data flows FORWARD ONLY | Bound by outreach_context_id |
+| Sub-hubs may re-run if upstream unchanged | Idempotent design |
+
+### Hub Registry (Waterfall Order)
+
+| Order | Hub | Doctrine ID | Core Metric | Entities Owned |
+|-------|-----|-------------|-------------|----------------|
+| 1 | **Company Lifecycle (CL)** | PARENT | LIFECYCLE_STATE | cl.company_identity, cl.lifecycle_state |
+| 2 | **Company Target** | 04.04.01 | BIT_SCORE | outreach.company_target, verified_pattern |
+| 3 | **DOL Filings** | 04.04.03 | FILING_MATCH_RATE | form_5500, schedule_a, ein_registry |
+| 4 | **People Intelligence** | 04.04.02 | SLOT_FILL_RATE | outreach.people, slot_assignments |
+| 5 | **Blog Content** | 04.04.05 | CONTENT_SIGNAL_RATE | blog_signals, news_events |
+
+**Note**: People Intelligence (04.04.02) executes AFTER DOL Filings (04.04.03) in the waterfall.
 
 ### Spoke Contracts
 

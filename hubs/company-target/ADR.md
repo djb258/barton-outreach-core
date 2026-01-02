@@ -255,5 +255,215 @@ Add explicit table ownership documentation to PRD with:
 
 ---
 
+# ADR: Rejection of Merged-Hub Architecture
+
+## ADR Identity
+
+| Field | Value |
+|-------|-------|
+| **ADR ID** | ADR-CT-004 |
+| **Status** | [x] Accepted |
+| **Date** | 2026-01-02 |
+
+---
+
+## Owning Hub
+
+| Field | Value |
+|-------|-------|
+| **Hub Name** | Company Target |
+| **Hub ID** | HUB-CT-001 |
+
+---
+
+## Context
+
+During architecture review, a proposal was considered to merge DOL Filings into Company Target
+to reduce the number of sub-hubs. This ADR formally rejects that approach.
+
+---
+
+## Decision
+
+**REJECT merged-hub architecture. Maintain 5 distinct sub-hubs in waterfall order.**
+
+The canonical waterfall is:
+1. Company Lifecycle (CL)
+2. Company Target (04.04.01)
+3. DOL Filings (04.04.03)
+4. People Intelligence (04.04.02)
+5. Blog Content (04.04.05)
+
+---
+
+## Rationale
+
+| Concern | Why Separate Hubs Are Better |
+|---------|------------------------------|
+| **Ownership Clarity** | Each hub has one owner, one metric, one responsibility |
+| **Failure Isolation** | DOL failure does not block Company Target from PASSing |
+| **Auditability** | Each hub produces its own audit trail |
+| **Partial Re-run** | Can re-run DOL without re-running Company Target |
+| **Regulatory Separation** | DOL data has different compliance requirements |
+
+---
+
+## Alternatives Rejected
+
+| Alternative | Why Rejected |
+|-------------|--------------|
+| Merge DOL into Company Target | Violates single-responsibility, mixed failure modes |
+| Merge People into Company Target | People is consumer-only, different lifecycle |
+| Parallel execution of DOL + People | Violates waterfall doctrine, creates race conditions |
+
+---
+
+## Consequences
+
+### Enables
+
+- Clean PASS/FAIL semantics per hub
+- Independent re-runs
+- Clear ownership boundaries
+- Auditable waterfall execution
+
+### Prevents
+
+- Cross-hub failure contamination
+- Unclear ownership of DOL data
+- Speculative reads from incomplete upstream
+
+---
+
+## Waterfall Enforcement
+
+```
+CL ──► CT ──► DOL ──► PEOPLE ──► BLOG
+       │      │        │
+       │      │        └── Consumes CT + DOL (read-only)
+       │      └── Requires CT PASS
+       └── Requires CL PASS
+```
+
+---
+
+## Approval
+
+| Role | Name | Date |
+|------|------|------|
+| Hub Owner | | |
+| Reviewer | | |
+
+---
+
+# ADR: External CL + Program-Scoped Context
+
+## ADR Identity
+
+| Field | Value |
+|-------|-------|
+| **ADR ID** | ADR-CT-005 |
+| **Status** | [x] Accepted |
+| **Date** | 2026-01-02 |
+
+---
+
+## Owning Hub
+
+| Field | Value |
+|-------|-------|
+| **Hub Name** | Company Target |
+| **Hub ID** | HUB-CT-001 |
+
+---
+
+## Context
+
+Previous documentation implied CL was part of the Outreach program waterfall.
+This caused confusion about where company_unique_id and outreach_context_id
+are minted and who owns what.
+
+---
+
+## Decision
+
+**Formalize the External CL + Program-Scoped Context architecture:**
+
+1. **CL is EXTERNAL** — Company Lifecycle is a separate system, not part of Outreach
+2. **Outreach Orchestration** — Mints outreach_context_id as Context Authority
+3. **company_unique_id** — Consumed from CL, never minted by Outreach
+4. **outreach_context_id** — Program-scoped, binds all sub-hub operations
+
+---
+
+## Architecture Boundary
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    EXTERNAL (NOT OUTREACH)                       │
+│  Company Lifecycle (CL)                                          │
+│  • Mints company_unique_id (SOVEREIGN)                           │
+│  • Shared across programs                                        │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                                │ company_unique_id (consumed)
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    OUTREACH PROGRAM                              │
+├─────────────────────────────────────────────────────────────────┤
+│  0. Outreach Orchestration ─► Mints outreach_context_id          │
+│                                │                                 │
+│  1. Company Target ────────────┤                                 │
+│  2. DOL Filings ───────────────┤ All bound by                    │
+│  3. People Intelligence ───────┤ outreach_context_id             │
+│  4. Blog Content ──────────────┘                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## outreach.outreach_context Table
+
+The root audit record for every Outreach run:
+
+| Column | Type | Description |
+|--------|------|-------------|
+| outreach_context_id | UUID | PK, minted by Orchestration |
+| company_unique_id | TEXT | FK to CL (external) |
+| program_name | TEXT | DEFAULT 'outreach' |
+| run_reason | TEXT | campaign, retry, refresh, etc. |
+| initiated_by | TEXT | human / agent |
+| initiated_at | TIMESTAMP | Run start time |
+| status | TEXT | OPEN, COMPLETE, FAILED |
+
+---
+
+## Consequences
+
+### Enables
+
+- Clear boundary between CL (external) and Outreach (program)
+- Single source of truth for execution context
+- Clean audit trail per run
+- No confusion about identity ownership
+
+### Prevents
+
+- Outreach from invoking or gating CL
+- Sub-hubs from minting their own context IDs
+- Orphan records without valid context
+- Scope bleed between programs
+
+---
+
+## Approval
+
+| Role | Name | Date |
+|------|------|------|
+| Hub Owner | | |
+| Reviewer | | |
+
+---
+
 **Last Updated**: 2026-01-02
-**ADR Count**: 3 (ADR-CT-001, ADR-CT-002, ADR-CT-003)
+**ADR Count**: 5 (ADR-CT-001, ADR-CT-002, ADR-CT-003, ADR-CT-004, ADR-CT-005)

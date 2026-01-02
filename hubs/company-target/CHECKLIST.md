@@ -350,6 +350,39 @@ A failure is **blocking** if:
 
 ---
 
+## 12. External CL + Program Scope Compliance
+
+### CL is External
+
+- [ ] Understands CL is NOT part of Outreach program
+- [ ] Does NOT invoke Company Lifecycle (CL is external)
+- [ ] Does NOT gate on CL operations (CL already verified existence)
+- [ ] Consumes company_unique_id as read-only input
+
+### Outreach Context Authority
+
+- [ ] outreach_context_id sourced from Outreach Orchestration (not CL)
+- [ ] All operations bound by outreach_context_id
+- [ ] Does NOT mint outreach_context_id (Orchestration does)
+- [ ] Reads from outreach.outreach_context table
+
+### Program Boundary Compliance
+
+| Boundary | This Hub | Action |
+|----------|----------|--------|
+| CL (external) | Company Target | CONSUME company_unique_id |
+| Orchestration | Company Target | CONSUME outreach_context_id |
+| DOL (downstream) | Company Target | EMIT domain, verified_pattern |
+
+### Explicit Prohibitions
+
+- [ ] Does NOT call CL APIs or endpoints
+- [ ] Does NOT verify company existence (CL did that)
+- [ ] Does NOT retry CL operations
+- [ ] Does NOT create outreach_context_id
+
+---
+
 ## Prime Directive
 
 > **Cost containment is a hard gate. Accuracy is a tiebreaker, not a justification to spend.**

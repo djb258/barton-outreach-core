@@ -26,6 +26,74 @@ Source of truth for plan renewal dates and broker relationships.
 
 ---
 
+## 3.1 Waterfall Position
+
+**Position**: 3rd in canonical waterfall (after CT, before People)
+
+```
+1. CL ──────────► PASS ──┐  (EXTERNAL)
+                         │ company_unique_id
+                         ▼
+2. COMPANY TARGET ► PASS ──┐
+                           │ verified_pattern, domain
+                           ▼
+3. DOL FILINGS ───► PASS ──┐  ◄── YOU ARE HERE
+                           │ ein, filing_signals
+                           ▼
+4. PEOPLE ────────► PASS ──┐
+                           ▼
+5. BLOG ──────────► PASS
+```
+
+### Upstream Dependencies
+
+| Upstream | Required Signal | Gate |
+|----------|-----------------|------|
+| Company Target | company_unique_id | MUST have passed |
+| Company Target | domain | MUST be resolved |
+
+### Downstream Consumers
+
+| Downstream | Signals Emitted | Binding |
+|------------|-----------------|---------|
+| People Intelligence | filing_signals, regulatory_data | outreach_context_id |
+| Blog Content | filing_signals | outreach_context_id |
+
+### Waterfall Rules (LOCKED)
+
+- Company Target must PASS before this hub executes
+- This hub must PASS before People Intelligence executes
+- No retry/rescue from downstream hubs
+- Failures stay local — downstream sees FAIL, not partial data
+
+---
+
+## 3.2 External Dependencies & Program Scope
+
+### CL is EXTERNAL to Outreach
+
+| Boundary | System | Ownership |
+|----------|--------|-----------|
+| **External** | Company Lifecycle (CL) | Mints company_unique_id, shared across all programs |
+| **Program** | Outreach Orchestration | Mints outreach_context_id, program-scoped |
+| **Sub-Hub** | DOL Filings (this hub) | Second enrichment sub-hub in waterfall |
+
+### Key Doctrine
+
+- **CL is external** — Outreach CONSUMES company_unique_id, does NOT invoke CL
+- **No CL gating** — Outreach does NOT verify company existence (CL already did)
+- **Run identity** — All operations bound by outreach_context_id from Orchestration
+- **Context table** — outreach.outreach_context is the root audit record
+
+### Explicit Prohibitions
+
+- [ ] Does NOT invoke Company Lifecycle (CL is external)
+- [ ] Does NOT mint company_unique_id (CL does)
+- [ ] Does NOT verify company existence (CL already did)
+- [ ] Does NOT create outreach_context_id (Orchestration does)
+
+---
+
 ## 4. Lifecycle Gate
 
 | Minimum Lifecycle State | Gate Condition |
@@ -156,3 +224,9 @@ Healthy Threshold: >= 90%
 |------|------|------|
 | Owner | | |
 | Reviewer | | |
+
+---
+
+**Last Updated**: 2026-01-02
+**Hub**: DOL Filings (04.04.03)
+**Doctrine**: External CL + Outreach Program v1.0
