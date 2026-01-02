@@ -174,3 +174,86 @@ Option B chosen: Sovereign ID existence = verified (if CL minted the ID, existen
 |------|------|------|
 | Hub Owner | | |
 | Reviewer | | |
+
+---
+
+# ADR: Table Ownership and ERD Documentation
+
+## ADR Identity
+
+| Field | Value |
+|-------|-------|
+| **ADR ID** | ADR-CT-003 |
+| **Status** | [x] Accepted |
+| **Date** | 2026-01-02 |
+
+---
+
+## Owning Hub
+
+| Field | Value |
+|-------|-------|
+| **Hub Name** | Company Target |
+| **Hub ID** | HUB-CT-001 |
+
+---
+
+## Context
+
+Company Target's table ownership was not clearly documented. The relationship between
+`outreach.company_target` and downstream sub-hub tables needed explicit ERD documentation
+to prevent scope creep and clarify data flow.
+
+---
+
+## Decision
+
+Add explicit table ownership documentation to PRD with:
+
+1. **Primary Tables** - Tables this sub-hub owns and writes to
+2. **Legacy Tables** - Tables shared during migration
+3. **Read-Only Tables** - Tables from CL parent (never write)
+4. **ERD Diagram** - Visual representation of table relationships
+
+---
+
+## Table Ownership Summary
+
+| Schema.Table | Owner | Write | Read |
+|--------------|-------|-------|------|
+| `outreach.company_target` | Company Target | YES | YES |
+| `outreach.column_registry` | Company Target | YES | YES |
+| `marketing.company_master` | Legacy (to CL) | YES | YES |
+| `marketing.pipeline_events` | Shared | YES | YES |
+| `cl.company_identity` | CL Parent | NO | YES |
+| `cl.lifecycle_state` | CL Parent | NO | YES |
+
+---
+
+## Consequences
+
+### Enables
+
+- Clear ownership boundaries
+- Prevents unauthorized table writes
+- Documents migration path for legacy tables
+
+### Prevents
+
+- Scope creep into CL tables
+- Confusion about write authority
+- Undocumented table dependencies
+
+---
+
+## Approval
+
+| Role | Name | Date |
+|------|------|------|
+| Hub Owner | | |
+| Reviewer | | |
+
+---
+
+**Last Updated**: 2026-01-02
+**ADR Count**: 3 (ADR-CT-001, ADR-CT-002, ADR-CT-003)

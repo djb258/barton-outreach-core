@@ -359,3 +359,9 @@ A failure is **blocking** if:
 ## Compliance Rule
 
 **If any box is unchecked, this hub may not ship.**
+
+---
+
+**Last Updated**: 2026-01-02
+**Hub**: Company Target (04.04.01)
+**Doctrine Version**: 1.0

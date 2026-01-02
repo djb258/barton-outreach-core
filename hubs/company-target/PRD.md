@@ -175,9 +175,109 @@ Pattern found?
 
 ---
 
+---
+
+## 13. Tables Owned
+
+This sub-hub owns or writes to the following tables:
+
+### Primary Tables
+
+| Schema | Table | Purpose | Row Count |
+|--------|-------|---------|-----------|
+| `outreach` | `company_target` | Internal anchor (FK to CL) | ~500 |
+| `outreach` | `column_registry` | Column metadata registry | ~60 |
+
+### Legacy Tables (Read + Write)
+
+| Schema | Table | Purpose | Migration Status |
+|--------|-------|---------|------------------|
+| `marketing` | `company_master` | Master company records | Migrating to CL |
+| `marketing` | `company_slot` | Slot assignments | Stays (People Hub) |
+| `marketing` | `pipeline_events` | Pipeline audit trail | Shared |
+
+### Read-Only Tables (From CL)
+
+| Schema | Table | Purpose |
+|--------|-------|---------|
+| `cl` | `company_identity` | Sovereign company records |
+| `cl` | `lifecycle_state` | Current lifecycle state |
+
+---
+
+## 14. ERD — Company Target Tables
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     COMPANY TARGET TABLE RELATIONSHIPS                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                    cl.company_identity (CL PARENT)
+                    ──────────────────────────────
+                    • company_unique_id PK (SOVEREIGN)
+                    • legal_name
+                    • created_at
+                                    │
+                                    │ company_unique_id (FK)
+                                    │ ON DELETE RESTRICT
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     outreach.company_target (INTERNAL ANCHOR)                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ target_id              TEXT      PK   Target identifier                     │
+│ company_unique_id      TEXT      FK   → cl.company_identity                 │
+│ outreach_status        TEXT           queued, active, paused, completed     │
+│ bit_score_snapshot     NUMERIC        Local BIT score cache                 │
+│ first_targeted_at      TIMESTAMP      First outreach attempt                │
+│ last_targeted_at       TIMESTAMP      Most recent attempt                   │
+│ sequence_count         INTEGER        Number of sequences run               │
+│ created_at             TIMESTAMP      Record creation                       │
+│ updated_at             TIMESTAMP      Last modification                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+                    │
+                    │ target_id (FK)
+        ┌───────────┼───────────┬───────────────┐
+        ▼           ▼           ▼               ▼
+┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────┐
+│ outreach │ │ outreach │ │ outreach │ │ marketing    │
+│ .people  │ │ .dol_    │ │ .blog_   │ │ .company_    │
+│          │ │ filings  │ │ signals  │ │ master       │
+│ (PI Hub) │ │ (DOL Hub)│ │ (BC Hub) │ │ (Legacy)     │
+└──────────┘ └──────────┘ └──────────┘ └──────────────┘
+```
+
+### Column Details — outreach.company_target
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `target_id` | TEXT | PK | Unique target identifier |
+| `company_unique_id` | TEXT | NOT NULL, FK | Links to CL parent |
+| `outreach_status` | TEXT | DEFAULT 'queued' | Current outreach state |
+| `bit_score_snapshot` | NUMERIC | | Cached BIT score |
+| `first_targeted_at` | TIMESTAMP | | First targeting timestamp |
+| `last_targeted_at` | TIMESTAMP | | Most recent targeting |
+| `sequence_count` | INTEGER | DEFAULT 0 | Sequences executed |
+| `created_at` | TIMESTAMP | DEFAULT NOW() | Creation timestamp |
+| `updated_at` | TIMESTAMP | DEFAULT NOW() | Last update |
+
+### Indexes
+
+| Index Name | Columns | Purpose |
+|------------|---------|---------|
+| `idx_target_company` | `company_unique_id` | FK lookup performance |
+| `idx_target_status` | `outreach_status` | Status filtering |
+
+---
+
 ## Approval
 
 | Role | Name | Date |
 |------|------|------|
 | Owner | | |
 | Reviewer | | |
+
+---
+
+**Last Updated**: 2026-01-02
+**Hub**: Company Target (04.04.01)
+**Doctrine**: CL Parent-Child v1.0
