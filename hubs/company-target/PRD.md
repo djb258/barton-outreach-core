@@ -48,6 +48,11 @@ Receives `company_sov_id` from Company Lifecycle parent — does NOT mint compan
 ## 6. Pipeline
 
 ```
+CL UPSTREAM GATE (FIRST - before ANY logic)
+  ├─ Check company_sov_id exists in cl.company_identity
+  ├─ EXISTS → EXISTENCE_PASS → proceed
+  └─ MISSING → CT_UPSTREAM_CL_NOT_VERIFIED → STOP
+ ↓
 Validate lifecycle permission (>= ACTIVE)
  ↓
 Phase 1: Company Matching
@@ -110,7 +115,10 @@ Pattern found?
 
 - [ ] Does NOT mint companies (company_sov_id comes from CL)
 - [ ] Does NOT mutate lifecycle state
+- [ ] Does NOT implement CL existence checks (domain, name, state verification)
+- [ ] Does NOT retry or repair missing CL signals
 - [ ] Requires outreach_context_id for all operations
+- [ ] Requires CL existence verification (EXISTENCE_PASS) before any logic
 - [ ] Tier-2 tools limited to one attempt per context
 - [ ] All spend logged to spend_log
 

@@ -75,6 +75,12 @@ _What changed and why? Reference the approved PRD/ADR — do not define architec
 - [ ] Context IDs are disposable (not permanent identity)
 - [ ] No minting/reviving/mutating company existence
 
+### CL Upstream Gate Compliance
+- [ ] CLGate.enforce_or_fail() called before hub logic (if Company Target)
+- [ ] No CL existence checks implemented (domain, name, state)
+- [ ] No retry/repair of missing CL signals
+- [ ] Missing CL company → CT_UPSTREAM_CL_NOT_VERIFIED error
+
 ### Lifecycle Gate Compliance
 - [ ] Minimum lifecycle state enforced before processing
 - [ ] Lifecycle state never modified by this change

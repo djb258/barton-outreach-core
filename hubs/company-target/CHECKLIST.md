@@ -1,78 +1,196 @@
 # Company Target — Compliance Checklist
 
-This checklist must be completed before any changes can ship.
-No exceptions. No partial compliance.
+**DOCTRINE LOCK**: This checklist is the freeze line for Company Target.
+No code ships unless every box is checked. No exceptions. No partial compliance.
 
 ---
 
-## Sovereign ID Compliance
+## 0. CL Upstream Gate (FIRST CHECK)
 
-- [ ] Uses company_sov_id as sole company identity
-- [ ] Does NOT mint company identifiers
-- [ ] Does NOT revive dead companies
-- [ ] Company Lifecycle treated as read-only dependency
-- [ ] outreach_context_id used for all operations
+> Outreach assumes Company Life Cycle existence verification has already passed.
+> Outreach will not execute without an `EXISTENCE_PASS` signal.
 
----
+### Gate Enforcement
 
-## Lifecycle Gate Compliance
+- [ ] `CLGate.enforce_or_fail()` called BEFORE any Company Target logic
+- [ ] Checks `company_sov_id` exists in `cl.company_identity`
+- [ ] EXISTS → `EXISTENCE_PASS` → proceed to Phase 1
+- [ ] MISSING → Write `CT_UPSTREAM_CL_NOT_VERIFIED` error → STOP
 
-- [ ] Minimum lifecycle state = ACTIVE
-- [ ] Gate enforced before any processing
-- [ ] Lifecycle state never modified by this hub
-- [ ] BIT signals do not mutate lifecycle
+### Explicit Prohibitions
 
----
+- [ ] Does NOT implement CL existence checks (domain resolution, name coherence, state matching)
+- [ ] Does NOT add CL error tables
+- [ ] Does NOT retry or "repair" missing CL signals
+- [ ] Does NOT infer existence from domains, LinkedIn, or names
+- [ ] Does NOT soft-fail or partially proceed
 
-## Cost Discipline
+### Error Routing
 
-### Tool Registry Compliance
-
-- [ ] All tools registered in tool_registry.md
-- [ ] No unauthorized tools used
-- [ ] Each tool scoped to this sub-hub only
-
-### Tier Enforcement
-
-- [ ] Tier-0 tools: Used freely (no gate)
-- [ ] Tier-1 tools: Gated by lifecycle >= ACTIVE
-- [ ] Tier-2 tools: Max ONE attempt per outreach_context
-- [ ] All spend logged against context + company_sov_id
-- [ ] Firewall blocks illegal tool calls
+- [ ] Missing CL company → `outreach_errors.company_target_errors`
+- [ ] `failure_code`: `CT_UPSTREAM_CL_NOT_VERIFIED`
+- [ ] `pipeline_stage`: `upstream_cl_gate`
+- [ ] `severity`: `blocking`
+- [ ] Error terminates execution immediately
 
 ---
 
-## Pipeline Compliance
+## 1. Hard Input Contract (MANDATORY)
 
-- [ ] Phase 1: Company Matching (no identity minting)
-- [ ] Phase 2: Domain Resolution (DNS/MX only)
-- [ ] Phase 3: Email Pattern Waterfall (tiered correctly)
-- [ ] Phase 4: Pattern Verification (local checks)
+### Required Inputs
 
----
+- [ ] `company_unique_id` received (read-only, pre-minted from CL)
+- [ ] `outreach_context_id` received (MANDATORY, cost + retry scope)
+- [ ] `correlation_id` received (MANDATORY, tracing only)
 
-## IMO Structure
+### Input Validation
 
-- [ ] Ingress contains no logic
-- [ ] Middle contains all logic
-- [ ] Egress contains no logic
-- [ ] Spokes are I/O only
-
----
-
-## Global Invariants
-
-- [ ] One sovereign company ID only
-- [ ] Context IDs are disposable
-- [ ] No enrichment without deficit
-- [ ] CSV is never canonical storage
+- [ ] FAIL IMMEDIATELY if `outreach_context_id` is missing
+- [ ] FAIL IMMEDIATELY if `company_sov_id` is missing
+- [ ] FAIL IMMEDIATELY if `correlation_id` is missing
+- [ ] No identity minting (CL owns company_unique_id)
 
 ---
 
-## Error Handling Compliance
+## 2. Phase Order (IMMUTABLE)
+
+Phases MUST execute in this exact order. No skipping, no reordering.
+
+### Phase 1 — Company Matching (READ-ONLY)
+
+- [ ] Match against `company_master` only
+- [ ] GOLD: Exact domain match (score = 1.0)
+- [ ] SILVER: Exact name match (score = 0.95)
+- [ ] BRONZE: Fuzzy + city guard (0.85–0.92)
+- [ ] BRONZE+: Fuzzy >= 0.92 (no city required)
+- [ ] Collision threshold = 0.03 score difference
+- [ ] Collision resolution: Abacus.ai Fuzzy Arbitrator (Tool 3) ONLY
+- [ ] NO other LLM allowed in pipeline
+- [ ] No match minting
+- [ ] No writes upstream
+
+### Phase 2 — Domain Resolution (FREE ONLY)
+
+- [ ] Domain from `company_master` first
+- [ ] Domain from input record fallback
+- [ ] DNS validation
+- [ ] MX validation
+- [ ] No valid domain → `needs_enrichment = true` → FAIL COMPANY_TARGET
+
+### Phase 3 — Email Pattern Waterfall (COST-FIRST)
+
+#### Tier 0 (FREE) — REQUIRED
+
+- [ ] Firecrawl
+- [ ] Google Places / public web scrape
+- [ ] Zero cost only
+
+#### Tier 1 (LOW COST) — BUDGET-GATED
+
+- [ ] Hunter.io
+- [ ] Clearbit
+- [ ] Apollo
+- [ ] Allowed only if Tier 0 FAILS
+- [ ] Tier-1 spend cap for `outreach_context_id` not exceeded
+
+#### Tier 2 (PREMIUM) — SINGLE-SHOT
+
+- [ ] Prospeo
+- [ ] Snov
+- [ ] Clay
+- [ ] Requires `can_attempt_tier2(outreach_context_id) == TRUE`
+- [ ] **ONE Tier-2 attempt per outreach_context_id TOTAL**
+- [ ] If Tier-2 fails → no retry, no alternate provider
+
+#### Waterfall Behavior
+
+- [ ] Waterfall stops on first successful pattern discovery
+- [ ] Cost-first: Exhaust cheaper signals before spending more
+
+### Phase 4 — Pattern Verification (CHEAP FIRST)
+
+- [ ] Match against known valid emails (free)
+- [ ] MX / catch-all check (free)
+- [ ] SMTP probe only if non–catch-all
+- [ ] Emit `email_pattern`
+- [ ] Emit `pattern_verified = PASS | FAIL`
+- [ ] Emit `catch_all_flag`
+- [ ] Emit `confidence_score` (metadata only)
+- [ ] **Decision is binary. Confidence NEVER upgrades a FAIL.**
+
+---
+
+## 3. Cost & Logging Doctrine (NON-NEGOTIABLE)
+
+### Tool Context Enforcement
+
+- [ ] Every paid tool call includes `outreach_context_id`
+- [ ] Every paid tool call includes `company_sov_id`
+- [ ] All spend logged per context, not global
+- [ ] `correlation_id` is for tracing only — never cost logic
+
+### Tier-2 Single-Shot Enforcement
+
+- [ ] `can_attempt_tier2()` called before EVERY Tier-2 provider call
+- [ ] Tier-2 returns early if guard returns FALSE
+- [ ] No fallback to alternate Tier-2 provider on guard block
+- [ ] `log_tool_attempt()` called after EVERY paid tool call
+
+### Cost Logging
+
+- [ ] All tool attempts logged to `outreach_ctx.tool_attempts`
+- [ ] All spend logged to `outreach_ctx.spend_log`
+- [ ] Missing context = HARD FAIL
+
+---
+
+## 4. Output Contract (STRICT)
+
+Must emit exactly:
+
+- [ ] `company_unique_id`
+- [ ] `outreach_context_id`
+- [ ] `email_pattern` (or null)
+- [ ] `email_domain_status`
+- [ ] `pattern_verified` (PASS | FAIL)
+- [ ] `catch_all_flag`
+- [ ] `cost_summary`
+- [ ] `failure_reason` (if FAIL)
+
+No partial success. No soft states.
+
+---
+
+## 5. Forbidden Actions
+
+- [ ] **NO** identity minting
+- [ ] **NO** people-level verification
+- [ ] **NO** retry loops
+- [ ] **NO** tool escalation for "accuracy"
+- [ ] **NO** writing upstream tables
+- [ ] **NO** lifecycle state mutations
+- [ ] **NO** reviving dead companies
+
+---
+
+## 6. Kill Switch
+
+Pipeline MUST exit immediately if:
+
+- [ ] Domain invalid
+- [ ] Cost guards violated
+- [ ] Tier-2 exhausted
+- [ ] Verification FAILS
+- [ ] Missing context ID
+- [ ] Missing sovereign ID
+
+---
+
+## 7. Error Handling Compliance
 
 ### When Errors Are Emitted
 
+- [ ] CL gate failure → `CT_UPSTREAM_CL_NOT_VERIFIED` error
 - [ ] Phase 1 match failure → `CT_MATCH_*` error
 - [ ] Phase 2 domain failure → `CT_DOMAIN_*` error
 - [ ] Phase 3 pattern failure → `CT_PATTERN_*` or `CT_TIER2_EXHAUSTED`
@@ -83,6 +201,8 @@ No exceptions. No partial compliance.
 ### Blocking Failures
 
 A failure is **blocking** if:
+
+- [ ] CL upstream gate fails (company not in CL)
 - [ ] No company match found (cannot proceed without anchor)
 - [ ] Domain unresolved after all attempts
 - [ ] Pattern not found after Tier-2 exhausted
@@ -93,6 +213,7 @@ A failure is **blocking** if:
 
 | Error Type | Resolver |
 |------------|----------|
+| CL gate errors | CL repo (create company in CL first) |
 | Match errors | Human (investigate source) |
 | Domain errors | Agent (retry with new context) |
 | Pattern errors | Human (manual research) |
@@ -221,6 +342,17 @@ A failure is **blocking** if:
 - [ ] No error row deletions
 - [ ] No context resurrection
 - [ ] No signal mutations
+
+### Tier-2 Guard (DG-013, DG-014)
+
+- [ ] Phase 3 calls `can_attempt_tier2()` before Tier-2 providers
+- [ ] Phase 3 calls `log_tool_attempt()` after every paid tool
+
+---
+
+## Prime Directive
+
+> **Cost containment is a hard gate. Accuracy is a tiebreaker, not a justification to spend.**
 
 ---
 

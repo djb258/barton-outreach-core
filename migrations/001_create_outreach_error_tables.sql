@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS outreach_errors.company_target_errors (
 
     -- Constraints
     CONSTRAINT ct_valid_stage CHECK (pipeline_stage IN (
+        'upstream_cl_gate',
         'phase1_company_matching',
         'phase1b_unmatched_hold',
         'phase2_domain_resolution',
@@ -76,6 +77,8 @@ CREATE TABLE IF NOT EXISTS outreach_errors.company_target_errors (
         'neon_write'
     )),
     CONSTRAINT ct_valid_failure_code CHECK (failure_code IN (
+        -- Upstream gate failures
+        'CT_UPSTREAM_CL_NOT_VERIFIED',
         -- Phase 1 failures
         'CT_MATCH_NO_COMPANY',
         'CT_MATCH_AMBIGUOUS',

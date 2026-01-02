@@ -340,7 +340,9 @@ class CompanyPipeline:
     def run_email_pattern_detection(
         self,
         company_ids: List[str] = None,
-        correlation_id: str = None
+        correlation_id: str = None,
+        outreach_context_id: str = None,
+        company_sov_id: str = None
     ) -> PipelineRunResult:
         """
         Run email pattern detection phase.
@@ -350,15 +352,24 @@ class CompanyPipeline:
         2. Common pattern inference
         3. External pattern lookup
 
+        DOCTRINE: If paid tools are used, outreach_context_id and company_sov_id
+        must be provided. This method stores them for downstream use.
+
         Args:
             company_ids: Specific companies to process (None = all needing pattern)
             correlation_id: Pipeline trace ID
+            outreach_context_id: Cost scope context (required for paid tools)
+            company_sov_id: Sovereign company ID from CL (required for paid tools)
 
         Returns:
             PipelineRunResult with stats
         """
         if not correlation_id:
             correlation_id = str(uuid.uuid4())
+
+        # Store context for downstream paid tool calls
+        self._current_outreach_context_id = outreach_context_id
+        self._current_company_sov_id = company_sov_id
 
         result = PipelineRunResult(correlation_id=correlation_id)
 
@@ -524,18 +535,50 @@ class CompanyPipeline:
     def run_full_pipeline(
         self,
         people_df: pd.DataFrame,
+        outreach_context_id: str,
+        company_sov_id: str,
         correlation_id: str = None
     ) -> Tuple[pd.DataFrame, Dict[str, PipelineRunResult]]:
         """
         Run the full company pipeline (Phase 1-4).
 
+        DOCTRINE: outreach_context_id and company_sov_id are MANDATORY.
+        FAIL HARD if missing. CL existence verification required.
+
+        Upstream Contract:
+            Outreach assumes Company Life Cycle existence verification
+            has already passed. Outreach will not execute without a
+            verified sovereign ID in CL.
+
         Args:
             people_df: Input DataFrame with people to process
+            outreach_context_id: MANDATORY - Cost scope context
+            company_sov_id: MANDATORY - Sovereign company ID from CL
             correlation_id: Pipeline trace ID
 
         Returns:
             Tuple of (processed DataFrame, dict of phase results)
+
+        Raises:
+            MissingContextError: If outreach_context_id is missing
+            MissingSovIdError: If company_sov_id is missing
+            CLNotVerifiedError: If company not found in CL
         """
+        # DOCTRINE ENFORCEMENT: FAIL HARD on missing context
+        from .utils.context_manager import (
+            OutreachContextManager,
+            MissingContextError,
+            MissingSovIdError
+        )
+        outreach_context_id = OutreachContextManager.validate_context_id(outreach_context_id)
+        company_sov_id = OutreachContextManager.validate_sov_id(company_sov_id)
+
+        # CL UPSTREAM GATE: Verify company exists in Company Lifecycle
+        # DOCTRINE: Outreach is a CONSUMER of CL truth, not a creator
+        # If CL did not mint the sovereign ID, Outreach MUST NOT proceed
+        from .utils.cl_gate import CLGate
+        CLGate.enforce_or_fail(company_sov_id, outreach_context_id)
+
         if not correlation_id:
             correlation_id = str(uuid.uuid4())
 
@@ -552,8 +595,13 @@ class CompanyPipeline:
         phase2_result = self.run_domain_detection(matched_ids, correlation_id)
         results['phase2_domain'] = phase2_result
 
-        # Phase 3: Email Pattern Detection
-        phase3_result = self.run_email_pattern_detection(matched_ids, correlation_id)
+        # Phase 3: Email Pattern Detection (with context for paid tools)
+        phase3_result = self.run_email_pattern_detection(
+            matched_ids,
+            correlation_id,
+            outreach_context_id=outreach_context_id,
+            company_sov_id=company_sov_id
+        )
         results['phase3_pattern'] = phase3_result
 
         # Phase 4: Spoke Ready Check
