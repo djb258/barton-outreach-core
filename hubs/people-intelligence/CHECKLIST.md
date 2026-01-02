@@ -208,3 +208,9 @@ A failure is **blocking** if:
 ## Compliance Rule
 
 **If any box is unchecked, this hub may not ship.**
+
+---
+
+**Last Updated**: 2026-01-02
+**Hub**: People Intelligence (04.04.02)
+**Doctrine Version**: 1.0
