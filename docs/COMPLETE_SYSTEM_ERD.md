@@ -1,64 +1,79 @@
 # Barton Outreach Core - Complete System ERD
 ## Hub-and-Spoke Architecture with All Tables and Pipelines
 
-**Version:** 3.0.0
-**Last Updated:** 2025-01-02
+**Version:** 3.2.0
+**Last Updated:** 2026-01-03
 **Architecture:** Bicycle Wheel Doctrine v1.1
 **DOL Subhub:** EIN Resolution + Violation Discovery
+**Join Doctrine:** All DOL/Government data joins on EIN
 
 ---
 
 ## Visual Architecture Overview
 
 ```
-                                    MASTER HUB
-                                        |
-            +---------------------------+---------------------------+
-            |                           |                           |
-            v                           v                           v
-    +---------------+           +---------------+           +---------------+
-    |  PEOPLE NODE  |           |   DOL NODE    |           |  BLOG NODE    |
-    |   (Spoke #1)  |           |  (Spoke #2)   |           |  (Spoke #3)   |
-    |   [ACTIVE]    |           |   [ACTIVE]    |           |  [PLANNED]    |
-    +-------+-------+           +-------+-------+           +---------------+
-            |                           |
-            v                           v
-    +---------------+           +---------------------------+
-    | Email Verify  |           |      DOL SUBHUB           |
-    |  (Sub-wheel)  |           | ┌───────────────────────┐ |
-    +---------------+           | │ EIN Resolution Spoke  │ |
-            |                   | │ • ein_linkage table   │ |
-            |                   | │ • Filing discovery    │ |
-            |                   | │ • Hash verification   │ |
-            |                   | └───────────────────────┘ |
-            |                   | ┌───────────────────────┐ |
-            |                   | │ Violation Discovery   │ |
-            |                   | │ • violations table    │ |
-            |                   | │ • OSHA, EBSA, WHD     │ |
-            |                   | │ • Outreach views      │ |
-            |                   | └───────────────────────┘ |
-            |                   +---------------------------+
-            |                           |
-            +---------------------------+
-                           |
-                           v
-            +---------------------------+
-            |      TALENT FLOW NODE     |
-            |        (Spoke #4)         |
-            |         [SHELL]           |
-            +---------------------------+
-                           |
-            +---------------------------+
-            |        BIT ENGINE         |
-            |       (Spoke #5)          |
-            |       [PLANNED]           |
-            +---------------------------+
-                           |
-            +---------------------------+
-            |      OUTREACH NODE        |
-            |        (Spoke #6)         |
-            |       [PLANNED]           |
-            +---------------------------+
+                              COMPANY LIFECYCLE (CL)
+                              [EXTERNAL PARENT HUB]
+                              Mints company_unique_id
+                                        │
+                                        │ company_unique_id (consumed)
+                                        ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         OUTREACH PROGRAM (4 SUBHUBS)                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│    ┌─────────────────────────────────────────────────────────────────────┐ │
+│    │  SUBHUB 1: COMPANY TARGET (04.04.01)                    [ACTIVE]    │ │
+│    │  ───────────────────────────────────────────────────────────────    │ │
+│    │  • Domain resolution                                                │ │
+│    │  • Email pattern discovery                                          │ │
+│    │  • company_master, company_slot                                     │ │
+│    │  • EMITS: verified_pattern, domain                                  │ │
+│    └─────────────────────────────────────────────────────────────────────┘ │
+│                                        │                                   │
+│                                        ▼                                   │
+│    ┌─────────────────────────────────────────────────────────────────────┐ │
+│    │  SUBHUB 2: DOL FILINGS (04.04.03)                       [ACTIVE]    │ │
+│    │  ───────────────────────────────────────────────────────────────    │ │
+│    │  • EIN resolution (fuzzy + deterministic)                           │ │
+│    │  • Form 5500 + Schedule A filings                                   │ │
+│    │  • Violation discovery (OSHA, EBSA, WHD)                            │ │
+│    │  • ein_linkage, violations, form_5500                               │ │
+│    │  • EMITS: ein, filing_signals, violation_facts                      │ │
+│    └─────────────────────────────────────────────────────────────────────┘ │
+│                                        │                                   │
+│                                        ▼                                   │
+│    ┌─────────────────────────────────────────────────────────────────────┐ │
+│    │  SUBHUB 3: PEOPLE INTELLIGENCE (04.04.02)               [ACTIVE]    │ │
+│    │  ───────────────────────────────────────────────────────────────    │ │
+│    │  • CONSUMER ONLY - Does NOT discover patterns or EINs               │ │
+│    │  • Slot assignment (seniority-based)                                │ │
+│    │  • Email verification (sub-wheel)                                   │ │
+│    │  • people_master, person_scores, person_movement_history            │ │
+│    │  • CONSUMES: verified_pattern (CT), ein/signals (DOL)               │ │
+│    │  • EMITS: slot_assignments, people_records                          │ │
+│    └─────────────────────────────────────────────────────────────────────┘ │
+│                                        │                                   │
+│                                        ▼                                   │
+│    ┌─────────────────────────────────────────────────────────────────────┐ │
+│    │  SUBHUB 4: BLOG CONTENT (04.04.05)                      [PLANNED]   │ │
+│    │  ───────────────────────────────────────────────────────────────    │ │
+│    │  • Content signals, news monitoring                                 │ │
+│    │  • CONSUMER ONLY                                                    │ │
+│    │  • company_events (news/blog signals)                               │ │
+│    │  • EMITS: content_signals, bit_impact_scores                        │ │
+│    └─────────────────────────────────────────────────────────────────────┘ │
+│                                        │                                   │
+│                                        ▼                                   │
+│    ┌─────────────────────────────────────────────────────────────────────┐ │
+│    │  BIT ENGINE + OUTREACH EXECUTION                                    │ │
+│    │  ───────────────────────────────────────────────────────────────    │ │
+│    │  • Aggregates signals from all 4 subhubs                            │ │
+│    │  • Calculates BIT Score (0-100)                                     │ │
+│    │  • Triggers outreach campaigns                                      │ │
+│    └─────────────────────────────────────────────────────────────────────┘ │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -114,6 +129,62 @@ Company Target (PASS, EIN resolved)
 
 ---
 
+## EIN Join Architecture (Core Doctrine)
+
+> **DOCTRINE: All DOL / Government data joins on EIN**
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                         EIN-BASED JOIN ARCHITECTURE                              │
+│                    (Canonical Pattern for All DOL Data)                          │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│   ┌───────────────────┐                                                          │
+│   │ dol.violations    │                                                          │
+│   │                   │        ┌─────────────────────────────────────┐           │
+│   │ violation_id      │        │ public.form_5500_filings            │           │
+│   │ EIN ─────────────────────► │ sponsor_ein (EIN)                   │           │
+│   │ violation_type    │        │ plan_name                           │           │
+│   │ penalty_current   │        │ filing_year                         │           │
+│   │                   │        │ total_participants                  │           │
+│   └─────────┬─────────┘        │ net_assets                          │           │
+│             │                  └──────────────────────┬──────────────┘           │
+│             │                                         │                          │
+│             │ EIN                                     │ EIN                      │
+│             │                                         │                          │
+│             ▼                                         ▼                          │
+│   ┌─────────────────────────────────────────────────────────────────┐           │
+│   │                    dol.ein_linkage                               │           │
+│   │                                                                  │           │
+│   │  EIN (canonical join key)                                        │           │
+│   │  company_unique_id ──► marketing.company_master (Sovereign ID)   │           │
+│   │  outreach_context_id ──► outreach.outreach_context               │           │
+│   │                                                                  │           │
+│   └─────────────────────────────────────────────────────────────────┘           │
+│                                                                                  │
+│   JOIN PATTERN:                                                                  │
+│   ─────────────                                                                  │
+│   Violations ──┬── EIN ──┬── 5500 Filings ──► company_unique_id                 │
+│                │         │                                                       │
+│                └─────────┴── ein_linkage ──► outreach_context_id                │
+│                                                                                  │
+│   SQL EXAMPLE:                                                                   │
+│   ─────────────                                                                  │
+│   SELECT v.*, f.plan_name, el.company_unique_id, el.outreach_context_id         │
+│   FROM dol.violations v                                                          │
+│   JOIN public.form_5500_filings f ON v.ein = f.sponsor_ein                       │
+│   JOIN dol.ein_linkage el ON v.ein = el.ein;                                     │
+│                                                                                  │
+│   ╔═══════════════════════════════════════════════════════════════════════════╗ │
+│   ║ RULE: Never join violations directly to company_master.                   ║ │
+│   ║       Always go through EIN → ein_linkage → company_unique_id            ║ │
+│   ╚═══════════════════════════════════════════════════════════════════════════╝ │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## Complete Hub-and-Spoke Mermaid Diagram
 
 ```mermaid
@@ -142,13 +213,29 @@ flowchart TB
         PM --> PMH
     end
 
-    subgraph DOL_SPOKE["DOL NODE (Spoke #2)"]
+    subgraph DOL_SPOKE["DOL NODE (Spoke #2) - EIN Resolution + Violations"]
         direction TB
-        F5500[("form_5500<br/>━━━━━━━━━━━━━━<br/>ack_id PK<br/>ein<br/>plan_name<br/>participant_count<br/>total_assets")]
-
-        F5500SF[("form_5500_sf<br/>━━━━━━━━━━━━━━<br/>ack_id PK<br/>ein<br/>plan_name<br/>Small Plans")]
-
-        SCHA[("schedule_a<br/>━━━━━━━━━━━━━━<br/>ack_id PK<br/>insurance_company<br/>covered_lives<br/>premium_info")]
+        
+        subgraph DOL_5500["5500 Filings (1.3M records)"]
+            F5500[("form_5500_filings<br/>━━━━━━━━━━━━━━<br/>ack_id PK<br/>spons_dfe_ein<br/>plan_name<br/>participant_count<br/>total_assets")]
+            
+            F5500SF[("form_5500_sf<br/>━━━━━━━━━━━━━━<br/>ack_id PK<br/>ein<br/>Small Plans")]
+            
+            SCHA[("schedule_a<br/>━━━━━━━━━━━━━━<br/>ack_id<br/>insurance_company<br/>premium_info")]
+        end
+        
+        subgraph DOL_LINKAGE["EIN Linkage (Identity Resolution)"]
+            EINLINK[("dol.ein_linkage<br/>━━━━━━━━━━━━━━<br/>company_unique_id FK<br/>ein<br/>outreach_context_id<br/>hash_fingerprint")]
+        end
+        
+        subgraph DOL_VIOLATIONS["EBSA Violations (~9.6K records)"]
+            EBSAVIOL[("dol.ebsa_violations<br/>━━━━━━━━━━━━━━<br/>id PK<br/>ein<br/>plan_year<br/>case_type<br/>penalty_amount_range<br/>plan_admin_state")]
+        end
+        
+        %% JOIN CHAIN: Violation → 5500 → Outreach
+        EBSAVIOL -->|"EIN Join"| F5500
+        F5500 -->|"EIN Join"| EINLINK
+        EINLINK -->|"company_unique_id"| CM
     end
 
     subgraph FAILURE_SPOKES["FAILURE SPOKES"]
@@ -166,9 +253,13 @@ flowchart TB
         PRI[("people_raw_intake<br/>━━━━━━━━━━━━━━<br/>Raw people imports")]
     end
 
-    %% Relationships
-    CM -.->|"EIN Join"| F5500
-    CM -.->|"EIN Join"| F5500SF
+    %% Relationships - DOL Join Chain
+    %% VIOLATION → 5500 → EIN_LINKAGE → COMPANY_MASTER → OUTREACH
+    EBSAVIOL -.->|"ein"| F5500
+    F5500 -.->|"spons_dfe_ein"| EINLINK
+    EINLINK -->|"company_unique_id FK"| CM
+    
+    %% People relationships
     CS -->|"FK"| PM
     PM -->|"company_unique_id FK"| CM
 
@@ -929,6 +1020,8 @@ erDiagram
 | **dol** | v_companies_with_violations | Outreach targeting | ein_linkage → violations |
 | **dol** | v_violation_summary | Aggregate stats | ein_linkage → violations (grouped) |
 | **dol** | v_recent_violations | Last 90 days | violations → ein_linkage |
+| **dol** | v_violations_with_5500_context | **EIN-based join pattern** | violations → 5500 → ein_linkage (via EIN) |
+| **dol** | v_violations_outreach_ready | **Full outreach chain** | violations → 5500 → ein_linkage → company_master |
 | **analytics** | v_5500_renewal_month | Renewal month signals | ein_linkage → form_5500 |
 | **analytics** | v_5500_insurance_facts | Schedule A/EZ facts | ein_linkage → schedule_a |
 | **analytics** | v_company_target_ein_enrichment_queue | Enrichment queue | shq.error_master filtered |
