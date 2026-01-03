@@ -25,10 +25,17 @@
  *   - WHD (Wage and Hour Division)
  *   - OFCCP (Office of Federal Contract Compliance Programs)
  *
+ * API KEY:
+ *   Requires DOL_API_KEY from Doppler (env var)
+ *   See: dolApiClient.js for API integration
+ *
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
 const crypto = require('crypto');
+
+// Import DOL API Client
+const dolApiClient = require('./dolApiClient');
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -485,6 +492,251 @@ function parseOSHAInspection(oshaInspection) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// FULL DISCOVERY PIPELINE
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Run full EBSA violation discovery pipeline
+ * 
+ * This is the main entry point for discovering EBSA violations
+ * (401k plans, health plans, ERISA violations).
+ * 
+ * Pipeline:
+ * 1. Fetch from DOL API (data.dol.gov)
+ * 2. Normalize records
+ * 3. Match to existing EIN linkages
+ * 4. Return ready-for-insert records
+ * 
+ * @param {Object} options - Discovery options
+ * @param {Array<string>} options.states - Target states (default: Mid-Atlantic)
+ * @param {number|Array<number>} options.years - Plan year(s) to filter (e.g., 2023 or [2022, 2023])
+ * @param {string} options.caseType - Case type filter (DEFICIENT, LATE, NON_FILER)
+ * @param {number} options.minPenalty - Minimum penalty amount
+ * @param {number} options.maxRecords - Maximum records to fetch
+ * @param {Array<Object>} options.einLinkages - Existing EIN linkages from dol.ein_linkage
+ * @param {boolean} options.requireEINMatch - Only return matched violations
+ * @param {string} options.outreachContextId - Outreach context ID
+ * @returns {Promise<Object>} Discovery result
+ */
+async function runEBSADiscovery(options = {}) {
+  const {
+    states = dolApiClient.TARGET_STATES,
+    years = null,
+    caseType = null,
+    minPenalty = null,
+    maxRecords = 5000,
+    einLinkages = [],
+    requireEINMatch = true,
+    outreachContextId = null
+  } = options;
+  
+  const yearStr = years ? (Array.isArray(years) ? years.join(', ') : years) : 'all';
+  
+  console.log('═══════════════════════════════════════════════════════════════');
+  console.log('DOL EBSA Violation Discovery Pipeline');
+  console.log('═══════════════════════════════════════════════════════════════');
+  console.log(`Target States: ${states.join(', ')}`);
+  console.log(`Target Years: ${yearStr}`);
+  console.log(`Case Type: ${caseType || 'all'}`);
+  console.log(`Min Penalty: ${minPenalty ? '$' + minPenalty : 'none'}`);
+  console.log(`Max Records: ${maxRecords}`);
+  console.log(`EIN Linkages Available: ${einLinkages.length}`);
+  console.log('═══════════════════════════════════════════════════════════════');
+  
+  try {
+    // Step 1: Fetch from DOL API
+    console.log('\n[Step 1/4] Fetching from DOL API (EBSA OCATS)...');
+    const apiResult = await dolApiClient.discoverEBSAViolations({ 
+      states, 
+      years,
+      caseType,
+      minPenalty,
+      maxRecords 
+    });
+    console.log(`  ✓ Fetched ${apiResult.violations.length} raw violations`);
+    
+    // Step 2: Process violations (normalize + validate)
+    console.log('\n[Step 2/4] Processing and normalizing violations...');
+    const processResult = processViolations(
+      apiResult.violations,
+      SOURCE_AGENCIES.EBSA,
+      einLinkages,
+      { requireEINMatch, outreachContextId }
+    );
+    
+    if (!processResult.success) {
+      console.error(`  ✗ Processing failed: ${processResult.error}`);
+      return {
+        success: false,
+        error: processResult.error,
+        airEvents: []
+      };
+    }
+    
+    console.log(`  ✓ Processed ${processResult.stats.total} violations`);
+    console.log(`  ✓ Matched: ${processResult.stats.matched_count} (${processResult.stats.match_rate})`);
+    console.log(`  ✓ Unmatched: ${processResult.stats.unmatched_count}`);
+    console.log(`  ✓ Invalid EINs: ${processResult.stats.invalid_ein_count}`);
+    
+    // Step 3: Generate AIR events
+    console.log('\n[Step 3/4] Generating AIR events...');
+    const airEvents = [];
+    
+    // AIR event for each matched violation
+    for (const violation of processResult.matched) {
+      airEvents.push(createViolationAIREvent(
+        VIOLATION_AIR_EVENTS.VIOLATION_EIN_MATCHED,
+        violation,
+        { status: 'SUCCESS', message: 'EBSA violation matched to EIN' }
+      ));
+    }
+    
+    // AIR events for unmatched (if not requiring match)
+    if (!requireEINMatch) {
+      for (const violation of processResult.unmatched) {
+        airEvents.push(createViolationAIREvent(
+          VIOLATION_AIR_EVENTS.VIOLATION_EIN_NOT_FOUND,
+          violation,
+          { status: 'INFO', message: 'EBSA violation - no EIN linkage found' }
+        ));
+      }
+    }
+    
+    // Batch completion AIR event
+    airEvents.push(createBatchCompleteAIREvent(
+      processResult.stats,
+      SOURCE_AGENCIES.EBSA,
+      outreachContextId
+    ));
+    
+    console.log(`  ✓ Generated ${airEvents.length} AIR events`);
+    
+    // Step 4: Prepare result
+    console.log('\n[Step 4/4] Preparing result...');
+    
+    const result = {
+      success: true,
+      violations: processResult.violations,
+      matched: processResult.matched,
+      unmatched: processResult.unmatched,
+      stats: processResult.stats,
+      airEvents,
+      metadata: {
+        source: 'EBSA_OCATS',
+        states,
+        api_metadata: apiResult.metadata,
+        pipeline_completed_at: new Date().toISOString()
+      }
+    };
+    
+    console.log('\n═══════════════════════════════════════════════════════════════');
+    console.log('Discovery Complete');
+    console.log(`  Total Violations: ${result.stats.total}`);
+    console.log(`  Ready for Insert: ${result.matched.length}`);
+    console.log(`  Unmatched (for review): ${result.unmatched.length}`);
+    console.log('═══════════════════════════════════════════════════════════════\n');
+    
+    return result;
+    
+  } catch (error) {
+    console.error('\n✗ Discovery pipeline failed:', error.message);
+    
+    return {
+      success: false,
+      error: error.message,
+      stack: error.stack,
+      airEvents: [
+        createViolationAIREvent(
+          VIOLATION_AIR_EVENTS.VIOLATION_BATCH_COMPLETE,
+          null,
+          { 
+            status: 'ERROR', 
+            message: `Discovery failed: ${error.message}`,
+            payload: { error: error.message }
+          }
+        )
+      ]
+    };
+  }
+}
+
+/**
+ * Run full OSHA violation discovery pipeline
+ * 
+ * @param {Object} options - Discovery options
+ * @returns {Promise<Object>} Discovery result
+ */
+async function runOSHADiscovery(options = {}) {
+  const {
+    states = dolApiClient.TARGET_STATES,
+    maxRecords = 5000,
+    startDate = null,
+    einLinkages = [],
+    requireEINMatch = true,
+    outreachContextId = null
+  } = options;
+  
+  console.log('═══════════════════════════════════════════════════════════════');
+  console.log('DOL OSHA Violation Discovery Pipeline');
+  console.log('═══════════════════════════════════════════════════════════════');
+  
+  try {
+    // Step 1: Fetch from DOL API
+    console.log('\n[Step 1/4] Fetching from DOL API (OSHA Inspections)...');
+    const apiResult = await dolApiClient.discoverOSHAViolations({ states, startDate, maxRecords });
+    console.log(`  ✓ Fetched ${apiResult.violations.length} raw inspections`);
+    
+    // Step 2: Process violations
+    console.log('\n[Step 2/4] Processing and normalizing...');
+    const processResult = processViolations(
+      apiResult.violations,
+      SOURCE_AGENCIES.OSHA,
+      einLinkages,
+      { requireEINMatch, outreachContextId }
+    );
+    
+    if (!processResult.success) {
+      return { success: false, error: processResult.error, airEvents: [] };
+    }
+    
+    console.log(`  ✓ Matched: ${processResult.stats.matched_count}`);
+    
+    // Step 3: Generate AIR events
+    const airEvents = [];
+    for (const violation of processResult.matched) {
+      airEvents.push(createViolationAIREvent(
+        VIOLATION_AIR_EVENTS.VIOLATION_EIN_MATCHED,
+        violation,
+        { status: 'SUCCESS' }
+      ));
+    }
+    airEvents.push(createBatchCompleteAIREvent(processResult.stats, SOURCE_AGENCIES.OSHA, outreachContextId));
+    
+    return {
+      success: true,
+      violations: processResult.violations,
+      matched: processResult.matched,
+      unmatched: processResult.unmatched,
+      stats: processResult.stats,
+      airEvents,
+      metadata: { source: 'OSHA', states, api_metadata: apiResult.metadata }
+    };
+    
+  } catch (error) {
+    console.error('✗ OSHA Discovery failed:', error.message);
+    return { success: false, error: error.message, airEvents: [] };
+  }
+}
+
+/**
+ * Health check for DOL API connectivity
+ * @returns {Promise<Object>} Health check result
+ */
+async function checkAPIHealth() {
+  return dolApiClient.healthCheck();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // MODULE EXPORTS
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -519,5 +771,13 @@ module.exports = {
   createBatchCompleteAIREvent,
   
   // Source-specific parsers
-  parseOSHAInspection
+  parseOSHAInspection,
+  
+  // Full Discovery Pipelines (NEW)
+  runEBSADiscovery,
+  runOSHADiscovery,
+  checkAPIHealth,
+  
+  // API Client (re-export for direct access)
+  dolApiClient
 };

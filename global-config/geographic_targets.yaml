@@ -1,0 +1,80 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# Geographic Targets Configuration
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# Canonical list of target states for all outreach operations.
+# All hubs and spokes should reference this configuration.
+#
+# Last Updated: 2025-01-03
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Target States (8 states - Mid-Atlantic / Appalachian focus)
+target_states:
+  - code: WV
+    name: West Virginia
+    region: appalachian
+    priority: 1
+    
+  - code: VA
+    name: Virginia
+    region: mid_atlantic
+    priority: 1
+    
+  - code: PA
+    name: Pennsylvania
+    region: mid_atlantic
+    priority: 1
+    
+  - code: MD
+    name: Maryland
+    region: mid_atlantic
+    priority: 1
+    
+  - code: OH
+    name: Ohio
+    region: midwest
+    priority: 1
+    
+  - code: KY
+    name: Kentucky
+    region: appalachian
+    priority: 1
+    
+  - code: DE
+    name: Delaware
+    region: mid_atlantic
+    priority: 1
+    
+  - code: NC
+    name: North Carolina
+    region: southeast
+    priority: 1
+
+# State codes as array (for quick reference)
+state_codes:
+  - WV
+  - VA
+  - PA
+  - MD
+  - OH
+  - KY
+  - DE
+  - NC
+
+# Regions
+regions:
+  appalachian:
+    name: Appalachian
+    states: [WV, KY]
+    
+  mid_atlantic:
+    name: Mid-Atlantic
+    states: [VA, PA, MD, DE]
+    
+  midwest:
+    name: Midwest
+    states: [OH]
+    
+  southeast:
+    name: Southeast
+    states: [NC]

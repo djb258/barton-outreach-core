@@ -172,25 +172,43 @@ DOL agencies (OSHA, EBSA, WHD) publish violation data for employers. Companies w
 | FR-5.2 | System SHALL provide `v_violation_summary` view | P0 |
 | FR-5.3 | System SHALL provide `v_recent_violations` view (90 days) | P0 |
 
-### Violation Architecture
+### Violation Architecture — Linkage Chain
 
 ```
+LINKAGE CHAIN (CORRECT):
+  Violation → EIN → Outreach Context ID → Sovereign ID
+
 DOL Sources (OSHA, EBSA, WHD, OFCCP)
         ↓
 findViolations.js
   ├─ normalizeViolation() → Standard schema
-  ├─ matchViolationToEIN() → Link to ein_linkage
+  ├─ matchViolationToEIN() → Link to dol.ein_linkage
+  │       ↓
+  │   company_unique_id (from ein_linkage)
+  │       ↓
+  │   outreach_context_id (from outreach.outreach_context)
+  │       ↓
+  │   company_unique_id = SOVEREIGN ID
   │
   └─ Result
-        ├─ MATCHED → INSERT dol.violations
+        ├─ MATCHED → INSERT dol.violations (with both IDs)
         └─ UNMATCHED → Log for enrichment
         
 Downstream Outreach
         ↓
 READ from dol.v_companies_with_violations
+  (includes company_unique_id AND outreach_context_id)
         ↓
 Message about remediation services
 ```
+
+### Key Linkage Fields
+
+| Field | Owner | Purpose |
+|-------|-------|---------|
+| `ein` | DOL Subhub | Federal identifier (from violation) |
+| `outreach_context_id` | Outreach Orchestration | Targeting context for campaign |
+| `company_unique_id` | Company Lifecycle (CL) | **SOVEREIGN ID** |
 
 ### Violation Files
 

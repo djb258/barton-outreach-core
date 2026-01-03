@@ -160,23 +160,46 @@ DOL agencies (OSHA, EBSA, WHD, OFCCP) publish employer violation data. Companies
 
 ## Violation Architecture
 
-### Data Flow
+### Data Flow — Linkage Chain
+
+**CORRECT LINKAGE CHAIN:**
+```
+Violation → EIN → Outreach Context ID → Sovereign ID
+```
+
 ```
 DOL Sources (OSHA, EBSA, WHD, OFCCP)
         ↓
 DOL Subhub
   ├─ findViolations.js → Discover + normalize
   ├─ matchViolationToEIN() → Link to ein_linkage
+  │       ↓
+  │   ein_linkage provides: company_unique_id
+  │       ↓
+  │   outreach.outreach_context provides: outreach_context_id
+  │       ↓
+  │   company_unique_id = SOVEREIGN ID (from CL)
   │
   └─ Result
-        ├─ MATCHED → dol.violations (append-only)
+        ├─ MATCHED → dol.violations (with both IDs)
         │     ↓
         │   dol.v_companies_with_violations
+        │     ├─ company_unique_id (sovereign)
+        │     ├─ outreach_context_id (targeting)
+        │     └─ ein (violation link)
         │     ↓
         │   Downstream Outreach (reads facts)
         │
         └─ UNMATCHED → Log for enrichment
 ```
+
+### Key IDs
+
+| ID | Owner | Purpose |
+|----|-------|---------|
+| `ein` | DOL Subhub | Federal identifier (violation link) |
+| `outreach_context_id` | Outreach Orchestration | Targeting context |
+| `company_unique_id` | Company Lifecycle (CL) | **SOVEREIGN ID** |
 
 ### Source Agencies (LOCKED)
 | Agency | Data Source |

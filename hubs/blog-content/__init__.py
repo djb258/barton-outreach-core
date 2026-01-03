@@ -1,31 +1,48 @@
 """
-Blog Content Sub-Hub (04.04.05)
-================================
+Blog Sub-Hub — News & Content Signal Pipeline
+═══════════════════════════════════════════════════════════════════════════
 
-PURPOSE:
-    Provide timing signals from news, funding events, and content sources.
-    BIT modulation only - cannot mint, revive, or trigger enrichment.
+Doctrine: /hubs/blog-content/PRD.md
+Version: 1.0.0
 
-LIFECYCLE GATE:
-    Requires lifecycle >= ACTIVE
+This sub-hub processes external news content and converts it into structured
+BIT (Buyer Intent Tool) signals for downstream consumption.
 
-RULES:
-    - Cannot mint or revive companies
-    - Cannot trigger enrichment
-    - BIT modulation only
-    - Requires company_sov_id
-    - Lifecycle read-only
+ROLE:
+    - Read-only signal emitter
+    - CANNOT create companies
+    - CANNOT trigger enrichment
+    - CANNOT mutate Company Lifecycle
 
-SIGNALS EMITTED:
-    - FUNDING_EVENT: +15.0
-    - ACQUISITION: +12.0
-    - LEADERSHIP_CHANGE: +8.0
-    - EXPANSION: +7.0
-    - PRODUCT_LAUNCH: +5.0
-    - PARTNERSHIP: +5.0
-    - LAYOFF: -3.0
-    - NEGATIVE_NEWS: -5.0
+PIPELINE:
+    Ingest → Parse → Extract → Classify → Match → Validate → Emit
+
+TERMINAL STATES:
+    - EMITTED: Signal sent to BIT Engine
+    - QUEUED: Article queued for identity resolution
+    - DROPPED: Failed validation or processing
+
+USAGE:
+    from hubs.blog_content import run
+    
+    result = await run({
+        'title': 'Acme Corp Raises $50M Series B',
+        'content': '...',
+        'source': 'newsapi',
+        'source_url': 'https://...',
+        'published_at': '2024-01-15T10:30:00Z'
+    })
+    
+    print(result.terminal_state)  # EMITTED / QUEUED / DROPPED
 """
 
-__version__ = "1.0.0"
-__doctrine_id__ = "04.04.05"
+from .blog_node_spoke import run, get_spoke, BlogNodeSpoke, PipelineResult
+
+__all__ = [
+    'run',
+    'get_spoke',
+    'BlogNodeSpoke',
+    'PipelineResult',
+]
+
+__version__ = '1.0.0'

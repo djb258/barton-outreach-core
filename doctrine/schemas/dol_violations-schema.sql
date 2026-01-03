@@ -141,6 +141,11 @@ CREATE INDEX IF NOT EXISTS idx_dol_violations_case
 CREATE UNIQUE INDEX IF NOT EXISTS idx_dol_violations_unique 
   ON dol.violations (ein, source_agency, COALESCE(case_number, citation_id, source_record_id));
 
+-- Find violations by outreach context (for targeting)
+CREATE INDEX IF NOT EXISTS idx_dol_violations_outreach_context 
+  ON dol.violations (outreach_context_id)
+  WHERE outreach_context_id IS NOT NULL;
+
 -- ═══════════════════════════════════════════════════════════════════════════
 -- APPEND-ONLY TRIGGERS
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -211,11 +216,13 @@ ON CONFLICT (category_code) DO NOTHING;
 -- ═══════════════════════════════════════════════════════════════════════════
 --
 -- Join violations with EIN linkage for outreach targeting
+-- Linkage Chain: Violation → EIN → Outreach Context → Sovereign ID
 --
 
 CREATE OR REPLACE VIEW dol.v_companies_with_violations AS
 SELECT
-  el.company_unique_id,
+  el.company_unique_id,          -- Sovereign ID (from CL via ein_linkage)
+  v.outreach_context_id,         -- Outreach Context (targeting context)
   el.ein,
   v.violation_id,
   v.source_agency,

@@ -1,7 +1,7 @@
 # DOL Subhub — Task Checklist
 ## Barton Outreach Core | SVG-PLE Marketing
 
-**Last Updated**: 2025-01-02
+**Last Updated**: 2025-01-03
 **Status**: Active
 
 ---
@@ -84,6 +84,13 @@
 - [x] Update PRD with violation requirements
 - [x] Update ADR with violation architecture
 - [x] Update Obsidian vault
+- [x] Create `VIOLATION_DISCOVERY_FLOW.md` (linkage chain)
+
+### Linkage Chain (CORRECT)
+- [x] Document: Violation → EIN → Outreach Context → Sovereign ID
+- [x] Add `outreach_context_id` to violations schema
+- [x] Add `outreach_context_id` to views
+- [x] Verify views include both IDs (company_unique_id + outreach_context_id)
 
 ---
 
@@ -132,11 +139,13 @@ The DOL Subhub must NOT:
 | Document | Purpose |
 |----------|---------|
 | `doctrine/ple/DOL_EIN_RESOLUTION.md` | Core doctrine |
+| `doctrine/ple/VIOLATION_DISCOVERY_FLOW.md` | Linkage chain documentation |
 | `doctrine/ple/COMPANY_TARGET_IDENTITY.md` | Upstream doctrine |
 | `doctrine/schemas/dol_ein_linkage-schema.sql` | EIN linkage schema |
 | `doctrine/schemas/dol_violations-schema.sql` | Violations schema |
 | `ctb/docs/prd/PRD-DOL-EIN-FUZZY-FILING-DISCOVERY.md` | PRD |
 | `ctb/docs/adr/ADR-DOL-FUZZY-BOUNDARY.md` | ADR |
+| `global-config/geographic_targets.yaml` | Target states (8 states) |
 
 ---
 
