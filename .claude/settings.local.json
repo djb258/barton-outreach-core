@@ -204,7 +204,10 @@
       "Bash(hubs/people-intelligence/CC.md )",
       "Bash(ops/CC.md )",
       "Bash(spokes/CC.md)",
-      "Bash(git tag:*)"
+      "Bash(git tag:*)",
+      "Bash(powershell -Command \"Remove-Item -Path ''company-lifecycle-cl'' -Recurse -Force\")",
+      "Bash(powershell -Command \"Get-Process | Where-Object {$_Path -like ''*cursor*'' -or $_Name -like ''*node*''} | Select-Object Name, Id | Format-Table -AutoSize\")",
+      "Bash(powershell -Command:*)"
     ],
     "deny": []
   }
