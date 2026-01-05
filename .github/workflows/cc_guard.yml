@@ -357,3 +357,147 @@ jobs:
           echo "Identity minting scan complete"
           echo "Manual review recommended for any flagged patterns"
           echo "================================================"
+
+  cc-root-lockdown:
+    name: CC Root Directory Lockdown
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify Root Directory Structure
+        run: |
+          echo "================================================"
+          echo "CC DOCTRINE GUARD - Root Directory Lockdown"
+          echo "================================================"
+          echo ""
+          echo "ALLOWED top-level directories:"
+          echo "  .github/, docs/, hubs/, contexts/, contracts/, ops/, spokes/, meta/"
+          echo ""
+          echo "ALLOWED files (Doppler exception):"
+          echo "  .doppler/, .doppler.yaml, doppler.yaml, .env.example"
+          echo ""
+
+          VIOLATIONS=0
+
+          # Allowed top-level directories
+          ALLOWED_DIRS=(
+            ".github"
+            "docs"
+            "hubs"
+            "contexts"
+            "contracts"
+            "ops"
+            "spokes"
+            "meta"
+            "node_modules"  # Build artifact, gitignored
+            ".git"          # Git internals
+            ".claude"       # Claude config
+          )
+
+          # Check for unauthorized directories
+          for dir in */; do
+            dir_name="${dir%/}"
+            ALLOWED=false
+
+            for allowed in "${ALLOWED_DIRS[@]}"; do
+              if [ "$dir_name" == "$allowed" ]; then
+                ALLOWED=true
+                break
+              fi
+            done
+
+            if [ "$ALLOWED" = false ]; then
+              echo "CC VIOLATION: Unauthorized top-level directory: $dir_name"
+              echo "  → Must be moved to meta/legacy_quarantine/ or deleted"
+              VIOLATIONS=$((VIOLATIONS + 1))
+            else
+              echo "  OK: $dir_name"
+            fi
+          done
+
+          echo ""
+          echo "================================================"
+
+          if [ $VIOLATIONS -gt 0 ]; then
+            echo "CC ROOT LOCKDOWN: FAIL"
+            echo "Violations: $VIOLATIONS"
+            echo ""
+            echo "New top-level directories are NOT allowed."
+            echo "Allowed: .github/, docs/, hubs/, contexts/, contracts/, ops/, spokes/, meta/"
+            echo "================================================"
+            exit 1
+          else
+            echo "CC ROOT LOCKDOWN: PASS"
+            echo "All top-level directories are CC-compliant"
+            echo "================================================"
+          fi
+
+  cc-executable-check:
+    name: CC Executable Location Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check Executable Locations
+        run: |
+          echo "================================================"
+          echo "CC DOCTRINE GUARD - Executable Location Check"
+          echo "================================================"
+          echo ""
+          echo "RULE: Executable scripts must live in ops/"
+          echo "EXCEPTION: Hub phase files may have __main__ for testing"
+          echo ""
+
+          VIOLATIONS=0
+
+          # Find Python files with if __name__ == "__main__" outside allowed locations
+          EXECUTABLES=$(find . -name "*.py" -type f \
+            ! -path "./ops/*" \
+            ! -path "./meta/*" \
+            ! -path "./.git/*" \
+            ! -path "./node_modules/*" \
+            ! -path "./hubs/*/imo/middle/phases/*" \
+            -exec grep -l "if __name__.*==.*['\"]__main__['\"]" {} \; 2>/dev/null || true)
+
+          if [ -n "$EXECUTABLES" ]; then
+            echo "WARNING: Executable files found outside ops/:"
+            echo "$EXECUTABLES"
+            echo ""
+            echo "These files have __main__ blocks and should be reviewed."
+            echo "Consider moving orchestration logic to ops/scripts/"
+            # Note: Warning only, not failing - hub phases often have main for testing
+          else
+            echo "  OK: No unauthorized executables found"
+          fi
+
+          # Check for shell scripts outside ops/
+          SHELL_SCRIPTS=$(find . -name "*.sh" -type f \
+            ! -path "./ops/*" \
+            ! -path "./meta/*" \
+            ! -path "./.git/*" \
+            ! -path "./node_modules/*" \
+            ! -path "./.github/*" 2>/dev/null || true)
+
+          if [ -n "$SHELL_SCRIPTS" ]; then
+            echo ""
+            echo "CC VIOLATION: Shell scripts found outside ops/:"
+            echo "$SHELL_SCRIPTS"
+            VIOLATIONS=$((VIOLATIONS + 1))
+          fi
+
+          echo ""
+          echo "================================================"
+
+          if [ $VIOLATIONS -gt 0 ]; then
+            echo "CC EXECUTABLE CHECK: FAIL"
+            echo "Violations: $VIOLATIONS"
+            echo ""
+            echo "Shell scripts must live in ops/scripts/"
+            echo "================================================"
+            exit 1
+          else
+            echo "CC EXECUTABLE CHECK: PASS"
+            echo "================================================"
+          fi

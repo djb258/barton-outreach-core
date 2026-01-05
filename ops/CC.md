@@ -19,10 +19,20 @@ Operations are runtime execution instances. They operate at CC-04 and:
 
 | Directory | Purpose | PID Scope |
 |-----------|---------|-----------|
+| cc_enforcement/ | CC doctrine enforcement | Per-run |
 | enforcement/ | Doctrine enforcement checks | Per-run |
 | validation/ | Runtime validation | Per-record |
 | master_error_log/ | Error logging | Append-only |
 | phase_registry/ | Phase execution tracking | Per-pipeline |
+| migrations/ | Database migrations | Per-deploy |
+| neon/ | Neon database operations | Per-query |
+| scripts/ | Operational scripts | Per-execution |
+| tests/ | Test execution | Per-suite |
+| tooling/ | Operational tooling | Per-run |
+| tools/ | CLI tools | Per-invocation |
+| infra/ | Infrastructure management | Per-deploy |
+| monitoring/grafana/ | Monitoring dashboards | N/A (config) |
+| diagnostics/ | Runtime diagnostics | Per-check |
 
 ## Rules
 

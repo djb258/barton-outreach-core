@@ -40,3 +40,10 @@ lerna-debug.log*
 __pycache__/
 *.pyc
 *.pyo
+
+# External repositories (CC-01 sovereign, not part of this repo)
+company-lifecycle-cl/
+site-scout-pro/
+meta/legacy_quarantine/barton-outreach-core/
+meta/legacy_quarantine/company-lifecycle-cl/
+meta/legacy_quarantine/site-scout-pro/
