@@ -1,0 +1,151 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#e1f5fe', 'primaryTextColor': '#01579b', 'primaryBorderColor': '#0288d1', 'lineColor': '#0288d1', 'secondaryColor': '#fff3e0', 'tertiaryColor': '#e8f5e9'}}}%%
+
+flowchart TB
+    %% =========================================================================
+    %% CC SYSTEM DIAGRAM - Canonical Chain Architecture
+    %% Doctrine Version: v1.1.0
+    %% Repository: barton-outreach-core
+    %% =========================================================================
+
+    %% CC-01 SOVEREIGN (External)
+    subgraph CC01["CC-01 SOVEREIGN (External)"]
+        direction TB
+        CL["Company Lifecycle (CL)<br/>━━━━━━━━━━━━━━━━━━━<br/>MINTS: company_unique_id<br/>TABLE: cl.company_identity<br/>STATUS: EXTERNAL"]
+    end
+
+    %% CC-02 HUB (Ownership + Routing)
+    subgraph CC02["CC-02 HUB (Ownership + Routing)"]
+        direction TB
+
+        subgraph CT_HUB["Company Target (04.04.01)"]
+            CT_IN["imo/input"]
+            CT_MID["imo/middle<br/>• Domain Resolution<br/>• Pattern Discovery<br/>• BIT Scoring"]
+            CT_OUT["imo/output"]
+            CT_IN --> CT_MID --> CT_OUT
+        end
+
+        subgraph DOL_HUB["DOL Filings (04.04.03)"]
+            DOL_IN["imo/input"]
+            DOL_MID["imo/middle<br/>• EIN Matching<br/>• Form 5500<br/>• Schedule A"]
+            DOL_OUT["imo/output"]
+            DOL_IN --> DOL_MID --> DOL_OUT
+        end
+
+        subgraph PI_HUB["People Intelligence (04.04.02)"]
+            PI_IN["imo/input"]
+            PI_MID["imo/middle<br/>• People Discovery<br/>• Slot Assignment<br/>• Movement Engine"]
+            PI_OUT["imo/output"]
+            PI_IN --> PI_MID --> PI_OUT
+        end
+
+        subgraph BLOG_HUB["Blog Content (04.04.05)"]
+            BLOG_IN["imo/input"]
+            BLOG_MID["imo/middle<br/>• Content Analysis<br/>• Entity Extraction<br/>• Signal Validation"]
+            BLOG_OUT["imo/output"]
+            BLOG_IN --> BLOG_MID --> BLOG_OUT
+        end
+
+        subgraph OE_HUB["Outreach Execution (04.04.04)"]
+            OE_IN["imo/input"]
+            OE_MID["imo/middle<br/>• Campaign Execution<br/>• Engagement Tracking<br/>• Contact State"]
+            OE_OUT["imo/output"]
+            OE_IN --> OE_MID --> OE_OUT
+        end
+    end
+
+    %% CC-03 CONTEXT (Bounded Configuration)
+    subgraph CC03["CC-03 CONTEXT (Bounded Configuration)"]
+        direction LR
+        CTX["contexts/<br/>━━━━━━━━━━━━<br/>outreach_context_id<br/>Execution boundary"]
+        CON["contracts/<br/>━━━━━━━━━━━━<br/>Spoke interfaces<br/>YAML definitions"]
+    end
+
+    %% CC-04 PROCESS (Runtime Execution)
+    subgraph CC04["CC-04 PROCESS (Runtime Execution)"]
+        direction LR
+        PHASES["phases/<br/>━━━━━━━━━━━━<br/>Pipeline execution<br/>Phases 1-8"]
+        OPS["ops/<br/>━━━━━━━━━━━━<br/>Enforcement<br/>Validation"]
+        DIAG["diagnostics/<br/>━━━━━━━━━━━━<br/>Runtime checks<br/>Error logging"]
+    end
+
+    %% SPOKES (I/O Interface - No CC Layer)
+    subgraph SPOKES["SPOKES (I/O Interface)"]
+        direction LR
+        SP_CP["company-people<br/>ingress/egress"]
+        SP_CD["company-dol<br/>ingress/egress"]
+        SP_CO["company-outreach<br/>ingress/egress"]
+        SP_PO["people-outreach<br/>ingress/egress"]
+        SP_SC["signal-company<br/>ingress only"]
+    end
+
+    %% =========================================================================
+    %% IDENTITY FLOW (One-way, Downward)
+    %% =========================================================================
+
+    CL -->|"company_unique_id<br/>(SOVEREIGN, IMMUTABLE)"| CT_IN
+
+    %% =========================================================================
+    %% WATERFALL FLOW (Sequential, Forward Only)
+    %% =========================================================================
+
+    CT_OUT -->|"verified_pattern<br/>domain"| DOL_IN
+    CT_OUT -->|"verified_pattern<br/>domain"| PI_IN
+    DOL_OUT -->|"ein<br/>filing_signals"| PI_IN
+    CT_OUT -->|"company_unique_id<br/>domain"| BLOG_IN
+    PI_OUT -->|"people_records<br/>slot_assignments"| OE_IN
+    CT_OUT -->|"target_id"| OE_IN
+
+    %% =========================================================================
+    %% SPOKE CONNECTIONS (Bidirectional via Hub)
+    %% =========================================================================
+
+    CT_MID <-.->|"spoke"| SP_CP
+    SP_CP <-.->|"spoke"| PI_MID
+
+    CT_MID <-.->|"spoke"| SP_CD
+    SP_CD <-.->|"spoke"| DOL_MID
+
+    CT_MID <-.->|"spoke"| SP_CO
+    SP_CO <-.->|"spoke"| OE_MID
+
+    PI_MID <-.->|"spoke"| SP_PO
+    SP_PO <-.->|"spoke"| OE_MID
+
+    SP_SC -.->|"external signals"| CT_IN
+
+    %% =========================================================================
+    %% CONTEXT BINDING
+    %% =========================================================================
+
+    CTX -->|"binds"| CT_MID
+    CTX -->|"binds"| DOL_MID
+    CTX -->|"binds"| PI_MID
+    CTX -->|"binds"| BLOG_MID
+    CTX -->|"binds"| OE_MID
+
+    CON -->|"defines"| SPOKES
+
+    %% =========================================================================
+    %% PROCESS EXECUTION
+    %% =========================================================================
+
+    PHASES -->|"executes within"| CT_MID
+    PHASES -->|"executes within"| PI_MID
+    OPS -->|"enforces"| CC02
+    DIAG -->|"monitors"| CC02
+
+    %% =========================================================================
+    %% STYLING
+    %% =========================================================================
+
+    classDef cc01Style fill:#ffcdd2,stroke:#c62828,stroke-width:3px,color:#b71c1c
+    classDef cc02Style fill:#bbdefb,stroke:#1565c0,stroke-width:2px,color:#0d47a1
+    classDef cc03Style fill:#fff9c4,stroke:#f9a825,stroke-width:2px,color:#f57f17
+    classDef cc04Style fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20
+    classDef spokeStyle fill:#f3e5f5,stroke:#7b1fa2,stroke-width:1px,stroke-dasharray: 5 5,color:#4a148c
+
+    class CC01 cc01Style
+    class CC02 cc02Style
+    class CC03 cc03Style
+    class CC04 cc04Style
+    class SPOKES spokeStyle
