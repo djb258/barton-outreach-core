@@ -5,11 +5,36 @@
 | Field | Value |
 |-------|-------|
 | **Doctrine Version** | 1.1.0 |
-| **CC Layer** | CC-02 |
+| **Claimed CC Layer** | CC-02 |
+| **Effective CC Layer** | CC-03 (DOWNGRADED) |
 
 ---
 
-## Hub Identity (CC-02)
+## Authority Gate Status (BLOCKING)
+
+> **DOCTRINE**: `claimed_cc_layer ≠ effective_cc_layer`
+> CC-02 requires external delegation. Absence of proof = failure.
+
+| Check | Status |
+|-------|--------|
+| **Delegation artifact exists** | [ ] |
+| **Authority gate passes** | [ ] |
+| **Effective CC layer ≥ claimed** | [ ] |
+
+### Authority Gate Result
+
+```bash
+# Run: python ops/enforcement/authority_gate.py
+# Paste output here:
+
+```
+
+> ⚠️ **MERGE BLOCKED** if `effective_cc_layer < claimed_cc_layer` in strict mode.
+> This PR operates at **CC-03** until delegation artifact is provided.
+
+---
+
+## Hub Identity
 
 | Field | Value |
 |-------|-------|
@@ -119,11 +144,14 @@
 
 | Gate | Requirement | Passed |
 |------|-------------|--------|
+| G0 | **Authority gate passes** (BLOCKING) | [ ] |
 | G1 | PRD approved | [ ] |
 | G2 | ADR approved (if applicable) | [ ] |
 | G3 | Work item assigned | [ ] |
 | G4 | Tests pass | [ ] |
 | G5 | Compliance checklist complete | [ ] |
+
+> **G0 is BLOCKING**: If authority gate fails, PR cannot merge regardless of other gates.
 
 ---
 
@@ -160,7 +188,11 @@
 ---
 
 **Reviewer Notes**: Please verify:
-1. CC layer compliance (no upward writes)
-2. Hub/Spoke doctrine followed (no logic in spokes)
-3. Failures route to Master Error Log
-4. CTB enforcement passes
+1. **Authority gate passes** — `python ops/enforcement/authority_gate.py` exits 0
+2. **Effective CC layer** — Matches or exceeds claimed CC layer
+3. **CC layer compliance** — No upward writes beyond effective layer
+4. **Hub/Spoke doctrine** — No logic in spokes
+5. **Failures route** — To Master Error Log
+6. **CTB enforcement** — Passes
+
+> ❌ **BLOCK MERGE** if authority gate fails or effective_cc_layer < claimed_cc_layer

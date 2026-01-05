@@ -8,9 +8,69 @@ No exceptions. No partial compliance.
 | Field | Value |
 |-------|-------|
 | **Doctrine Version** | 1.1.0 |
-| **CC Layer** | CC-02 |
+| **Claimed CC Layer** | CC-02 |
+| **Effective CC Layer** | CC-03 (DOWNGRADED) |
 | **Sovereign ID** | barton-enterprises |
 | **Hub ID** | outreach-core-001 |
+
+---
+
+## Canonical Authority Check (FAIL-CLOSED)
+
+> **DOCTRINE**: `claimed_cc_layer ≠ effective_cc_layer`
+> CC-02 requires external delegation from upstream CC-02 or CC-01.
+> Absence of proof = failure. No self-declaration allowed.
+
+### Authority Status
+
+| Field | Value |
+|-------|-------|
+| **Claimed** | CC-02 |
+| **Effective** | CC-03 |
+| **Delegation Status** | DOWNGRADED |
+| **Reason** | No external delegation artifact from CC-01 or upstream CC-02 |
+
+### Authority Validation Checklist
+
+- [ ] **Delegation artifact exists** — External warrant from upstream authority
+- [ ] **Artifact reference valid** — `authority.delegation.artifact_ref` in heir.doctrine.yaml
+- [ ] **Upstream authority verified** — company-lifecycle-cl-001 or barton-enterprises sovereign
+- [ ] **Signature valid** — Delegation artifact contains valid signature
+- [ ] **Authority gate passes** — `python ops/enforcement/authority_gate.py`
+
+### Required for CC-02 Claim
+
+To claim CC-02, this hub must:
+
+1. **Obtain delegation artifact** from upstream CC-02 (company-lifecycle-cl) or CC-01 (barton-enterprises)
+2. **Place artifact** at specified path (e.g., `delegations/outreach-core-001.yaml`)
+3. **Update heir.doctrine.yaml** with `authority.delegation.artifact_ref`
+4. **Run authority gate** to validate: `python ops/enforcement/authority_gate.py`
+5. **Pass CI gate** — GitHub workflow must pass before merge
+
+### Delegation Artifact Template
+
+```yaml
+# delegations/outreach-core-001.yaml
+delegation:
+  delegator: "company-lifecycle-cl-001"  # Upstream authority
+  delegator_cc_layer: "CC-02"
+  delegatee: "outreach-core-001"         # This hub
+  cc_layer_granted: "CC-02"
+  scope: "Marketing intelligence and outreach execution"
+  constraints:
+    - "Must reference company_unique_id from CL"
+    - "No identity minting"
+    - "Read-only access to cl.* schema"
+  issued_at: "2026-01-05T00:00:00Z"
+  expires_at: null  # null = no expiration
+  signature: "<signed-by-upstream-authority>"
+```
+
+### Current Status: ⚠️ DOWNGRADED
+
+This hub currently operates at **CC-03** (Context) until a valid delegation artifact is provided.
+All CC-02 claims in documentation are **aspirational**, not **effective**.
 
 ---
 
@@ -232,4 +292,7 @@ If any box is unchecked, this hub may not ship.
 | Created | 2026-01-05 |
 | Last Modified | 2026-01-05 |
 | Doctrine Version | 1.1.0 |
-| Status | COMPLIANT |
+| Claimed CC Layer | CC-02 |
+| Effective CC Layer | CC-03 |
+| Authority Status | DOWNGRADED |
+| Status | PARTIAL — Awaiting delegation artifact |

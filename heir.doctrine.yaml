@@ -6,18 +6,73 @@
 conformance:
   doctrine_version: "1.1.0"
   ctb_version: "1.0.0"
-  schema_version: "HEIR/2.0"
+  schema_version: "HEIR/2.1"
+
+# =============================================================================
+# CANONICAL AUTHORITY ASSERTION (FAIL-CLOSED)
+# =============================================================================
+# Rule: claimed_cc_layer ≠ effective_cc_layer
+# CC-02 requires external delegation from upstream CC-02 or CC-01.
+# Absence of proof = failure. No self-declaration allowed.
+# =============================================================================
+
+authority:
+  # What this repository CLAIMS to be
+  claimed_cc_layer: "CC-02"
+
+  # What is COMPUTED after validation (set by authority gate)
+  # If no valid delegation exists, this MUST be CC-03 or lower
+  effective_cc_layer: "CC-03"
+
+  # External delegation reference (REQUIRED for CC-02 claim)
+  # Must be: ADR ID from upstream, registry entry, or signed delegation YAML
+  delegation:
+    # Status: PENDING | VALID | INVALID | DOWNGRADED
+    status: "DOWNGRADED"
+
+    # Reason for current status
+    reason: "No external delegation artifact from CC-01 or upstream CC-02"
+
+    # Reference to delegation artifact (required for VALID status)
+    # Example: "company-lifecycle-cl/delegations/outreach-core-001.yaml"
+    artifact_ref: null
+
+    # Upstream authority that would grant CC-02
+    upstream_authority:
+      sovereign_id: "barton-enterprises"
+      upstream_hub_id: "company-lifecycle-cl-001"
+      upstream_cc_layer: "CC-02"
+      delegation_type: "hub-to-hub"
+
+    # Validation metadata
+    last_validated: null
+    validated_by: null
+    validation_hash: null
+
+  # Fail-closed enforcement
+  enforcement:
+    mode: "strict"  # strict | warn | disabled
+    block_on_invalid: true
+    require_delegation_artifact: true
+    downgrade_on_missing: true
 
 # --- Sovereign Declaration (CC-01) ---
+# NOTE: Sovereign reference only. This repo cannot self-declare CC-01.
 sovereign:
   identity: "barton-enterprises"
   boundary: "Marketing intelligence and executive enrichment operations"
+  # Sovereign authority is EXTERNAL - this is a reference, not a claim
+  authority_type: "reference"
 
-# --- Hub Identity (CC-02) ---
+# --- Hub Identity ---
+# NOTE: CC layer is determined by authority.effective_cc_layer, not self-declaration
 hub:
   name: "outreach-core"
   id: "outreach-core-001"
   purpose: "Marketing intelligence & executive enrichment platform"
+  # Claimed CC-02, but effective is CC-03 until delegation is provided
+  cc_layer_claim: "CC-02"
+  cc_layer_effective: "CC-03"
   ctb_placement:
     trunk: "barton"
     branch: "outreach"

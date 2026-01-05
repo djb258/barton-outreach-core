@@ -1,0 +1,105 @@
+name: Authority Gate
+
+# DOCTRINE: claimed_cc_layer ≠ effective_cc_layer
+# CC-02 requires external delegation from upstream CC-02 or CC-01.
+# Absence of proof = failure. No self-declaration allowed.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - 'heir.doctrine.yaml'
+      - 'delegations/**'
+      - 'ops/enforcement/authority_gate.py'
+
+jobs:
+  authority-gate:
+    name: Canonical Authority Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pyyaml
+
+      - name: Run Authority Gate
+        id: authority
+        run: |
+          echo "========================================"
+          echo "CANONICAL AUTHORITY GATE"
+          echo "========================================"
+          echo ""
+
+          # Run authority gate and capture exit code
+          python ops/enforcement/authority_gate.py --repo-root . || EXIT_CODE=$?
+
+          # Set output based on exit code
+          if [ "${EXIT_CODE:-0}" -eq 0 ]; then
+            echo "authority_status=PASSED" >> $GITHUB_OUTPUT
+            echo "effective_cc_layer=CC-02" >> $GITHUB_OUTPUT
+          elif [ "${EXIT_CODE:-0}" -eq 4 ]; then
+            echo "authority_status=DOWNGRADED" >> $GITHUB_OUTPUT
+            echo "effective_cc_layer=CC-03" >> $GITHUB_OUTPUT
+          else
+            echo "authority_status=FAILED" >> $GITHUB_OUTPUT
+            echo "effective_cc_layer=INVALID" >> $GITHUB_OUTPUT
+          fi
+
+          exit ${EXIT_CODE:-0}
+        continue-on-error: true
+
+      - name: Authority Gate Summary
+        run: |
+          echo "## Authority Gate Result" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Status** | ${{ steps.authority.outputs.authority_status }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Effective CC Layer** | ${{ steps.authority.outputs.effective_cc_layer }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.authority.outputs.authority_status }}" = "DOWNGRADED" ]; then
+            echo "### ⚠️ DOWNGRADED" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "This repository claims CC-02 but operates at **CC-03** due to missing delegation artifact." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "To obtain CC-02:" >> $GITHUB_STEP_SUMMARY
+            echo "1. Obtain delegation artifact from upstream authority" >> $GITHUB_STEP_SUMMARY
+            echo "2. Place artifact in \`delegations/\` directory" >> $GITHUB_STEP_SUMMARY
+            echo "3. Update \`heir.doctrine.yaml\` with artifact reference" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.authority.outputs.authority_status }}" = "PASSED" ]; then
+            echo "### ✅ PASSED" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Valid delegation artifact found. Operating at claimed CC layer." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ FAILED" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Authority gate failed. See logs for details." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Fail on strict enforcement
+        if: steps.authority.outputs.authority_status == 'FAILED'
+        run: |
+          echo "❌ Authority gate failed in strict mode"
+          echo "PR cannot be merged until authority is resolved"
+          exit 1
+
+      # Note: DOWNGRADED status allows merge but with CC-03 effective layer
+      # Set to 'exit 1' if you want to block DOWNGRADED PRs as well
+      - name: Warn on downgrade
+        if: steps.authority.outputs.authority_status == 'DOWNGRADED'
+        run: |
+          echo "⚠️ Authority DOWNGRADED: Operating at CC-03 instead of claimed CC-02"
+          echo "This is allowed in warn mode, but CC-02 operations will be blocked"
+          # Uncomment below to block DOWNGRADED PRs:
+          # exit 1
