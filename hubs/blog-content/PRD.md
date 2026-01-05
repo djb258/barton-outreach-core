@@ -1,25 +1,49 @@
 # PRD — Blog Content Sub-Hub
 
-## 1. Overview
-
-- **System Name:** Barton Outreach Core
-- **Hub Name:** Blog Content
-- **Owner:** Outreach Team
-- **Version:** 1.0.0
-
----
-
-## 2. Hub Identity
+## Conformance
 
 | Field | Value |
 |-------|-------|
-| **Hub ID** | HUB-BLOG-001 |
-| **Doctrine ID** | 04.04.05 |
-| **Process ID** | Set at runtime |
+| **Doctrine Version** | 1.1.0 |
+| **CTB Version** | 1.0.0 |
+| **CC Layer** | CC-03 (Context within CC-02 Hub) |
 
 ---
 
-## 3. Purpose
+## 1. Sovereign Reference (CC-01)
+
+| Field | Value |
+|-------|-------|
+| **Sovereign ID** | barton-enterprises |
+| **Sovereign Boundary** | Marketing intelligence and executive enrichment operations |
+
+---
+
+## 2. Hub Identity (CC-02)
+
+| Field | Value |
+|-------|-------|
+| **Parent Hub** | outreach-core |
+| **Parent Hub ID** | outreach-core-001 |
+| **Hub Name** | Blog Content |
+| **Hub ID** | HUB-BC-001 |
+| **Doctrine ID** | 04.04.05 |
+| **Owner** | Outreach Team |
+| **Version** | 1.0.0 |
+
+---
+
+## 3. Process Identity (CC-04)
+
+| Field | Value |
+|-------|-------|
+| **PID Pattern** | `HUB-BC-001-${TIMESTAMP}-${RANDOM_HEX}` |
+| **Session Pattern** | `HUB-BC-001-session-${SESSION_ID}` |
+| **Context Binding** | outreach_context_id |
+
+---
+
+## 4. Purpose
 
 Provide **timing signals** from news, funding events, and content sources.
 BIT modulation only — cannot mint, revive, or trigger enrichment.

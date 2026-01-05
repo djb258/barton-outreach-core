@@ -1,25 +1,49 @@
 # PRD — DOL Filings Sub-Hub
 
-## 1. Overview
-
-- **System Name:** Barton Outreach Core
-- **Hub Name:** DOL Filings
-- **Owner:** Outreach Team
-- **Version:** 1.0.0
-
----
-
-## 2. Hub Identity
+## Conformance
 
 | Field | Value |
 |-------|-------|
-| **Hub ID** | HUB-DOL-001 |
-| **Doctrine ID** | 04.04.03 |
-| **Process ID** | Set at runtime |
+| **Doctrine Version** | 1.1.0 |
+| **CTB Version** | 1.0.0 |
+| **CC Layer** | CC-03 (Context within CC-02 Hub) |
 
 ---
 
-## 3. Purpose
+## 1. Sovereign Reference (CC-01)
+
+| Field | Value |
+|-------|-------|
+| **Sovereign ID** | barton-enterprises |
+| **Sovereign Boundary** | Marketing intelligence and executive enrichment operations |
+
+---
+
+## 2. Hub Identity (CC-02)
+
+| Field | Value |
+|-------|-------|
+| **Parent Hub** | outreach-core |
+| **Parent Hub ID** | outreach-core-001 |
+| **Hub Name** | DOL Filings |
+| **Hub ID** | HUB-DOL-001 |
+| **Doctrine ID** | 04.04.03 |
+| **Owner** | Outreach Team |
+| **Version** | 1.0.0 |
+
+---
+
+## 3. Process Identity (CC-04)
+
+| Field | Value |
+|-------|-------|
+| **PID Pattern** | `HUB-DOL-001-${TIMESTAMP}-${RANDOM_HEX}` |
+| **Session Pattern** | `HUB-DOL-001-session-${SESSION_ID}` |
+| **Context Binding** | outreach_context_id |
+
+---
+
+## 4. Purpose
 
 Attach regulatory filings (Form 5500, Schedule A) to **existing companies**.
 Source of truth for plan renewal dates and broker relationships.

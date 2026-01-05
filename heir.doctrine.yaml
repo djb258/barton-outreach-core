@@ -1,0 +1,125 @@
+# HEIR Doctrine Configuration
+# Repository: barton-outreach-core
+# Reference: templates/doctrine/CANONICAL_ARCHITECTURE_DOCTRINE.md
+
+# --- Conformance ---
+conformance:
+  doctrine_version: "1.1.0"
+  ctb_version: "1.0.0"
+  schema_version: "HEIR/2.0"
+
+# --- Sovereign Declaration (CC-01) ---
+sovereign:
+  identity: "barton-enterprises"
+  boundary: "Marketing intelligence and executive enrichment operations"
+
+# --- Hub Identity (CC-02) ---
+hub:
+  name: "outreach-core"
+  id: "outreach-core-001"
+  purpose: "Marketing intelligence & executive enrichment platform"
+  ctb_placement:
+    trunk: "barton"
+    branch: "outreach"
+    leaf: "core"
+
+# --- Process Identity (CC-04) ---
+process:
+  id_pattern: "outreach-core-001-${TIMESTAMP}-${RANDOM_HEX}"
+  session_pattern: "outreach-core-001-session-${SESSION_ID}"
+
+# --- IMO Structure ---
+imo:
+  ingress:
+    description: "Receives company_unique_id from CL, intake CSV data, external API responses"
+    spokes:
+      - name: "cl-identity"
+        type: "I"
+        direction: "inbound"
+        contract: "contracts/cl-identity.contract.yaml"
+      - name: "intake-csv"
+        type: "I"
+        direction: "inbound"
+        contract: "contracts/intake-csv.contract.yaml"
+  middle:
+    description: "Company targeting, BIT scoring, email pattern discovery, slot assignment"
+    owns_logic: true
+    owns_state: true
+    sub_hubs:
+      - name: "company-target"
+        id: "HUB-CT-001"
+        doctrine_id: "04.04.01"
+      - name: "people-intelligence"
+        id: "HUB-PI-001"
+        doctrine_id: "04.04.02"
+      - name: "dol-filings"
+        id: "HUB-DOL-001"
+        doctrine_id: "04.04.03"
+      - name: "outreach-execution"
+        id: "HUB-OE-001"
+        doctrine_id: "04.04.04"
+      - name: "blog-content"
+        id: "HUB-BC-001"
+        doctrine_id: "04.04.05"
+  egress:
+    description: "Campaign execution, enriched contact data, analytics signals"
+    spokes:
+      - name: "campaign-output"
+        type: "O"
+        direction: "outbound"
+        contract: "contracts/campaign-output.contract.yaml"
+      - name: "analytics-signal"
+        type: "O"
+        direction: "outbound"
+        contract: "contracts/analytics-signal.contract.yaml"
+
+# --- Services (Abstract) ---
+services:
+  - name: "neon-db"
+    port: "5432"
+    type: "database"
+  - name: "api-server"
+    port: "8000"
+    type: "http"
+
+# --- Environment (Abstract) ---
+environment:
+  secrets_provider: "doppler"
+  variables:
+    - key: "NEON_HOST"
+      source: "${DOPPLER:NEON_HOST}"
+    - key: "NEON_DATABASE"
+      source: "${DOPPLER:NEON_DATABASE}"
+    - key: "NEON_USER"
+      source: "${DOPPLER:NEON_USER}"
+    - key: "NEON_PASSWORD"
+      source: "${DOPPLER:NEON_PASSWORD}"
+
+# --- Contracts ---
+contracts:
+  acceptance:
+    - "All sub-hubs must receive valid company_unique_id from CL"
+    - "No identity minting within this hub"
+    - "BIT_SCORE required before outreach execution"
+    - "Email pattern must be verified before people pipeline"
+
+# --- Build Actions ---
+build:
+  ci_checks:
+    - "npm run lint"
+    - "npm run build"
+    - "python -m pytest"
+  validation:
+    - ".github/workflows/doctrine_guard.yml"
+    - ".github/workflows/audit.yml"
+
+# --- Traceability ---
+traceability:
+  prd: "docs/prd/PRD_COMPANY_HUB.md"
+  adrs:
+    - "docs/adr/ADR-001_Hub_Spoke_Architecture.md"
+    - "hubs/company-target/ADR.md"
+    - "hubs/people-intelligence/ADR.md"
+    - "hubs/dol-filings/ADR.md"
+    - "hubs/outreach-execution/ADR.md"
+    - "hubs/blog-content/ADR.md"

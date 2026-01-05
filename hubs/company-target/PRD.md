@@ -1,25 +1,49 @@
 # PRD — Company Target Sub-Hub
 
-## 1. Overview
-
-- **System Name:** Barton Outreach Core
-- **Hub Name:** Company Target
-- **Owner:** Outreach Team
-- **Version:** 1.0.0
-
----
-
-## 2. Hub Identity
+## Conformance
 
 | Field | Value |
 |-------|-------|
-| **Hub ID** | HUB-CT-001 |
-| **Doctrine ID** | 04.04.01 |
-| **Process ID** | Set at runtime |
+| **Doctrine Version** | 1.1.0 |
+| **CTB Version** | 1.0.0 |
+| **CC Layer** | CC-03 (Context within CC-02 Hub) |
 
 ---
 
-## 3. Purpose
+## 1. Sovereign Reference (CC-01)
+
+| Field | Value |
+|-------|-------|
+| **Sovereign ID** | barton-enterprises |
+| **Sovereign Boundary** | Marketing intelligence and executive enrichment operations |
+
+---
+
+## 2. Hub Identity (CC-02)
+
+| Field | Value |
+|-------|-------|
+| **Parent Hub** | outreach-core |
+| **Parent Hub ID** | outreach-core-001 |
+| **Hub Name** | Company Target |
+| **Hub ID** | HUB-CT-001 |
+| **Doctrine ID** | 04.04.01 |
+| **Owner** | Outreach Team |
+| **Version** | 1.0.0 |
+
+---
+
+## 3. Process Identity (CC-04)
+
+| Field | Value |
+|-------|-------|
+| **PID Pattern** | `HUB-CT-001-${TIMESTAMP}-${RANDOM_HEX}` |
+| **Session Pattern** | `HUB-CT-001-session-${SESSION_ID}` |
+| **Context Binding** | outreach_context_id |
+
+---
+
+## 4. Purpose
 
 Determine **outreach readiness** for lifecycle-qualified companies.
 Internal anchor table that links all other sub-hubs together.
@@ -27,7 +51,7 @@ Receives `company_sov_id` from Company Lifecycle parent — does NOT mint compan
 
 ---
 
-## 3.1 Waterfall Position
+## 4.1 Waterfall Position
 
 **Position**: 2nd in canonical waterfall (after CL, before DOL)
 
@@ -70,7 +94,7 @@ Receives `company_sov_id` from Company Lifecycle parent — does NOT mint compan
 
 ---
 
-## 3.2 External Dependencies & Program Scope
+## 4.2 External Dependencies & Program Scope
 
 ### CL is EXTERNAL to Outreach
 
@@ -111,7 +135,7 @@ status                TEXT NOT NULL      -- OPEN | COMPLETE | FAILED
 
 ---
 
-## 4. Lifecycle Gate
+## 5. Lifecycle Gate
 
 | Minimum Lifecycle State | Gate Condition |
 |-------------------------|----------------|
@@ -119,7 +143,7 @@ status                TEXT NOT NULL      -- OPEN | COMPLETE | FAILED
 
 ---
 
-## 5. Inputs
+## 6. Inputs
 
 | Input | Source | Required |
 |-------|--------|----------|
@@ -129,7 +153,7 @@ status                TEXT NOT NULL      -- OPEN | COMPLETE | FAILED
 
 ---
 
-## 6. Pipeline
+## 7. Pipeline
 
 ```
 CL UPSTREAM GATE (FIRST - before ANY logic)
@@ -157,7 +181,7 @@ Pattern found?
 
 ---
 
-## 7. Cost Rules
+## 8. Cost Rules
 
 | Rule | Enforcement |
 |------|-------------|
@@ -169,7 +193,7 @@ Pattern found?
 
 ---
 
-## 8. Tools
+## 9. Tools
 
 | Tool | Tier | Cost Class | ADR |
 |------|------|------------|-----|
@@ -185,7 +209,7 @@ Pattern found?
 
 ---
 
-## 9. Outputs
+## 10. Outputs
 
 | Output | Destination |
 |--------|-------------|
@@ -195,7 +219,7 @@ Pattern found?
 
 ---
 
-## 10. Constraints
+## 11. Constraints
 
 - [ ] Does NOT mint companies (company_sov_id comes from CL)
 - [ ] Does NOT mutate lifecycle state
@@ -208,13 +232,13 @@ Pattern found?
 
 ---
 
-## 11. Core Metric
+## 12. Core Metric
 
 **BIT_SCORE** — Buyer Intent Tool weighted average
 
 ---
 
-## 12. Upstream Dependencies, Signal Validity, and Downstream Effects
+## 13. Upstream Dependencies, Signal Validity, and Downstream Effects
 
 ### Execution Position
 
@@ -261,7 +285,7 @@ Pattern found?
 
 ---
 
-## 13. Tables Owned
+## 14. Tables Owned
 
 This sub-hub owns or writes to the following tables:
 
@@ -289,7 +313,7 @@ This sub-hub owns or writes to the following tables:
 
 ---
 
-## 14. ERD — Company Target Tables
+## 15. ERD — Company Target Tables
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -362,6 +386,25 @@ This sub-hub owns or writes to the following tables:
 
 ---
 
-**Last Updated**: 2026-01-02
-**Hub**: Company Target (04.04.01)
-**Doctrine**: External CL + Outreach Program v1.0
+## Traceability
+
+| Artifact | Reference |
+|----------|-----------|
+| Canonical Doctrine | templates/doctrine/CANONICAL_ARCHITECTURE_DOCTRINE.md |
+| Hub/Spoke Doctrine | templates/doctrine/HUB_SPOKE_ARCHITECTURE.md |
+| CC Descent Protocol | templates/doctrine/ALTITUDE_DESCENT_MODEL.md |
+| Parent Hub PRD | docs/prd/PRD_COMPANY_HUB.md |
+| ADR | hubs/company-target/ADR.md |
+
+---
+
+## Document Control
+
+| Field | Value |
+|-------|-------|
+| Created | 2025-12-26 |
+| Last Modified | 2026-01-05 |
+| Doctrine Version | 1.1.0 |
+| Hub ID | HUB-CT-001 |
+| CC Layer | CC-03 |
+| Status | COMPLIANT |

@@ -1,77 +1,166 @@
-# Pull Request
+# Hub Change
 
-## Description
-<!-- Brief description of what this PR does -->
+## Conformance
 
+| Field | Value |
+|-------|-------|
+| **Doctrine Version** | 1.1.0 |
+| **CC Layer** | CC-02 |
 
+---
 
-## Hub/Spoke Location
-<!-- Where in the Bicycle Wheel architecture does this change belong? -->
-- [ ] Company Hub (Master Node)
-- [ ] People Node Spoke
-- [ ] DOL Node Spoke
-- [ ] Email Verification SubWheel
-- [ ] BIT Engine
-- [ ] Failure Spoke
-- [ ] Other: ___________
+## Hub Identity (CC-02)
 
-## Type of Change
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Enhancement to existing feature
-- [ ] New Hub/Spoke/SubWheel
-- [ ] Documentation update
-- [ ] Refactoring
-- [ ] Other (please describe):
+| Field | Value |
+|-------|-------|
+| **Sovereign ID** | barton-enterprises |
+| **Hub Name** | outreach-core |
+| **Hub ID** | outreach-core-001 |
+| **PID Pattern** | `outreach-core-001-${TIMESTAMP}-${RANDOM_HEX}` |
 
-## Changes Made
-<!-- List the key changes in bullet points -->
+---
 
--
--
--
+## Change Type
 
-## Bicycle Wheel Doctrine Checklist
-- [ ] Changes respect Hub-and-Spoke hierarchy (spokes don't call other spokes directly)
-- [ ] Failures route to appropriate Failure Spoke
-- [ ] No sideways hub-to-hub calls
-- [ ] Tools are registered at hub level (not spoke level)
+- [ ] New Hub
+- [ ] Ingress Change (I layer)
+- [ ] Middle Change (M layer — logic, state, tools)
+- [ ] Egress Change (O layer)
+- [ ] Guard Rail Change
+- [ ] Kill Switch Change
+- [ ] Documentation Only
+
+---
+
+## Scope Declaration
+
+### Sub-Hub Affected
+
+- [ ] Company Target (HUB-CT-001)
+- [ ] People Intelligence (HUB-PI-001)
+- [ ] DOL Filings (HUB-DOL-001)
+- [ ] Outreach Execution (HUB-OE-001)
+- [ ] Blog Content (HUB-BC-001)
+- [ ] None (root hub change)
+
+### IMO Layers Affected
+
+| Layer | Modified |
+|-------|----------|
+| I — Ingress | [ ] |
+| M — Middle | [ ] |
+| O — Egress | [ ] |
+
+### Spokes Affected
+
+| Spoke Name | Type | Direction |
+|------------|------|-----------|
+| | I | Inbound |
+| | O | Outbound |
+
+---
+
+## Summary
+
+<!-- What changed and why? Reference the approved PRD/ADR — do not define architecture here. -->
+
+---
+
+## Traceability
+
+| Artifact | Reference |
+|----------|-----------|
+| Canonical Doctrine | templates/doctrine/CANONICAL_ARCHITECTURE_DOCTRINE.md |
+| PRD | |
+| Sub-PRD | |
+| ADR | |
+| Work Item | |
+
+---
+
+## CC Layer Scope
+
+| CC Layer | Affected | Description |
+|----------|----------|-------------|
+| CC-01 (Sovereign) | [ ] | |
+| CC-02 (Hub) | [ ] | |
+| CC-03 (Context) | [ ] | |
+| CC-04 (Process) | [ ] | |
+
+---
+
+## Compliance Checklist
+
+### Doctrine Compliance
+- [ ] Doctrine version declared (1.1.0)
+- [ ] Sovereign reference present (barton-enterprises)
+- [ ] Authorization matrix honored (no upward writes)
+
+### Hub Compliance (CC-02)
+- [ ] Hub PRD exists and is current
+- [ ] ADR approved for each decision (CC-03)
+- [ ] Work item linked
+- [ ] No cross-hub logic introduced
+- [ ] No sideways hub calls introduced
+- [ ] Spokes contain no logic, tools, or state (CC-03)
 - [ ] Kill switch tested (if applicable)
+- [ ] Rollback plan documented
 
-## CTB Compliance Checklist
+### CTB Compliance
 - [ ] CTB enforcement passes: `bash global-config/scripts/ctb_enforce.sh`
 - [ ] Security scan passes: `bash global-config/scripts/security_lockdown.sh`
-- [ ] No hardcoded secrets (all secrets use MCP vault)
+- [ ] No hardcoded secrets (all secrets use Doppler)
 - [ ] No `.env` files committed
-- [ ] Tests pass (if applicable): `pytest`
 - [ ] Branch follows CTB structure (if new branch)
-- [ ] Updated relevant documentation
+
+---
+
+## Promotion Gates
+
+| Gate | Requirement | Passed |
+|------|-------------|--------|
+| G1 | PRD approved | [ ] |
+| G2 | ADR approved (if applicable) | [ ] |
+| G3 | Work item assigned | [ ] |
+| G4 | Tests pass | [ ] |
+| G5 | Compliance checklist complete | [ ] |
+
+---
 
 ## Testing
-<!-- How was this tested? -->
 
 - [ ] Tested locally
 - [ ] Pipeline executed successfully
+- [ ] Automated tests added/updated
 - [ ] Manual testing performed
-- [ ] Automated tests added/updated (if applicable)
 
-## Test Results
+### Test Results
 ```bash
 # Paste test output or enforcement results here
 ```
 
+---
+
+## Rollback
+
+<!-- How is this change reversed if it fails? -->
+
+---
+
 ## Screenshots (if applicable)
+
 <!-- Add screenshots for UI changes -->
 
-## Additional Context
-<!-- Any other relevant information -->
+---
 
 ## Related Issues
+
 <!-- Link to related issues: Fixes #123, Relates to #456 -->
 
 ---
 
 **Reviewer Notes**: Please verify:
-1. CTB enforcement passes
-2. Bicycle Wheel Doctrine is followed (no sideways spoke calls)
-3. Failures route to Master Failure Hub
+1. CC layer compliance (no upward writes)
+2. Hub/Spoke doctrine followed (no logic in spokes)
+3. Failures route to Master Error Log
+4. CTB enforcement passes

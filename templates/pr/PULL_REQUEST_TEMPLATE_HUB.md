@@ -1,12 +1,22 @@
 # Hub Change
 
-## Hub Identity
+## Conformance
 
 | Field | Value |
 |-------|-------|
+| **Doctrine Version** | |
+| **CC Layer** | CC-02 |
+
+---
+
+## Hub Identity (CC-02)
+
+| Field | Value |
+|-------|-------|
+| **Sovereign ID** | _(CC-01 reference)_ |
 | **Hub Name** | |
 | **Hub ID** | |
-| **Process ID** | |
+| **PID Pattern** | _(CC-04 execution scope)_ |
 
 ---
 
@@ -50,48 +60,41 @@ _What changed and why? Reference the approved PRD/ADR — do not define architec
 
 | Artifact | Reference |
 |----------|-----------|
+| Canonical Doctrine | CANONICAL_ARCHITECTURE_DOCTRINE.md |
 | PRD | |
 | Sub-PRD | |
 | ADR | |
-| Linear Issue | |
+| Work Item | |
+
+---
+
+## CC Layer Scope
+
+| CC Layer | Affected | Description |
+|----------|----------|-------------|
+| CC-01 (Sovereign) | [ ] | |
+| CC-02 (Hub) | [ ] | |
+| CC-03 (Context) | [ ] | |
+| CC-04 (Process) | [ ] | |
 
 ---
 
 ## Compliance Checklist
 
-### Structure Compliance
+### Doctrine Compliance
+- [ ] Doctrine version declared
+- [ ] Sovereign reference present (CC-01)
+- [ ] Authorization matrix honored (no upward writes)
+
+### Hub Compliance (CC-02)
 - [ ] Hub PRD exists and is current
-- [ ] ADR approved (if decision required)
-- [ ] Linear issue linked
+- [ ] ADR approved for each decision (CC-03)
+- [ ] Work item linked
 - [ ] No cross-hub logic introduced
 - [ ] No sideways hub calls introduced
-- [ ] Spokes contain no logic, tools, or state
+- [ ] Spokes contain no logic, tools, or state (CC-03)
 - [ ] Kill switch tested
 - [ ] Rollback plan documented
-
-### Sovereign ID Compliance
-- [ ] Uses Company Sovereign ID only (no hub-specific company ID)
-- [ ] Company Lifecycle treated as read-only
-- [ ] Context IDs are disposable (not permanent identity)
-- [ ] No minting/reviving/mutating company existence
-
-### CL Upstream Gate Compliance
-- [ ] CLGate.enforce_or_fail() called before hub logic (if Company Target)
-- [ ] No CL existence checks implemented (domain, name, state)
-- [ ] No retry/repair of missing CL signals
-- [ ] Missing CL company → CT_UPSTREAM_CL_NOT_VERIFIED error
-
-### Lifecycle Gate Compliance
-- [ ] Minimum lifecycle state enforced before processing
-- [ ] Lifecycle state never modified by this change
-- [ ] BIT signals do not mutate lifecycle
-
-### Cost Discipline
-- [ ] All tools in approved tool_registry.md
-- [ ] Tier-2 tools: max ONE attempt per outreach_context
-- [ ] All spend logged against context + company
-- [ ] No paid tools before lifecycle allows
-- [ ] No enrichment without measured deficit
 
 ---
 
