@@ -381,12 +381,117 @@ $line"
           echo "DG-012: PASS - No signal mutations"
 
   # ===========================================================================
+  # JOB 7: Tier-2 Guard Enforcement
+  # ===========================================================================
+  tier2-guard:
+    name: "DG-013/014: Tier-2 Single-Shot"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "DG-013: Check can_attempt_tier2 guard exists"
+        run: |
+          echo "Checking Tier-2 guard enforcement..."
+
+          # Phase 3 MUST call can_attempt_tier2 before Tier-2 providers
+          PHASE3_FILE="hubs/company-target/imo/middle/phases/phase3_email_pattern_waterfall.py"
+
+          if [ -f "$PHASE3_FILE" ]; then
+            # Check for ACTUAL CALL to can_attempt_tier2 (not just comments)
+            # Pattern: ctx_mgr.can_attempt_tier2 or context_manager.can_attempt_tier2
+            if ! grep -qE "\.(can_attempt_tier2|assert_can_attempt_tier2)\(" "$PHASE3_FILE"; then
+              echo "::error::DG-013 VIOLATION: Phase 3 missing can_attempt_tier2() CALL"
+              echo "Tier-2 tools MUST check can_attempt_tier2() before calling."
+              echo ""
+              echo "Required pattern: ctx_mgr.can_attempt_tier2(...) or similar"
+              exit 1
+            fi
+
+            # Verify the guard is in a loop or called for each provider
+            if ! grep -qE "for provider_name in.*tier2_providers" "$PHASE3_FILE"; then
+              # Check for explicit provider name checks
+              if ! grep -qE "can_attempt_tier2.*prospeo|can_attempt_tier2.*snov|can_attempt_tier2.*clay" "$PHASE3_FILE"; then
+                echo "::error::DG-013 VIOLATION: can_attempt_tier2 not called for each Tier-2 provider"
+                echo "Must check ALL Tier-2 providers: prospeo, snov, clay"
+                exit 1
+              fi
+            fi
+          else
+            echo "::error::Phase 3 file not found at expected path"
+            exit 1
+          fi
+
+          echo "DG-013: PASS - Tier-2 guard present with proper call pattern"
+
+      - name: "DG-014: Check log_tool_attempt enforcement"
+        run: |
+          echo "Checking tool attempt logging..."
+
+          # Phase 3 MUST call log_tool_attempt for cost tracking
+          PHASE3_FILE="hubs/company-target/imo/middle/phases/phase3_email_pattern_waterfall.py"
+
+          if [ -f "$PHASE3_FILE" ]; then
+            # Check for ACTUAL CALL to log_tool_attempt (not just comments)
+            # Pattern: context_manager.log_tool_attempt( or .log_tool_attempt(
+            if ! grep -qE "\.log_tool_attempt\(" "$PHASE3_FILE"; then
+              echo "::error::DG-014 VIOLATION: Phase 3 missing log_tool_attempt() CALL"
+              echo "All paid tool calls MUST be logged via log_tool_attempt()."
+              echo ""
+              echo "Required pattern: context_manager.log_tool_attempt(...)"
+              exit 1
+            fi
+
+            # Count log_tool_attempt calls - must have at least 2 (success and error paths)
+            CALL_COUNT=$(grep -cE "\.log_tool_attempt\(" "$PHASE3_FILE" || echo "0")
+            if [ "$CALL_COUNT" -lt 2 ]; then
+              echo "::error::DG-014 VIOLATION: log_tool_attempt called only $CALL_COUNT times"
+              echo "Must log both success and error paths (expected >= 2 calls)"
+              exit 1
+            fi
+
+            # Verify outreach_context_id is used somewhere in the function call block
+            if ! grep -q "outreach_context_id=outreach_context_id" "$PHASE3_FILE"; then
+              echo "::error::DG-014 VIOLATION: log_tool_attempt not passing outreach_context_id"
+              echo "Cost logging MUST include outreach_context_id parameter."
+              exit 1
+            fi
+
+            # Verify company_sov_id is used somewhere in the function call block
+            if ! grep -q "company_sov_id=company_sov_id" "$PHASE3_FILE"; then
+              echo "::error::DG-014 VIOLATION: log_tool_attempt not passing company_sov_id"
+              echo "Cost logging MUST include company_sov_id parameter."
+              exit 1
+            fi
+          else
+            echo "::error::Phase 3 file not found at expected path"
+            exit 1
+          fi
+
+          echo "DG-014: PASS - Tool logging present with required params (${CALL_COUNT} calls)"
+
+      - name: "DG-013b: Check context_manager imports"
+        run: |
+          echo "Checking context_manager is imported..."
+
+          PHASE3_FILE="hubs/company-target/imo/middle/phases/phase3_email_pattern_waterfall.py"
+
+          if [ -f "$PHASE3_FILE" ]; then
+            if ! grep -q "from.*context_manager import" "$PHASE3_FILE"; then
+              echo "::error::DG-013b VIOLATION: Phase 3 not importing context_manager"
+              echo "context_manager is the TRUTH SOURCE for cost safety."
+              exit 1
+            fi
+          fi
+
+          echo "DG-013b: PASS - context_manager imported"
+
+  # ===========================================================================
   # SUMMARY
   # ===========================================================================
   summary:
     name: "Doctrine Guard Summary"
     runs-on: ubuntu-latest
-    needs: [tool-usage, hub-boundaries, doctrine-consistency, signal-validity, lifecycle-protection, repair-protection]
+    needs: [tool-usage, hub-boundaries, doctrine-consistency, signal-validity, lifecycle-protection, repair-protection, tier2-guard]
     if: always()
     steps:
       - name: Check all jobs passed
@@ -424,6 +529,11 @@ $line"
             exit 1
           fi
 
+          if [ "${{ needs.tier2-guard.result }}" != "success" ]; then
+            echo "FAIL: Tier-2 Guard checks failed"
+            exit 1
+          fi
+
           echo ""
           echo "ALL DOCTRINE GUARDS PASSED"
           echo ""
@@ -439,3 +549,5 @@ $line"
           echo "  DG-010: Error Immutability"
           echo "  DG-011: Context Immutability"
           echo "  DG-012: Signal Immutability"
+          echo "  DG-013: Tier-2 Single-Shot Guard"
+          echo "  DG-014: Tool Attempt Logging"

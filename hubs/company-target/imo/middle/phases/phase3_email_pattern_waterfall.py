@@ -11,6 +11,15 @@ If no pattern found, suggests common patterns for verification in Phase 4.
 
 DOCTRINE ENFORCEMENT:
 - correlation_id is MANDATORY (FAIL HARD if missing)
+- outreach_context_id is MANDATORY (FAIL HARD if missing)
+- company_sov_id is MANDATORY (FAIL HARD if missing)
+- Tier-2 is SINGLE-SHOT per context (can_attempt_tier2 guard)
+- All tool attempts MUST be logged via log_tool_attempt()
+
+COST DOCTRINE:
+- Exhaust cheaper signals before spending more
+- Tier-2: ONE attempt per outreach_context_id TOTAL
+- If Tier-2 fails, no retry, no alternate provider
 """
 
 import time
@@ -22,6 +31,15 @@ import pandas as pd
 
 # Doctrine enforcement imports
 from ops.enforcement.correlation_id import validate_correlation_id, CorrelationIDError
+
+# Context management (TRUTH SOURCE for cost safety)
+from ..utils.context_manager import (
+    OutreachContextManager,
+    MissingContextError,
+    MissingSovIdError,
+    Tier2BlockedError,
+    get_context_manager
+)
 
 from ..utils.normalization import normalize_domain
 from ..utils.patterns import (
@@ -162,27 +180,52 @@ class Phase3EmailPatternWaterfall:
             except Exception:
                 pass
 
-    def run(self, domain_df: pd.DataFrame,
-            correlation_id: str) -> Tuple[pd.DataFrame, Phase3Stats]:
+    def run(
+        self,
+        domain_df: pd.DataFrame,
+        correlation_id: str,
+        outreach_context_id: str,
+        company_sov_id: str,
+        context_manager: OutreachContextManager = None
+    ) -> Tuple[pd.DataFrame, Phase3Stats]:
         """
         Run email pattern waterfall.
 
-        DOCTRINE: correlation_id is MANDATORY. FAIL HARD if missing.
+        DOCTRINE:
+        - correlation_id is MANDATORY (FAIL HARD if missing)
+        - outreach_context_id is MANDATORY (FAIL HARD if missing)
+        - company_sov_id is MANDATORY (FAIL HARD if missing)
+        - Tier-2 is single-shot per context
 
         Args:
             domain_df: DataFrame with domains from Phase 2
                 Expected columns: person_id, resolved_domain, matched_company_id
             correlation_id: MANDATORY - End-to-end trace ID (UUID v4)
+            outreach_context_id: MANDATORY - Current execution context
+            company_sov_id: MANDATORY - Company sovereign ID
+            context_manager: Optional context manager (will create if not provided)
 
         Returns:
             Tuple of (result_df with pattern info, Phase3Stats)
 
         Raises:
             CorrelationIDError: If correlation_id is missing or invalid (FAIL HARD)
+            MissingContextError: If outreach_context_id is missing (FAIL HARD)
+            MissingSovIdError: If company_sov_id is missing (FAIL HARD)
         """
         # DOCTRINE ENFORCEMENT: Validate correlation_id (FAIL HARD)
         process_id = "company.identity.pattern.phase3"
         correlation_id = validate_correlation_id(correlation_id, process_id, "Phase 3")
+
+        # DOCTRINE ENFORCEMENT: Validate context params (FAIL HARD)
+        ctx_mgr = context_manager or get_context_manager()
+        outreach_context_id = ctx_mgr.validate_context_id(outreach_context_id)
+        company_sov_id = ctx_mgr.validate_sov_id(company_sov_id)
+
+        # Store context for internal methods
+        self._current_context_id = outreach_context_id
+        self._current_sov_id = company_sov_id
+        self._context_manager = ctx_mgr
 
         start_time = time.time()
         stats = Phase3Stats(total_input=len(domain_df), correlation_id=correlation_id)
@@ -290,12 +333,17 @@ class Phase3EmailPatternWaterfall:
         """
         Discover email pattern for a domain using tiered waterfall.
 
+        DOCTRINE:
+        - Cost-first: Exhaust cheaper signals before spending
+        - Tier-2 single-shot: Enforced via can_attempt_tier2() guard
+        - All attempts logged via context manager
+
         Order:
         1. Check cache
         2. Extract from input emails if available
         3. Try Tier 0 (free)
         4. Try Tier 1 (low cost)
-        5. Try Tier 2 (premium)
+        5. Try Tier 2 (premium) - WITH GUARD
         6. Suggest common patterns
 
         Args:
@@ -310,12 +358,17 @@ class Phase3EmailPatternWaterfall:
         if domain in self._pattern_cache:
             return self._pattern_cache[domain]
 
+        # Get context from run() - stored as instance attributes
+        ctx_id = getattr(self, '_current_context_id', None)
+        sov_id = getattr(self, '_current_sov_id', None)
+        ctx_mgr = getattr(self, '_context_manager', None)
+
         result = PatternResult(
             company_id=company_id,
             domain=domain
         )
 
-        # 1. Try extracting from input emails
+        # 1. Try extracting from input emails (FREE - no logging needed)
         if self.use_input_emails and input_emails:
             pattern_match = self._extract_from_input_emails(input_emails, domain)
             if pattern_match and pattern_match.confidence >= self.min_confidence:
@@ -338,60 +391,51 @@ class Phase3EmailPatternWaterfall:
                 self._pattern_cache[domain] = result
                 return result
 
-        # 2. Try tiered providers
-        max_provider_tier = ProviderTier(min(self.max_tier, 2))
+        # 2. Try Tier 0 (FREE)
+        if self.enable_tier_0:
+            tier0_result = self._discover_pattern_at_tier(
+                domain=domain,
+                tier=ProviderTier.TIER_0,
+                outreach_context_id=ctx_id,
+                company_sov_id=sov_id,
+                context_manager=ctx_mgr
+            )
+            if tier0_result and tier0_result.pattern_status == PatternStatus.FOUND:
+                result = tier0_result
+                result.company_id = company_id
+                self._pattern_cache[domain] = result
+                return result
 
-        # Execute waterfall
-        provider_results = execute_tier_waterfall(
-            registry=self.provider_registry,
-            domain=domain,
-            company_name=None,  # Could be added if needed
-            max_tier=max_provider_tier,
-            stop_on_pattern=True
-        )
+        # 3. Try Tier 1 (LOW COST)
+        if self.enable_tier_1:
+            tier1_result = self._discover_pattern_at_tier(
+                domain=domain,
+                tier=ProviderTier.TIER_1,
+                outreach_context_id=ctx_id,
+                company_sov_id=sov_id,
+                context_manager=ctx_mgr
+            )
+            if tier1_result and tier1_result.pattern_status == PatternStatus.FOUND:
+                result = tier1_result
+                result.company_id = company_id
+                self._pattern_cache[domain] = result
+                return result
 
-        result.api_calls_made = len(provider_results)
+        # 4. Try Tier 2 (PREMIUM) - WITH GUARD
+        if self.enable_tier_2 and ctx_id and sov_id:
+            tier2_result = self.try_tier_2(
+                domain=domain,
+                outreach_context_id=ctx_id,
+                company_sov_id=sov_id,
+                context_manager=ctx_mgr
+            )
+            if tier2_result and tier2_result.pattern_status == PatternStatus.FOUND:
+                result = tier2_result
+                result.company_id = company_id
+                self._pattern_cache[domain] = result
+                return result
 
-        # Process provider results
-        for pr in provider_results:
-            result.cost_credits += pr.cost_credits
-            # PBE Hook: Record each provider result
-            self._record_pbe_provider_result(pr)
-
-            if pr.success and pr.patterns:
-                # Found a pattern
-                best_pattern = max(pr.patterns, key=lambda p: p.get('confidence', 0))
-                if best_pattern.get('confidence', 0) >= self.min_confidence:
-                    result.pattern = best_pattern.get('pattern')
-                    result.confidence = best_pattern.get('confidence', 0.8)
-                    result.tier_used = pr.tier.value
-                    result.provider_used = pr.provider
-                    result.sample_emails = best_pattern.get('sample_emails', [])[:3]
-
-                    # Set source based on tier
-                    if pr.tier == ProviderTier.TIER_0:
-                        result.pattern_source = PatternSource.TIER_0
-                    elif pr.tier == ProviderTier.TIER_1:
-                        result.pattern_source = PatternSource.TIER_1
-                    else:
-                        result.pattern_source = PatternSource.TIER_2
-
-                    result.pattern_status = PatternStatus.FOUND
-
-                    self.logger.log_event(
-                        EventType.PATTERN_DISCOVERED,
-                        f"Pattern from {pr.provider}: {result.pattern}",
-                        entity_type="pattern",
-                        entity_id=domain,
-                        confidence=result.confidence,
-                        source=pr.provider,
-                        metadata={'tier': pr.tier.value}
-                    )
-
-                    self._pattern_cache[domain] = result
-                    return result
-
-        # 3. Suggest common patterns if all providers failed
+        # 5. Suggest common patterns if all providers failed (fallback)
         if self.suggest_if_failed:
             suggestions = suggest_patterns_for_domain(domain)
             if suggestions:
@@ -558,9 +602,18 @@ class Phase3EmailPatternWaterfall:
         result = self._discover_pattern_at_tier(domain, ProviderTier.TIER_1)
         return result if result and result.pattern_status == PatternStatus.FOUND else None
 
-    def try_tier_2(self, domain: str) -> Optional[PatternResult]:
+    def try_tier_2(
+        self,
+        domain: str,
+        outreach_context_id: str,
+        company_sov_id: str,
+        context_manager: OutreachContextManager = None
+    ) -> Optional[PatternResult]:
         """
         Try Tier 2 providers (premium).
+
+        DOCTRINE: Single-shot enforcement via can_attempt_tier2().
+        If guard returns FALSE, we MUST NOT proceed.
 
         Providers:
         - Prospeo
@@ -569,30 +622,81 @@ class Phase3EmailPatternWaterfall:
 
         Args:
             domain: Domain to discover pattern for
+            outreach_context_id: MANDATORY - Current execution context
+            company_sov_id: MANDATORY - Company sovereign ID
+            context_manager: Context manager for guard checks
 
         Returns:
             PatternResult if found, None otherwise
+
+        Raises:
+            Tier2BlockedError: If Tier-2 already attempted in this context
+            MissingContextError: If context ID missing
+            MissingSovIdError: If sovereign ID missing
         """
         if not self.enable_tier_2:
             return None
 
-        result = self._discover_pattern_at_tier(domain, ProviderTier.TIER_2)
+        # Get context manager
+        ctx_mgr = context_manager or get_context_manager()
+
+        # DOCTRINE GUARD: Validate inputs (FAIL HARD)
+        ctx_mgr.validate_context_id(outreach_context_id)
+        ctx_mgr.validate_sov_id(company_sov_id)
+
+        # TIER-2 FUSE: Check if ANY Tier-2 tool already attempted
+        tier2_providers = ['prospeo', 'snov', 'clay']
+        for provider_name in tier2_providers:
+            if not ctx_mgr.can_attempt_tier2(outreach_context_id, company_sov_id, provider_name):
+                self.logger.log_event(
+                    EventType.PATTERN_FAILED,
+                    f"TIER-2 FUSE BLOWN: {provider_name} blocked in context {outreach_context_id}",
+                    LogLevel.WARNING,
+                    entity_type="pattern",
+                    entity_id=domain,
+                    metadata={
+                        'blocked_provider': provider_name,
+                        'context_id': outreach_context_id,
+                        'reason': 'single_shot_enforcement'
+                    }
+                )
+                # SINGLE-SHOT ENFORCED - No retry, no alternate provider
+                return None
+
+        result = self._discover_pattern_at_tier(
+            domain=domain,
+            tier=ProviderTier.TIER_2,
+            outreach_context_id=outreach_context_id,
+            company_sov_id=company_sov_id,
+            context_manager=ctx_mgr
+        )
         return result if result and result.pattern_status == PatternStatus.FOUND else None
 
-    def _discover_pattern_at_tier(self, domain: str,
-                                  tier: ProviderTier) -> Optional[PatternResult]:
+    def _discover_pattern_at_tier(
+        self,
+        domain: str,
+        tier: ProviderTier,
+        outreach_context_id: str = None,
+        company_sov_id: str = None,
+        context_manager: OutreachContextManager = None
+    ) -> Optional[PatternResult]:
         """
         Discover pattern using only a specific tier.
+
+        DOCTRINE: If context params provided, logs all tool attempts.
 
         Args:
             domain: Domain to discover pattern for
             tier: Specific tier to use
+            outreach_context_id: Optional - for cost logging (required for Tier-2)
+            company_sov_id: Optional - for cost logging (required for Tier-2)
+            context_manager: Optional - for guard checks and logging
 
         Returns:
             PatternResult or None
         """
         result = PatternResult(
-            company_id='',
+            company_id=company_sov_id or '',
             domain=domain
         )
 
@@ -601,7 +705,23 @@ class Phase3EmailPatternWaterfall:
             try:
                 pr = provider.get_email_pattern(domain)
                 result.api_calls_made += 1
-                result.cost_credits += pr.cost_credits if pr else 0
+                cost = pr.cost_credits if pr else 0
+                result.cost_credits += cost
+                success = pr.success if pr else False
+
+                # DOCTRINE: Log tool attempt if context provided
+                if context_manager and outreach_context_id and company_sov_id:
+                    context_manager.log_tool_attempt(
+                        outreach_context_id=outreach_context_id,
+                        company_sov_id=company_sov_id,
+                        tool_name=provider.name,
+                        tool_tier=tier.value,
+                        cost_credits=cost,
+                        success=success,
+                        result_summary=f"Pattern: {pr.pattern}" if pr and hasattr(pr, 'pattern') and pr.pattern else None,
+                        error_message=None,
+                        sub_hub="company-target"
+                    )
 
                 if pr and pr.success and pr.patterns:
                     best = max(pr.patterns, key=lambda p: p.get('confidence', 0))
@@ -623,6 +743,20 @@ class Phase3EmailPatternWaterfall:
                         return result
 
             except Exception as e:
+                # Log error attempt if context provided
+                if context_manager and outreach_context_id and company_sov_id:
+                    context_manager.log_tool_attempt(
+                        outreach_context_id=outreach_context_id,
+                        company_sov_id=company_sov_id,
+                        tool_name=provider.name,
+                        tool_tier=tier.value,
+                        cost_credits=0,
+                        success=False,
+                        result_summary=None,
+                        error_message=str(e),
+                        sub_hub="company-target"
+                    )
+
                 self.logger.error(
                     f"Provider {provider.name} failed for {domain}",
                     error=e,
