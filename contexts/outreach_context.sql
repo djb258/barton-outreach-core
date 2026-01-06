@@ -16,7 +16,7 @@
 --
 -- ANALOGY:
 --   - company_sov_id = VIN (permanent, sovereign)
---   - outreach_context_id = Work Order (disposable, scoped)
+--   - outreach_id = Work Order (disposable, scoped)
 --   - There is ONE VIN, many work orders
 --
 -- =============================================================================
@@ -41,7 +41,7 @@ CREATE TYPE outreach_ctx.final_state_enum AS ENUM (
 
 CREATE TABLE IF NOT EXISTS outreach_ctx.context (
     -- Primary identifier (disposable)
-    outreach_context_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    outreach_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
     -- Sovereign company reference (REQUIRED, read-only)
     company_sov_id UUID NOT NULL,
@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS outreach_ctx.tool_attempts (
     attempt_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
     -- Context reference
-    outreach_context_id UUID NOT NULL REFERENCES outreach_ctx.context(outreach_context_id),
+    outreach_id UUID NOT NULL REFERENCES outreach_ctx.context(outreach_id),
     company_sov_id UUID NOT NULL,
 
     -- Tool information
@@ -123,13 +123,13 @@ CREATE TABLE IF NOT EXISTS outreach_ctx.tool_attempts (
     error_message TEXT,
 
     -- CRITICAL: Enforce single Tier-2 attempt per context
-    CONSTRAINT tier2_single_attempt UNIQUE (outreach_context_id, company_sov_id, tool_name)
+    CONSTRAINT tier2_single_attempt UNIQUE (outreach_id, company_sov_id, tool_name)
         WHERE tool_tier = 2
 );
 
 -- Index for tool attempt lookups
 CREATE INDEX IF NOT EXISTS idx_tool_attempts_context
-    ON outreach_ctx.tool_attempts(outreach_context_id);
+    ON outreach_ctx.tool_attempts(outreach_id);
 
 -- Index for company tool history
 CREATE INDEX IF NOT EXISTS idx_tool_attempts_company
@@ -143,7 +143,7 @@ CREATE TABLE IF NOT EXISTS outreach_ctx.spend_log (
     spend_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
     -- Context and company reference
-    outreach_context_id UUID NOT NULL REFERENCES outreach_ctx.context(outreach_context_id),
+    outreach_id UUID NOT NULL REFERENCES outreach_ctx.context(outreach_id),
     company_sov_id UUID NOT NULL,
 
     -- Spend details
@@ -161,7 +161,7 @@ CREATE TABLE IF NOT EXISTS outreach_ctx.spend_log (
 
 -- Index for spend aggregation
 CREATE INDEX IF NOT EXISTS idx_spend_log_context
-    ON outreach_ctx.spend_log(outreach_context_id);
+    ON outreach_ctx.spend_log(outreach_id);
 
 CREATE INDEX IF NOT EXISTS idx_spend_log_company
     ON outreach_ctx.spend_log(company_sov_id);
@@ -196,7 +196,7 @@ BEGIN
         p_lifecycle_state,
         NOW() + (p_ttl_hours || ' hours')::INTERVAL,
         p_created_by
-    ) RETURNING outreach_context_id INTO v_context_id;
+    ) RETURNING outreach_id INTO v_context_id;
 
     RETURN v_context_id;
 END;
@@ -214,7 +214,7 @@ BEGIN
         kill_reason = p_reason,
         final_state = 'ABORTED',
         finalized_at = NOW()
-    WHERE outreach_context_id = p_context_id
+    WHERE outreach_id = p_context_id
       AND is_active = TRUE
       AND final_state IS NULL;  -- Cannot re-finalize
 
@@ -231,7 +231,7 @@ BEGIN
     SET is_active = FALSE,
         final_state = 'PASS',
         finalized_at = NOW()
-    WHERE outreach_context_id = p_context_id
+    WHERE outreach_id = p_context_id
       AND is_active = TRUE
       AND final_state IS NULL;  -- Cannot re-finalize
 
@@ -250,7 +250,7 @@ BEGIN
         final_state = 'FAIL',
         finalized_at = NOW(),
         kill_reason = p_reason
-    WHERE outreach_context_id = p_context_id
+    WHERE outreach_id = p_context_id
       AND final_state IS NULL;  -- Cannot re-finalize
 
     RETURN FOUND;
@@ -287,7 +287,7 @@ CREATE OR REPLACE FUNCTION outreach_ctx.can_attempt_tier2(
 BEGIN
     RETURN NOT EXISTS (
         SELECT 1 FROM outreach_ctx.tool_attempts
-        WHERE outreach_context_id = p_context_id
+        WHERE outreach_id = p_context_id
           AND company_sov_id = p_company_sov_id
           AND tool_name = p_tool_name
           AND tool_tier = 2
@@ -312,7 +312,7 @@ DECLARE
 BEGIN
     -- Insert attempt record
     INSERT INTO outreach_ctx.tool_attempts (
-        outreach_context_id,
+        outreach_id,
         company_sov_id,
         tool_name,
         tool_tier,
@@ -333,7 +333,7 @@ BEGIN
 
     -- Log spend
     INSERT INTO outreach_ctx.spend_log (
-        outreach_context_id,
+        outreach_id,
         company_sov_id,
         tool_name,
         tool_tier,
@@ -356,7 +356,7 @@ BEGIN
         tier0_calls = tier0_calls + CASE WHEN p_tool_tier = 0 THEN 1 ELSE 0 END,
         tier1_calls = tier1_calls + CASE WHEN p_tool_tier = 1 THEN 1 ELSE 0 END,
         tier2_calls = tier2_calls + CASE WHEN p_tool_tier = 2 THEN 1 ELSE 0 END
-    WHERE outreach_context_id = p_context_id;
+    WHERE outreach_id = p_context_id;
 
     RETURN v_attempt_id;
 END;
@@ -369,7 +369,7 @@ $$ LANGUAGE plpgsql;
 -- Active contexts with spend summary
 CREATE OR REPLACE VIEW outreach_ctx.active_contexts AS
 SELECT
-    c.outreach_context_id,
+    c.outreach_id,
     c.company_sov_id,
     c.context_type,
     c.context_name,
@@ -395,7 +395,7 @@ WHERE c.is_active = TRUE
 -- Finalized contexts (PASS/FAIL/ABORTED)
 CREATE OR REPLACE VIEW outreach_ctx.finalized_contexts AS
 SELECT
-    c.outreach_context_id,
+    c.outreach_id,
     c.company_sov_id,
     c.context_type,
     c.context_name,
@@ -414,7 +414,7 @@ WHERE c.final_state IS NOT NULL;
 -- Contexts approaching SLA expiry (warning threshold: 1 hour)
 CREATE OR REPLACE VIEW outreach_ctx.sla_warning AS
 SELECT
-    c.outreach_context_id,
+    c.outreach_id,
     c.company_sov_id,
     c.sla_expires_at,
     EXTRACT(EPOCH FROM (c.sla_expires_at - NOW())) / 60 AS minutes_until_abort,
@@ -430,7 +430,7 @@ WHERE c.is_active = TRUE
 CREATE OR REPLACE VIEW outreach_ctx.spend_by_company AS
 SELECT
     company_sov_id,
-    COUNT(DISTINCT outreach_context_id) AS context_count,
+    COUNT(DISTINCT outreach_id) AS context_count,
     SUM(cost_credits) AS total_spend,
     SUM(CASE WHEN tool_tier = 0 THEN cost_credits ELSE 0 END) AS tier0_spend,
     SUM(CASE WHEN tool_tier = 1 THEN cost_credits ELSE 0 END) AS tier1_spend,
@@ -449,7 +449,7 @@ COMMENT ON TABLE outreach_ctx.tool_attempts IS
     'Track tool attempts per context. Enforces single Tier-2 attempt rule.';
 
 COMMENT ON TABLE outreach_ctx.spend_log IS
-    'Cost accounting keyed to (company_sov_id + outreach_context_id).';
+    'Cost accounting keyed to (company_sov_id + outreach_id).';
 
 COMMENT ON FUNCTION outreach_ctx.can_attempt_tier2 IS
     'Check if Tier-2 tool can be attempted in this context. Returns FALSE if already attempted.';

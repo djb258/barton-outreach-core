@@ -33,7 +33,7 @@ Company Target is a **sub-hub only**. It:
 - Receives company_sov_id from Company Lifecycle (external, read-only)
 - Does NOT mint, revive, or mutate company existence
 - Determines outreach readiness, not company existence
-- Uses disposable outreach_context_id for execution tracking
+- Uses disposable outreach_id for execution tracking
 
 ---
 
@@ -380,7 +380,7 @@ CL ──► CT ──► DOL ──► PEOPLE ──► BLOG
 ## Context
 
 Previous documentation implied CL was part of the Outreach program waterfall.
-This caused confusion about where company_unique_id and outreach_context_id
+This caused confusion about where company_unique_id and outreach_id
 are minted and who owns what.
 
 ---
@@ -390,9 +390,9 @@ are minted and who owns what.
 **Formalize the External CL + Program-Scoped Context architecture:**
 
 1. **CL is EXTERNAL** — Company Lifecycle is a separate system, not part of Outreach
-2. **Outreach Orchestration** — Mints outreach_context_id as Context Authority
+2. **Outreach Orchestration** — Mints outreach_id as Context Authority
 3. **company_unique_id** — Consumed from CL, never minted by Outreach
-4. **outreach_context_id** — Program-scoped, binds all sub-hub operations
+4. **outreach_id** — Program-scoped, binds all sub-hub operations
 
 ---
 
@@ -411,11 +411,11 @@ are minted and who owns what.
 ┌─────────────────────────────────────────────────────────────────┐
 │                    OUTREACH PROGRAM                              │
 ├─────────────────────────────────────────────────────────────────┤
-│  0. Outreach Orchestration ─► Mints outreach_context_id          │
+│  0. Outreach Orchestration ─► Mints outreach_id          │
 │                                │                                 │
 │  1. Company Target ────────────┤                                 │
 │  2. DOL Filings ───────────────┤ All bound by                    │
-│  3. People Intelligence ───────┤ outreach_context_id             │
+│  3. People Intelligence ───────┤ outreach_id             │
 │  4. Blog Content ──────────────┘                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -428,7 +428,7 @@ The root audit record for every Outreach run:
 
 | Column | Type | Description |
 |--------|------|-------------|
-| outreach_context_id | UUID | PK, minted by Orchestration |
+| outreach_id | UUID | PK, minted by Orchestration |
 | company_unique_id | TEXT | FK to CL (external) |
 | program_name | TEXT | DEFAULT 'outreach' |
 | run_reason | TEXT | campaign, retry, refresh, etc. |

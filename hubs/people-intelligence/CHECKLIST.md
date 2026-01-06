@@ -6,7 +6,7 @@
 
 - [ ] Uses company_sov_id as sole company identity
 - [ ] No people records without company_sov_id
-- [ ] outreach_context_id used for all operations
+- [ ] outreach_id used for all operations
 
 ---
 
@@ -101,7 +101,7 @@ A failure is **blocking** if:
 ### Signal Validity
 
 - [ ] Signals are origin-bound (declared source only)
-- [ ] Signals are run-bound to current outreach_context_id
+- [ ] Signals are run-bound to current outreach_id
 - [ ] Signals from prior contexts are NOT authoritative
 - [ ] Signal age does NOT justify action
 
@@ -167,7 +167,7 @@ A failure is **blocking** if:
 
 ### Context Lineage
 
-- [ ] All retries create new `outreach_context_id`
+- [ ] All retries create new `outreach_id`
 - [ ] New contexts do NOT inherit signals from prior contexts
 - [ ] Prior context remains for audit (never deleted)
 
@@ -177,7 +177,7 @@ A failure is **blocking** if:
 
 ### Tool Usage (DG-001, DG-002)
 
-- [ ] All paid tools called with `outreach_context_id`
+- [ ] All paid tools called with `outreach_id`
 - [ ] All tools listed in `tooling/tool_registry.md`
 - [ ] Tier-2 tools use `can_attempt_tier2()` guard
 
@@ -216,9 +216,9 @@ A failure is **blocking** if:
 
 ### Outreach Context Authority
 
-- [ ] outreach_context_id sourced from Outreach Orchestration (not CL)
-- [ ] All operations bound by outreach_context_id
-- [ ] Does NOT mint outreach_context_id (Orchestration does)
+- [ ] outreach_id sourced from Outreach Orchestration (not CL)
+- [ ] All operations bound by outreach_id
+- [ ] Does NOT mint outreach_id (Orchestration does)
 - [ ] Reads from outreach.outreach_context table
 
 ### Consumer-Only Compliance

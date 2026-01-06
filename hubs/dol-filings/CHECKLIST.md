@@ -102,7 +102,7 @@ These are **expected** and logged but do not block:
 ### Signal Validity
 
 - [ ] Signals are origin-bound (declared source only)
-- [ ] Signals are run-bound to current outreach_context_id
+- [ ] Signals are run-bound to current outreach_id
 - [ ] Signals from prior contexts are NOT authoritative
 - [ ] Signal age does NOT justify action
 
@@ -167,7 +167,7 @@ This hub operates independently with no cross-hub dependencies.
 
 ### Context Lineage
 
-- [ ] All retries create new `outreach_context_id`
+- [ ] All retries create new `outreach_id`
 - [ ] New contexts do NOT inherit signals from prior contexts
 - [ ] Prior context remains for audit (never deleted)
 
@@ -215,9 +215,9 @@ This hub operates independently with no cross-hub dependencies.
 
 ### Outreach Context Authority
 
-- [ ] outreach_context_id sourced from Outreach Orchestration (not CL)
-- [ ] All operations bound by outreach_context_id
-- [ ] Does NOT mint outreach_context_id (Orchestration does)
+- [ ] outreach_id sourced from Outreach Orchestration (not CL)
+- [ ] All operations bound by outreach_id
+- [ ] Does NOT mint outreach_id (Orchestration does)
 - [ ] Reads from outreach.outreach_context table
 
 ### Program Boundary Compliance
@@ -234,7 +234,7 @@ This hub operates independently with no cross-hub dependencies.
 - [ ] Does NOT call CL APIs or endpoints
 - [ ] Does NOT verify company existence (CL did that)
 - [ ] Does NOT retry CL operations
-- [ ] Does NOT create outreach_context_id
+- [ ] Does NOT create outreach_id
 
 ---
 

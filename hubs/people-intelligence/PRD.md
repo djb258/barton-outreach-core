@@ -1,4 +1,4 @@
-# PRD — People Intelligence Sub-Hub
+# PRD — Hub
 
 ## Conformance
 
@@ -6,7 +6,7 @@
 |-------|-------|
 | **Doctrine Version** | 1.1.0 |
 | **CTB Version** | 1.0.0 |
-| **CC Layer** | CC-03 (Context within CC-02 Hub) |
+| **CC Layer** | CC-02 |
 
 ---
 
@@ -23,396 +23,148 @@
 
 | Field | Value |
 |-------|-------|
-| **Parent Hub** | outreach-core |
-| **Parent Hub ID** | outreach-core-001 |
 | **Hub Name** | People Intelligence |
-| **Hub ID** | HUB-PI-001 |
-| **Doctrine ID** | 04.04.02 |
+| **Hub ID** | HUB-PEOPLE |
 | **Owner** | Outreach Team |
 | **Version** | 1.0.0 |
 
 ---
 
-## 3. Process Identity (CC-04)
+## 3. Purpose
 
-| Field | Value |
-|-------|-------|
-| **PID Pattern** | `HUB-PI-001-${TIMESTAMP}-${RANDOM_HEX}` |
-| **Session Pattern** | `HUB-PI-001-session-${SESSION_ID}` |
-| **Context Binding** | outreach_context_id |
+Populate **role slots**, not raw contacts. Own human identity, employment state, and slot assignments. Track human lifecycle independently from company lifecycle. CONSUMER of upstream patterns — does NOT discover patterns or resolve domains.
+
+**Waterfall Position**: 3rd sub-hub in canonical waterfall (after DOL Filings, before Blog Content).
 
 ---
 
-## 4. Purpose
+## 4. CTB Placement
 
-Populate **role slots**, not raw contacts.
-Own human identity, employment state, and slot assignments.
-Track human lifecycle independently from company lifecycle.
-
----
-
-## 3.1 Waterfall Position
-
-**Position**: 4th in canonical waterfall (after DOL, before Blog)
-
-```
-1. CL ──────────► PASS ──┐  (EXTERNAL)
-                         │ company_unique_id
-                         ▼
-2. COMPANY TARGET ► PASS ──┐
-                           │ verified_pattern, domain
-                           ▼
-3. DOL FILINGS ───► PASS ──┐
-                           │ ein, filing_signals
-                           ▼
-4. PEOPLE ────────► PASS ──┐  ◄── YOU ARE HERE
-                           │ slot_assignments
-                           ▼
-5. BLOG ──────────► PASS
-```
-
-### Upstream Dependencies
-
-| Upstream | Required Signal | Gate |
-|----------|-----------------|------|
-| Company Target | verified_pattern | MUST have PASS |
-| Company Target | domain | MUST be resolved |
-| DOL Filings | regulatory_signals | MUST have PASS |
-
-### Downstream Consumers
-
-| Downstream | Signals Emitted | Binding |
-|------------|-----------------|---------|
-| Blog Content | slot_assignments, people_records | outreach_context_id |
-| Outreach Execution | slot_assignments, people_records | outreach_context_id |
-
-### Waterfall Rules (LOCKED)
-
-- DOL Filings must PASS before this hub executes
-- This hub must PASS before Blog Content executes
-- No retry/rescue from downstream hubs
-- Failures stay local — downstream sees FAIL, not partial data
+| Field | Value | CC Layer |
+|-------|-------|----------|
+| **Trunk** | sys | CC-02 |
+| **Branch** | outreach | CC-02 |
+| **Leaf** | people-intelligence | CC-02 |
 
 ---
 
-## 3.2 External Dependencies & Program Scope
+## 5. IMO Structure (CC-02)
 
-### CL is EXTERNAL to Outreach
-
-| Boundary | System | Ownership |
-|----------|--------|-----------|
-| **External** | Company Lifecycle (CL) | Mints company_unique_id, shared across all programs |
-| **Program** | Outreach Orchestration | Mints outreach_context_id, program-scoped |
-| **Sub-Hub** | People Intelligence (this hub) | Third enrichment sub-hub in waterfall |
-
-### Key Doctrine
-
-- **CL is external** — Outreach CONSUMES company_unique_id, does NOT invoke CL
-- **Consumer-Only** — This hub CONSUMES patterns from CT, NOT discovers them
-- **Run identity** — All operations bound by outreach_context_id from Orchestration
-- **Context table** — outreach.outreach_context is the root audit record
-
-### Consumer-Only Compliance (CRITICAL)
-
-This hub is a **CONSUMER** of upstream data, not a **PRODUCER**:
-
-| Data | Source | This Hub |
-|------|--------|----------|
-| Email patterns | Company Target | CONSUME (not discover) |
-| Domain resolution | Company Target | CONSUME (not resolve) |
-| Regulatory signals | DOL Filings | CONSUME (not fetch) |
-| Company existence | CL (external) | CONSUME via CT |
-
-### Explicit Prohibitions
-
-- [ ] Does NOT invoke Company Lifecycle (CL is external)
-- [ ] Does NOT mint company_unique_id (CL does)
-- [ ] Does NOT discover email patterns (CT does)
-- [ ] Does NOT resolve domains (CT does)
-- [ ] Does NOT create outreach_context_id (Orchestration does)
+| Layer | Role | Description | CC Layer |
+|-------|------|-------------|----------|
+| **I — Ingress** | Dumb input only | Receives outreach_id, verified_pattern from CT; filing_signals from DOL | CC-02 |
+| **M — Middle** | Logic, decisions, state | Email generation, slot assignment, enrichment queue | CC-02 |
+| **O — Egress** | Output only | Emits slot_assignments, contact_records to downstream | CC-02 |
 
 ---
 
-## 4. Lifecycle Gate
+## 6. Spokes (CC-03 Interfaces)
 
-| Minimum Lifecycle State | Gate Condition |
-|-------------------------|----------------|
-| TARGETABLE | Requires lifecycle >= TARGETABLE |
-| Additional | Requires verified pattern from Company Target |
-
----
-
-## 5. Inputs
-
-| Input | Source | Required |
-|-------|--------|----------|
-| company_sov_id | Company Lifecycle (external) | YES |
-| verified_pattern | Company Target | YES |
-| outreach_context_id | contexts/outreach_context | YES |
+| Spoke Name | Type | Direction | Contract | CC Layer |
+|------------|------|-----------|----------|----------|
+| company-people | I | Inbound | outreach_id, verified_pattern | CC-03 |
+| dol-people | I | Inbound | outreach_id, filing_signals | CC-03 |
+| people-blog | O | Outbound | outreach_id, slot_assignments | CC-03 |
+| people-outreach | O | Outbound | outreach_id, contact_records | CC-03 |
 
 ---
 
-## 6. Pipeline
+## 7. Constants vs Variables
 
-```
-Validate lifecycle permission (>= TARGETABLE)
- ↓
-Validate verified pattern exists
- ↓
-Phase 5: Email Generation
- ↓
-Phase 6: Slot Assignment (CHRO, HR_MANAGER, BENEFITS_LEAD, etc.)
- ↓
-Phase 7: Enrichment Queue (only for measured deficit)
- ↓
-Phase 8: Output Writer (CSV export only)
-```
-
----
-
-## 7. Cost Rules
-
-| Rule | Enforcement |
-|------|-------------|
-| Apollo | Tier 1, lifecycle >= TARGETABLE |
-| Clay | Tier 2, max 1 per context |
-| MillionVerifier | Per-use, lifecycle >= TARGETABLE |
-| Enrichment | Only to fix MEASURED slot deficit |
+| Element | Type | Mutability | CC Layer |
+|---------|------|------------|----------|
+| Hub ID | Constant | Immutable | CC-02 |
+| Hub Name | Constant | ADR-gated | CC-02 |
+| Doctrine ID (04.04.02) | Constant | Immutable | CC-02 |
+| CTB Placement | Constant | ADR-gated | CC-02 |
+| Primary Table | Constant | ADR-gated | CC-02 |
+| Slot Types | Constant | ADR-gated | CC-02 |
+| outreach_id | Variable | Runtime | CC-04 |
+| slot_assignments | Variable | Runtime (calculated) | CC-04 |
 
 ---
 
 ## 8. Tools
 
-| Tool | Tier | Cost Class | ADR |
-|------|------|------------|-----|
-| Apollo | 1 | Low | ADR-PI-001 |
-| Clay | 2 | Premium | ADR-PI-001 |
-| MillionVerifier | 1 | Per-use | ADR-PI-002 |
+| Tool | Solution Type | CC Layer | IMO Layer | ADR Reference |
+|------|---------------|----------|-----------|---------------|
+| Apollo | Deterministic | CC-02 | M | ADR-PI-001 |
+| Clay | Deterministic | CC-02 | M | ADR-PI-001 |
+| MillionVerifier | Deterministic | CC-02 | M | ADR-PI-002 |
+| Title Classifier | Deterministic | CC-02 | M | N/A (Local) |
 
 ---
 
-## 9. Constraints
+## 9. Guard Rails
 
-- [ ] No people without company_sov_id
-- [ ] Enrichment only to fix measured slot deficit
-- [ ] CSV is output only (never canonical)
-- [ ] Requires verified pattern from Company Target
-
----
-
-## 10. Core Metric
-
-**SLOT_FILL_RATE** — Percentage of target slots filled with verified contacts
-
-Healthy Threshold: >= 80%
+| Guard Rail | Type | Threshold | CC Layer |
+|------------|------|-----------|----------|
+| Verified pattern required | Validation | MUST have from Company Target | CC-03 |
+| DOL Filings PASS | Validation | MUST have upstream PASS | CC-03 |
+| Clay limit | Rate Limit | Max 1 per outreach_id | CC-03 |
+| Enrichment budget | Rate Limit | Only for measured slot deficit | CC-04 |
 
 ---
 
-## 11. Upstream Dependencies, Signal Validity, and Downstream Effects
+## 10. Kill Switch
 
-### Execution Position
-
-**Third in canonical order** — After Company Target and DOL Filings.
-
-### Required Upstream PASS Conditions
-
-| Upstream | Condition |
-|----------|-----------|
-| Company Target | PASS with verified_pattern |
-| Company Target | domain resolved |
-| DOL Filings | PASS (or no filings) |
-
-### Signals Consumed (Origin-Bound)
-
-| Signal | Origin | Validity |
-|--------|--------|----------|
-| company_sov_id | Company Lifecycle (via CT) | Run-bound to outreach_context_id |
-| verified_pattern | Company Target | Run-bound to outreach_context_id |
-| domain | Company Target | Run-bound to outreach_context_id |
-| pattern_confidence | Company Target | Run-bound to outreach_context_id |
-| regulatory_signals | DOL Filings | Run-bound to outreach_context_id |
-
-### Signals Emitted
-
-| Signal | Consumers | Validity |
-|--------|-----------|----------|
-| slot_assignments | Blog, Outreach Execution | Run-bound to outreach_context_id |
-| people_records | Blog, Outreach Execution | Run-bound to outreach_context_id |
-| SLOT_FILL_RATE | Monitoring | Run-bound to outreach_context_id |
-
-### Downstream Effects
-
-| If This Hub | Then |
-|-------------|------|
-| PASS | Blog Content may execute |
-| FAIL | Blog does NOT execute |
-
-### Explicit Prohibitions
-
-- [ ] May NOT consume Blog Content signals
-- [ ] May NOT fix Company Target errors (pattern missing → FAIL, not retry)
-- [ ] May NOT re-enrich Company Target domain
-- [ ] May NOT refresh signals from prior contexts
-- [ ] May NOT use stale pattern from prior context
+| Field | Value |
+|-------|-------|
+| **Activation Criteria** | No verified pattern from Company Target |
+| **Trigger Authority** | CC-02 (Hub) |
+| **Emergency Contact** | Outreach Team |
 
 ---
 
-## 12. Tables Owned
+## 11. Promotion Gates
 
-This sub-hub owns or writes to the following tables:
-
-### Primary Tables (Write)
-
-| Schema | Table | Purpose | Key Columns |
-|--------|-------|---------|-------------|
-| `outreach` | `people` | Core people records | person_id, company_unique_id, slot_type |
-| `outreach` | `slot_assignments` | WHO fills each slot | assignment_id, person_id, slot_type |
-| `outreach` | `email_verification` | Verification results | email, result, verified_at |
-| `people` | `movement_history` | Job change tracking | person_id, old_company, new_company |
-| `people` | `enrichment_state` | Enrichment status | person_id, phase, status |
-
-### Shared Tables (Read + Write)
-
-| Schema | Table | Purpose | Owner |
-|--------|-------|---------|-------|
-| `marketing` | `people_master` | Legacy people records | Migrating to outreach |
-| `marketing` | `company_slot` | Slot definitions | Company Target |
-
-### Read-Only Tables (From Other Hubs)
-
-| Schema | Table | Purpose | Owner |
-|--------|-------|---------|-------|
-| `outreach` | `company_target` | Company anchor | Company Target |
-| `cl` | `company_identity` | Sovereign company ID | CL Parent |
-| `outreach` | `column_registry` | Pattern storage | Company Target |
+| Gate | Artifact | CC Layer | Requirement |
+|------|----------|----------|-------------|
+| G1 | PRD | CC-02 | Hub definition approved |
+| G2 | ADR | CC-03 | Architecture decision recorded |
+| G3 | Work Item | CC-04 | Execution item created |
+| G4 | PR | CC-04 | Code reviewed and merged |
+| G5 | Checklist | CC-04 | Compliance verification complete |
 
 ---
 
-## 13. ERD — People Intelligence Tables
+## 12. Failure Modes
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                   PEOPLE INTELLIGENCE TABLE RELATIONSHIPS                    │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-outreach.company_target (Company Target Hub)
-├── target_id PK
-├── company_unique_id FK → cl.company_identity
-└── email_pattern (verified)
-                │
-                │ company_unique_id (FK)
-                ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        outreach.people (CORE TABLE)                          │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ person_id              TEXT      PK   Unique person identifier              │
-│ company_unique_id      TEXT      FK   → outreach.company_target             │
-│ first_name             TEXT           First name                            │
-│ last_name              TEXT           Last name                             │
-│ full_name              TEXT           Full display name                     │
-│ job_title              TEXT           Current job title                     │
-│ seniority              TEXT           Seniority level                       │
-│ seniority_rank         INTEGER        Numeric rank (0-100)                  │
-│ linkedin_url           TEXT           LinkedIn profile URL                  │
-│ generated_email        TEXT           Generated email address               │
-│ email_confidence       TEXT           verified/derived/low_confidence       │
-│ email_verified         BOOLEAN        Verification status                   │
-│ slot_type              TEXT           CHRO/HR_MANAGER/BENEFITS_LEAD/etc.    │
-│ slot_assigned_at       TIMESTAMP      When slot was won                     │
-│ created_at             TIMESTAMP      Record creation                       │
-│ updated_at             TIMESTAMP      Last modification                     │
-└─────────────────────────────────────────────────────────────────────────────┘
-        │                               │
-        │ person_id (FK)                │ person_id (FK)
-        ▼                               ▼
-┌───────────────────────┐    ┌─────────────────────────────┐
-│ outreach.slot_        │    │ outreach.email_             │
-│ assignments           │    │ verification                │
-├───────────────────────┤    ├─────────────────────────────┤
-│ assignment_id    PK   │    │ verification_id   PK        │
-│ person_id        FK   │    │ person_id         FK        │
-│ company_unique_id FK  │    │ email             TEXT      │
-│ slot_type        TEXT │    │ result            TEXT      │
-│ seniority_score  INT  │    │ result_code       INT       │
-│ replaced_person_id    │    │ is_valid          BOOLEAN   │
-│ assigned_at      TS   │    │ is_catch_all      BOOLEAN   │
-│ created_at       TS   │    │ credits_used      INT       │
-└───────────────────────┘    │ verified_at       TIMESTAMP │
-                             └─────────────────────────────┘
-        │
-        │ person_id (FK)
-        ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                      people.movement_history                                 │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ movement_id            TEXT      PK   Movement event ID                     │
-│ person_id              TEXT      FK   → outreach.people                     │
-│ old_company_id         TEXT           Previous company                      │
-│ new_company_id         TEXT           New company                           │
-│ old_title              TEXT           Previous job title                    │
-│ new_title              TEXT           New job title                         │
-│ movement_type          TEXT           HIRE/PROMOTION/LATERAL/DEPARTURE      │
-│ detected_at            TIMESTAMP      When movement was detected            │
-│ source                 TEXT           Detection source                      │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Slot Type Values
-
-| Slot Type | Seniority Rank | Description |
-|-----------|----------------|-------------|
-| `CHRO` | 100 | Chief HR Officer, VP HR, SVP HR |
-| `HR_MANAGER` | 80 | HR Director, HR Manager, HR Lead |
-| `BENEFITS_LEAD` | 60 | Benefits Manager, Benefits Director |
-| `PAYROLL_ADMIN` | 50 | Payroll Manager, Payroll Director |
-| `HR_SUPPORT` | 30 | HR Coordinator, HR Specialist |
-| `UNSLOTTED` | 0 | Could not classify |
-
-### Email Confidence Values
-
-| Confidence | Description | Source |
-|------------|-------------|--------|
-| `verified` | Pattern verified in Phase 4 | Company Target |
-| `derived` | Pattern derived from known emails | Company Target |
-| `low_confidence` | Fallback pattern, unverified | People Hub |
-| `waterfall` | Pattern discovered via on-demand waterfall | People Hub |
-
-### Indexes
-
-| Table | Index Name | Columns | Purpose |
-|-------|------------|---------|---------|
-| `outreach.people` | `idx_people_company` | `company_unique_id` | FK lookup |
-| `outreach.people` | `idx_people_slot` | `slot_type` | Slot queries |
-| `outreach.people` | `idx_people_email` | `generated_email` | Email lookup |
-| `outreach.slot_assignments` | `idx_slot_company` | `company_unique_id, slot_type` | Slot conflicts |
+| Failure | Severity | CC Layer | Remediation |
+|---------|----------|----------|-------------|
+| No verified pattern | CRITICAL | CC-03 | STOP - upstream dependency |
+| DOL Filings not PASS | CRITICAL | CC-03 | STOP - upstream dependency |
+| Slot assignment fails | HIGH | CC-04 | Log to error table, emit FAIL |
+| Enrichment budget exceeded | MEDIUM | CC-04 | Queue for next context |
 
 ---
 
-## 14. Pipeline Phase Summary
+## 13. PID Scope (CC-04)
 
-| Phase | Name | Input | Output | Tools |
-|-------|------|-------|--------|-------|
-| 5 | Email Generation | people + patterns | emails | Pattern templates |
-| 6 | Slot Assignment | people + emails | slot assignments | Title classifier |
-| 7 | Enrichment Queue | failures from 5-6 | queue items | Waterfall (optional) |
-| 8 | Output Writer | all results | CSV files | File I/O |
+| Field | Value |
+|-------|-------|
+| **PID Pattern** | `HUB-PI-{TIMESTAMP}-{RANDOM_HEX}` |
+| **Retry Policy** | New PID per retry |
+| **Audit Trail** | Required |
 
-### Phase Tools and Costs
+---
 
-| Phase | Tool | Tier | Cost | Limit |
-|-------|------|------|------|-------|
-| 5 | Waterfall (optional) | 0-2 | Variable | Budget-gated |
-| 6 | Title Classifier | 0 | Free | Unlimited |
-| 7 | Waterfall Processor | 0-2 | Variable | Batch limit |
-| 8 | CSV Writer | 0 | Free | Unlimited |
+## 14. Human Override Rules
 
-### External Verification Tools
+Override requires CC-02 (Hub Owner) or CC-01 (Sovereign) approval:
+- Manual slot assignment for edge cases
+- Bypass enrichment budget for priority targets
+- Force email verification skip
 
-| Tool | Tier | Cost | Integration |
-|------|------|------|-------------|
-| MillionVerifier | 1 | ~$37/10k | `bulk_verifier.py` |
-| Apollo | 1 | Low | Contact enrichment |
-| Clay | 2 | Premium | ONE per context |
+---
+
+## 15. Observability
+
+| Type | Description | CC Layer |
+|------|-------------|----------|
+| **Logs** | Phase transitions (5-8), slot assignments, enrichment calls | CC-04 |
+| **Metrics** | SLOT_FILL_RATE (target >= 80%), email_verification_rate | CC-04 |
+| **Alerts** | Fill rate below threshold, enrichment budget exhaustion | CC-03/CC-04 |
 
 ---
 
@@ -420,11 +172,15 @@ outreach.company_target (Company Target Hub)
 
 | Role | Name | Date |
 |------|------|------|
-| Owner | | |
+| Sovereign (CC-01) | | |
+| Hub Owner (CC-02) | | |
 | Reviewer | | |
 
 ---
 
-**Last Updated**: 2026-01-02
-**Hub**: People Intelligence (04.04.02)
-**Doctrine**: External CL + Outreach Program v1.0
+## Traceability
+
+| Artifact | Reference |
+|----------|-----------|
+| Canonical Doctrine | CANONICAL_ARCHITECTURE_DOCTRINE.md |
+| Hub/Spoke Doctrine | HUB_SPOKE_ARCHITECTURE.md |

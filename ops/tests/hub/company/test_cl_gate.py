@@ -83,7 +83,7 @@ class TestCLGateEnforcement:
         with pytest.raises(CLNotVerifiedError) as exc_info:
             CLGate.enforce_or_fail(
                 company_sov_id="99999999-9999-9999-9999-999999999999",
-                outreach_context_id="test-context-123"
+                outreach_id="test-context-123"
             )
 
         assert exc_info.value.error_code == "CT_UPSTREAM_CL_NOT_VERIFIED"
@@ -96,7 +96,7 @@ class TestCLGateEnforcement:
         # Should not raise
         CLGate.enforce_or_fail(
             company_sov_id="11111111-1111-1111-1111-111111111111",
-            outreach_context_id="test-context-123"
+            outreach_id="test-context-123"
         )
 
     def test_exception_contains_company_id(self):
@@ -106,7 +106,7 @@ class TestCLGateEnforcement:
         try:
             CLGate.enforce_or_fail(
                 company_sov_id="bad-company-id",
-                outreach_context_id="test-context"
+                outreach_id="test-context"
             )
             pytest.fail("Should have raised CLNotVerifiedError")
         except CLNotVerifiedError as e:
@@ -120,7 +120,7 @@ class TestCLGateEnforcement:
         try:
             CLGate.enforce_or_fail(
                 company_sov_id="missing",
-                outreach_context_id="ctx"
+                outreach_id="ctx"
             )
         except UpstreamCLError as e:
             assert e.error_code == "CT_UPSTREAM_CL_NOT_VERIFIED"

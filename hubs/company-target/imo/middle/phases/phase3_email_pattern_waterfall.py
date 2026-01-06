@@ -11,14 +11,14 @@ If no pattern found, suggests common patterns for verification in Phase 4.
 
 DOCTRINE ENFORCEMENT:
 - correlation_id is MANDATORY (FAIL HARD if missing)
-- outreach_context_id is MANDATORY (FAIL HARD if missing)
+- outreach_id is MANDATORY (FAIL HARD if missing)
 - company_sov_id is MANDATORY (FAIL HARD if missing)
 - Tier-2 is SINGLE-SHOT per context (can_attempt_tier2 guard)
 - All tool attempts MUST be logged via log_tool_attempt()
 
 COST DOCTRINE:
 - Exhaust cheaper signals before spending more
-- Tier-2: ONE attempt per outreach_context_id TOTAL
+- Tier-2: ONE attempt per outreach_id TOTAL
 - If Tier-2 fails, no retry, no alternate provider
 """
 
@@ -184,7 +184,7 @@ class Phase3EmailPatternWaterfall:
         self,
         domain_df: pd.DataFrame,
         correlation_id: str,
-        outreach_context_id: str,
+        outreach_id: str,
         company_sov_id: str,
         context_manager: OutreachContextManager = None
     ) -> Tuple[pd.DataFrame, Phase3Stats]:
@@ -193,7 +193,7 @@ class Phase3EmailPatternWaterfall:
 
         DOCTRINE:
         - correlation_id is MANDATORY (FAIL HARD if missing)
-        - outreach_context_id is MANDATORY (FAIL HARD if missing)
+        - outreach_id is MANDATORY (FAIL HARD if missing)
         - company_sov_id is MANDATORY (FAIL HARD if missing)
         - Tier-2 is single-shot per context
 
@@ -201,7 +201,7 @@ class Phase3EmailPatternWaterfall:
             domain_df: DataFrame with domains from Phase 2
                 Expected columns: person_id, resolved_domain, matched_company_id
             correlation_id: MANDATORY - End-to-end trace ID (UUID v4)
-            outreach_context_id: MANDATORY - Current execution context
+            outreach_id: MANDATORY - Current execution context
             company_sov_id: MANDATORY - Company sovereign ID
             context_manager: Optional context manager (will create if not provided)
 
@@ -210,7 +210,7 @@ class Phase3EmailPatternWaterfall:
 
         Raises:
             CorrelationIDError: If correlation_id is missing or invalid (FAIL HARD)
-            MissingContextError: If outreach_context_id is missing (FAIL HARD)
+            MissingContextError: If outreach_id is missing (FAIL HARD)
             MissingSovIdError: If company_sov_id is missing (FAIL HARD)
         """
         # DOCTRINE ENFORCEMENT: Validate correlation_id (FAIL HARD)
@@ -219,11 +219,11 @@ class Phase3EmailPatternWaterfall:
 
         # DOCTRINE ENFORCEMENT: Validate context params (FAIL HARD)
         ctx_mgr = context_manager or get_context_manager()
-        outreach_context_id = ctx_mgr.validate_context_id(outreach_context_id)
+        outreach_id = ctx_mgr.validate_context_id(outreach_id)
         company_sov_id = ctx_mgr.validate_sov_id(company_sov_id)
 
         # Store context for internal methods
-        self._current_context_id = outreach_context_id
+        self._current_context_id = outreach_id
         self._current_sov_id = company_sov_id
         self._context_manager = ctx_mgr
 
@@ -396,7 +396,7 @@ class Phase3EmailPatternWaterfall:
             tier0_result = self._discover_pattern_at_tier(
                 domain=domain,
                 tier=ProviderTier.TIER_0,
-                outreach_context_id=ctx_id,
+                outreach_id=ctx_id,
                 company_sov_id=sov_id,
                 context_manager=ctx_mgr
             )
@@ -411,7 +411,7 @@ class Phase3EmailPatternWaterfall:
             tier1_result = self._discover_pattern_at_tier(
                 domain=domain,
                 tier=ProviderTier.TIER_1,
-                outreach_context_id=ctx_id,
+                outreach_id=ctx_id,
                 company_sov_id=sov_id,
                 context_manager=ctx_mgr
             )
@@ -425,7 +425,7 @@ class Phase3EmailPatternWaterfall:
         if self.enable_tier_2 and ctx_id and sov_id:
             tier2_result = self.try_tier_2(
                 domain=domain,
-                outreach_context_id=ctx_id,
+                outreach_id=ctx_id,
                 company_sov_id=sov_id,
                 context_manager=ctx_mgr
             )
@@ -605,7 +605,7 @@ class Phase3EmailPatternWaterfall:
     def try_tier_2(
         self,
         domain: str,
-        outreach_context_id: str,
+        outreach_id: str,
         company_sov_id: str,
         context_manager: OutreachContextManager = None
     ) -> Optional[PatternResult]:
@@ -622,7 +622,7 @@ class Phase3EmailPatternWaterfall:
 
         Args:
             domain: Domain to discover pattern for
-            outreach_context_id: MANDATORY - Current execution context
+            outreach_id: MANDATORY - Current execution context
             company_sov_id: MANDATORY - Company sovereign ID
             context_manager: Context manager for guard checks
 
@@ -641,22 +641,22 @@ class Phase3EmailPatternWaterfall:
         ctx_mgr = context_manager or get_context_manager()
 
         # DOCTRINE GUARD: Validate inputs (FAIL HARD)
-        ctx_mgr.validate_context_id(outreach_context_id)
+        ctx_mgr.validate_context_id(outreach_id)
         ctx_mgr.validate_sov_id(company_sov_id)
 
         # TIER-2 FUSE: Check if ANY Tier-2 tool already attempted
         tier2_providers = ['prospeo', 'snov', 'clay']
         for provider_name in tier2_providers:
-            if not ctx_mgr.can_attempt_tier2(outreach_context_id, company_sov_id, provider_name):
+            if not ctx_mgr.can_attempt_tier2(outreach_id, company_sov_id, provider_name):
                 self.logger.log_event(
                     EventType.PATTERN_FAILED,
-                    f"TIER-2 FUSE BLOWN: {provider_name} blocked in context {outreach_context_id}",
+                    f"TIER-2 FUSE BLOWN: {provider_name} blocked in context {outreach_id}",
                     LogLevel.WARNING,
                     entity_type="pattern",
                     entity_id=domain,
                     metadata={
                         'blocked_provider': provider_name,
-                        'context_id': outreach_context_id,
+                        'context_id': outreach_id,
                         'reason': 'single_shot_enforcement'
                     }
                 )
@@ -666,7 +666,7 @@ class Phase3EmailPatternWaterfall:
         result = self._discover_pattern_at_tier(
             domain=domain,
             tier=ProviderTier.TIER_2,
-            outreach_context_id=outreach_context_id,
+            outreach_id=outreach_id,
             company_sov_id=company_sov_id,
             context_manager=ctx_mgr
         )
@@ -676,7 +676,7 @@ class Phase3EmailPatternWaterfall:
         self,
         domain: str,
         tier: ProviderTier,
-        outreach_context_id: str = None,
+        outreach_id: str = None,
         company_sov_id: str = None,
         context_manager: OutreachContextManager = None
     ) -> Optional[PatternResult]:
@@ -688,7 +688,7 @@ class Phase3EmailPatternWaterfall:
         Args:
             domain: Domain to discover pattern for
             tier: Specific tier to use
-            outreach_context_id: Optional - for cost logging (required for Tier-2)
+            outreach_id: Optional - for cost logging (required for Tier-2)
             company_sov_id: Optional - for cost logging (required for Tier-2)
             context_manager: Optional - for guard checks and logging
 
@@ -710,9 +710,9 @@ class Phase3EmailPatternWaterfall:
                 success = pr.success if pr else False
 
                 # DOCTRINE: Log tool attempt if context provided
-                if context_manager and outreach_context_id and company_sov_id:
+                if context_manager and outreach_id and company_sov_id:
                     context_manager.log_tool_attempt(
-                        outreach_context_id=outreach_context_id,
+                        outreach_id=outreach_id,
                         company_sov_id=company_sov_id,
                         tool_name=provider.name,
                         tool_tier=tier.value,
@@ -744,9 +744,9 @@ class Phase3EmailPatternWaterfall:
 
             except Exception as e:
                 # Log error attempt if context provided
-                if context_manager and outreach_context_id and company_sov_id:
+                if context_manager and outreach_id and company_sov_id:
                     context_manager.log_tool_attempt(
-                        outreach_context_id=outreach_context_id,
+                        outreach_id=outreach_id,
                         company_sov_id=company_sov_id,
                         tool_name=provider.name,
                         tool_tier=tier.value,

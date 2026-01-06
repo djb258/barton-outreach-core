@@ -2,7 +2,7 @@
 Kill-Switch Test: Tier-2 Single-Shot Enforcement
 =================================================
 
-DOCTRINE: Tier-2 tools are SINGLE-SHOT per outreach_context_id.
+DOCTRINE: Tier-2 tools are SINGLE-SHOT per outreach_id.
 A second Tier-2 attempt in the same context MUST hard FAIL.
 
 This test uses the REAL PATH through the context manager.
@@ -70,7 +70,7 @@ class TestTier2KillSwitch:
 
         # Log the first attempt (marks tool as used)
         self.ctx_mgr.log_tool_attempt(
-            outreach_context_id=self.context_id,
+            outreach_id=self.context_id,
             company_sov_id=self.sov_id,
             tool_name=tool_name,
             tool_tier=2,
@@ -93,7 +93,7 @@ class TestTier2KillSwitch:
         """
         # Use prospeo first
         self.ctx_mgr.log_tool_attempt(
-            outreach_context_id=self.context_id,
+            outreach_id=self.context_id,
             company_sov_id=self.sov_id,
             tool_name='prospeo',
             tool_tier=2,
@@ -125,7 +125,7 @@ class TestTier2KillSwitch:
         """
         # Use Tier-2 in first context
         self.ctx_mgr.log_tool_attempt(
-            outreach_context_id=self.context_id,
+            outreach_id=self.context_id,
             company_sov_id=self.sov_id,
             tool_name='prospeo',
             tool_tier=2,
@@ -145,14 +145,14 @@ class TestTier2KillSwitch:
     # =========================================================================
 
     def test_missing_context_id_raises(self):
-        """Missing outreach_context_id MUST raise MissingContextError."""
+        """Missing outreach_id MUST raise MissingContextError."""
         with pytest.raises(MissingContextError):
             self.ctx_mgr.can_attempt_tier2(
                 None, self.sov_id, 'prospeo'
             )
 
     def test_empty_context_id_raises(self):
-        """Empty outreach_context_id MUST raise MissingContextError."""
+        """Empty outreach_id MUST raise MissingContextError."""
         with pytest.raises(MissingContextError):
             self.ctx_mgr.can_attempt_tier2(
                 '', self.sov_id, 'prospeo'
@@ -182,7 +182,7 @@ class TestTier2KillSwitch:
         """
         # First attempt - log it
         self.ctx_mgr.log_tool_attempt(
-            outreach_context_id=self.context_id,
+            outreach_id=self.context_id,
             company_sov_id=self.sov_id,
             tool_name='clay',
             tool_tier=2,
@@ -210,7 +210,7 @@ class TestTier2KillSwitch:
         # Log multiple Tier-0 and Tier-1 attempts
         for _ in range(5):
             self.ctx_mgr.log_tool_attempt(
-                outreach_context_id=self.context_id,
+                outreach_id=self.context_id,
                 company_sov_id=self.sov_id,
                 tool_name='hunter',  # Tier-1
                 tool_tier=1,
@@ -257,7 +257,7 @@ class TestTier2KillSwitchIntegration:
 
         # First, mark Tier-2 as used in context
         self.ctx_mgr.log_tool_attempt(
-            outreach_context_id=self.context_id,
+            outreach_id=self.context_id,
             company_sov_id=self.sov_id,
             tool_name='prospeo',
             tool_tier=2,
@@ -268,7 +268,7 @@ class TestTier2KillSwitchIntegration:
         # Now try_tier_2 should return None (blocked)
         result = phase3.try_tier_2(
             domain='example.com',
-            outreach_context_id=self.context_id,
+            outreach_id=self.context_id,
             company_sov_id=self.sov_id,
             context_manager=self.ctx_mgr
         )

@@ -10,14 +10,33 @@
 
 ---
 
+## CANONICAL DOCTRINE REFERENCE
+
+| Document | Version | Authority |
+|----------|---------|-----------|
+| CANONICAL_ARCHITECTURE_DOCTRINE.md | 1.1.0 | imo-creator |
+| HUB_SPOKE_ARCHITECTURE.md | 1.1.0 | imo-creator |
+| ALTITUDE_DESCENT_MODEL.md | 1.1.0 | imo-creator |
+
+| Field | Value |
+|-------|-------|
+| **Sovereign** | barton-enterprises |
+| **CC Layer** | CC-02 (Hub) |
+| **CTB Placement** | sys/outreach |
+| **Doctrine Version** | 1.1.0 |
+| **CTB Version** | 1.0.0 |
+
+---
+
 ## CORE ARCHITECTURE: CL PARENT-CHILD
 
 ### The Golden Rule
 
 ```
-IF company_unique_id IS NULL:
+IF outreach_id IS NULL:
     STOP. DO NOT PROCEED.
-    → Request identity from Company Lifecycle (CL) parent hub first.
+    → Mint outreach_id via outreach.outreach spine first.
+    → Spine requires sovereign_id from CL with identity_status = 'PASS'
 ```
 
 ### Architecture Diagram — External CL + Outreach Program
@@ -31,63 +50,76 @@ IF company_unique_id IS NULL:
 │  • Mints company_unique_id (SOVEREIGN, IMMUTABLE)                            │
 │  • Owns cl.* schema (company_identity, lifecycle_state)                      │
 │  • Shared across programs (Outreach, Client Intake, Analytics)               │
-│  • Outreach does NOT invoke or gate CL                                       │
+│  • Gate: identity_status = 'PASS' required for Outreach                      │
 └─────────────────────────────────────────────────────────────────────────────┘
                                     │
-                                    │ company_unique_id (consumed)
+                                    │ sovereign_id (identity_status = 'PASS')
                                     ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                      OUTREACH PROGRAM (PROGRAM-SCOPED)                       │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  0. OUTREACH ORCHESTRATION (Context Authority) ─────────────► RUN CREATED   │
-│     • Mints outreach_context_id (program-scoped)                             │
-│     • Binds outreach_context_id ⇄ company_unique_id                          │
-│     • Establishes execution + audit boundary                                 │
-│     • Performs NO enrichment, discovery, or scoring                          │
-│     • Table: outreach.outreach_context                                       │
+│  0. OUTREACH SPINE (Master Identity) ───────────────────────► outreach_id   │
+│     • Table: outreach.outreach                                               │
+│     • Mints outreach_id (THE identity for all Outreach)                      │
+│     • sovereign_id is receipt to CL (sub-hubs DON'T see this)                │
+│     • Gate: Only identity_status = 'PASS' from CL allowed                    │
 │                                    │                                         │
-│                                    │ outreach_context_id                     │
+│                                    │ outreach_id                             │
 │                                    ▼                                         │
 │  1. COMPANY TARGET (04.04.01) ──────────────────────────────► PASS REQUIRED │
-│     • Domain resolution                                                      │
-│     • Email pattern discovery                                                │
+│     • Table: outreach.company_target (FK: outreach_id)                       │
+│     • Error: outreach.company_target_errors                                  │
+│     • Domain resolution, email pattern discovery                             │
 │     • EMITS: verified_pattern, domain                                        │
 │                                    │                                         │
 │                                    ▼                                         │
 │  2. DOL FILINGS (04.04.03) ─────────────────────────────────► PASS REQUIRED │
-│     • EIN resolution                                                         │
-│     • Form 5500 + Schedule A                                                 │
-│     • EMITS: ein, filing_signals                                             │
+│     • Table: outreach.dol (FK: outreach_id)                                  │
+│     • Error: outreach.dol_errors                                             │
+│     • EIN resolution, Form 5500 + Schedule A                                 │
+│     • EMITS: ein, filing_signals, funding_type                               │
 │                                    │                                         │
 │                                    ▼                                         │
 │  3. PEOPLE INTELLIGENCE (04.04.02) ─────────────────────────► PASS REQUIRED │
-│     • CONSUMER ONLY - Does NOT discover patterns or EINs                     │
+│     • Table: outreach.people (FK: outreach_id)                               │
+│     • Error: outreach.people_errors                                          │
 │     • CONSUMES: verified_pattern (CT), ein/signals (DOL)                     │
 │     • EMITS: slot_assignments, people_records                                │
 │                                    │                                         │
 │                                    ▼                                         │
 │  4. BLOG CONTENT (04.04.05) ────────────────────────────────► PASS          │
+│     • Table: outreach.blog (FK: outreach_id)                                 │
+│     • Error: outreach.blog_errors                                            │
 │     • Content signals, news monitoring                                       │
-│     • CONSUMER ONLY                                                          │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Error Pattern (LOCKED)
+
+```
+FAIL at any stage → record lands in that sub-hub's error table
+Fix the issue → record re-enters pipeline at that stage
+Same pattern as CL
 ```
 
 ### External Dependencies & Program Scope
 
 | Boundary | System | Ownership |
 |----------|--------|-----------|
-| **External** | Company Lifecycle (CL) | Mints company_unique_id, shared across all programs |
-| **Program** | Outreach Orchestration | Mints outreach_context_id, program-scoped |
-| **Sub-Hub** | CT, DOL, People, Blog | Reference outreach_context_id for all operations |
+| **External** | Company Lifecycle (CL) | Mints sovereign_id (company_unique_id), shared across all programs |
+| **Program** | Outreach Spine | Mints outreach_id, program-scoped. Table: outreach.outreach |
+| **Sub-Hub** | CT, DOL, People, Blog | FK to outreach_id for all operations (never see sovereign_id) |
 
 ### Key Doctrine (LOCKED)
 
-- **CL is external** — Outreach consumes company_unique_id, does NOT invoke CL
-- **Outreach run identity** — All operations bound by outreach_context_id
-- **Context table** — outreach.outreach_context is the root audit record
-- **No sub-hub writes without valid outreach_context_id**
+- **CL is external** — Outreach receives sovereign_id, does NOT invoke CL
+- **Outreach identity** — `outreach_id` is THE identity. All sub-hubs FK to this.
+- **Spine table** — `outreach.outreach` is the master spine
+- **sovereign_id is hidden** — Sub-hubs do NOT see sovereign_id directly
+- **Gate** — Only `identity_status = 'PASS'` from CL gets an outreach_id
+- **No sub-hub writes without valid outreach_id**
 
 ### Waterfall Doctrine Rules (LOCKED)
 
@@ -96,21 +128,23 @@ IF company_unique_id IS NULL:
 | Each sub-hub must PASS before next executes | Gate validation |
 | No lateral reads between hubs | Spoke contracts only |
 | No speculative execution | PASS gate blocks downstream |
-| No retry/rescue from downstream | Failures stay local |
-| Data flows FORWARD ONLY | Bound by outreach_context_id |
+| No retry/rescue from downstream | Failures land in error table |
+| Data flows FORWARD ONLY | Bound by outreach_id |
 | Sub-hubs may re-run if upstream unchanged | Idempotent design |
+| Fail = Error table entry | Fix issue → re-enter at that stage |
 
 ### Hub Registry (Waterfall Order)
 
-| Order | Hub | Doctrine ID | Core Metric | Entities Owned |
-|-------|-----|-------------|-------------|----------------|
-| 1 | **Company Lifecycle (CL)** | PARENT | LIFECYCLE_STATE | cl.company_identity, cl.lifecycle_state |
-| 2 | **Company Target** | 04.04.01 | BIT_SCORE | outreach.company_target, verified_pattern |
-| 3 | **DOL Filings** | 04.04.03 | FILING_MATCH_RATE | form_5500, schedule_a, ein_registry |
-| 4 | **People Intelligence** | 04.04.02 | SLOT_FILL_RATE | outreach.people, slot_assignments |
-| 5 | **Blog Content** | 04.04.05 | CONTENT_SIGNAL_RATE | blog_signals, news_events |
+| Order | Hub | Table | Error Table | Core Metric |
+|-------|-----|-------|-------------|-------------|
+| EXT | **Company Lifecycle (CL)** | cl.company_identity | — | LIFECYCLE_STATE |
+| 0 | **Outreach Spine** | outreach.outreach | — | IDENTITY_MINT |
+| 1 | **Company Target** | outreach.company_target | outreach.company_target_errors | BIT_SCORE |
+| 2 | **DOL Filings** | outreach.dol | outreach.dol_errors | FILING_MATCH_RATE |
+| 3 | **People Intelligence** | outreach.people | outreach.people_errors | SLOT_FILL_RATE |
+| 4 | **Blog Content** | outreach.blog | outreach.blog_errors | CONTENT_SIGNAL_RATE |
 
-**Note**: People Intelligence (04.04.02) executes AFTER DOL Filings (04.04.03) in the waterfall.
+**Note**: All sub-hubs (1-4) FK to `outreach_id`. They do NOT see `sovereign_id`.
 
 ### Spoke Contracts
 
@@ -124,11 +158,12 @@ IF company_unique_id IS NULL:
 
 ### Key Doctrine Rules
 
-1. **CL is PARENT** - Mints company_unique_id, Outreach receives only
-2. **Company Target is internal anchor** - FK join point for sub-hubs
-3. **Spokes are I/O ONLY** - No logic, no state, no transformation
-4. **No identity minting** - NEVER create company_unique_id
-5. **Signal to CL** - Engagement events flow back to parent
+1. **CL is PARENT** - Mints sovereign_id (company_unique_id), Outreach receives only
+2. **Outreach Spine is master** - Mints outreach_id, all sub-hubs FK to this
+3. **Sub-hubs don't see sovereign_id** - They only use outreach_id
+4. **Spokes are I/O ONLY** - No logic, no state, no transformation
+5. **No identity minting** - NEVER create sovereign_id (CL only)
+6. **Signal to CL** - Engagement events flow back to parent
 
 ---
 
@@ -262,24 +297,39 @@ barton-outreach-core/
 
 | Phase | Owner Hub | Description |
 |-------|-----------|-------------|
-| Phase 1 | Company Intelligence | Company Matching |
-| Phase 1b | Company Intelligence | Unmatched Hold Export |
-| Phase 2 | Company Intelligence | Domain Resolution |
-| Phase 3 | Company Intelligence | Email Pattern Waterfall |
-| Phase 4 | Company Intelligence | Pattern Verification |
+| Phase 0 | Outreach Spine | Mint outreach_id (gate: CL identity_status = 'PASS') |
+| Phase 1 | Company Target | Company Matching |
+| Phase 1b | Company Target | Unmatched Hold Export |
+| Phase 2 | Company Target | Domain Resolution |
+| Phase 3 | Company Target | Email Pattern Waterfall |
+| Phase 4 | Company Target | Pattern Verification |
 | Phase 5 | People Intelligence | Email Generation |
 | Phase 6 | People Intelligence | Slot Assignment |
 | Phase 7 | People Intelligence | Enrichment Queue |
 | Phase 8 | People Intelligence | Output Writer |
 
-### Execution Order
+### Execution Order (Waterfall)
 
 ```
-Company Identity Pipeline (Phases 1-4) → ALWAYS FIRST
-         ↓
-People Pipeline (Phases 5-8) → Only after company anchor exists
-         ↓
-BIT Scoring → Only after people are slotted
+CL (sovereign_id, identity_status='PASS')
+         │
+         ▼
+OUTREACH SPINE (mints outreach_id)
+         │
+         ▼
+Company Target (Phases 1-4) → PASS REQUIRED
+         │           └─► Error: outreach.company_target_errors
+         ▼
+DOL Filings → PASS REQUIRED
+         │           └─► Error: outreach.dol_errors
+         ▼
+People Intelligence (Phases 5-8) → PASS REQUIRED
+         │           └─► Error: outreach.people_errors
+         ▼
+Blog Content → PASS
+         │           └─► Error: outreach.blog_errors
+         ▼
+BIT Scoring → After all sub-hubs complete
 ```
 
 ---
@@ -299,13 +349,18 @@ SSL Mode: require
 
 | Schema | Table | Purpose |
 |--------|-------|---------|
-| marketing | company_master | Master company records |
-| marketing | company_slot | Executive position tracking |
-| marketing | people_master | Contact/executive data |
-| marketing | data_enrichment_log | Enrichment job tracking |
+| **outreach** | outreach | **MASTER SPINE** - mints outreach_id, FKs to CL |
+| outreach | company_target | Company targeting (FK: outreach_id) |
+| outreach | dol | DOL filing facts (FK: outreach_id) |
+| outreach | people | Contact records (FK: outreach_id) |
+| outreach | blog | Content signals (FK: outreach_id) |
+| outreach | company_target_errors | CT error table |
+| outreach | dol_errors | DOL error table |
+| outreach | people_errors | People error table |
+| outreach | blog_errors | Blog error table |
+| cl | company_identity | CL sovereign identity (external) |
+| marketing | company_master | Legacy master company records |
 | intake | company_raw_intake | CSV staging |
-| public | shq_error_log | System error tracking |
-| bit | events | Buyer intent signals |
 
 ---
 
@@ -355,8 +410,37 @@ hubs/outreach-execution/hub.manifest.yaml
 
 ---
 
+## CLAUDE CODE SETTINGS (.claude/settings.local.json)
+
+### What This File Is For
+Permission prefixes ONLY. Tells Claude Code what bash commands, web fetches, and file reads are pre-approved.
+
+### Rules (LOCKED)
+
+1. **NO CREDENTIALS** - Never add API keys, passwords, tokens, or connection strings. Doppler handles all secrets.
+2. **USE PREFIX PATTERNS** - Use `Bash(git:*)` not `Bash(git commit -m "specific message")`. The `:*` suffix covers all subcommands.
+3. **NO ENV VAR ASSIGNMENTS** - `Bash(MY_VAR="value")` is not a valid permission, it's garbage.
+4. **NO FILE PATHS AS COMMANDS** - `Bash(hub/company/__init__.py)` is nonsense. That's not a bash command.
+5. **KEEP IT LEAN** - If a broader pattern exists (e.g., `Bash(powershell:*)`), don't add specific PowerShell commands.
+
+### Current Approved Prefixes
+
+```
+Web: WebSearch, WebFetch (github.com, raw.githubusercontent.com, barton-outreach-core.lovable.app)
+Tools: git, gh, npm, node, python, doppler, psql
+Shells: powershell, bash, sh
+File ops: mkdir, cp, rm, mv, chmod, cat, ls, dir, cd, tree, find, grep, findstr, xargs, wc, du, echo, curl, export
+Package mgrs: winget, scoop
+```
+
+### If You Need a New Permission
+Add a PREFIX pattern, not a specific command. Example: need `kubectl`? Add `Bash(kubectl:*)`, not `Bash(kubectl get pods -n production)`.
+
+---
+
 ## NEVER DO THESE THINGS
 
+- **NEVER** add credentials to `.claude/settings.local.json` (Doppler handles secrets)
 - **NEVER** put logic in spokes (spokes are I/O only)
 - **NEVER** store state in spokes
 - **NEVER** make sideways hub-to-hub calls
@@ -443,17 +527,18 @@ DOCTRINE_VERSION=04
 
 ## REMEMBER
 
-1. **CL is PARENT** - Mints company_unique_id, Outreach receives only
-2. **Company Target is internal anchor** - FK join point for all sub-hubs
-3. **Spokes are DUMB** - I/O only, no logic, no state
-4. **Contracts define interfaces** - Check YAML before implementing
-5. **BIT_SCORE drives outreach** - No score, no campaign
+1. **CL is PARENT** - Mints sovereign_id, Outreach receives only (with identity_status = 'PASS')
+2. **Outreach Spine is master** - `outreach.outreach` mints `outreach_id`
+3. **Sub-hubs FK to outreach_id** - They NEVER see sovereign_id directly
+4. **Spokes are DUMB** - I/O only, no logic, no state
+5. **Errors are work items** - Fail → error table → fix → re-enter
+6. **BIT_SCORE drives outreach** - No score, no campaign
 
 ---
 
-**Last Updated**: 2026-01-02
-**Architecture**: CL Parent-Child Doctrine v1.0
-**Status**: REMEDIATION IN PROGRESS
+**Last Updated**: 2026-01-06
+**Architecture**: CL Parent-Child Doctrine v1.1 (Spine Build)
+**Status**: SPINE BUILD IN PROGRESS
 
 ---
 

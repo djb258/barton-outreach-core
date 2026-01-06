@@ -1,4 +1,4 @@
-# PRD — Blog Content Sub-Hub
+# PRD — Hub
 
 ## Conformance
 
@@ -6,7 +6,7 @@
 |-------|-------|
 | **Doctrine Version** | 1.1.0 |
 | **CTB Version** | 1.0.0 |
-| **CC Layer** | CC-03 (Context within CC-02 Hub) |
+| **CC Layer** | CC-02 |
 
 ---
 
@@ -23,219 +23,147 @@
 
 | Field | Value |
 |-------|-------|
-| **Parent Hub** | outreach-core |
-| **Parent Hub ID** | outreach-core-001 |
 | **Hub Name** | Blog Content |
-| **Hub ID** | HUB-BC-001 |
-| **Doctrine ID** | 04.04.05 |
+| **Hub ID** | HUB-BLOG-001 |
 | **Owner** | Outreach Team |
 | **Version** | 1.0.0 |
 
 ---
 
-## 3. Process Identity (CC-04)
+## 3. Purpose
 
-| Field | Value |
-|-------|-------|
-| **PID Pattern** | `HUB-BC-001-${TIMESTAMP}-${RANDOM_HEX}` |
-| **Session Pattern** | `HUB-BC-001-session-${SESSION_ID}` |
-| **Context Binding** | outreach_context_id |
+Provide **timing signals** from news, funding events, and content sources. BIT modulation only — cannot mint, revive, or trigger enrichment. FINAL hub in waterfall — context is finalized after this hub.
+
+**Waterfall Position**: 4th (LAST) sub-hub in canonical waterfall (after People Intelligence).
 
 ---
 
-## 4. Purpose
+## 4. CTB Placement
 
-Provide **timing signals** from news, funding events, and content sources.
-BIT modulation only — cannot mint, revive, or trigger enrichment.
-
----
-
-## 3.1 Waterfall Position
-
-**Position**: 5th (LAST) in canonical waterfall
-
-```
-1. CL ──────────► PASS ──┐  (EXTERNAL)
-                         │ company_unique_id
-                         ▼
-2. COMPANY TARGET ► PASS ──┐
-                           │ verified_pattern, domain
-                           ▼
-3. DOL FILINGS ───► PASS ──┐
-                           │ ein, filing_signals
-                           ▼
-4. PEOPLE ────────► PASS ──┐
-                           │ slot_assignments
-                           ▼
-5. BLOG ──────────► PASS    ◄── YOU ARE HERE (FINAL)
-```
-
-### Upstream Dependencies
-
-| Upstream | Required Signal | Gate |
-|----------|-----------------|------|
-| Company Target | company_unique_id, domain | MUST have PASS |
-| DOL Filings | regulatory_signals | MUST have PASS |
-| People Intelligence | slot_assignments | MUST have PASS |
-
-### Downstream Consumers
-
-| Downstream | Signals Emitted | Binding |
-|------------|-----------------|---------|
-| BIT Engine | timing_signals | outreach_context_id |
-| Context Finalization | final_state | outreach_context_id |
-
-### Waterfall Rules (LOCKED)
-
-- People Intelligence must PASS before this hub executes
-- This is the FINAL hub — context is finalized after this hub
-- No retry/rescue from this hub (nothing downstream)
-- Failures stay local — context finalized as FAIL
+| Field | Value | CC Layer |
+|-------|-------|----------|
+| **Trunk** | sys | CC-02 |
+| **Branch** | outreach | CC-02 |
+| **Leaf** | blog-content | CC-02 |
 
 ---
 
-## 3.2 External Dependencies & Program Scope
+## 5. IMO Structure (CC-02)
 
-### CL is EXTERNAL to Outreach
-
-| Boundary | System | Ownership |
-|----------|--------|-----------|
-| **External** | Company Lifecycle (CL) | Mints company_unique_id, shared across all programs |
-| **Program** | Outreach Orchestration | Mints outreach_context_id, program-scoped |
-| **Sub-Hub** | Blog Content (this hub) | FINAL sub-hub in waterfall |
-
-### Key Doctrine
-
-- **CL is external** — Outreach CONSUMES company_unique_id, does NOT invoke CL
-- **Timing Only** — This hub provides TIMING signals, NOT enrichment
-- **Run identity** — All operations bound by outreach_context_id from Orchestration
-- **Context table** — outreach.outreach_context is the root audit record
-
-### Consumer-Only Compliance (CRITICAL)
-
-This hub is a **CONSUMER** of upstream data, not a **PRODUCER**:
-
-| Data | Source | This Hub |
-|------|--------|----------|
-| Company identity | Company Target | CONSUME (not mint) |
-| Domain resolution | Company Target | CONSUME (not resolve) |
-| Email patterns | People Intelligence | CONSUME (not generate) |
-| Slot assignments | People Intelligence | CONSUME (not assign) |
-
-### Explicit Prohibitions
-
-- [ ] Does NOT invoke Company Lifecycle (CL is external)
-- [ ] Does NOT mint company_unique_id (CL does)
-- [ ] Does NOT trigger enrichment (timing only)
-- [ ] Does NOT trigger spend (free signals only)
-- [ ] Does NOT create outreach_context_id (Orchestration does)
+| Layer | Role | Description | CC Layer |
+|-------|------|-------------|----------|
+| **I — Ingress** | Dumb input only | Receives outreach_id, slot_assignments from People; news feeds | CC-02 |
+| **M — Middle** | Logic, decisions, state | Signal processing, BIT modulation | CC-02 |
+| **O — Egress** | Output only | Emits timing_signals to BIT Engine | CC-02 |
 
 ---
 
-## 4. Lifecycle Gate
+## 6. Spokes (CC-03 Interfaces)
 
-| Minimum Lifecycle State | Gate Condition |
-|-------------------------|----------------|
-| ACTIVE | Requires lifecycle >= ACTIVE |
-
----
-
-## 5. Signals Emitted
-
-| Signal | BIT Impact | Description |
-|--------|-----------|-------------|
-| FUNDING_EVENT | +15.0 | Company received funding |
-| ACQUISITION | +12.0 | Company acquired or acquiring |
-| LEADERSHIP_CHANGE | +8.0 | Executive change detected |
-| EXPANSION | +7.0 | Office/market expansion |
-| PRODUCT_LAUNCH | +5.0 | New product announced |
-| PARTNERSHIP | +5.0 | Partnership announced |
-| LAYOFF | -3.0 | Layoffs announced |
-| NEGATIVE_NEWS | -5.0 | Negative press coverage |
+| Spoke Name | Type | Direction | Contract | CC Layer |
+|------------|------|-----------|----------|----------|
+| company-blog | I | Inbound | outreach_id, domain | CC-03 |
+| dol-blog | I | Inbound | outreach_id, regulatory_data | CC-03 |
+| people-blog | I | Inbound | outreach_id, slot_assignments | CC-03 |
+| blog-bit | O | Outbound | outreach_id, timing_signals | CC-03 |
 
 ---
 
-## 6. Constraints
+## 7. Constants vs Variables
 
-- [ ] Cannot mint or revive companies
-- [ ] Cannot trigger enrichment
-- [ ] BIT modulation only
-- [ ] Requires company_sov_id (must already exist)
-- [ ] Lifecycle read-only
-
----
-
-## 7. Inputs
-
-| Input | Source | Required |
-|-------|--------|----------|
-| company_sov_id | Company Lifecycle (external) | YES |
-| news_feeds | External feeds | NO |
-| funding_alerts | Crunchbase, etc. | NO |
-| content_webhooks | Custom integrations | NO |
+| Element | Type | Mutability | CC Layer |
+|---------|------|------------|----------|
+| Hub ID | Constant | Immutable | CC-02 |
+| Hub Name | Constant | ADR-gated | CC-02 |
+| Doctrine ID (04.04.05) | Constant | Immutable | CC-02 |
+| CTB Placement | Constant | ADR-gated | CC-02 |
+| Primary Table | Constant | ADR-gated | CC-02 |
+| Signal Types | Constant | ADR-gated | CC-02 |
+| BIT Impact Values | Constant | ADR-gated | CC-02 |
+| outreach_id | Variable | Runtime | CC-04 |
+| timing_signals | Variable | Runtime (from feeds) | CC-04 |
 
 ---
 
 ## 8. Tools
 
-No paid enrichment tools. Signal processing only.
+| Tool | Solution Type | CC Layer | IMO Layer | ADR Reference |
+|------|---------------|----------|-----------|---------------|
+| News Feed Parser | Deterministic | CC-02 | M | N/A (Free) |
+| Signal Classifier | Deterministic | CC-02 | M | N/A (Local) |
 
 ---
 
-## 9. Core Metric
+## 9. Guard Rails
 
-**SIGNAL_COVERAGE** — Percentage of active companies with recent signals
+| Guard Rail | Type | Threshold | CC Layer |
+|------------|------|-----------|----------|
+| People Intelligence PASS | Validation | MUST have upstream PASS | CC-03 |
+| No paid tools | Validation | Free signals only | CC-03 |
+| No enrichment trigger | Validation | Timing signals only | CC-03 |
+| No company minting | Validation | MUST NOT mint or revive | CC-03 |
 
 ---
 
-## 10. Upstream Dependencies, Signal Validity, and Downstream Effects
+## 10. Kill Switch
 
-### Execution Position
+| Field | Value |
+|-------|-------|
+| **Activation Criteria** | People Intelligence not PASS |
+| **Trigger Authority** | CC-02 (Hub) |
+| **Emergency Contact** | Outreach Team |
 
-**Last in canonical order** — After Company Target, DOL Filings, and People Intelligence.
+---
 
-### Required Upstream PASS Conditions
+## 11. Promotion Gates
 
-| Upstream | Condition |
-|----------|-----------|
-| Company Target | PASS (company exists, domain resolved) |
-| DOL Filings | PASS (or no filings) |
-| People Intelligence | PASS (slots populated) |
+| Gate | Artifact | CC Layer | Requirement |
+|------|----------|----------|-------------|
+| G1 | PRD | CC-02 | Hub definition approved |
+| G2 | ADR | CC-03 | Architecture decision recorded |
+| G3 | Work Item | CC-04 | Execution item created |
+| G4 | PR | CC-04 | Code reviewed and merged |
+| G5 | Checklist | CC-04 | Compliance verification complete |
 
-### Signals Consumed (Origin-Bound)
+---
 
-| Signal | Origin | Validity |
-|--------|--------|----------|
-| company_sov_id | Company Lifecycle (via CT) | Run-bound to outreach_context_id |
-| domain | Company Target | Run-bound to outreach_context_id |
-| BIT_SCORE | Company Target | Run-bound to outreach_context_id |
-| regulatory_signals | DOL Filings | Run-bound to outreach_context_id |
-| slot_assignments | People Intelligence | Run-bound to outreach_context_id |
+## 12. Failure Modes
 
-### Signals Emitted
+| Failure | Severity | CC Layer | Remediation |
+|---------|----------|----------|-------------|
+| Upstream hub not PASS | CRITICAL | CC-03 | STOP - upstream dependency |
+| Feed parse error | LOW | CC-04 | Log warning, continue |
+| Signal classification fails | LOW | CC-04 | Default to no BIT impact |
+| Context finalization fails | HIGH | CC-04 | Log error, mark context FAIL |
 
-| Signal | Consumers | Validity |
-|--------|-----------|----------|
-| FUNDING_EVENT | BIT Engine | Run-bound to outreach_context_id |
-| ACQUISITION | BIT Engine | Run-bound to outreach_context_id |
-| LEADERSHIP_CHANGE | BIT Engine | Run-bound to outreach_context_id |
-| All timing signals | BIT Engine only | Run-bound to outreach_context_id |
+---
 
-### Downstream Effects
+## 13. PID Scope (CC-04)
 
-| If This Hub | Then |
-|-------------|------|
-| PASS | Context finalized as PASS |
-| FAIL | Context finalized as FAIL |
+| Field | Value |
+|-------|-------|
+| **PID Pattern** | `HUB-BC-{TIMESTAMP}-{RANDOM_HEX}` |
+| **Retry Policy** | New PID per retry |
+| **Audit Trail** | Required |
 
-### Explicit Prohibitions
+---
 
-- [ ] May NOT trigger enrichment (no paid tools)
-- [ ] May NOT trigger spend (timing signals only)
-- [ ] May NOT mint or revive companies
-- [ ] May NOT fix upstream errors
-- [ ] May NOT refresh signals from prior contexts
-- [ ] May NOT use signal age to justify action
+## 14. Human Override Rules
+
+Override requires CC-02 (Hub Owner) or CC-01 (Sovereign) approval:
+- Manual signal injection for known events
+- Force context finalization despite feed errors
+- Adjust BIT impact values for specific signals
+
+---
+
+## 15. Observability
+
+| Type | Description | CC Layer |
+|------|-------------|----------|
+| **Logs** | Feed processing, signal emissions, context finalization | CC-04 |
+| **Metrics** | SIGNAL_COVERAGE, signals_per_company, BIT_modulation_rate | CC-04 |
+| **Alerts** | Feed unavailable, context finalization failures | CC-03/CC-04 |
 
 ---
 
@@ -243,11 +171,15 @@ No paid enrichment tools. Signal processing only.
 
 | Role | Name | Date |
 |------|------|------|
-| Owner | | |
+| Sovereign (CC-01) | | |
+| Hub Owner (CC-02) | | |
 | Reviewer | | |
 
 ---
 
-**Last Updated**: 2026-01-02
-**Hub**: Blog Content (04.04.05)
-**Doctrine**: External CL + Outreach Program v1.0
+## Traceability
+
+| Artifact | Reference |
+|----------|-----------|
+| Canonical Doctrine | CANONICAL_ARCHITECTURE_DOCTRINE.md |
+| Hub/Spoke Doctrine | HUB_SPOKE_ARCHITECTURE.md |

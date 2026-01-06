@@ -1,4 +1,4 @@
-# PRD — DOL Filings Sub-Hub
+# PRD — Hub
 
 ## Conformance
 
@@ -6,7 +6,7 @@
 |-------|-------|
 | **Doctrine Version** | 1.1.0 |
 | **CTB Version** | 1.0.0 |
-| **CC Layer** | CC-03 (Context within CC-02 Hub) |
+| **CC Layer** | CC-02 |
 
 ---
 
@@ -23,222 +23,143 @@
 
 | Field | Value |
 |-------|-------|
-| **Parent Hub** | outreach-core |
-| **Parent Hub ID** | outreach-core-001 |
 | **Hub Name** | DOL Filings |
-| **Hub ID** | HUB-DOL-001 |
-| **Doctrine ID** | 04.04.03 |
+| **Hub ID** | HUB-DOL |
 | **Owner** | Outreach Team |
 | **Version** | 1.0.0 |
 
 ---
 
-## 3. Process Identity (CC-04)
+## 3. Purpose
 
-| Field | Value |
-|-------|-------|
-| **PID Pattern** | `HUB-DOL-001-${TIMESTAMP}-${RANDOM_HEX}` |
-| **Session Pattern** | `HUB-DOL-001-session-${SESSION_ID}` |
-| **Context Binding** | outreach_context_id |
+Attach regulatory filings (Form 5500, Schedule A) to **existing companies**. Source of truth for plan renewal dates and broker relationships. Bulk CSV processing only — no paid enrichment tools.
+
+**Waterfall Position**: 2nd sub-hub in canonical waterfall (after Company Target, before People Intelligence).
 
 ---
 
-## 4. Purpose
+## 4. CTB Placement
 
-Attach regulatory filings (Form 5500, Schedule A) to **existing companies**.
-Source of truth for plan renewal dates and broker relationships.
-
----
-
-## 3.1 Waterfall Position
-
-**Position**: 3rd in canonical waterfall (after CT, before People)
-
-```
-1. CL ──────────► PASS ──┐  (EXTERNAL)
-                         │ company_unique_id
-                         ▼
-2. COMPANY TARGET ► PASS ──┐
-                           │ verified_pattern, domain
-                           ▼
-3. DOL FILINGS ───► PASS ──┐  ◄── YOU ARE HERE
-                           │ ein, filing_signals
-                           ▼
-4. PEOPLE ────────► PASS ──┐
-                           ▼
-5. BLOG ──────────► PASS
-```
-
-### Upstream Dependencies
-
-| Upstream | Required Signal | Gate |
-|----------|-----------------|------|
-| Company Target | company_unique_id | MUST have passed |
-| Company Target | domain | MUST be resolved |
-
-### Downstream Consumers
-
-| Downstream | Signals Emitted | Binding |
-|------------|-----------------|---------|
-| People Intelligence | filing_signals, regulatory_data | outreach_context_id |
-| Blog Content | filing_signals | outreach_context_id |
-
-### Waterfall Rules (LOCKED)
-
-- Company Target must PASS before this hub executes
-- This hub must PASS before People Intelligence executes
-- No retry/rescue from downstream hubs
-- Failures stay local — downstream sees FAIL, not partial data
+| Field | Value | CC Layer |
+|-------|-------|----------|
+| **Trunk** | sys | CC-02 |
+| **Branch** | outreach | CC-02 |
+| **Leaf** | dol-filings | CC-02 |
 
 ---
 
-## 3.2 External Dependencies & Program Scope
+## 5. IMO Structure (CC-02)
 
-### CL is EXTERNAL to Outreach
-
-| Boundary | System | Ownership |
-|----------|--------|-----------|
-| **External** | Company Lifecycle (CL) | Mints company_unique_id, shared across all programs |
-| **Program** | Outreach Orchestration | Mints outreach_context_id, program-scoped |
-| **Sub-Hub** | DOL Filings (this hub) | Second enrichment sub-hub in waterfall |
-
-### Key Doctrine
-
-- **CL is external** — Outreach CONSUMES company_unique_id, does NOT invoke CL
-- **No CL gating** — Outreach does NOT verify company existence (CL already did)
-- **Run identity** — All operations bound by outreach_context_id from Orchestration
-- **Context table** — outreach.outreach_context is the root audit record
-
-### Explicit Prohibitions
-
-- [ ] Does NOT invoke Company Lifecycle (CL is external)
-- [ ] Does NOT mint company_unique_id (CL does)
-- [ ] Does NOT verify company existence (CL already did)
-- [ ] Does NOT create outreach_context_id (Orchestration does)
+| Layer | Role | Description | CC Layer |
+|-------|------|-------------|----------|
+| **I — Ingress** | Dumb input only | Receives outreach_id, domain from Company Target; DOL CSV files | CC-02 |
+| **M — Middle** | Logic, decisions, state | EIN matching, filing parsing, signal generation | CC-02 |
+| **O — Egress** | Output only | Emits filing_signals, regulatory_data to downstream | CC-02 |
 
 ---
 
-## 4. Lifecycle Gate
+## 6. Spokes (CC-03 Interfaces)
 
-| Minimum Lifecycle State | Gate Condition |
-|-------------------------|----------------|
-| ACTIVE | Requires lifecycle >= ACTIVE |
-
----
-
-## 5. Inputs
-
-| Input | Source | Required |
-|-------|--------|----------|
-| company_sov_id | Company Lifecycle (external) | YES |
-| DOL CSV files | Federal DOL data | YES |
+| Spoke Name | Type | Direction | Contract | CC Layer |
+|------------|------|-----------|----------|----------|
+| company-dol | I | Inbound | outreach_id, domain | CC-03 |
+| dol-people | O | Outbound | outreach_id, filing_signals, ein | CC-03 |
+| dol-blog | O | Outbound | outreach_id, regulatory_data | CC-03 |
 
 ---
 
-## 6. Pipeline
+## 7. Constants vs Variables
 
-```
-Load DOL CSV (Form 5500, 5500-SF, Schedule A)
- ↓
-Parse and validate records
- ↓
-EIN Matching (exact match only, no fuzzy)
- ↓
-Match found?
-  ├─ YES → Attach filing to company → Emit signals
-  └─ NO → STOP (no retries on mismatch)
-```
-
----
-
-## 7. Cost Rules
-
-| Rule | Enforcement |
-|------|-------------|
-| DOL CSV | Bulk processing, free |
-| No paid tools | This hub uses no paid enrichment |
-| No retries | Exact EIN match or fail |
+| Element | Type | Mutability | CC Layer |
+|---------|------|------------|----------|
+| Hub ID | Constant | Immutable | CC-02 |
+| Hub Name | Constant | ADR-gated | CC-02 |
+| Doctrine ID (04.04.03) | Constant | Immutable | CC-02 |
+| CTB Placement | Constant | ADR-gated | CC-02 |
+| Primary Table | Constant | ADR-gated | CC-02 |
+| outreach_id | Variable | Runtime | CC-04 |
+| filing_data | Variable | Runtime (from CSV) | CC-04 |
 
 ---
 
 ## 8. Tools
 
-| Tool | Tier | Cost Class |
-|------|------|------------|
-| DOL CSV | Bulk | Free |
+| Tool | Solution Type | CC Layer | IMO Layer | ADR Reference |
+|------|---------------|----------|-----------|---------------|
+| DOL CSV Parser | Deterministic | CC-02 | M | N/A (Bulk) |
+| EIN Matcher | Deterministic | CC-02 | M | N/A (Local) |
 
 ---
 
-## 9. Signals Emitted
+## 9. Guard Rails
 
-| Signal | BIT Impact |
-|--------|-----------|
-| FORM_5500_FILED | +5.0 |
-| LARGE_PLAN | +8.0 |
-| BROKER_CHANGE | +7.0 |
-
----
-
-## 10. Constraints
-
-- [ ] Bulk CSV only
-- [ ] Exact EIN match (no fuzzy)
-- [ ] No retries on mismatch
-- [ ] Emits signals only — no enrichment
+| Guard Rail | Type | Threshold | CC Layer |
+|------------|------|-----------|----------|
+| Company Target PASS | Validation | MUST have upstream PASS | CC-03 |
+| Exact EIN match | Validation | No fuzzy matching allowed | CC-03 |
+| No retries on mismatch | Rate Limit | Single attempt per EIN | CC-04 |
 
 ---
 
-## 11. Core Metric
+## 10. Kill Switch
 
-**FILING_MATCH_RATE** — Percentage of filings matched to company_master
-
-Healthy Threshold: >= 90%
+| Field | Value |
+|-------|-------|
+| **Activation Criteria** | EIN match fails (exact match only) |
+| **Trigger Authority** | CC-02 (Hub) |
+| **Emergency Contact** | Outreach Team |
 
 ---
 
-## 12. Upstream Dependencies, Signal Validity, and Downstream Effects
+## 11. Promotion Gates
 
-### Execution Position
+| Gate | Artifact | CC Layer | Requirement |
+|------|----------|----------|-------------|
+| G1 | PRD | CC-02 | Hub definition approved |
+| G2 | ADR | CC-03 | Architecture decision recorded |
+| G3 | Work Item | CC-04 | Execution item created |
+| G4 | PR | CC-04 | Code reviewed and merged |
+| G5 | Checklist | CC-04 | Compliance verification complete |
 
-**Second in canonical order** — After Company Target, before People Intelligence.
+---
 
-### Required Upstream PASS Conditions
+## 12. Failure Modes
 
-| Upstream | Condition |
-|----------|-----------|
-| Company Target | PASS (company exists with company_sov_id) |
-| Company Target | Domain resolved (for cross-reference) |
+| Failure | Severity | CC Layer | Remediation |
+|---------|----------|----------|-------------|
+| Company Target not PASS | CRITICAL | CC-03 | STOP - upstream dependency |
+| EIN match fails | MEDIUM | CC-04 | Log to error table, emit FAIL |
+| CSV parse error | HIGH | CC-04 | Log error, skip record |
+| Duplicate filing detected | LOW | CC-04 | Dedupe, log warning |
 
-### Signals Consumed (Origin-Bound)
+---
 
-| Signal | Origin | Validity |
-|--------|--------|----------|
-| company_sov_id | Company Lifecycle (via CT) | Run-bound to outreach_context_id |
-| domain | Company Target | Run-bound to outreach_context_id |
+## 13. PID Scope (CC-04)
 
-### Signals Emitted
+| Field | Value |
+|-------|-------|
+| **PID Pattern** | `HUB-DOL-{TIMESTAMP}-{RANDOM_HEX}` |
+| **Retry Policy** | New PID per retry |
+| **Audit Trail** | Required |
 
-| Signal | Consumers | Validity |
-|--------|-----------|----------|
-| FORM_5500_FILED | People, Blog | Run-bound to outreach_context_id |
-| LARGE_PLAN | People, Blog | Run-bound to outreach_context_id |
-| BROKER_CHANGE | People, Blog | Run-bound to outreach_context_id |
-| filing_data | Monitoring | Run-bound to outreach_context_id |
+---
 
-### Downstream Effects
+## 14. Human Override Rules
 
-| If This Hub | Then |
-|-------------|------|
-| PASS | People Intelligence may execute |
-| FAIL | People, Blog do NOT execute |
+Override requires CC-02 (Hub Owner) or CC-01 (Sovereign) approval:
+- Manual EIN assignment for edge cases
+- Force filing attachment despite mismatch
+- Bulk re-processing of CSV files
 
-### Explicit Prohibitions
+---
 
-- [ ] May NOT consume People Intelligence or Blog signals
-- [ ] May NOT unlock People Intelligence alone (CT must also PASS)
-- [ ] May NOT fix Company Target errors
-- [ ] May NOT refresh signals from prior contexts
-- [ ] May NOT retry EIN matches (exact match or FAIL)
+## 15. Observability
+
+| Type | Description | CC Layer |
+|------|-------------|----------|
+| **Logs** | CSV processing, EIN match attempts, filing attachments | CC-04 |
+| **Metrics** | FILING_MATCH_RATE (target >= 90%), records_processed | CC-04 |
+| **Alerts** | Match rate below threshold, CSV parse failures | CC-03/CC-04 |
 
 ---
 
@@ -246,11 +167,15 @@ Healthy Threshold: >= 90%
 
 | Role | Name | Date |
 |------|------|------|
-| Owner | | |
+| Sovereign (CC-01) | | |
+| Hub Owner (CC-02) | | |
 | Reviewer | | |
 
 ---
 
-**Last Updated**: 2026-01-02
-**Hub**: DOL Filings (04.04.03)
-**Doctrine**: External CL + Outreach Program v1.0
+## Traceability
+
+| Artifact | Reference |
+|----------|-----------|
+| Canonical Doctrine | CANONICAL_ARCHITECTURE_DOCTRINE.md |
+| Hub/Spoke Doctrine | HUB_SPOKE_ARCHITECTURE.md |

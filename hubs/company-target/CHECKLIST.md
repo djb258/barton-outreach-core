@@ -40,12 +40,12 @@ No code ships unless every box is checked. No exceptions. No partial compliance.
 ### Required Inputs
 
 - [ ] `company_unique_id` received (read-only, pre-minted from CL)
-- [ ] `outreach_context_id` received (MANDATORY, cost + retry scope)
+- [ ] `outreach_id` received (MANDATORY, cost + retry scope)
 - [ ] `correlation_id` received (MANDATORY, tracing only)
 
 ### Input Validation
 
-- [ ] FAIL IMMEDIATELY if `outreach_context_id` is missing
+- [ ] FAIL IMMEDIATELY if `outreach_id` is missing
 - [ ] FAIL IMMEDIATELY if `company_sov_id` is missing
 - [ ] FAIL IMMEDIATELY if `correlation_id` is missing
 - [ ] No identity minting (CL owns company_unique_id)
@@ -91,15 +91,15 @@ Phases MUST execute in this exact order. No skipping, no reordering.
 - [ ] Clearbit
 - [ ] Apollo
 - [ ] Allowed only if Tier 0 FAILS
-- [ ] Tier-1 spend cap for `outreach_context_id` not exceeded
+- [ ] Tier-1 spend cap for `outreach_id` not exceeded
 
 #### Tier 2 (PREMIUM) — SINGLE-SHOT
 
 - [ ] Prospeo
 - [ ] Snov
 - [ ] Clay
-- [ ] Requires `can_attempt_tier2(outreach_context_id) == TRUE`
-- [ ] **ONE Tier-2 attempt per outreach_context_id TOTAL**
+- [ ] Requires `can_attempt_tier2(outreach_id) == TRUE`
+- [ ] **ONE Tier-2 attempt per outreach_id TOTAL**
 - [ ] If Tier-2 fails → no retry, no alternate provider
 
 #### Waterfall Behavior
@@ -124,7 +124,7 @@ Phases MUST execute in this exact order. No skipping, no reordering.
 
 ### Tool Context Enforcement
 
-- [ ] Every paid tool call includes `outreach_context_id`
+- [ ] Every paid tool call includes `outreach_id`
 - [ ] Every paid tool call includes `company_sov_id`
 - [ ] All spend logged per context, not global
 - [ ] `correlation_id` is for tracing only — never cost logic
@@ -149,7 +149,7 @@ Phases MUST execute in this exact order. No skipping, no reordering.
 Must emit exactly:
 
 - [ ] `company_unique_id`
-- [ ] `outreach_context_id`
+- [ ] `outreach_id`
 - [ ] `email_pattern` (or null)
 - [ ] `email_domain_status`
 - [ ] `pattern_verified` (PASS | FAIL)
@@ -245,7 +245,7 @@ A failure is **blocking** if:
 ### Signal Validity
 
 - [ ] Signals are origin-bound (declared source only)
-- [ ] Signals are run-bound to current outreach_context_id
+- [ ] Signals are run-bound to current outreach_id
 - [ ] Signals from prior contexts are NOT authoritative
 - [ ] Signal age does NOT justify action
 
@@ -307,7 +307,7 @@ A failure is **blocking** if:
 
 ### Context Lineage
 
-- [ ] All retries create new `outreach_context_id`
+- [ ] All retries create new `outreach_id`
 - [ ] New contexts do NOT inherit signals from prior contexts
 - [ ] Prior context remains for audit (never deleted)
 
@@ -317,7 +317,7 @@ A failure is **blocking** if:
 
 ### Tool Usage (DG-001, DG-002)
 
-- [ ] All paid tools called with `outreach_context_id`
+- [ ] All paid tools called with `outreach_id`
 - [ ] All tools listed in `tooling/tool_registry.md`
 - [ ] Tier-2 tools use `can_attempt_tier2()` guard
 
@@ -361,9 +361,9 @@ A failure is **blocking** if:
 
 ### Outreach Context Authority
 
-- [ ] outreach_context_id sourced from Outreach Orchestration (not CL)
-- [ ] All operations bound by outreach_context_id
-- [ ] Does NOT mint outreach_context_id (Orchestration does)
+- [ ] outreach_id sourced from Outreach Orchestration (not CL)
+- [ ] All operations bound by outreach_id
+- [ ] Does NOT mint outreach_id (Orchestration does)
 - [ ] Reads from outreach.outreach_context table
 
 ### Program Boundary Compliance
@@ -371,7 +371,7 @@ A failure is **blocking** if:
 | Boundary | This Hub | Action |
 |----------|----------|--------|
 | CL (external) | Company Target | CONSUME company_unique_id |
-| Orchestration | Company Target | CONSUME outreach_context_id |
+| Orchestration | Company Target | CONSUME outreach_id |
 | DOL (downstream) | Company Target | EMIT domain, verified_pattern |
 
 ### Explicit Prohibitions
@@ -379,7 +379,7 @@ A failure is **blocking** if:
 - [ ] Does NOT call CL APIs or endpoints
 - [ ] Does NOT verify company existence (CL did that)
 - [ ] Does NOT retry CL operations
-- [ ] Does NOT create outreach_context_id
+- [ ] Does NOT create outreach_id
 
 ---
 

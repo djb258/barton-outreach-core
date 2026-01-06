@@ -52,7 +52,7 @@ class CLGate:
 
     Usage:
         # At Company Target entry point (BEFORE any logic):
-        CLGate.enforce_or_fail(company_sov_id, outreach_context_id)
+        CLGate.enforce_or_fail(company_sov_id, outreach_id)
 
         # Or check without exception:
         if CLGate.check_existence(company_sov_id):
@@ -161,7 +161,7 @@ class CLGate:
     def enforce_or_fail(
         cls,
         company_sov_id: str,
-        outreach_context_id: str,
+        outreach_id: str,
         write_error: bool = True
     ) -> None:
         """
@@ -178,7 +178,7 @@ class CLGate:
 
         Args:
             company_sov_id: Company sovereign ID to verify
-            outreach_context_id: Current execution context
+            outreach_id: Current execution context
             write_error: Whether to write error to database (default True)
 
         Raises:
@@ -191,12 +191,12 @@ class CLGate:
         # EXISTENCE_FAIL path
         logger.warning(
             f"CL gate FAIL: {company_sov_id} not found in CL. "
-            f"Context: {outreach_context_id}"
+            f"Context: {outreach_id}"
         )
 
         # Write error to database if requested
         if write_error:
-            cls._write_error(company_sov_id, outreach_context_id)
+            cls._write_error(company_sov_id, outreach_id)
 
         raise CLNotVerifiedError(company_sov_id)
 
@@ -204,14 +204,14 @@ class CLGate:
     def _write_error(
         cls,
         company_sov_id: Optional[str],
-        outreach_context_id: str
+        outreach_id: str
     ) -> None:
         """
         Write UPSTREAM_CL_NOT_VERIFIED error to error table.
 
         Args:
             company_sov_id: Company sovereign ID (may be None/invalid)
-            outreach_context_id: Current execution context
+            outreach_id: Current execution context
         """
         if cls._mock_mode:
             logger.info(f"[MOCK] Would write CL gate error for {company_sov_id}")
@@ -227,7 +227,7 @@ class CLGate:
                 cur.execute(
                     """INSERT INTO outreach_errors.company_target_errors (
                         company_sov_id,
-                        outreach_context_id,
+                        outreach_id,
                         hub_name,
                         pipeline_stage,
                         failure_code,
@@ -246,7 +246,7 @@ class CLGate:
                     )""",
                     (
                         company_sov_id if company_sov_id else None,
-                        outreach_context_id,
+                        outreach_id,
                         f'{{"expected_signal": "EXISTENCE_PASS", "company_sov_id": "{company_sov_id}"}}'
                     )
                 )

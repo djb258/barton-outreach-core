@@ -4,7 +4,7 @@ Outreach Context Manager
 Python interface to outreach_ctx database functions.
 
 DOCTRINE ENFORCEMENT:
-- All paid tools MUST be logged against outreach_context_id
+- All paid tools MUST be logged against outreach_id
 - Tier-2 tools are SINGLE-SHOT per context (can_attempt_tier2 guard)
 - Context finalization is IMMUTABLE (PASS/FAIL/ABORTED)
 
@@ -12,7 +12,7 @@ This module is the TRUTH SOURCE for cost safety.
 If this module is bypassed, the doctrine is violated.
 
 ERROR CODES:
-- CT_MISSING_CONTEXT_ID: outreach_context_id not provided
+- CT_MISSING_CONTEXT_ID: outreach_id not provided
 - CT_MISSING_SOV_ID: company_sov_id not provided
 - CT_TIER2_BLOCKED: Tier-2 already attempted in this context
 - CT_CONTEXT_FINALIZED: Cannot operate on finalized context
@@ -44,8 +44,8 @@ class ContextError(Exception):
 
 
 class MissingContextError(ContextError):
-    """Raised when outreach_context_id is missing."""
-    def __init__(self, message: str = "outreach_context_id is MANDATORY"):
+    """Raised when outreach_id is missing."""
+    def __init__(self, message: str = "outreach_id is MANDATORY"):
         super().__init__("CT_MISSING_CONTEXT_ID", message)
 
 
@@ -84,7 +84,7 @@ class ToolAttemptResult:
 @dataclass
 class ContextInfo:
     """Information about an outreach context."""
-    outreach_context_id: str
+    outreach_id: str
     company_sov_id: str
     is_active: bool
     final_state: Optional[str]
@@ -151,14 +151,14 @@ class OutreachContextManager:
     # =========================================================================
 
     @staticmethod
-    def validate_context_id(outreach_context_id: str) -> str:
+    def validate_context_id(outreach_id: str) -> str:
         """
-        Validate outreach_context_id is present and valid.
+        Validate outreach_id is present and valid.
 
         DOCTRINE: FAIL HARD if missing.
 
         Args:
-            outreach_context_id: Context ID to validate
+            outreach_id: Context ID to validate
 
         Returns:
             Validated context ID (stripped)
@@ -166,12 +166,12 @@ class OutreachContextManager:
         Raises:
             MissingContextError: If context ID is None or empty
         """
-        if not outreach_context_id:
+        if not outreach_id:
             raise MissingContextError()
 
-        ctx_id = str(outreach_context_id).strip()
+        ctx_id = str(outreach_id).strip()
         if not ctx_id:
-            raise MissingContextError("outreach_context_id cannot be empty string")
+            raise MissingContextError("outreach_id cannot be empty string")
 
         return ctx_id
 
@@ -206,7 +206,7 @@ class OutreachContextManager:
 
     def can_attempt_tier2(
         self,
-        outreach_context_id: str,
+        outreach_id: str,
         company_sov_id: str,
         tool_name: str
     ) -> bool:
@@ -217,7 +217,7 @@ class OutreachContextManager:
         This is a HARD GATE - if FALSE, caller MUST NOT proceed.
 
         Args:
-            outreach_context_id: Current execution context
+            outreach_id: Current execution context
             company_sov_id: Company sovereign ID
             tool_name: Tier-2 tool name (prospeo, snov, clay)
 
@@ -225,7 +225,7 @@ class OutreachContextManager:
             True if tool can be attempted, False if already used
         """
         # Validate inputs
-        ctx_id = self.validate_context_id(outreach_context_id)
+        ctx_id = self.validate_context_id(outreach_id)
         sov_id = self.validate_sov_id(company_sov_id)
         tool = tool_name.lower().strip()
 
@@ -255,7 +255,7 @@ class OutreachContextManager:
 
     def assert_can_attempt_tier2(
         self,
-        outreach_context_id: str,
+        outreach_id: str,
         company_sov_id: str,
         tool_name: str
     ) -> None:
@@ -265,7 +265,7 @@ class OutreachContextManager:
         Convenience method that raises Tier2BlockedError if guard fails.
 
         Args:
-            outreach_context_id: Current execution context
+            outreach_id: Current execution context
             company_sov_id: Company sovereign ID
             tool_name: Tier-2 tool name
 
@@ -274,8 +274,8 @@ class OutreachContextManager:
             MissingContextError: If context ID missing
             MissingSovIdError: If sovereign ID missing
         """
-        if not self.can_attempt_tier2(outreach_context_id, company_sov_id, tool_name):
-            raise Tier2BlockedError(tool_name, outreach_context_id)
+        if not self.can_attempt_tier2(outreach_id, company_sov_id, tool_name):
+            raise Tier2BlockedError(tool_name, outreach_id)
 
     # =========================================================================
     # TOOL ATTEMPT LOGGING
@@ -283,7 +283,7 @@ class OutreachContextManager:
 
     def log_tool_attempt(
         self,
-        outreach_context_id: str,
+        outreach_id: str,
         company_sov_id: str,
         tool_name: str,
         tool_tier: int,
@@ -299,7 +299,7 @@ class OutreachContextManager:
         DOCTRINE: Every paid tool call MUST be logged.
 
         Args:
-            outreach_context_id: Current execution context
+            outreach_id: Current execution context
             company_sov_id: Company sovereign ID
             tool_name: Tool that was called
             tool_tier: Tool tier (0, 1, or 2)
@@ -313,7 +313,7 @@ class OutreachContextManager:
             ToolAttemptResult with attempt_id
         """
         # Validate inputs
-        ctx_id = self.validate_context_id(outreach_context_id)
+        ctx_id = self.validate_context_id(outreach_id)
         sov_id = self.validate_sov_id(company_sov_id)
         tool = tool_name.lower().strip()
 
@@ -374,19 +374,19 @@ class OutreachContextManager:
     # CONTEXT FINALIZATION
     # =========================================================================
 
-    def finalize_pass(self, outreach_context_id: str) -> bool:
+    def finalize_pass(self, outreach_id: str) -> bool:
         """
         Finalize context with PASS state.
 
         DOCTRINE: Once finalized, context is IMMUTABLE.
 
         Args:
-            outreach_context_id: Context to finalize
+            outreach_id: Context to finalize
 
         Returns:
             True if successfully finalized, False if already finalized
         """
-        ctx_id = self.validate_context_id(outreach_context_id)
+        ctx_id = self.validate_context_id(outreach_id)
 
         if self._mock_mode:
             return True
@@ -408,20 +408,20 @@ class OutreachContextManager:
         finally:
             self._release_connection(conn)
 
-    def finalize_fail(self, outreach_context_id: str, reason: str) -> bool:
+    def finalize_fail(self, outreach_id: str, reason: str) -> bool:
         """
         Finalize context with FAIL state.
 
         DOCTRINE: Once finalized, context is IMMUTABLE.
 
         Args:
-            outreach_context_id: Context to finalize
+            outreach_id: Context to finalize
             reason: Reason for failure
 
         Returns:
             True if successfully finalized, False if already finalized
         """
-        ctx_id = self.validate_context_id(outreach_context_id)
+        ctx_id = self.validate_context_id(outreach_id)
 
         if self._mock_mode:
             return True
@@ -447,17 +447,17 @@ class OutreachContextManager:
     # CONTEXT INFO
     # =========================================================================
 
-    def get_context_info(self, outreach_context_id: str) -> Optional[ContextInfo]:
+    def get_context_info(self, outreach_id: str) -> Optional[ContextInfo]:
         """
         Get information about a context.
 
         Args:
-            outreach_context_id: Context to query
+            outreach_id: Context to query
 
         Returns:
             ContextInfo or None if not found
         """
-        ctx_id = self.validate_context_id(outreach_context_id)
+        ctx_id = self.validate_context_id(outreach_id)
 
         if self._mock_mode:
             return None
@@ -468,20 +468,20 @@ class OutreachContextManager:
             with conn.cursor() as cur:
                 cur.execute(
                     """SELECT
-                        outreach_context_id,
+                        outreach_id,
                         company_sov_id,
                         is_active,
                         final_state,
                         total_cost_credits,
                         tier2_calls
                     FROM outreach_ctx.context
-                    WHERE outreach_context_id = %s::uuid""",
+                    WHERE outreach_id = %s::uuid""",
                     (ctx_id,)
                 )
                 row = cur.fetchone()
                 if row:
                     return ContextInfo(
-                        outreach_context_id=str(row[0]),
+                        outreach_id=str(row[0]),
                         company_sov_id=str(row[1]),
                         is_active=row[2],
                         final_state=row[3],

@@ -2,7 +2,7 @@
 Pipeline Context Enforcement Test
 ==================================
 
-DOCTRINE: run_full_pipeline() MUST FAIL HARD if outreach_context_id
+DOCTRINE: run_full_pipeline() MUST FAIL HARD if outreach_id
 or company_sov_id is missing.
 
 This test verifies the orchestrator enforces cost discipline by testing
@@ -39,20 +39,20 @@ class TestPipelineContextEnforcement:
 
     These tests verify the validation functions that run_full_pipeline()
     calls at entry point. The pipeline uses:
-        outreach_context_id = OutreachContextManager.validate_context_id(outreach_context_id)
+        outreach_id = OutreachContextManager.validate_context_id(outreach_id)
         company_sov_id = OutreachContextManager.validate_sov_id(company_sov_id)
     """
 
-    def test_missing_outreach_context_id_raises(self):
+    def test_missing_outreach_id_raises(self):
         """
-        DOCTRINE: Missing outreach_context_id MUST raise MissingContextError.
+        DOCTRINE: Missing outreach_id MUST raise MissingContextError.
         """
         with pytest.raises(MissingContextError):
             OutreachContextManager.validate_context_id(None)
 
-    def test_empty_outreach_context_id_raises(self):
+    def test_empty_outreach_id_raises(self):
         """
-        DOCTRINE: Empty outreach_context_id MUST raise MissingContextError.
+        DOCTRINE: Empty outreach_id MUST raise MissingContextError.
         """
         with pytest.raises(MissingContextError):
             OutreachContextManager.validate_context_id("")
@@ -103,20 +103,20 @@ if __name__ == '__main__':
     print("=" * 70)
     print()
 
-    # Test 1: Missing outreach_context_id
+    # Test 1: Missing outreach_id
     try:
-        test.test_missing_outreach_context_id_raises()
-        print("[PASS] test_missing_outreach_context_id_raises")
+        test.test_missing_outreach_id_raises()
+        print("[PASS] test_missing_outreach_id_raises")
     except AssertionError as e:
-        print(f"[FAIL] test_missing_outreach_context_id_raises: {e}")
+        print(f"[FAIL] test_missing_outreach_id_raises: {e}")
         sys.exit(1)
 
-    # Test 2: Empty outreach_context_id
+    # Test 2: Empty outreach_id
     try:
-        test.test_empty_outreach_context_id_raises()
-        print("[PASS] test_empty_outreach_context_id_raises")
+        test.test_empty_outreach_id_raises()
+        print("[PASS] test_empty_outreach_id_raises")
     except AssertionError as e:
-        print(f"[FAIL] test_empty_outreach_context_id_raises: {e}")
+        print(f"[FAIL] test_empty_outreach_id_raises: {e}")
         sys.exit(1)
 
     # Test 3: Missing company_sov_id
