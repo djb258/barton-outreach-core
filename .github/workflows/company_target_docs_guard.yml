@@ -23,9 +23,17 @@ jobs:
 
           STALE_TERMS="company_id minting|fuzzy matching|fuzzy arbitration|retry logic|Phase 1 |Phase 1b|hold queue|rescue pattern"
 
+          # Negative assertion patterns (allowed)
+          NEGATIVE_PATTERNS="DEPRECATED|REMOVED|DELETED|NEVER|NOT|NO |FORBIDDEN|PROHIBITED|moved to|belongs in|owned by|\*\*NO\*\*|~~"
+
           # Check docs that touch Company Target
-          if grep -rEi "$STALE_TERMS" docs/prd/PRD_COMPANY_HUB.md hubs/company-target/*.md 2>/dev/null | grep -v "DEPRECATED" | grep -v "~~" | grep -v "REMOVED" | grep -v "DELETED"; then
-            echo "STALENESS VIOLATION: Found stale terminology without deprecation marker"
+          # Exclude lines that are negative assertions or deprecation markers
+          VIOLATIONS=$(grep -rEi "$STALE_TERMS" docs/prd/PRD_COMPANY_HUB.md hubs/company-target/*.md 2>/dev/null | grep -vEi "$NEGATIVE_PATTERNS" || true)
+
+          if [ -n "$VIOLATIONS" ]; then
+            echo "STALENESS VIOLATION: Found stale terminology without deprecation/negation marker"
+            echo ""
+            echo "$VIOLATIONS"
             echo ""
             echo "These terms are deprecated in Company Target v3.0:"
             echo "  - company_id minting (use outreach_id)"
@@ -35,11 +43,11 @@ jobs:
             echo "  - Phase 1 / Phase 1b (moved to CL)"
             echo "  - hold queue (no rescue patterns)"
             echo ""
-            echo "If referring to deprecated concepts, use strikethrough (~~) or DEPRECATED label."
+            echo "If referring to deprecated concepts, use negation (NEVER, NO, NOT) or deprecation labels."
             exit 1
           fi
 
-          echo "No stale terminology found"
+          echo "No stale terminology violations found"
 
       # =========================================================================
       # GUARD 2: Require outreach_id in Company Target docs

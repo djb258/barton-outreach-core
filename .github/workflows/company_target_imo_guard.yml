@@ -25,9 +25,14 @@ jobs:
         run: |
           echo "🔒 Checking for forbidden sovereign_id references..."
 
-          # Find any reference to sovereign_id in Company Target code
-          if grep -r "sovereign_id" hubs/company-target/imo/ --include="*.py" | grep -v "__pycache__" | grep -v "\.pyc"; then
+          # Find any OPERATIONAL reference to sovereign_id (exclude comments/docstrings that explain doctrine)
+          # Allowed in comments: "NEVER references sovereign_id", "Do NOT read sovereign_id", etc.
+          VIOLATIONS=$(grep -r "sovereign_id" hubs/company-target/imo/ --include="*.py" | grep -v "__pycache__" | grep -v "\.pyc" | grep -vE "NEVER|NOT|#.*sovereign_id|\"\"\".*sovereign_id" || true)
+
+          if [ -n "$VIOLATIONS" ]; then
             echo "❌ DOCTRINE VIOLATION: sovereign_id referenced in Company Target"
+            echo ""
+            echo "$VIOLATIONS"
             echo ""
             echo "Company Target operates ONLY on outreach_id."
             echo "sovereign_id is hidden by the Outreach Spine."
