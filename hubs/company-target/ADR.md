@@ -1,3 +1,10 @@
+# Company Target — Architecture Decision Records
+
+> **IMPORTANT**: This file contains historical ADRs. The authoritative ADR for Company Target's
+> current architecture is `docs/adr/ADR-CT-IMO-001.md` which supersedes these decisions.
+
+---
+
 # ADR: Company Target as Sub-Hub (Not Main Hub)
 
 ## ADR Identity
@@ -5,7 +12,7 @@
 | Field | Value |
 |-------|-------|
 | **ADR ID** | ADR-CT-001 |
-| **Status** | [x] Accepted |
+| **Status** | [x] Accepted → **SUPERSEDED by ADR-CT-IMO-001** |
 | **Date** | 2026-01-01 |
 
 ---
@@ -29,11 +36,15 @@ for company identity.
 
 ## Decision
 
+> **NOTE (2026-01-07)**: This decision is superseded by ADR-CT-IMO-001.
+> Company Target now operates on `outreach_id` only (not `company_sov_id`).
+> The spine hides `sovereign_id` from sub-hubs.
+
 Company Target is a **sub-hub only**. It:
-- Receives company_sov_id from Company Lifecycle (external, read-only)
+- ~~Receives company_sov_id from Company Lifecycle~~ → Now receives `outreach_id` from Outreach Spine
 - Does NOT mint, revive, or mutate company existence
 - Determines outreach readiness, not company existence
-- Uses disposable outreach_id for execution tracking
+- Uses `outreach_id` for execution tracking (minted by spine)
 
 ---
 
@@ -97,7 +108,7 @@ Company Target is a **sub-hub only**. It:
 | Field | Value |
 |-------|-------|
 | **ADR ID** | ADR-CT-002 |
-| **Status** | [x] Accepted |
+| **Status** | [x] Accepted → **SUPERSEDED by Spine Architecture** |
 | **Date** | 2026-01-02 |
 
 ---
@@ -121,13 +132,17 @@ for company existence verification.
 
 ## Decision
 
-Implement a **CL Upstream Gate** that runs BEFORE any Company Target logic:
+> **NOTE (2026-01-07)**: This gate is now implemented at the Outreach Spine level.
+> Company Target receives `outreach_id` which guarantees CL verification already occurred.
+> Company Target does NOT check CL tables directly — the spine enforces this gate.
 
-1. Check if `company_sov_id` exists in `cl.company_identity`
-2. If EXISTS → `EXISTENCE_PASS` (proceed to Phase 1-4)
-3. If MISSING → Write error `CT_UPSTREAM_CL_NOT_VERIFIED` and STOP
+~~Implement a **CL Upstream Gate** that runs BEFORE any Company Target logic:~~
 
-Option B chosen: Sovereign ID existence = verified (if CL minted the ID, existence was verified).
+~~1. Check if `company_sov_id` exists in `cl.company_identity`~~
+~~2. If EXISTS → `EXISTENCE_PASS` (proceed to Phase 1-4)~~
+~~3. If MISSING → Write error `CT_UPSTREAM_CL_NOT_VERIFIED` and STOP~~
+
+**Current Architecture**: Spine enforces CL gate. CT receives `outreach_id` only.
 
 ---
 
@@ -219,14 +234,17 @@ Add explicit table ownership documentation to PRD with:
 
 ## Table Ownership Summary
 
+> **NOTE (2026-01-07)**: Table ownership has been simplified per IMO refactor.
+> Company Target now writes ONLY to `outreach.*` tables.
+
 | Schema.Table | Owner | Write | Read |
 |--------------|-------|-------|------|
 | `outreach.company_target` | Company Target | YES | YES |
-| `outreach.column_registry` | Company Target | YES | YES |
-| `marketing.company_master` | Legacy (to CL) | YES | YES |
-| `marketing.pipeline_events` | Shared | YES | YES |
-| `cl.company_identity` | CL Parent | NO | YES |
-| `cl.lifecycle_state` | CL Parent | NO | YES |
+| `outreach.company_target_errors` | Company Target | YES | YES |
+| ~~`marketing.company_master`~~ | ~~Legacy (to CL)~~ | **NO** | NO |
+| ~~`marketing.pipeline_events`~~ | ~~Shared~~ | **NO** | NO |
+| ~~`cl.company_identity`~~ | ~~CL Parent~~ | **NO** | **NO** (spine hides) |
+| ~~`cl.lifecycle_state`~~ | ~~CL Parent~~ | **NO** | **NO** (spine hides) |
 
 ---
 
@@ -465,5 +483,6 @@ The root audit record for every Outreach run:
 
 ---
 
-**Last Updated**: 2026-01-02
-**ADR Count**: 5 (ADR-CT-001, ADR-CT-002, ADR-CT-003, ADR-CT-004, ADR-CT-005)
+**Last Updated**: 2026-01-07
+**ADR Count**: 5 legacy + 1 authoritative
+**Authoritative ADR**: `docs/adr/ADR-CT-IMO-001.md` (supersedes legacy ADRs)

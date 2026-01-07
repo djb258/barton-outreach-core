@@ -1,4 +1,7 @@
-# PRD — Hub
+# PRD — Company Target (Execution Prep Sub-Hub) v3.0
+
+> **DOCTRINE LOCK**: This PRD describes Company Target as a single-pass IMO gate.
+> For full details, see `docs/prd/PRD_COMPANY_HUB.md`.
 
 ## Conformance
 
@@ -7,6 +10,7 @@
 | **Doctrine Version** | 1.1.0 |
 | **CTB Version** | 1.0.0 |
 | **CC Layer** | CC-02 |
+| **Architecture** | Single-Pass IMO Gate |
 
 ---
 
@@ -26,13 +30,13 @@
 | **Hub Name** | Company Target |
 | **Hub ID** | HUB-COMPANY-TARGET |
 | **Owner** | Outreach Team |
-| **Version** | 1.0.0 |
+| **Version** | 3.0.0 |
 
 ---
 
 ## 3. Purpose
 
-Determine **outreach readiness** for lifecycle-qualified companies. Internal anchor table that links all other sub-hubs together. Receives `sovereign_id` from Company Lifecycle parent — does NOT mint companies.
+Determine **email methodology** for outreach-ready companies. Single-pass IMO gate that receives `outreach_id` from Outreach Spine. Does NOT see `sovereign_id` directly — spine hides this.
 
 **Waterfall Position**: 1st sub-hub in canonical waterfall (after Outreach Spine, before DOL Filings).
 
@@ -52,9 +56,9 @@ Determine **outreach readiness** for lifecycle-qualified companies. Internal anc
 
 | Layer | Role | Description | CC Layer |
 |-------|------|-------------|----------|
-| **I — Ingress** | Dumb input only | Receives outreach_id, sovereign_id from spine | CC-02 |
-| **M — Middle** | Logic, decisions, state | Domain resolution, email pattern waterfall, BIT scoring | CC-02 |
-| **O — Egress** | Output only | Emits verified_pattern, domain, BIT signals | CC-02 |
+| **I — Input** | Load from spine | Receives `outreach_id` only; validates existence | CC-02 |
+| **M — Middle** | Logic, decisions | MX gate, pattern generation, SMTP validation | CC-02 |
+| **O — Output** | Write result | PASS → `outreach.company_target`; FAIL → error table | CC-02 |
 
 ---
 
@@ -62,7 +66,7 @@ Determine **outreach readiness** for lifecycle-qualified companies. Internal anc
 
 | Spoke Name | Type | Direction | Contract | CC Layer |
 |------------|------|-----------|----------|----------|
-| outreach-spine | I | Inbound | outreach_id, sovereign_id | CC-03 |
+| outreach-spine | I | Inbound | `outreach_id` only (sovereign_id hidden) | CC-03 |
 | company-dol | O | Outbound | outreach_id, domain | CC-03 |
 | company-people | O | Outbound | outreach_id, verified_pattern | CC-03 |
 | company-blog | O | Outbound | outreach_id, domain | CC-03 |

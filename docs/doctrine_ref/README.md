@@ -1,9 +1,27 @@
 # SVG-PLE Doctrine Library
 
-**Version**: 1.0.0
-**Last Updated**: 2025-11-07
+**Version**: 1.1.0 (Spine-First Architecture)
+**Last Updated**: 2026-01-07
 **Barton Doctrine Compliance**: 100% ✅
 **Status**: Production Ready
+
+> **v1.1.0 Update**: Company Target refactored to single-pass IMO gate. See ADR-CT-IMO-001.
+
+### Outreach Context View (Cumulative, Read-Only)
+
+Outreach Context is cumulative and read-only. Subhubs contribute layers; none redefine identity.
+
+```sql
+-- Read the current outreach footprint
+SELECT * FROM outreach.v_context_current WHERE outreach_id = '...';
+```
+
+| Rule | Enforcement |
+|------|-------------|
+| SELECT only | REVOKE INSERT/UPDATE/DELETE |
+| Subhubs may READ | Via JOIN or direct query |
+| Subhubs may NOT WRITE | CI guard blocks violations |
+| Observational only | Not authoritative for business logic |
 
 ---
 
@@ -147,24 +165,30 @@ Check operational sections:
 
 ---
 
-#### 🔴 Company Target: Identity Resolution
+#### 🔴 Company Target: IMO Gate (Execution Readiness)
 
 | Document | Barton ID | Description | Status |
 |----------|-----------|-------------|--------|
-| **[COMPANY_TARGET_IDENTITY.md](./ple/COMPANY_TARGET_IDENTITY.md)** | `01.04.02.04.21000.001` | Identity resolution with EIN fuzzy matching | ✅ Active |
+| **[COMPANY_TARGET_IDENTITY.md](./ple/COMPANY_TARGET_IDENTITY.md)** | `01.04.02.04.21000.001` | ~~Identity resolution with EIN fuzzy matching~~ | ❌ **DEPRECATED** |
+| **[ADR-CT-IMO-001.md](../adr/ADR-CT-IMO-001.md)** | N/A | Company Target as Single-Pass IMO Gate | ✅ Active |
 
-**SCOPE**:
-- EIN fuzzy matching (ONLY place fuzzy logic is allowed)
-- EIN_NOT_RESOLVED failure → ENRICHMENT routing
-- Execution gate for DOL Subhub
-- Company identity validation
+> **NOTE (2026-01-07)**: Company Target no longer performs identity resolution or fuzzy matching.
+> It is now a single-pass IMO gate focused on email methodology derivation.
+> See `docs/adr/ADR-CT-IMO-001.md` for the current architecture.
 
-**CANONICAL RULE**:
-- ✅ Fuzzy logic allowed ONLY in Company Target
-- ❌ DOL Subhub must NEVER see fuzzy logic
-- ❌ Analytics views must NEVER see fuzzy logic
+**CURRENT SCOPE (v3.0)**:
+- Receives `outreach_id` from Outreach Spine
+- MX gate validation (TOOL-004)
+- Email pattern generation and SMTP validation (TOOL-005)
+- Single-pass execution (no retries)
+- Writes to `outreach.company_target` (PASS) or `outreach.company_target_errors` (FAIL)
 
-**Related Code**: [`ctb/sys/company-target/identity_validator.js`](../ctb/sys/company-target/identity_validator.js)
+**DEPRECATED CONCEPTS**:
+- ~~EIN fuzzy matching~~ → Now CL's responsibility
+- ~~Identity resolution~~ → Spine handles identity binding
+- ~~Retry/backoff logic~~ → FAIL is terminal
+
+**Related Code**: `hubs/company-target/imo/middle/company_target_imo.py`
 
 ---
 

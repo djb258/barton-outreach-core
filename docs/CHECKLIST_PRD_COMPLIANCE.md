@@ -1,7 +1,7 @@
 # PRD Compliance Checklist
 
-**Version:** 2.1
-**Last Updated:** 2025-12-19
+**Version:** 3.0 (Spine-First Architecture)
+**Last Updated:** 2026-01-07
 
 ---
 
@@ -11,10 +11,12 @@
 
 | PRD | File | Status | Last Updated |
 |-----|------|--------|--------------|
-| Company Hub | `docs/prd/PRD_COMPANY_HUB.md` | ✅ Current | 2025-12-17 |
-| Company Pipeline | `docs/prd/PRD_COMPANY_HUB_PIPELINE.md` | ✅ Current | 2025-12-17 |
+| Company Target (IMO) | `docs/prd/PRD_COMPANY_HUB.md` | ✅ Current (v3.0) | 2026-01-07 |
+| ~~Company Pipeline~~ | ~~`docs/prd/PRD_COMPANY_HUB_PIPELINE.md`~~ | **DEPRECATED** | See v3.0 |
 | BIT Engine | `docs/prd/PRD_BIT_ENGINE.md` | ✅ Current | 2025-12-19 |
 | Master Error Log | `docs/prd/PRD_MASTER_ERROR_LOG.md` | ✅ Current | 2025-12-17 |
+
+> **v3.0 Note:** Company Target is now a single-pass IMO gate. Phase 1/1b removed (moved to CL).
 
 ### Spoke PRDs
 
@@ -70,14 +72,14 @@ For each PRD, verify:
 - [ ] correlation_id is included in ALL emitted signals
 - [ ] correlation_id is NEVER modified mid-processing
 
-### Hub Gate (HARD LAW)
+### Hub Gate (HARD LAW) — v3.0 Spine-First
 
 For each PRD, verify:
 
-- [ ] company_id validation before processing
-- [ ] domain validation for email operations
-- [ ] email_pattern validation for outreach
-- [ ] Clear STOP conditions documented
+- [ ] `outreach_id` validation before processing (NOT `company_id`)
+- [ ] Domain loaded from spine (NOT from CL directly)
+- [ ] `sovereign_id` NEVER referenced in sub-hubs
+- [ ] Clear STOP conditions documented (terminal failure = no retry)
 
 ### Signal Deduplication
 
@@ -119,7 +121,8 @@ For each PRD, verify:
 
 | ADR | File | Status |
 |-----|------|--------|
-| ADR-001: Hub-Spoke Architecture | `docs/adr/ADR-001_Hub_Spoke_Architecture.md` | ✅ Accepted |
+| ADR-001: Hub-Spoke Architecture | `docs/adr/ADR-001_Hub_Spoke_Architecture.md` | ✅ Accepted (updated v3.0) |
+| ADR-CT-IMO-001: Company Target as IMO Gate | `docs/adr/ADR-CT-IMO-001.md` | ✅ Accepted |
 
 ### Pending ADRs
 
@@ -127,7 +130,7 @@ For each PRD, verify:
 |----------|--------|----------|
 | Signal Weighting Strategy | Pending | Medium |
 | Cache Invalidation Policy | Pending | Low |
-| External API Selection | Pending | Medium |
+| ~~External API Selection~~ | **RESOLVED** | See SNAP_ON_TOOLBOX.yaml |
 
 ---
 

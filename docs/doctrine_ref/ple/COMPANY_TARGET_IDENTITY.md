@@ -1,18 +1,29 @@
 # Company Target — Identity Resolution Doctrine
 ## Barton Doctrine Framework | SVG-PLE Marketing Core
 
+> **DEPRECATED (2026-01-07)**: This doctrine is SUPERSEDED by the Company Target IMO architecture.
+> Company Target no longer performs identity resolution or fuzzy matching.
+> See `docs/adr/ADR-CT-IMO-001.md` for the current architecture.
+>
+> **Why This Changed**: Identity resolution and fuzzy matching are now owned by Company Lifecycle (CL),
+> not Company Target. Company Target is now a single-pass IMO gate focused solely on email methodology.
+
 **Document ID**: `01.04.02.04.21000.001`
-**Version**: 1.0.0
+**Version**: 1.0.0 → **DEPRECATED**
 **Last Updated**: 2025-01-01
-**Status**: Active | Production Ready
+**Status**: ~~Active | Production Ready~~ → **DEPRECATED**
 
 ---
 
 ## Overview
 
-This doctrine defines **Company Target Identity Resolution**, the process responsible for resolving company identities including EIN fuzzy matching. 
+~~This doctrine defines **Company Target Identity Resolution**, the process responsible for resolving company identities including EIN fuzzy matching.~~
 
-**CRITICAL**: Fuzzy matching to attach EIN ↔ company_unique_id is allowed **ONLY** in Company Target / Identity Resolution. The DOL Subhub requires a locked EIN and must **NEVER** see fuzzy logic.
+**DEPRECATED**: Company Target no longer performs identity resolution. This is now CL's responsibility.
+
+~~**CRITICAL**: Fuzzy matching to attach EIN ↔ company_unique_id is allowed **ONLY** in Company Target / Identity Resolution. The DOL Subhub requires a locked EIN and must **NEVER** see fuzzy logic.~~
+
+**CURRENT ARCHITECTURE**: Company Target receives `outreach_id` from the Outreach Spine. It derives email methodology via MX/SMTP checks, NOT identity resolution.
 
 ---
 

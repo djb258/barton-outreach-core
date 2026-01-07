@@ -1,0 +1,125 @@
+name: Company Target Docs Guard
+
+on:
+  pull_request:
+    paths:
+      - "docs/**"
+      - "hubs/company-target/**"
+
+jobs:
+  docs-guard:
+    name: Staleness Prevention Guard
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # =========================================================================
+      # GUARD 1: Block stale terminology in Company Target docs
+      # =========================================================================
+      - name: Block stale terminology
+        run: |
+          echo "Checking for stale Company Target terminology..."
+
+          STALE_TERMS="company_id minting|fuzzy matching|fuzzy arbitration|retry logic|Phase 1 |Phase 1b|hold queue|rescue pattern"
+
+          # Check docs that touch Company Target
+          if grep -rEi "$STALE_TERMS" docs/prd/PRD_COMPANY_HUB.md hubs/company-target/*.md 2>/dev/null | grep -v "DEPRECATED" | grep -v "~~" | grep -v "REMOVED" | grep -v "DELETED"; then
+            echo "STALENESS VIOLATION: Found stale terminology without deprecation marker"
+            echo ""
+            echo "These terms are deprecated in Company Target v3.0:"
+            echo "  - company_id minting (use outreach_id)"
+            echo "  - fuzzy matching (moved to CL)"
+            echo "  - fuzzy arbitration (moved to CL)"
+            echo "  - retry logic (FAIL is terminal)"
+            echo "  - Phase 1 / Phase 1b (moved to CL)"
+            echo "  - hold queue (no rescue patterns)"
+            echo ""
+            echo "If referring to deprecated concepts, use strikethrough (~~) or DEPRECATED label."
+            exit 1
+          fi
+
+          echo "No stale terminology found"
+
+      # =========================================================================
+      # GUARD 2: Require outreach_id in Company Target docs
+      # =========================================================================
+      - name: Verify outreach_id usage
+        run: |
+          echo "Verifying outreach_id is the primary identity..."
+
+          # Check that key docs mention outreach_id
+          if ! grep -q "outreach_id" docs/prd/PRD_COMPANY_HUB.md; then
+            echo "DOCTRINE VIOLATION: PRD_COMPANY_HUB.md does not reference outreach_id"
+            exit 1
+          fi
+
+          if ! grep -q "outreach_id" hubs/company-target/pipeline.md; then
+            echo "DOCTRINE VIOLATION: pipeline.md does not reference outreach_id"
+            exit 1
+          fi
+
+          echo "outreach_id references verified"
+
+      # =========================================================================
+      # GUARD 3: Block sovereign_id references in Company Target
+      # =========================================================================
+      - name: Block sovereign_id in operational docs
+        run: |
+          echo "Checking for forbidden sovereign_id references..."
+
+          # Allow sovereign_id only in deprecation context
+          if grep -rE "sovereign_id" hubs/company-target/*.md docs/prd/PRD_COMPANY_HUB.md 2>/dev/null | grep -v "NEVER" | grep -v "hidden" | grep -v "spine" | grep -v "CL"; then
+            echo "WARNING: sovereign_id found outside deprecation/explanation context"
+            echo "Company Target operates on outreach_id ONLY."
+            echo "Review the context to ensure this is not implying direct access."
+          fi
+
+          echo "sovereign_id check complete"
+
+      # =========================================================================
+      # GUARD 4: Verify ADR-CT-IMO-001 reference exists
+      # =========================================================================
+      - name: Verify ADR reference
+        run: |
+          echo "Verifying ADR-CT-IMO-001 reference..."
+
+          if ! grep -q "ADR-CT-IMO-001" docs/prd/PRD_COMPANY_HUB.md; then
+            echo "DOCTRINE VIOLATION: PRD must reference ADR-CT-IMO-001"
+            exit 1
+          fi
+
+          echo "ADR reference verified"
+
+      # =========================================================================
+      # GUARD 5: Block marketing.* table references
+      # =========================================================================
+      - name: Block marketing table references
+        run: |
+          echo "Checking for forbidden marketing.* references..."
+
+          if grep -rE "marketing\\.company_master|INSERT INTO marketing|UPDATE marketing" hubs/company-target/**/*.md docs/prd/PRD_COMPANY_HUB.md 2>/dev/null | grep -v "DEPRECATED" | grep -v "~~" | grep -v "NO"; then
+            echo "DOCTRINE VIOLATION: Company Target does not write to marketing.* tables"
+            exit 1
+          fi
+
+          echo "No forbidden marketing.* references"
+
+      # =========================================================================
+      # SUMMARY
+      # =========================================================================
+      - name: Guard Summary
+        run: |
+          echo ""
+          echo "========================================================"
+          echo "  COMPANY TARGET DOCS GUARD — ALL CHECKS PASSED"
+          echo "========================================================"
+          echo ""
+          echo "  Stale terminology: CLEAN"
+          echo "  outreach_id usage: VERIFIED"
+          echo "  sovereign_id context: CHECKED"
+          echo "  ADR reference: PRESENT"
+          echo "  marketing.* writes: BLOCKED"
+          echo ""
+          echo "  Doctrine: Company Target IMO v3.0"
+          echo ""

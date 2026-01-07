@@ -298,15 +298,14 @@ barton-outreach-core/
 | Phase | Owner Hub | Description |
 |-------|-----------|-------------|
 | Phase 0 | Outreach Spine | Mint outreach_id (gate: CL identity_status = 'PASS') |
-| Phase 1 | Company Target | Company Matching |
-| Phase 1b | Company Target | Unmatched Hold Export |
-| Phase 2 | Company Target | Domain Resolution |
-| Phase 3 | Company Target | Email Pattern Waterfall |
-| Phase 4 | Company Target | Pattern Verification |
+| **IMO** | **Company Target** | **Single-pass IMO gate (I→M→O)** |
 | Phase 5 | People Intelligence | Email Generation |
 | Phase 6 | People Intelligence | Slot Assignment |
 | Phase 7 | People Intelligence | Enrichment Queue |
 | Phase 8 | People Intelligence | Output Writer |
+
+> **NOTE**: Company Target Phases 1-4 are DEPRECATED. Company Target now operates as a single-pass IMO gate.
+> See `docs/adr/ADR-CT-IMO-001.md` for details.
 
 ### Execution Order (Waterfall)
 
@@ -317,8 +316,8 @@ CL (sovereign_id, identity_status='PASS')
 OUTREACH SPINE (mints outreach_id)
          │
          ▼
-Company Target (Phases 1-4) → PASS REQUIRED
-         │           └─► Error: outreach.company_target_errors
+Company Target IMO (I→M→O) → PASS or FAIL
+         │           └─► Error: outreach.company_target_errors (terminal)
          ▼
 DOL Filings → PASS REQUIRED
          │           └─► Error: outreach.dol_errors
@@ -369,9 +368,9 @@ SSL Mode: require
 ### Import Paths
 
 ```python
-# Company Target Sub-Hub (child of CL)
-from hubs.company_target import CompanyHub, BITEngine, CompanyPipeline
-from hubs.company_target.imo.middle.phases import Phase1CompanyMatching
+# Company Target Sub-Hub (IMO Gate)
+from hubs.company_target import run_company_target_imo
+from hubs.company_target.imo.middle import BITEngine
 
 # People Intelligence Hub
 from hubs.people_intelligence import PeopleHub, SlotAssignment
@@ -559,7 +558,7 @@ DOCTRINE_VERSION=04
 |----------|-------|-----------------|
 | P0-1 | DV-016: funnel.* schema empty | Create tables OR remove references |
 | P0-2 | DV-003,008,009,025: Broken imports | Fix Python import paths |
-| P0-3 | DV-011,012,013: Fuzzy matching | Remove OR move to CL repo |
+| P0-3 | DV-011,012,013: Fuzzy matching | **RESOLVED** - Removed from CT (v3.0) |
 | P1-1 | DV-002,004-007: AXLE terminology | Replace with "Sub-Hub" |
 | P1-2 | DV-017: Missing FK constraint | Add FK to cl.company_identity |
 | P1-3 | DV-027-030: CI guard gaps | Fix pattern matching in workflows |

@@ -1,7 +1,7 @@
 # Tool Registry (AUTHORITATIVE)
 
 **Status:** LOCKED
-**Last Updated:** 2026-01-01
+**Last Updated:** 2026-01-07
 **Authority:** This is the ONLY authoritative list of approved tools.
 
 ---
@@ -30,6 +30,13 @@
 | **Clay** | 2 | Company Target, People | Premium | >= ACTIVE + BIT |
 | **MillionVerifier** | 1 | People | Per-use | >= TARGETABLE |
 | **DOL CSV** | Bulk | DOL | Free | >= ACTIVE |
+| **EIN Matcher** | Local | DOL | Free | None |
+| **Title Classifier** | Local | People | Free | None |
+| **News Feed Parser** | Local | Blog | Free | None |
+| **Signal Classifier** | Local | Blog | Free | None |
+| **Email Sender** | Core | Outreach Execution | Per-use | >= TARGETABLE |
+| **Engagement Tracker** | Core | Outreach Execution | Free | None |
+| **Sequence Engine** | Core | Outreach Execution | Free | None |
 | **SMTP Check** | Local | Company Target | Free | None |
 | **MX Lookup** | Local | Gate Zero (external) | Free | None |
 | **LinkedIn Check** | Local | Gate Zero (external) | Free | None |

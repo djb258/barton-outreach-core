@@ -1,0 +1,237 @@
+name: Company Target IMO Guard
+
+on:
+  pull_request:
+    paths:
+      - "hubs/company-target/**"
+  push:
+    branches:
+      - main
+    paths:
+      - "hubs/company-target/**"
+
+jobs:
+  imo-guard:
+    name: IMO Doctrine Guard
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # =========================================================================
+      # GUARD 1: Block forbidden references to sovereign_id
+      # =========================================================================
+      - name: Block sovereign_id references
+        run: |
+          echo "🔒 Checking for forbidden sovereign_id references..."
+
+          # Find any reference to sovereign_id in Company Target code
+          if grep -r "sovereign_id" hubs/company-target/imo/ --include="*.py" | grep -v "__pycache__" | grep -v "\.pyc"; then
+            echo "❌ DOCTRINE VIOLATION: sovereign_id referenced in Company Target"
+            echo ""
+            echo "Company Target operates ONLY on outreach_id."
+            echo "sovereign_id is hidden by the Outreach Spine."
+            echo ""
+            echo "See: PRD — Company Target (Execution Prep Sub-Hub) v3.0"
+            exit 1
+          fi
+
+          echo "✅ No sovereign_id references found"
+
+      # =========================================================================
+      # GUARD 2: Block CL table references
+      # =========================================================================
+      - name: Block CL table references
+        run: |
+          echo "🔒 Checking for forbidden CL table references..."
+
+          # Find any reference to cl. tables (except comments/docs)
+          if grep -rE "FROM\s+cl\.|INTO\s+cl\.|UPDATE\s+cl\.|cl\.company_identity" hubs/company-target/imo/ --include="*.py" | grep -v "__pycache__" | grep -v "# "; then
+            echo "❌ DOCTRINE VIOLATION: CL tables referenced in Company Target"
+            echo ""
+            echo "Company Target NEVER touches CL tables directly."
+            echo "It reads from outreach.outreach spine only."
+            echo ""
+            echo "See: PRD — Company Target (Execution Prep Sub-Hub) v3.0"
+            exit 1
+          fi
+
+          echo "✅ No CL table references found"
+
+      # =========================================================================
+      # GUARD 3: Block marketing.* writes
+      # =========================================================================
+      - name: Block marketing table writes
+        run: |
+          echo "🔒 Checking for forbidden marketing.* writes..."
+
+          # Find any writes to marketing.* tables
+          if grep -rE "INSERT INTO marketing\.|UPDATE marketing\." hubs/company-target/imo/middle/company_target_imo.py; then
+            echo "❌ DOCTRINE VIOLATION: marketing.* writes in Company Target IMO"
+            echo ""
+            echo "Company Target IMO writes ONLY to outreach.* tables:"
+            echo "  - outreach.company_target"
+            echo "  - outreach.company_target_errors"
+            echo ""
+            echo "See: PRD — Company Target (Execution Prep Sub-Hub) v3.0"
+            exit 1
+          fi
+
+          echo "✅ No marketing.* writes in IMO"
+
+      # =========================================================================
+      # GUARD 4: Block fuzzy matching imports
+      # =========================================================================
+      - name: Block fuzzy matching
+        run: |
+          echo "🔒 Checking for forbidden fuzzy matching..."
+
+          # Find any fuzzy matching imports or usage
+          if grep -rE "from.*fuzzy|import.*fuzzy|rapidfuzz|jaro_winkler|levenshtein" hubs/company-target/imo/middle/company_target_imo.py; then
+            echo "❌ DOCTRINE VIOLATION: Fuzzy matching in Company Target IMO"
+            echo ""
+            echo "Company Target does NOT perform fuzzy matching."
+            echo "Matching is owned by Company Lifecycle (CL)."
+            echo ""
+            echo "See: PRD — Company Target (Execution Prep Sub-Hub) v3.0"
+            exit 1
+          fi
+
+          echo "✅ No fuzzy matching in IMO"
+
+      # =========================================================================
+      # GUARD 5: Verify spine guard assertion
+      # =========================================================================
+      - name: Verify spine guard assertion
+        run: |
+          echo "🔒 Verifying spine guard assertion..."
+
+          # Check that ENFORCE_OUTREACH_SPINE_ONLY assertion exists
+          if ! grep -q "assert ENFORCE_OUTREACH_SPINE_ONLY is True" hubs/company-target/imo/middle/company_target_imo.py; then
+            echo "❌ DOCTRINE VIOLATION: Missing spine guard assertion"
+            echo ""
+            echo "Company Target IMO must include:"
+            echo "  assert ENFORCE_OUTREACH_SPINE_ONLY is True"
+            echo ""
+            echo "See: PRD — Company Target (Execution Prep Sub-Hub) v3.0"
+            exit 1
+          fi
+
+          echo "✅ Spine guard assertion present"
+
+      # =========================================================================
+      # GUARD 6: Block retry/backoff logic
+      # =========================================================================
+      - name: Block retry logic
+        run: |
+          echo "🔒 Checking for forbidden retry logic..."
+
+          # Find retry/backoff patterns (excluding comments)
+          if grep -rE "retry_count|max_retries|backoff|retry_with" hubs/company-target/imo/middle/company_target_imo.py | grep -v "# " | grep -v "retry_allowed.*FALSE"; then
+            echo "❌ DOCTRINE VIOLATION: Retry logic in Company Target IMO"
+            echo ""
+            echo "Company Target IMO is SINGLE-PASS."
+            echo "FAIL is terminal - no retries allowed."
+            echo ""
+            echo "See: PRD — Company Target (Execution Prep Sub-Hub) v3.0"
+            exit 1
+          fi
+
+          echo "✅ No retry logic in IMO"
+
+      # =========================================================================
+      # GUARD 7: Verify doctrine lock comment
+      # =========================================================================
+      - name: Verify doctrine lock comment
+        run: |
+          echo "🔒 Verifying doctrine lock comment..."
+
+          # Check that doctrine lock comment exists
+          if ! grep -q "COMPANY TARGET — IMO GATE (DOCTRINE LOCK)" hubs/company-target/imo/middle/company_target_imo.py; then
+            echo "❌ DOCTRINE VIOLATION: Missing doctrine lock comment"
+            echo ""
+            echo "Company Target IMO must include the doctrine lock header."
+            echo ""
+            echo "See: PRD — Company Target (Execution Prep Sub-Hub) v3.0"
+            exit 1
+          fi
+
+          echo "✅ Doctrine lock comment present"
+
+      # =========================================================================
+      # GUARD 8: Block writes to outreach context view
+      # =========================================================================
+      - name: Block context view writes
+        run: |
+          echo "🔒 Checking for forbidden context view writes..."
+
+          # Block any attempts to write to the read-only context view
+          if grep -rE "INSERT INTO outreach\.v_context|UPDATE outreach\.v_context|DELETE FROM outreach\.v_context" hubs/company-target/ --include="*.py" | grep -v "__pycache__"; then
+            echo "❌ DOCTRINE VIOLATION: Attempted write to outreach.v_context_current"
+            echo ""
+            echo "The context view is READ-ONLY."
+            echo "Subhubs may read it but MUST NOT write to it."
+            echo ""
+            echo "See: docs/doctrine_ref/README.md"
+            exit 1
+          fi
+
+          echo "✅ No context view writes found"
+
+      # =========================================================================
+      # GUARD 9: Block Phase 1/1b resurrection
+      # =========================================================================
+      - name: Block Phase 1/1b resurrection
+        run: |
+          echo "🔒 Checking for Phase 1/1b resurrection..."
+
+          # Check if phase1 files exist (they should be deleted)
+          if [ -f "hubs/company-target/imo/middle/phases/phase1_company_matching.py" ]; then
+            echo "❌ DOCTRINE VIOLATION: phase1_company_matching.py exists"
+            echo ""
+            echo "Phase 1 (Company Matching) is DEPRECATED."
+            echo "It belongs in Company Lifecycle (CL), not Company Target."
+            exit 1
+          fi
+
+          if [ -f "hubs/company-target/imo/middle/phases/phase1b_unmatched_hold_export.py" ]; then
+            echo "❌ DOCTRINE VIOLATION: phase1b_unmatched_hold_export.py exists"
+            echo ""
+            echo "Phase 1b (Unmatched Hold) is DEPRECATED."
+            echo "It belongs in Company Lifecycle (CL), not Company Target."
+            exit 1
+          fi
+
+          if [ -f "hubs/company-target/imo/middle/utils/fuzzy.py" ]; then
+            echo "❌ DOCTRINE VIOLATION: fuzzy.py exists"
+            echo ""
+            echo "Fuzzy matching is DEPRECATED in Company Target."
+            echo "It belongs in Company Lifecycle (CL)."
+            exit 1
+          fi
+
+          echo "✅ Phase 1/1b files not resurrected"
+
+      # =========================================================================
+      # SUMMARY
+      # =========================================================================
+      - name: Guard Summary
+        run: |
+          echo ""
+          echo "═══════════════════════════════════════════════════════════════"
+          echo "  COMPANY TARGET IMO GUARD — ALL CHECKS PASSED"
+          echo "═══════════════════════════════════════════════════════════════"
+          echo ""
+          echo "  ✅ No sovereign_id references"
+          echo "  ✅ No CL table references"
+          echo "  ✅ No marketing.* writes"
+          echo "  ✅ No fuzzy matching"
+          echo "  ✅ Spine guard assertion present"
+          echo "  ✅ No retry logic"
+          echo "  ✅ Doctrine lock comment present"
+          echo "  ✅ No context view writes"
+          echo "  ✅ Phase 1/1b files deleted"
+          echo ""
+          echo "  PRD: Company Target (Execution Prep Sub-Hub) v3.0"
+          echo "  Doctrine: Spine-First Architecture"
+          echo ""
