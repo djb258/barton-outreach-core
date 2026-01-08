@@ -1,22 +1,25 @@
 # Follow-Up Prompt — Slot Resolution Ingestion
 
-**Status:** 🔴 DISABLED — DO NOT EXECUTE
+**Status:** ✅ EXECUTED → See P2_CANARY_INGESTION_VALIDATION.md
 
 ---
 
-## Prerequisite Checklist
+## Execution Summary
 
-Before enabling this prompt:
+P2 Canary Ingestion was implemented on 2026-01-08 with:
 
-- [ ] P1 Slot Structure migration applied and validated
-- [ ] Kill switch `people.slot_ingress_control` tested in staging
-- [ ] Candidate source identified (Clay, LinkedIn, Manual)
-- [ ] Error handling for rejected candidates defined
-- [ ] Human approval obtained for ingestion enablement
+- `people.slot_ingress_canary` — Canary allowlist table
+- Augmented `people.slot_can_accept_candidate()` with 6 checks
+- `people.v_candidate_canary_activity` — Observability view
+- `people.v_canary_queue_depth` — Queue depth metrics
+- Kill switch prepared (human must enable)
+
+**Migration:** `2026-01-08-people-slot-canary-ingestion.sql`  
+**Validation:** `P2_CANARY_INGESTION_VALIDATION.md`
 
 ---
 
-## Prompt (DO NOT USE UNTIL APPROVED)
+## Next Phase: P3 Slot Resolution (DISABLED)
 
 ```
 Claude Code Prompt — Slot Resolution Ingestion (Phase 2)
