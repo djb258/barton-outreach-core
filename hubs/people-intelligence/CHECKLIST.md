@@ -303,8 +303,70 @@ A failure is **blocking** if:
 
 ---
 
+---
+
+## 14. Talent Flow Compliance (TF-001)
+
+### Certification Status: CERTIFIED
+
+| Component | Status |
+|-----------|--------|
+| Doctrine Document | DONE |
+| CI Enforcement | DONE |
+| Guard Script | DONE |
+| Doctrine Tests | DONE |
+| Regression Lock | DONE |
+| Legacy Quarantine | DONE |
+
+### Invariants Enforced
+
+- [x] TF-001-A: Sensor Only (write to permitted tables only)
+- [x] TF-001-B: Signal Authority (emit permitted signals only)
+- [x] TF-001-C: Phase-Gated (DETECT → RECON → SIGNAL)
+- [x] TF-001-D: Binary Outcome (PROMOTED or QUARANTINED)
+- [x] TF-001-E: Idempotent (SHA256 deduplication)
+- [x] TF-001-F: No Acting (no scoring, no enrichment, no minting)
+- [x] TF-001-G: Kill Switch (HALT, not SKIP)
+
+### Permitted Signals
+
+- [x] SLOT_VACATED
+- [x] SLOT_BIND_REQUEST
+- [x] COMPANY_RESOLUTION_REQUIRED
+- [x] MOVEMENT_RECORDED
+
+### Forbidden Signals (Quarantined)
+
+- [x] JOB_CHANGE — QUARANTINED at meta/legacy_quarantine/movement_engine/
+- [x] STARTUP — QUARANTINED
+- [x] PROMOTION — QUARANTINED
+- [x] LATERAL — QUARANTINED
+- [x] COMPANY_CHANGE — QUARANTINED
+
+### Permitted Tables
+
+- [x] people.person_movement_history
+- [x] people.people_errors
+
+### Legacy Quarantine
+
+- [x] Legacy code moved to meta/legacy_quarantine/movement_engine/
+- [x] README.md documents quarantine reason
+- [x] No production imports from quarantine folder
+- [x] Regression test prevents forbidden signals
+
+### Documentation
+
+- [x] PRD: docs/prd/PRD_TALENT_FLOW.md
+- [x] ADR: docs/adr/ADR-TF-001_Talent_Flow_Quarantine.md
+- [x] Doctrine: hubs/people-intelligence/imo/TALENT_FLOW_DOCTRINE.md
+- [x] CI Enforcement: hubs/people-intelligence/imo/TALENT_FLOW_CI_ENFORCEMENT.md
+
+---
+
 **Last Updated**: 2026-01-08
 **Hub**: People Intelligence (04.04.02)
 **Doctrine Version**: Barton IMO v1.1
 **Migration Hash**: `678a8d99`
 **Certification Status**: FULL PASS
+**Talent Flow Certification**: TF-001 CERTIFIED
