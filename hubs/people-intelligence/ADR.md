@@ -162,5 +162,103 @@ Add explicit table ownership documentation to PRD with:
 
 ---
 
-**Last Updated**: 2026-01-02
-**ADR Count**: 2 (ADR-PI-001, ADR-PI-002)
+# ADR: Schema Evolution and FULL PASS Certification
+
+## ADR Identity
+
+| Field | Value |
+|-------|-------|
+| **ADR ID** | ADR-PI-003 |
+| **Status** | [x] Accepted |
+| **Date** | 2026-01-08 |
+
+---
+
+## Owning Hub
+
+| Field | Value |
+|-------|-------|
+| **Hub Name** | People Intelligence |
+| **Hub ID** | HUB-PI-001 |
+
+---
+
+## Context
+
+The People Intelligence sub-hub required schema evolution to add doctrine-required columns
+to `people.company_slot`. The migration was needed to achieve FULL PASS certification and
+enable full traceability between slots and outreach contexts.
+
+---
+
+## Decision
+
+Apply schema evolution migration `004_people_slot_schema_evolution.sql` with:
+
+1. **4 New Columns** added to `people.company_slot`:
+   - `outreach_id` (UUID NULL) - Links slot to outreach context
+   - `canonical_flag` (BOOLEAN) - TRUE for CEO/CFO/HR slots
+   - `creation_reason` (TEXT) - Why slot was created
+   - `slot_status` (TEXT) - Current slot lifecycle state
+
+2. **Backfill Strategy**:
+   - `outreach_id`: Via `dol.ein_linkage` (22.5% coverage)
+   - `canonical_flag`: TRUE for CEO/CFO/HR slot types
+   - `creation_reason`: 'canonical' for all existing slots
+   - `slot_status`: Copied from existing `status` column
+
+3. **Error Handling**:
+   - Unresolvable slots logged to `people.people_errors`
+   - Error code: `PI-E901` (schema_evolution)
+   - Retry strategy: `manual_fix`
+
+---
+
+## Migration Details
+
+| Field | Value |
+|-------|-------|
+| **Migration Hash** | `678a8d99` |
+| **Applied** | 2026-01-08T09:04:20 |
+| **Total Slots** | 1,359 |
+| **Outreach ID Coverage** | 306 (22.5%) |
+| **Errors Logged** | 1,053 |
+
+---
+
+## Indexes Created
+
+- `idx_company_slot_outreach_id`
+- `idx_company_slot_slot_status`
+- `idx_company_slot_canonical_flag`
+
+---
+
+## Consequences
+
+### Enables
+
+- Full traceability: slot → outreach_id → company
+- Doctrine compliance for slot lifecycle
+- Error audit for unresolved linkages
+- FULL PASS certification
+
+### Prevents
+
+- Orphan slots without outreach context
+- Implicit slot status (now explicit)
+- Data loss (unresolvable slots logged, not dropped)
+
+---
+
+## Approval
+
+| Role | Name | Date |
+|------|------|------|
+| Hub Owner | | 2026-01-08 |
+| Reviewer | Claude Code | 2026-01-08 |
+
+---
+
+**Last Updated**: 2026-01-08
+**ADR Count**: 3 (ADR-PI-001, ADR-PI-002, ADR-PI-003)

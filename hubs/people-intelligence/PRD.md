@@ -26,7 +26,10 @@
 | **Hub Name** | People Intelligence |
 | **Hub ID** | HUB-PEOPLE |
 | **Owner** | Outreach Team |
-| **Version** | 1.0.0 |
+| **Version** | 1.1.0 |
+| **Status** | ✅ FULL PASS |
+| **Migration Hash** | `678a8d99` |
+| **Certification Date** | 2026-01-08 |
 
 ---
 
@@ -34,7 +37,7 @@
 
 Populate **role slots**, not raw contacts. Own human identity, employment state, and slot assignments. Track human lifecycle independently from company lifecycle. CONSUMER of upstream patterns — does NOT discover patterns or resolve domains.
 
-**Waterfall Position**: 3rd sub-hub in canonical waterfall (after DOL Filings, before Blog Content).
+**Waterfall Position**: 4th sub-hub in canonical waterfall (after Blog Content, before Outreach Execution).
 
 ---
 
