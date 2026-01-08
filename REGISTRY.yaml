@@ -1,5 +1,5 @@
 # Hub Registry
-# Structural Instantiation v1.0.0
+# CTB-Compliant Structure v2.0.0
 # IMO-Creator Governance
 
 ---
@@ -13,11 +13,52 @@ hub:
   hub_unique_id: e46bcbf0-6719-4c68-8a38-78c36b47e3d1
   type: OUTREACH_ORCHESTRATION
   doctrine_id: "04.04"
-  version: "1.1.0"
+  version: "2.0.0"
   status: ACTIVE
   created_at: "2026-01-08T00:00:00Z"
   governance: imo-creator
   sovereign_parent: null  # This is the root hub
+  ctb_version: "1.1.0"
+  structure: CTB_COMPLIANT
+
+# =============================================================================
+# CTB STRUCTURE DECLARATION
+# =============================================================================
+
+ctb_structure:
+  src:
+    sys:
+      location: src/sys/
+      purpose: System infrastructure, bootstraps, config readers
+      altitude: 5  # Highest
+
+    data:
+      location: src/data/
+      purpose: Data layer - schemas, queries, migrations
+      altitude: 4
+      contains:
+        - schema/
+        - migrations/
+
+    app:
+      location: src/app/
+      purpose: Application logic - modules, services, workflows
+      altitude: 3
+      contains:
+        - hubs/
+        - spokes/
+
+    ai:
+      location: src/ai/
+      purpose: AI components - agents, routers, prompts
+      altitude: 2
+      status: RESERVED
+
+    ui:
+      location: src/ui/
+      purpose: User interface - pages, components
+      altitude: 1  # Lowest
+      status: RESERVED
 
 # =============================================================================
 # OWNED RESPONSIBILITIES
@@ -42,39 +83,39 @@ forbidden_responsibilities:
 sub_hubs:
   company-target:
     subhub_unique_id: 73fe8c7a-13d2-4d49-80d4-65e2350de9ab
-    location: hubs/company-target/
+    location: src/app/hubs/company-target/
     doctrine_id: "04.04.01"
     purpose: Company targeting and email pattern discovery
     status: CERTIFIED
     waterfall_position: 1
-    registry_file: hubs/company-target/REGISTRY.yaml
+    registry_file: src/app/hubs/company-target/REGISTRY.yaml
 
   dol-filings:
     subhub_unique_id: 099de3fb-5331-407a-b191-fa4aff194d33
-    location: hubs/dol-filings/
+    location: src/app/hubs/dol-filings/
     doctrine_id: "04.04.03"
     purpose: DOL Form 5500 processing and EIN linkage
     status: CERTIFIED
     waterfall_position: 2
-    registry_file: hubs/dol-filings/REGISTRY.yaml
+    registry_file: src/app/hubs/dol-filings/REGISTRY.yaml
 
   blog-content:
     subhub_unique_id: 09047fdb-3ee1-4999-b507-e400187f4a5c
-    location: hubs/blog-content/
+    location: src/app/hubs/blog-content/
     doctrine_id: "04.04.05"
     purpose: Blog content signals and engagement tracking
     status: ACTIVE
     waterfall_position: 3
-    registry_file: hubs/blog-content/REGISTRY.yaml
+    registry_file: src/app/hubs/blog-content/REGISTRY.yaml
 
   people-intelligence:
     subhub_unique_id: 2e5bf57e-4ca8-4d09-8c50-6ea785306b97
-    location: hubs/people-intelligence/
+    location: src/app/hubs/people-intelligence/
     doctrine_id: "04.04.02"
     purpose: Slot-based people intelligence and movement tracking
     status: CERTIFIED
     waterfall_position: 4
-    registry_file: hubs/people-intelligence/REGISTRY.yaml
+    registry_file: src/app/hubs/people-intelligence/REGISTRY.yaml
     certifications:
       - id: TF-001
         system: Talent Flow
@@ -83,12 +124,12 @@ sub_hubs:
 
   outreach-execution:
     subhub_unique_id: 2e83d911-91a2-4d6d-8935-af2c1f5e4e54
-    location: hubs/outreach-execution/
+    location: src/app/hubs/outreach-execution/
     doctrine_id: "04.04.04"
     purpose: Campaign execution and delivery
     status: ACTIVE
     waterfall_position: 5
-    registry_file: hubs/outreach-execution/REGISTRY.yaml
+    registry_file: src/app/hubs/outreach-execution/REGISTRY.yaml
 
 # =============================================================================
 # SPOKES (Data-Only Interfaces)
@@ -97,7 +138,7 @@ sub_hubs:
 spokes:
   company-dol:
     spoke_unique_id: 2eae5c3d-51be-47b9-962e-efd9217390b2
-    location: spokes/company-dol/
+    location: src/app/spokes/company-dol/
     connects:
       - 73fe8c7a-13d2-4d49-80d4-65e2350de9ab  # company-target
       - 099de3fb-5331-407a-b191-fa4aff194d33  # dol-filings
@@ -105,7 +146,7 @@ spokes:
 
   company-outreach:
     spoke_unique_id: 21fdbb3c-5d1a-434b-87ac-56938aa5d860
-    location: spokes/company-outreach/
+    location: src/app/spokes/company-outreach/
     connects:
       - 73fe8c7a-13d2-4d49-80d4-65e2350de9ab  # company-target
       - 2e83d911-91a2-4d6d-8935-af2c1f5e4e54  # outreach-execution
@@ -113,7 +154,7 @@ spokes:
 
   company-people:
     spoke_unique_id: c4349c1a-72d8-45ee-b9f3-29eea0c0b176
-    location: spokes/company-people/
+    location: src/app/spokes/company-people/
     connects:
       - 73fe8c7a-13d2-4d49-80d4-65e2350de9ab  # company-target
       - 2e5bf57e-4ca8-4d09-8c50-6ea785306b97  # people-intelligence
@@ -121,7 +162,7 @@ spokes:
 
   people-outreach:
     spoke_unique_id: 73474908-79f4-46a9-9b4b-701ccd77a122
-    location: spokes/people-outreach/
+    location: src/app/spokes/people-outreach/
     connects:
       - 2e5bf57e-4ca8-4d09-8c50-6ea785306b97  # people-intelligence
       - 2e83d911-91a2-4d6d-8935-af2c1f5e4e54  # outreach-execution
@@ -129,27 +170,17 @@ spokes:
 
   signal-company:
     spoke_unique_id: 937f56d5-3dca-43ce-8f0e-13535c9747d7
-    location: spokes/signal-company/
+    location: src/app/spokes/signal-company/
     connects:
       - 09047fdb-3ee1-4999-b507-e400187f4a5c  # blog-content
       - 73fe8c7a-13d2-4d49-80d4-65e2350de9ab  # company-target
     data_only: true
 
 # =============================================================================
-# OPERATIONAL COMPONENTS
+# SUPPORT FOLDERS (Not CTB Branches)
 # =============================================================================
 
-operational_components:
-  ops:
-    location: ops/
-    contains:
-      - enforcement/
-      - migrations/
-      - scripts/
-      - tests/
-      - tooling/
-      - validation/
-
+support_folders:
   docs:
     location: docs/
     contains:
@@ -158,6 +189,15 @@ operational_components:
       - audit/
       - dendron/
       - diagrams/
+
+  ops:
+    location: ops/
+    contains:
+      - enforcement/
+      - scripts/
+      - tests/
+      - tooling/
+      - validation/
 
   contexts:
     location: contexts/
@@ -189,7 +229,9 @@ waterfall:
 document_control:
   created_at: "2026-01-08T00:00:00Z"
   instantiated_at: "2026-01-08T00:00:00Z"
-  version: "1.0.0"
+  ctb_reorganized_at: "2026-01-08T00:00:00Z"
+  version: "2.0.0"
   authority: imo-creator
   author: Claude Code (IMO-Creator)
   structural_instantiation: COMPLETE
+  ctb_compliant: true

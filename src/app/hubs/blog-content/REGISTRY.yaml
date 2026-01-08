@@ -14,10 +14,13 @@ subhub:
   parent_hub_unique_id: e46bcbf0-6719-4c68-8a38-78c36b47e3d1
   doctrine_id: "04.04.05"
   type: sub-hub
-  version: "1.0.0"
+  version: "2.1.0"
   status: ACTIVE
   created_at: "2026-01-08T00:00:00Z"
   waterfall_position: 3
+  ctb_location: src/app/hubs/blog-content/
+  ctb_branch: app
+  ctb_altitude: 3
 
 # =============================================================================
 # PROCESS IDS (Immutable)

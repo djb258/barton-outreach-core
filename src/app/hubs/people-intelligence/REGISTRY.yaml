@@ -14,10 +14,13 @@ subhub:
   parent_hub_unique_id: e46bcbf0-6719-4c68-8a38-78c36b47e3d1
   doctrine_id: "04.04.02"
   type: sub-hub
-  version: "1.1.0"
+  version: "2.1.0"
   status: CERTIFIED
   created_at: "2026-01-08T00:00:00Z"
   waterfall_position: 4
+  ctb_location: src/app/hubs/people-intelligence/
+  ctb_branch: app
+  ctb_altitude: 3
   migration_hash: "678a8d99"
 
 # =============================================================================
