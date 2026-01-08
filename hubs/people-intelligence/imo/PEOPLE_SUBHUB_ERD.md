@@ -1,9 +1,11 @@
 # People Intelligence Sub-Hub — Entity Relationship Diagram
 
-**Version:** 1.0.0
+**Version:** 1.1.0
 **Generated:** 2026-01-08
 **Doctrine:** Barton IMO v1.1
 **Waterfall Position:** 4th (after Blog Content, before Outreach Execution)
+**Certification:** ✅ FULL PASS
+**Migration Hash:** `678a8d99`
 
 ---
 
