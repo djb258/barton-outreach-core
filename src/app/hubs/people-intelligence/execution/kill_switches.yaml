@@ -99,6 +99,21 @@ kill_switches:
     authority: agent_allowed
     description: Neon writes
 
+  # Slot Ingress Control (DATABASE KILL SWITCH)
+  - process_id: e1f2a3b4-c5d6-7890-4567-901234567890
+    process_name: slot_ingress
+    env_flag: PEOPLE_INTEL_SLOT_INGRESS_ENABLED
+    default_state: disabled  # OFF by default — structure only, no ingestion
+    safe_mode: full-disable
+    authority: human_only
+    description: |
+      Slot candidate ingestion kill switch.
+      Controls people.slot_ingress_control table in Neon.
+      When OFF: slot_can_accept_candidate() always returns FALSE.
+      Must be explicitly enabled by human to allow candidate ingestion.
+    database_table: people.slot_ingress_control
+    database_column: is_enabled
+
 # =============================================================================
 # GLOBAL KILL SWITCH
 # =============================================================================
