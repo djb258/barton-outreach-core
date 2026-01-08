@@ -35,6 +35,11 @@ lerna-debug.log*
 *.njsproj
 *.sln
 *.sw?
+nul
+
+# Temp files
+temp_*.txt
+*_checkpoint.json
 
 # Python
 __pycache__/

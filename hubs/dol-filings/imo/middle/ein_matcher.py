@@ -148,49 +148,69 @@ def backfill_ein(dry_run=False, threshold=0.8, limit=None):
             print(f"  {label}: {count:,}")
     print()
 
-    # Step 5: Update records
+    # ═══════════════════════════════════════════════════════════════════════
+    # DOCTRINE ENFORCEMENT (IMO v1.0)
+    # ═══════════════════════════════════════════════════════════════════════
+    # DOL is a FACTS-ONLY spoke. It may NOT write to company.company_master.
+    # EIN suggestions are routed to dol.ein_linkage for CL to consume.
+    #
+    # V-001 FIX: Removed direct UPDATE company.company_master
+    # ═══════════════════════════════════════════════════════════════════════
+
+    # Step 5: Route EIN suggestions to dol.ein_linkage (append-only)
     if not dry_run and matches:
-        print("UPDATING RECORDS...")
+        print("ROUTING EIN SUGGESTIONS TO dol.ein_linkage...")
         print("-" * 70)
 
-        updated = 0
+        routed = 0
         for match in matches:
+            # Insert into DOL's own table - CL will consume this
             cur.execute('''
-                UPDATE company.company_master
-                SET ein = %s,
-                    updated_at = %s
-                WHERE company_unique_id = %s
-                  AND ein IS NULL
+                INSERT INTO dol.ein_linkage (
+                    company_unique_id,
+                    suggested_ein,
+                    source_dol_name,
+                    match_similarity,
+                    source_city,
+                    source_state,
+                    created_at,
+                    linkage_status
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, 'PENDING')
+                ON CONFLICT (company_unique_id, suggested_ein) DO NOTHING
             ''', (
+                match['company_unique_id'],
                 match['dol_ein'],
-                datetime.now(timezone.utc),
-                match['company_unique_id']
+                match['dol_name'],
+                match['similarity'],
+                match['address_city'],
+                match['address_state'],
+                datetime.now(timezone.utc)
             ))
-            updated += cur.rowcount
+            routed += cur.rowcount
 
-            if updated % 500 == 0:
+            if routed % 500 == 0:
                 conn.commit()
-                print(f"  Updated {updated:,} records...")
+                print(f"  Routed {routed:,} suggestions...")
 
         conn.commit()
-        print(f"  Total updated: {updated:,}")
+        print(f"  Total routed to dol.ein_linkage: {routed:,}")
+        print("  [CL will consume and apply to company_master]")
         print()
     else:
-        updated = 0
+        routed = 0
         if dry_run:
-            print(f"[DRY RUN] Would update {len(matches):,} records")
+            print(f"[DRY RUN] Would route {len(matches):,} EIN suggestions to dol.ein_linkage")
             print()
 
-    # Step 6: Final count
-    cur.execute('SELECT COUNT(*) as with_ein FROM company.company_master WHERE ein IS NOT NULL')
-    after_ein = cur.fetchone()['with_ein']
+    # Step 6: Final count (read-only check)
+    cur.execute('SELECT COUNT(*) as pending FROM dol.ein_linkage WHERE linkage_status = %s', ('PENDING',))
+    pending_count = cur.fetchone()['pending']
 
     print('=' * 70)
-    print('FINAL RESULTS')
+    print('ROUTING RESULTS')
     print('=' * 70)
-    print(f"BEFORE: {with_ein:,} companies with EIN")
-    print(f"AFTER: {after_ein:,} companies with EIN")
-    print(f"NEW: {after_ein - with_ein:,} EINs backfilled")
+    print(f"EIN suggestions routed: {routed if not dry_run else 0:,}")
+    print(f"Pending in dol.ein_linkage: {pending_count:,}")
 
     if dry_run:
         print()
@@ -217,9 +237,8 @@ def backfill_ein(dry_run=False, threshold=0.8, limit=None):
 
     return {
         'matches_found': len(matches),
-        'updated': updated if not dry_run else 0,
-        'before_ein': with_ein,
-        'after_ein': after_ein
+        'routed': routed if not dry_run else 0,
+        'pending_count': pending_count
     }
 
 

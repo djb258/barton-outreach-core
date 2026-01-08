@@ -6,9 +6,28 @@ Processes DOL Form 5500, Schedule A, and violation data.
 This spoke enriches company records with:
 - Benefit plan information (Form 5500)
 - Insurance broker data (Schedule A)
-- Compliance signals
+- Compliance facts (append-only to dol.* tables)
 
-Sends signals to BIT Engine based on plan characteristics.
+═══════════════════════════════════════════════════════════════════════════════
+IMO DOCTRINE (v1.1 - Error-Only Enforcement)
+═══════════════════════════════════════════════════════════════════════════════
+
+The DOL Sub-Hub emits facts only.
+All failures are DATA DEFICIENCIES, not system failures.
+Therefore, the DOL Sub-Hub NEVER writes to AIR.
+
+DOL is a FACTS-ONLY spoke. It:
+  ✓ MAY read from company.company_master (EIN lookup)
+  ✓ MAY write to dol.* tables (append-only facts)
+  ✓ MAY write to shq.error_master (errors ONLY)
+  ✗ MAY NOT write to company.company_master (CL sovereignty)
+  ✗ MAY NOT emit BIT signals (intent routing violation)
+  ✗ MAY NOT mint new company identity
+  ✗ MAY NOT write to AIR (dol.air_log is FORBIDDEN)
+
+Geographic Scope: 8 target states only (WV, VA, PA, MD, OH, KY, DE, NC)
+Out-of-scope records are silently skipped (no error, no counter).
+═══════════════════════════════════════════════════════════════════════════════
 """
 
 from dataclasses import dataclass
@@ -18,12 +37,19 @@ import logging
 
 from ctb.sys.enrichment.pipeline_engine.wheel.bicycle_wheel import Spoke, Hub
 from ctb.sys.enrichment.pipeline_engine.wheel.wheel_result import SpokeResult, ResultStatus, FailureType
-from hub.company.bit_engine import BITEngine, SignalType
+
+# IMO Output layer - ERROR ONLY (no AIR)
+from hubs.dol_filings.imo.output.error_writer import (
+    write_error_master,
+    DOLErrorCode,
+    is_in_scope,
+    normalize_ein,
+    TARGET_STATES,
+)
 
 # Doctrine enforcement imports
 from ops.enforcement.correlation_id import validate_correlation_id, CorrelationIDError
 from ops.enforcement.hub_gate import validate_company_anchor, HubGateError, GateLevel
-from ops.enforcement.signal_dedup import should_emit_signal, get_deduplicator
 
 
 logger = logging.getLogger(__name__)
@@ -65,17 +91,27 @@ class DOLNodeSpoke(Spoke):
     Processes Department of Labor data to:
     1. Match Form 5500 filings to companies by EIN (Tool 18)
     2. Extract insurance broker data from Schedule A
-    3. Send signals to BIT Engine for intent scoring
+    3. Write failures to shq.error_master (ERROR-ONLY, NO AIR)
 
     EIN Matching (Tool 18):
         DOCTRINE: Exact match only. No fuzzy. Fail closed.
         Uses Company Hub's find_company_by_ein for production lookup.
+
+    IMO Enforcement (v1.1 - Error-Only):
+        - DOL emits FACTS ONLY
+        - NO BIT signals
+        - NO CL writes
+        - NO AIR logging (FORBIDDEN)
+        - ALL failures route to shq.error_master
+        
+    Geographic Scope:
+        8 target states: WV, VA, PA, MD, OH, KY, DE, NC
+        Out-of-scope records are silently skipped.
     """
 
     def __init__(
         self,
         hub: Hub,
-        bit_engine: Optional[BITEngine] = None,
         company_pipeline=None
     ):
         """
@@ -83,21 +119,20 @@ class DOLNodeSpoke(Spoke):
 
         Args:
             hub: Parent hub instance
-            bit_engine: BIT Engine for signals
             company_pipeline: CompanyPipeline for EIN matching
         """
         super().__init__(name="dol_node", hub=hub)
-        self.bit_engine = bit_engine or BITEngine()
         self._company_pipeline = company_pipeline
 
         # Track stats
         self.stats = {
             'total_processed': 0,
+            'skipped_out_of_scope': 0,  # Geographic filter
             'matched_by_ein': 0,
             'ein_lookup_misses': 0,
+            'errors_written': 0,  # Errors to shq.error_master
             'large_plans': 0,
             'schedule_a_records': 0,
-            'signals_sent': 0,
             'broker_changes_detected': 0
         }
 
@@ -148,7 +183,11 @@ class DOLNodeSpoke(Spoke):
         """
         Process a Form 5500 filing.
 
+        GEOGRAPHIC FILTER: Only process records in 8 target states.
+        Out-of-scope records are silently skipped (no error, no counter).
+
         HUB GATE: Validates company anchor after EIN lookup.
+        ERROR-ONLY: Failures route to shq.error_master (no AIR).
         """
         if not record.ein:
             return SpokeResult(
@@ -185,36 +224,17 @@ class DOLNodeSpoke(Spoke):
 
         self.stats['matched_by_ein'] += 1
 
-        # Send base signal for any 5500 filing (with deduplication)
-        self._send_signal(
-            SignalType.FORM_5500_FILED,
-            company_id,
-            metadata={'filing_id': record.filing_id, 'plan_name': record.plan_name},
-            correlation_id=correlation_id
-        )
+        # SUCCESS: Record matched, no error logging needed
+        # Facts are stored in dol.form_5500 table directly (not via AIR)
 
-        # Additional signal for large plans (with deduplication)
+        # Track large plans
         if record.total_participants >= 500:
             self.stats['large_plans'] += 1
-            self._send_signal(
-                SignalType.LARGE_PLAN,
-                company_id,
-                metadata={
-                    'participants': record.total_participants,
-                    'assets': record.total_assets
-                },
-                correlation_id=correlation_id
-            )
 
         return SpokeResult(
             status=ResultStatus.SUCCESS,
             data=record,
-            hub_signal={
-                'signal_type': 'form_5500_processed',
-                'impact': 5.0,
-                'source': self.name,
-                'company_id': company_id
-            },
+            # No hub_signal - DOL emits facts only
             metrics={
                 'ein': record.ein,
                 'participants': record.total_participants,
@@ -273,20 +293,8 @@ class DOLNodeSpoke(Spoke):
                         f"{prior_broker} → {record.broker_name}"
                     )
 
-                    # Emit BROKER_CHANGE signal if company anchor exists
-                    if company_id:
-                        self._send_signal(
-                            SignalType.BROKER_CHANGE,
-                            company_id,
-                            metadata={
-                                'filing_id': record.filing_id,
-                                'prior_broker': prior_broker,
-                                'new_broker': record.broker_name,
-                                'plan_year': current_year,
-                                'broker_fees': record.broker_fees
-                            },
-                            correlation_id=correlation_id
-                        )
+                    # Broker change is a FACT, stored in dol.schedule_a
+                    # NO AIR logging - facts go to DOL tables directly
 
         # Cache current broker for future comparisons
         if ein_normalized not in self._broker_cache:
@@ -296,12 +304,7 @@ class DOLNodeSpoke(Spoke):
         return SpokeResult(
             status=ResultStatus.SUCCESS,
             data=record,
-            hub_signal={
-                'signal_type': 'broker_change' if broker_changed else 'schedule_a_processed',
-                'impact': 7.0 if broker_changed else 0.0,
-                'source': self.name,
-                'company_id': company_id
-            } if broker_changed else None,
+            # No hub_signal - DOL emits facts only (IMO v1.0)
             metrics={
                 'broker_name': record.broker_name,
                 'broker_fees': record.broker_fees,
@@ -383,61 +386,16 @@ class DOLNodeSpoke(Spoke):
         logger.debug(f"EIN {ein_normalized} not found in any source - FAIL CLOSED")
         return None
 
-    def _send_signal(
-        self,
-        signal_type: SignalType,
-        company_id: str,
-        metadata: Dict = None,
-        correlation_id: str = None
-    ):
-        """
-        Send a signal to the BIT Engine with deduplication.
-
-        SIGNAL IDEMPOTENCY:
-        - 24h window for operational signals (People Spoke)
-        - 365d window for structural signals (DOL, executive changes)
-        - Duplicate signals are silently dropped
-
-        Args:
-            signal_type: Type of signal to emit
-            company_id: Company anchor ID
-            metadata: Additional signal metadata
-            correlation_id: Correlation ID for tracing
-        """
-        if not self.bit_engine:
-            return
-
-        # SIGNAL IDEMPOTENCY: Check for duplicate before emitting
-        entity_id = company_id  # DOL signals are company-level
-        signal_name = signal_type.value if hasattr(signal_type, 'value') else str(signal_type)
-
-        if not should_emit_signal(signal_name, entity_id, correlation_id):
-            logger.debug(
-                f"Duplicate signal dropped: {signal_name} for company {company_id} "
-                f"(correlation: {correlation_id})"
-            )
-            self.stats['signals_dropped'] = self.stats.get('signals_dropped', 0) + 1
-            return
-
-        # Signal is not a duplicate - emit it
-        self.bit_engine.create_signal(
-            signal_type=signal_type,
-            company_id=company_id,
-            source_spoke=self.name,
-            metadata=metadata or {}
-        )
-        self.stats['signals_sent'] += 1
-
     def get_stats(self) -> Dict[str, Any]:
         """Get processing statistics"""
         return {
             'total_processed': self.stats['total_processed'],
+            'skipped_out_of_scope': self.stats.get('skipped_out_of_scope', 0),
             'matched_by_ein': self.stats['matched_by_ein'],
             'match_rate': f"{self.stats['matched_by_ein'] / max(self.stats['total_processed'], 1) * 100:.1f}%",
             'large_plans': self.stats['large_plans'],
             'schedule_a_records': self.stats['schedule_a_records'],
-            'signals_sent': self.stats['signals_sent'],
-            'signals_dropped': self.stats.get('signals_dropped', 0),  # Signal idempotency
+            'errors_written': self.stats.get('errors_written', 0),  # v1.1: errors to shq.error_master
             'broker_changes_detected': self.stats.get('broker_changes_detected', 0)
         }
 

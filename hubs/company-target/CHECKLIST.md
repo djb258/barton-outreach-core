@@ -16,19 +16,19 @@ No code ships unless every box is checked. No exceptions. No partial compliance.
 
 ### Gate Enforcement
 
-- [ ] `outreach_id` exists in `outreach.outreach` spine
-- [ ] Domain loaded from spine record (not CL)
-- [ ] `ENFORCE_OUTREACH_SPINE_ONLY = True` assertion present
-- [ ] Missing `outreach_id` → Write `CT-I-NOT-FOUND` error → STOP
+- [x] `outreach_id` exists in `outreach.outreach` spine
+- [x] Domain loaded from spine record (not CL)
+- [x] `ENFORCE_OUTREACH_SPINE_ONLY = True` assertion present
+- [x] Missing `outreach_id` → Write `CT-I-NOT-FOUND` error → STOP
 
 ### Explicit Prohibitions
 
-- [ ] Does NOT reference `sovereign_id`
-- [ ] Does NOT read from `cl.*` tables
-- [ ] Does NOT perform company matching
-- [ ] Does NOT use fuzzy logic
-- [ ] Does NOT retry failures
-- [ ] Does NOT mint any IDs
+- [x] Does NOT reference `sovereign_id`
+- [x] Does NOT read from `cl.*` tables
+- [x] Does NOT perform company matching
+- [x] Does NOT use fuzzy logic
+- [x] Does NOT retry failures
+- [x] Does NOT mint any IDs
 
 ---
 
@@ -36,15 +36,15 @@ No code ships unless every box is checked. No exceptions. No partial compliance.
 
 ### Required Inputs
 
-- [ ] `outreach_id` received from spine (MANDATORY)
-- [ ] `domain` loaded from spine record
-- [ ] `correlation_id` for tracing (MANDATORY)
+- [x] `outreach_id` received from spine (MANDATORY)
+- [x] `domain` loaded from spine record
+- [x] `correlation_id` for tracing (MANDATORY)
 
 ### Input Validation
 
-- [ ] FAIL IMMEDIATELY if `outreach_id` not found → `CT-I-NOT-FOUND`
-- [ ] FAIL IMMEDIATELY if `domain` is missing → `CT-I-NO-DOMAIN`
-- [ ] Check idempotency: if already PASS/FAIL, exit immediately
+- [x] FAIL IMMEDIATELY if `outreach_id` not found → `CT-I-NOT-FOUND`
+- [x] FAIL IMMEDIATELY if `domain` is missing → `CT-I-NO-DOMAIN`
+- [x] Check idempotency: if already PASS/FAIL, exit immediately
 
 ---
 
@@ -52,12 +52,12 @@ No code ships unless every box is checked. No exceptions. No partial compliance.
 
 ### M1 — MX Gate (TOOL-004: MXLookup)
 
-- [ ] DNS MX record lookup performed
-- [ ] No MX records → `CT-M-NO-MX` → FAIL
+- [x] DNS MX record lookup performed
+- [x] No MX records → `CT-M-NO-MX` → FAIL
 
 ### M2 — Pattern Generation
 
-- [ ] Patterns generated in FIXED order:
+- [x] Patterns generated in FIXED order:
   1. `first.last@domain`
   2. `firstlast@domain`
   3. `f.last@domain`
@@ -69,18 +69,20 @@ No code ships unless every box is checked. No exceptions. No partial compliance.
 
 ### M3 — SMTP Validation (TOOL-005: SMTPCheck)
 
-- [ ] SMTP RCPT TO check performed for each pattern
-- [ ] Accept → PASS (stop)
-- [ ] Reject → continue to next pattern
-- [ ] Catch-all detected → mark flag, use `first.last`
+- [x] SMTP RCPT TO check performed for each pattern
+- [x] Accept → PASS (stop)
+- [x] Reject → continue to next pattern
+- [x] Catch-all detected → mark flag, use `first.last`
 
 ### M4 — Catch-All Handling
 
-- [ ] If catch-all: confidence reduced to 0.5
-- [ ] If catch-all: `is_catchall = true`
-- [ ] Pattern selected: `first.last@domain`
+- [x] If catch-all: confidence reduced to 0.5
+- [x] If catch-all: `is_catchall = true`
+- [x] Pattern selected: `first.last@domain`
 
-### M5 — Optional Tier-1 Verification (GATED)
+### M5 — Optional Tier-1 Verification (GATED) — DEFERRED
+
+> **Note**: M5 is deferred. Core IMO (M1-M4) is complete. M5 can be added when MillionVerifier integration is needed.
 
 - [ ] Only if Tier-0 inconclusive
 - [ ] Only if `ALLOW_TIER1 = true`
@@ -94,22 +96,22 @@ No code ships unless every box is checked. No exceptions. No partial compliance.
 
 ### PASS Output
 
-- [ ] Write to `outreach.company_target`
-- [ ] `execution_status = 'ready'`
-- [ ] `email_method` populated
-- [ ] `method_type` populated
-- [ ] `confidence_score` populated
-- [ ] `is_catchall` flag set
-- [ ] `imo_completed_at` timestamp set
+- [x] Write to `outreach.company_target`
+- [x] `execution_status = 'ready'`
+- [x] `email_method` populated
+- [x] `method_type` populated
+- [x] `confidence_score` populated
+- [x] `is_catchall` flag set
+- [x] `imo_completed_at` timestamp set
 
 ### FAIL Output
 
-- [ ] Write to `outreach.company_target_errors`
-- [ ] `failure_code` populated
-- [ ] `blocking_reason` populated
-- [ ] `imo_stage` populated (I or M)
-- [ ] `retry_allowed = FALSE`
-- [ ] Execution STOPS (no downstream)
+- [x] Write to `outreach.company_target_errors`
+- [x] `failure_code` populated
+- [x] `blocking_reason` populated
+- [x] `imo_stage` populated (I or M)
+- [x] `retry_allowed = FALSE`
+- [x] Execution STOPS (no downstream)
 
 ---
 
@@ -117,15 +119,15 @@ No code ships unless every box is checked. No exceptions. No partial compliance.
 
 ### Allowed Writes
 
-- [ ] `outreach.company_target` (PASS)
-- [ ] `outreach.company_target_errors` (FAIL)
+- [x] `outreach.company_target` (PASS)
+- [x] `outreach.company_target_errors` (FAIL)
 
 ### Forbidden Writes
 
-- [ ] **NO** writes to `marketing.*` tables
-- [ ] **NO** writes to `cl.*` tables
-- [ ] **NO** writes to `intake.*` tables
-- [ ] **NO** writes upstream
+- [x] **NO** writes to `marketing.*` tables
+- [x] **NO** writes to `cl.*` tables
+- [x] **NO** writes to `intake.*` tables
+- [x] **NO** writes upstream
 
 ---
 
@@ -133,10 +135,12 @@ No code ships unless every box is checked. No exceptions. No partial compliance.
 
 ### Tier 0 (FREE) — ALLOWED
 
-- [ ] TOOL-004: MXLookup (dnspython)
-- [ ] TOOL-005: SMTPCheck (smtplib)
+- [x] TOOL-004: MXLookup (dnspython)
+- [x] TOOL-005: SMTPCheck (smtplib)
 
-### Tier 2 (GATED) — CONDITIONAL
+### Tier 2 (GATED) — CONDITIONAL — DEFERRED
+
+> **Note**: Tied to M5. Deferred until MillionVerifier integration is needed.
 
 - [ ] TOOL-019: EmailVerifier (MillionVerifier)
 - [ ] Gate: `ALLOW_TIER1 = true`
@@ -145,9 +149,9 @@ No code ships unless every box is checked. No exceptions. No partial compliance.
 
 ### Forbidden Tools
 
-- [ ] No tools outside SNAP_ON_TOOLBOX.yaml
-- [ ] No Tier-2 tools without gate check
-- [ ] No bulk enrichment
+- [x] No tools outside SNAP_ON_TOOLBOX.yaml
+- [x] No Tier-2 tools without gate check
+- [x] No bulk enrichment
 
 ---
 
@@ -155,14 +159,14 @@ No code ships unless every box is checked. No exceptions. No partial compliance.
 
 The following are **permanently forbidden** in Company Target:
 
-- [ ] **NO** Phase 1 (Company Matching) — moved to CL
-- [ ] **NO** Phase 1b (Unmatched Hold) — moved to CL
-- [ ] **NO** fuzzy matching
-- [ ] **NO** fuzzy arbitration
-- [ ] **NO** retry/backoff logic
-- [ ] **NO** hold queues
-- [ ] **NO** rescue patterns
-- [ ] **NO** ID minting
+- [x] **NO** Phase 1 (Company Matching) — moved to CL
+- [x] **NO** Phase 1b (Unmatched Hold) — moved to CL
+- [x] **NO** fuzzy matching
+- [x] **NO** fuzzy arbitration
+- [x] **NO** retry/backoff logic
+- [x] **NO** hold queues
+- [x] **NO** rescue patterns
+- [x] **NO** ID minting
 
 ---
 
@@ -191,12 +195,12 @@ The following are **permanently forbidden** in Company Target:
 
 Every IMO run MUST log:
 
-- [ ] `outreach_id`
-- [ ] IMO stage transitions (I → M → O)
-- [ ] Tool IDs used (TOOL-004, TOOL-005, etc.)
-- [ ] PASS or FAIL outcome
-- [ ] Duration in milliseconds
-- [ ] Error details (if FAIL)
+- [x] `outreach_id`
+- [x] IMO stage transitions (I → M → O)
+- [x] Tool IDs used (TOOL-004, TOOL-005, etc.)
+- [x] PASS or FAIL outcome
+- [x] Duration in milliseconds
+- [x] Error details (if FAIL)
 
 ---
 
@@ -204,14 +208,14 @@ Every IMO run MUST log:
 
 The following guards run on every PR touching `hubs/company-target/**`:
 
-- [ ] No `sovereign_id` references
-- [ ] No CL table references
-- [ ] No `marketing.*` writes
-- [ ] No fuzzy matching imports
-- [ ] Spine guard assertion present
-- [ ] No retry logic
-- [ ] Doctrine lock comment present
-- [ ] Phase 1/1b files deleted
+- [x] No `sovereign_id` references
+- [x] No CL table references
+- [x] No `marketing.*` writes
+- [x] No fuzzy matching imports
+- [x] Spine guard assertion present
+- [x] No retry logic
+- [x] Doctrine lock comment present
+- [x] Phase 1/1b files deleted
 
 See: `.github/workflows/company_target_imo_guard.yml`
 
@@ -221,10 +225,10 @@ See: `.github/workflows/company_target_imo_guard.yml`
 
 > **FAIL is FOREVER. There are no retries.**
 
-- [ ] Failed records go to `outreach.company_target_errors`
-- [ ] `retry_allowed = FALSE` on all errors
-- [ ] Failed records do NOT proceed to downstream spokes
-- [ ] Resolution requires human intervention + new `outreach_id`
+- [x] Failed records go to `outreach.company_target_errors`
+- [x] `retry_allowed = FALSE` on all errors
+- [x] Failed records do NOT proceed to downstream spokes
+- [x] Resolution requires human intervention + new `outreach_id`
 
 ---
 

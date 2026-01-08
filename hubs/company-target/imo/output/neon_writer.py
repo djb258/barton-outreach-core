@@ -10,8 +10,11 @@ Per Doctrine:
 
 Target Tables:
 - marketing.company_master: Company records (the central axle)
-- funnel.bit_signal_log: BIT Engine signals
-- funnel.suspect_universe: Companies in funnel
+- marketing.company_slot: Executive slots
+- marketing.people_master: Contact records
+
+NOTE: BIT operations have moved to bit_writer.py (Spine-First Architecture v1.1)
+      BIT signals/scores now write to outreach.bit_signals and outreach.bit_scores
 
 Barton ID Format: 04.04.01.XX.XXXXX.XXX
 """
@@ -176,28 +179,8 @@ class CompanyNeonWriter:
         WHERE company_unique_id = %(company_unique_id)s
     """
 
-    INSERT_BIT_SIGNAL_SQL = """
-        INSERT INTO funnel.bit_signal_log (
-            signal_id,
-            company_unique_id,
-            signal_type,
-            signal_impact,
-            source_spoke,
-            correlation_id,
-            signal_hash,
-            created_at
-        ) VALUES (
-            %(signal_id)s,
-            %(company_unique_id)s,
-            %(signal_type)s,
-            %(signal_impact)s,
-            %(source_spoke)s,
-            %(correlation_id)s,
-            %(signal_hash)s,
-            %(created_at)s
-        )
-        ON CONFLICT (signal_hash) DO NOTHING
-    """
+    # NOTE: INSERT_BIT_SIGNAL_SQL removed - BIT operations moved to bit_writer.py
+    # BIT signals now write to outreach.bit_signals (Spine-First Architecture v1.1)
 
     LOAD_COMPANIES_SQL = """
         SELECT
@@ -514,53 +497,27 @@ class CompanyNeonWriter:
         correlation_id: str
     ) -> WriteResult:
         """
-        Log a BIT signal to funnel.bit_signal_log.
+        DEPRECATED: Use bit_writer.py instead.
 
-        Uses signal_hash for deduplication (Tool 10).
+        BIT signals now write to outreach.bit_signals via BITWriter class.
+        This method is kept for backwards compatibility but will raise a warning.
+
+        Migration: Spine-First Architecture v1.1 (2026-01-08)
         """
-        validate_correlation_id(correlation_id)
+        import warnings
+        warnings.warn(
+            "log_bit_signal is deprecated. Use bit_writer.BITWriter.write_signal() instead. "
+            "BIT operations moved to outreach.bit_signals (Spine-First Architecture v1.1)",
+            DeprecationWarning,
+            stacklevel=2
+        )
 
-        start_time = time.time()
-        result = WriteResult(success=False, table_name="funnel.bit_signal_log")
-
-        try:
-            conn = self._get_connection()
-            with conn.cursor() as cursor:
-                now = datetime.now()
-
-                # Generate signal hash for deduplication (24h window)
-                window_date = now.strftime("%Y-%m-%d")
-                hash_input = f"{signal_type}:{company_id}:{window_date}"
-                signal_hash = hashlib.sha256(hash_input.encode()).hexdigest()[:32]
-
-                # Generate signal ID
-                import uuid
-                signal_id = f"04.04.01.BIT.{uuid.uuid4().hex[:8].upper()}"
-
-                cursor.execute(self.INSERT_BIT_SIGNAL_SQL, {
-                    'signal_id': signal_id,
-                    'company_unique_id': company_id,
-                    'signal_type': signal_type,
-                    'signal_impact': signal_impact,
-                    'source_spoke': source_spoke,
-                    'correlation_id': correlation_id,
-                    'signal_hash': signal_hash,
-                    'created_at': now
-                })
-
-                # ON CONFLICT DO NOTHING means rowcount=0 if duplicate
-                result.records_written = cursor.rowcount
-                conn.commit()
-                result.success = True
-
-        except Exception as e:
-            logger.error(f"Failed to log BIT signal: {e}")
-            result.errors.append(str(e))
-            if self._connection:
-                self._connection.rollback()
-
-        result.duration_seconds = time.time() - start_time
-        return result
+        # Return failure to force migration to new writer
+        return WriteResult(
+            success=False,
+            table_name="DEPRECATED",
+            errors=["Method deprecated. Use bit_writer.BITWriter.write_signal() instead."]
+        )
 
     # -------------------------------------------------------------------------
     # READ OPERATIONS (Bootstrap & Lookup)

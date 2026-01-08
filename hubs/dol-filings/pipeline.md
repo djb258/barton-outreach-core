@@ -1,10 +1,20 @@
 # DOL Filings — Pipeline Definition
 
+> **IMO DOCTRINE v1.1 (Error-Only Enforcement)**
+> 
+> The DOL Sub-Hub emits facts only.
+> All failures are DATA DEFICIENCIES, not system failures.
+> Therefore, the DOL Sub-Hub NEVER writes to AIR.
+>
+> **AIR logging is FORBIDDEN.** All failures route to `shq.error_master`.
+> **Geographic scope:** 8 target states (WV, VA, PA, MD, OH, KY, DE, NC)
+
 ## Pipeline Flow
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    DOL FILINGS PIPELINE                      │
+│               (IMO Facts-Only Architecture)                  │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -29,7 +39,7 @@
 ┌─────────────────────────────────────────────────────────────┐
 │ MATCH: EIN Matching (Exact Only)                             │
 │ ─────────────────────────────────────────────────────────── │
-│ • Query company_master by EIN                               │
+│ • Query company_master by EIN (READ ONLY)                   │
 │ • EXACT MATCH ONLY — no fuzzy                               │
 │ • No retries on mismatch                                    │
 │ • Doctrine: Fail closed                                     │
@@ -51,18 +61,25 @@
 ┌─────────────────────────┐    ┌─────────────────────────┐
 │ ATTACH: Link Filing     │    │ LOG: Unmatched Filing   │
 │ ─────────────────────── │    │ ─────────────────────── │
-│ • Attach to company     │    │ • Log to error_log      │
-│ • Store in form_5500    │    │ • Do NOT retry          │
-│ • Store in schedule_a   │    │ • STOP processing       │
-└────────────┬────────────┘    └─────────────────────────┘
-             │
+│ • Attach to company     │    │ • Write to              │
+│ • Store in dol.form_5500│    │   shq.error_master ONLY │
+│ • Store in dol.schedule_a│   │ • NO AIR LOGGING        │
+└────────────┬────────────┘    │ • STOP processing       │
+             │                 └─────────────────────────┘
              ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ EMIT: BIT Signals                                            │
+│ OUTPUT: Store Facts (IMO Output Layer - ERROR ONLY)          │
 │ ─────────────────────────────────────────────────────────── │
-│ • FORM_5500_FILED (+5.0)                                    │
-│ • LARGE_PLAN (+8.0) if participants >= 100                  │
-│ • BROKER_CHANGE (+7.0) if broker differs from prior year    │
+│ • Facts stored directly in dol.* tables                     │
+│ • FORM_5500 → dol.form_5500                                 │
+│ • SCHEDULE_A → dol.schedule_a                               │
+│ • EIN_LINKAGE → dol.ein_linkage                             │
+│                                                             │
+│ ╔═══════════════════════════════════════════════════════╗   │
+│ ║ ❌ AIR LOGGING IS FORBIDDEN                           ║   │
+│ ║ ❌ NO dol.air_log writes                              ║   │
+│ ║ ✅ All failures route to shq.error_master ONLY        ║   │
+│ ╚═══════════════════════════════════════════════════════╝   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -76,5 +93,38 @@
 | Form 5500-SF Importer | `imo/middle/importers/import_5500_sf.py` |
 | Schedule A Importer | `imo/middle/importers/import_schedule_a.py` |
 | EIN Matcher | `imo/middle/ein_matcher.py` |
-| Form 5500 Processor | `imo/middle/processors/form5500_processor.py` |
-| Schedule A Processor | `imo/middle/processors/schedule_a_processor.py` |
+| DOL Hub Spoke | `imo/middle/dol_hub.py` |
+| Error Writer | `imo/output/error_writer.py` |
+| Doctrine Guards | `imo/middle/doctrine_guards.py` |
+
+---
+
+## IMO Enforcement Boundaries (v1.1 - Error-Only)
+
+| Operation | Allowed? | Target |
+|-----------|----------|--------|
+| READ company_master | ✅ YES | EIN lookup |
+| WRITE company_master | ❌ NO | CL sovereignty |
+| WRITE dol.* tables | ✅ YES | Append-only facts |
+| WRITE shq.error_master | ✅ YES | Errors ONLY |
+| WRITE dol.air_log | ❌ NO | AIR FORBIDDEN |
+| EMIT BIT signals | ❌ NO | Facts-only spoke |
+
+---
+
+## Geographic Scope
+
+DOL Sub-Hub processes **only 8 target states**:
+
+| State | Region |
+|-------|--------|
+| WV | Appalachian |
+| VA | Mid-Atlantic |
+| PA | Mid-Atlantic |
+| MD | Mid-Atlantic |
+| OH | Midwest |
+| KY | Appalachian |
+| DE | Mid-Atlantic |
+| NC | Southeast |
+
+**Out-of-scope records are silently skipped** (no error, no counter, no AIR).
