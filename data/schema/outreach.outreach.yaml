@@ -1,0 +1,110 @@
+# AI-Ready Schema Declaration
+# IMO-Creator Data Declaration Phase
+# Table: outreach.outreach
+
+---
+
+# =============================================================================
+# TABLE IDENTITY
+# =============================================================================
+
+table:
+  table_unique_id: a17f12b4-1d42-431c-9e58-7954270d085a
+  schema: outreach
+  name: outreach
+  qualified_name: outreach.outreach
+  description: |
+    Master spine table for the Outreach program. Every company that passes
+    the CL identity gate gets an outreach_id minted here. All sub-hub tables
+    (company_target, dol, people, blog) FK to outreach_id.
+  
+  owning_hub_unique_id: e46bcbf0-6719-4c68-8a38-78c36b47e3d1
+  owning_subhub_unique_id: null  # Hub-level table, not sub-hub owned
+  
+  source_of_truth: Neon PostgreSQL (barton-outreach-cc)
+  row_identity_strategy: outreach_id (UUID, auto-generated)
+  
+  doctrine_id: "OUT.SPINE.001"
+  created_at: "2026-01-06"
+
+# =============================================================================
+# COLUMNS (AI-Ready)
+# =============================================================================
+
+columns:
+  - column_unique_id: a17f12b4-1d42-431c-9e58-7954270d085a-01
+    name: outreach_id
+    description: Primary identity for Outreach. All sub-hubs FK to this.
+    data_type: UUID
+    format: UUID v4
+    nullable: false
+    semantic_role: identifier
+    is_primary_key: true
+
+  - column_unique_id: a17f12b4-1d42-431c-9e58-7954270d085a-02
+    name: sovereign_id
+    description: |
+      Receipt back to cl.company_identity.company_unique_id.
+      Sub-hubs do NOT see this - they only use outreach_id.
+    data_type: UUID
+    format: UUID v4
+    nullable: false
+    semantic_role: foreign_key
+    references:
+      table: cl.company_identity
+      column: company_unique_id
+
+  - column_unique_id: a17f12b4-1d42-431c-9e58-7954270d085a-03
+    name: created_at
+    description: Timestamp when outreach_id was minted
+    data_type: TIMESTAMPTZ
+    format: ISO-8601
+    nullable: false
+    semantic_role: attribute
+    default: now()
+
+  - column_unique_id: a17f12b4-1d42-431c-9e58-7954270d085a-04
+    name: updated_at
+    description: Timestamp of last update
+    data_type: TIMESTAMPTZ
+    format: ISO-8601
+    nullable: false
+    semantic_role: attribute
+    default: now()
+
+# =============================================================================
+# RELATIONSHIPS
+# =============================================================================
+
+relationships:
+  - type: foreign_key
+    from_column: sovereign_id
+    to_table: cl.company_identity
+    to_column: company_unique_id
+    cardinality: many-to-one
+    on_delete: RESTRICT
+    description: Links to Company Lifecycle sovereign identity
+
+  - type: referenced_by
+    from_table: outreach.company_target
+    from_column: outreach_id
+    to_column: outreach_id
+    cardinality: one-to-many
+    description: Company Target records FK to this spine
+
+  - type: referenced_by
+    from_table: outreach.people
+    from_column: outreach_id
+    to_column: outreach_id
+    cardinality: one-to-many
+    description: People records FK to this spine
+
+# =============================================================================
+# DOCUMENT CONTROL
+# =============================================================================
+
+document_control:
+  created_at: "2026-01-08"
+  phase: Data Declaration
+  authority: imo-creator
+  author: Claude Code (IMO-Creator)

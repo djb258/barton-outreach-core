@@ -1,0 +1,132 @@
+# Execution Wiring - DOL Filings Sub-Hub
+# IMO-Creator Execution Wiring Phase
+# subhub_unique_id: 099de3fb-5331-407a-b191-fa4aff194d33
+
+---
+
+# =============================================================================
+# PROCESS → EXECUTABLE BINDINGS
+# =============================================================================
+
+bindings:
+  # Filing Ingestion
+  - process_id: 74d8abef-b115-4329-b326-09543923e230
+    process_name: filing_ingestion
+    execution_type: script
+    executable_path: hubs/dol-filings/imo/input/
+    runtime: python
+    invocation_method: sdk
+    status: DECLARED_BUT_NOT_IMPLEMENTED
+
+  # Filing Parsing
+  - process_id: e77f10cf-0a86-4874-8826-9ff28e151122
+    process_name: filing_parsing
+    execution_type: script
+    executable_path: hubs/dol-filings/imo/middle/processors/
+    runtime: python
+    invocation_method: sdk
+    status: IMPLEMENTED
+
+  # EIN Matching
+  - process_id: 74dc7e12-a1e5-467e-9a47-ff6be96bc6e8
+    process_name: ein_matching
+    execution_type: script
+    executable_path: hubs/dol-filings/imo/middle/ein_matcher.py
+    runtime: python
+    invocation_method: sdk
+    status: IMPLEMENTED
+
+  # Schedule A Extraction
+  - process_id: 11c66c19-e6a7-4bbd-9949-7e2a171ca6ea
+    process_name: schedule_a_extraction
+    execution_type: script
+    executable_path: hubs/dol-filings/imo/middle/processors/
+    runtime: python
+    invocation_method: sdk
+    status: IMPLEMENTED
+
+  # Renewal Calculation
+  - process_id: 50f159ee-85df-4d8e-98e7-5d0f63d30fea
+    process_name: renewal_calculation
+    execution_type: script
+    executable_path: hubs/dol-filings/imo/middle/dol_hub.py
+    runtime: python
+    invocation_method: sdk
+    status: IMPLEMENTED
+
+  # Output
+  - process_id: 1ada5507-9de2-4a90-a24e-a14ed5d23e97
+    process_name: output
+    execution_type: script
+    executable_path: hubs/dol-filings/imo/output/
+    runtime: python
+    invocation_method: sdk
+    status: DECLARED_BUT_NOT_IMPLEMENTED
+
+# =============================================================================
+# KILL SWITCHES
+# =============================================================================
+
+kill_switches:
+  - process_id: 74d8abef-b115-4329-b326-09543923e230
+    process_name: filing_ingestion
+    env_flag: DOL_FILING_INGEST_ENABLED
+    default_state: enabled
+    safe_mode: noop
+    authority: agent_allowed
+
+  - process_id: e77f10cf-0a86-4874-8826-9ff28e151122
+    process_name: filing_parsing
+    env_flag: DOL_FILING_PARSE_ENABLED
+    default_state: enabled
+    safe_mode: dry-run
+    authority: agent_allowed
+
+  - process_id: 74dc7e12-a1e5-467e-9a47-ff6be96bc6e8
+    process_name: ein_matching
+    env_flag: DOL_EIN_MATCH_ENABLED
+    default_state: enabled
+    safe_mode: dry-run
+    authority: agent_allowed
+
+  - process_id: 11c66c19-e6a7-4bbd-9949-7e2a171ca6ea
+    process_name: schedule_a_extraction
+    env_flag: DOL_SCHEDULE_A_ENABLED
+    default_state: enabled
+    safe_mode: dry-run
+    authority: agent_allowed
+
+  - process_id: 50f159ee-85df-4d8e-98e7-5d0f63d30fea
+    process_name: renewal_calculation
+    env_flag: DOL_RENEWAL_ENABLED
+    default_state: enabled
+    safe_mode: dry-run
+    authority: agent_allowed
+
+  - process_id: 1ada5507-9de2-4a90-a24e-a14ed5d23e97
+    process_name: output
+    env_flag: DOL_OUTPUT_ENABLED
+    default_state: enabled
+    safe_mode: dry-run
+    authority: agent_allowed
+
+# =============================================================================
+# GLOBAL KILL SWITCH
+# =============================================================================
+
+global_kill_switch:
+  env_flag: DOL_FILINGS_GLOBAL_ENABLED
+  default_state: enabled
+  safe_mode: full-disable
+  authority: human_only
+  description: Disables entire DOL Filings sub-hub
+
+# =============================================================================
+# DOCUMENT CONTROL
+# =============================================================================
+
+document_control:
+  created_at: "2026-01-08"
+  phase: Execution Wiring
+  authority: imo-creator
+  author: Claude Code (IMO-Creator)

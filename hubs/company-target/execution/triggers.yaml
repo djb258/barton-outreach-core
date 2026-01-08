@@ -1,0 +1,84 @@
+# Triggers - Company Target Sub-Hub
+# IMO-Creator Execution Wiring Phase
+# subhub_unique_id: 73fe8c7a-13d2-4d49-80d4-65e2350de9ab
+
+---
+
+# =============================================================================
+# PROCESS TRIGGERS
+# =============================================================================
+
+triggers:
+  # Phase 1: Intake (triggered by CL)
+  - process_id: 40bb3fb5-d4a8-4878-b97f-fd80c2f0b7a3
+    process_name: phase_1
+    trigger_type: upstream
+    trigger_source: cl.company_identity
+    upstream_process_id: null  # External (CL)
+    description: Triggered when CL marks identity_status = PASS
+
+  # Phase 2: Domain Resolution
+  - process_id: 67bb76a6-af38-4665-a2c8-6e86b3d0f3d1
+    process_name: phase_2
+    trigger_type: upstream
+    trigger_source: phase_1 completion
+    upstream_process_id: 40bb3fb5-d4a8-4878-b97f-fd80c2f0b7a3
+    description: Triggered after intake completion
+
+  # Phase 3: Email Pattern Waterfall
+  - process_id: 33d2e5d1-1ab3-4eeb-b8a3-9c58b67fcd2e
+    process_name: phase_3
+    trigger_type: upstream
+    trigger_source: phase_2 completion
+    upstream_process_id: 67bb76a6-af38-4665-a2c8-6e86b3d0f3d1
+    description: Triggered after domain resolution
+
+  # Phase 4: Pattern Verification
+  - process_id: 81cc5f2a-0a9d-4b9e-82cf-4c1e7a3e2b5d
+    process_name: phase_4
+    trigger_type: upstream
+    trigger_source: phase_3 completion
+    upstream_process_id: 33d2e5d1-1ab3-4eeb-b8a3-9c58b67fcd2e
+    description: Triggered after email pattern discovery
+
+  # Phase 5: BIT Engine
+  - process_id: 45ad1e3c-78b6-4a2d-91ef-2d8c6b4e1a7f
+    process_name: phase_5
+    trigger_type: upstream
+    trigger_source: phase_4 completion
+    upstream_process_id: 81cc5f2a-0a9d-4b9e-82cf-4c1e7a3e2b5d
+    description: Triggered after pattern verification
+
+  # Phase 6: Company Hub Orchestrator
+  - process_id: 2c9b8d7e-5f6a-4c3b-a2e1-d7f8c9b6a5e4
+    process_name: phase_6
+    trigger_type: manual
+    trigger_source: operator
+    upstream_process_id: null
+    description: Manual orchestration entry point
+
+  # Phase 7: Pipeline Orchestrator
+  - process_id: 9e7d6c5b-4a3f-2e1d-c0b9-a8f7e6d5c4b3
+    process_name: phase_7
+    trigger_type: manual
+    trigger_source: operator
+    upstream_process_id: null
+    description: Manual pipeline execution entry point
+
+  # Phase 8: Output
+  - process_id: f1a2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c
+    process_name: phase_8
+    trigger_type: upstream
+    trigger_source: phase_5 completion
+    upstream_process_id: 45ad1e3c-78b6-4a2d-91ef-2d8c6b4e1a7f
+    description: Triggered after BIT calculation
+
+# =============================================================================
+# DOCUMENT CONTROL
+# =============================================================================
+
+document_control:
+  created_at: "2026-01-08"
+  phase: Execution Wiring
+  authority: imo-creator
+  author: Claude Code (IMO-Creator)

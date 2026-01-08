@@ -1,0 +1,261 @@
+# AI-Ready Schema Declaration
+# IMO-Creator Data Declaration Phase
+# Table: svg_marketing.talent_flow_movements
+
+---
+
+# =============================================================================
+# TABLE IDENTITY
+# =============================================================================
+
+table:
+  table_unique_id: e12de2d9-6b21-4a4b-8b0b-c13f94551eb0
+  schema: svg_marketing
+  name: talent_flow_movements
+  qualified_name: svg_marketing.talent_flow_movements
+  description: |
+    Tracks executive-level position changes (hires, departures, promotions,
+    role changes, backfills). Each movement represents a potential buying
+    intent signal for the BIT scoring engine. Part of the Talent Flow spoke
+    implementation (TF-001 PRODUCTION-READY).
+  
+  owning_hub_unique_id: e46bcbf0-6719-4c68-8a38-78c36b47e3d1
+  owning_subhub_unique_id: 2e5bf57e-4ca8-4d09-8c50-6ea785306b97  # people-intelligence
+  
+  source_of_truth: Neon PostgreSQL (barton-outreach-cc)
+  row_identity_strategy: movement_id (TEXT with doctrine prefix)
+  
+  doctrine_id: "SVG.TF.001"
+  created_at: "2025-11-10"
+  certification: TF-001 PRODUCTION-READY
+
+# =============================================================================
+# COLUMNS (AI-Ready)
+# =============================================================================
+
+columns:
+  - column_unique_id: e12de2d9-6b21-4a4b-8b0b-c13f94551eb0-01
+    name: movement_id
+    description: |
+      Primary key with doctrine prefix format:
+      04.01.02.04.20000.XXX
+    data_type: TEXT
+    format: Doctrine ID format
+    nullable: false
+    semantic_role: identifier
+    is_primary_key: true
+
+  - column_unique_id: e12de2d9-6b21-4a4b-8b0b-c13f94551eb0-02
+    name: company_unique_id
+    description: Reference to company identity
+    data_type: TEXT
+    format: String (UUID format)
+    nullable: false
+    semantic_role: foreign_key
+
+  - column_unique_id: e12de2d9-6b21-4a4b-8b0b-c13f94551eb0-03
+    name: person_unique_id
+    description: Reference to person record (if known)
+    data_type: TEXT
+    format: String (UUID format)
+    nullable: true
+    semantic_role: foreign_key
+
+  - column_unique_id: e12de2d9-6b21-4a4b-8b0b-c13f94551eb0-04
+    name: movement_type
+    description: Type of executive movement detected
+    data_type: TEXT
+    format: ENUM(hire, departure, promotion, role_change, backfill)
+    nullable: false
+    semantic_role: attribute
+
+  - column_unique_id: e12de2d9-6b21-4a4b-8b0b-c13f94551eb0-05
+    name: position_title
+    description: Job title of the position
+    data_type: TEXT
+    format: String
+    nullable: false
+    semantic_role: attribute
+
+  - column_unique_id: e12de2d9-6b21-4a4b-8b0b-c13f94551eb0-06
+    name: position_level
+    description: Seniority level of the position
+    data_type: TEXT
+    format: ENUM(C-suite, VP, Director, Senior Manager)
+    nullable: false
+    semantic_role: attribute
+
+  - column_unique_id: e12de2d9-6b21-4a4b-8b0b-c13f94551eb0-07
+    name: department
+    description: Department of the position
+    data_type: TEXT
+    format: String
+    nullable: true
+    semantic_role: attribute
+
+  - column_unique_id: e12de2d9-6b21-4a4b-8b0b-c13f94551eb0-08
+    name: previous_position_title
+    description: Previous position title (for departures and role changes)
+    data_type: TEXT
+    format: String
+    nullable: true
+    semantic_role: attribute
+
+  - column_unique_id: e12de2d9-6b21-4a4b-8b0b-c13f94551eb0-09
+    name: previous_company
+    description: Previous company (for hires)
+    data_type: TEXT
+    format: String
+    nullable: true
+    semantic_role: attribute
+
+  - column_unique_id: e12de2d9-6b21-4a4b-8b0b-c13f94551eb0-10
+    name: movement_date
+    description: Date when the movement occurred
+    data_type: DATE
+    format: YYYY-MM-DD
+    nullable: false
+    semantic_role: attribute
+
+  - column_unique_id: e12de2d9-6b21-4a4b-8b0b-c13f94551eb0-11
+    name: detected_at
+    description: Timestamp when movement was detected
+    data_type: TIMESTAMPTZ
+    format: ISO-8601
+    nullable: false
+    semantic_role: attribute
+    default: now()
+
+  - column_unique_id: e12de2d9-6b21-4a4b-8b0b-c13f94551eb0-12
+    name: detection_source
+    description: Source that detected this movement
+    data_type: TEXT
+    format: String (linkedin_enrichment, apify_agent, manual_entry, crunchbase_api, clearbit_enrichment)
+    nullable: false
+    semantic_role: attribute
+
+  - column_unique_id: e12de2d9-6b21-4a4b-8b0b-c13f94551eb0-13
+    name: confidence_score
+    description: Confidence in movement detection (0.0-1.0)
+    data_type: NUMERIC(3,2)
+    format: Decimal 0.00-1.00
+    nullable: true
+    semantic_role: metric
+    default: 0.85
+
+  - column_unique_id: e12de2d9-6b21-4a4b-8b0b-c13f94551eb0-14
+    name: verification_status
+    description: Verification status of this movement
+    data_type: TEXT
+    format: ENUM(pending, verified, rejected, needs_review)
+    nullable: false
+    semantic_role: attribute
+    default: "pending"
+
+  - column_unique_id: e12de2d9-6b21-4a4b-8b0b-c13f94551eb0-15
+    name: bit_event_created
+    description: Whether a BIT event was created from this movement
+    data_type: BOOLEAN
+    format: true/false
+    nullable: false
+    semantic_role: attribute
+    default: false
+
+  - column_unique_id: e12de2d9-6b21-4a4b-8b0b-c13f94551eb0-16
+    name: bit_event_id
+    description: ID of the BIT event created (if any)
+    data_type: TEXT
+    format: String
+    nullable: true
+    semantic_role: foreign_key
+
+  - column_unique_id: e12de2d9-6b21-4a4b-8b0b-c13f94551eb0-17
+    name: processed_at
+    description: Timestamp when movement was processed
+    data_type: TIMESTAMPTZ
+    format: ISO-8601
+    nullable: true
+    semantic_role: attribute
+
+  - column_unique_id: e12de2d9-6b21-4a4b-8b0b-c13f94551eb0-18
+    name: source_url
+    description: URL where movement was discovered
+    data_type: TEXT
+    format: URL
+    nullable: true
+    semantic_role: attribute
+
+  - column_unique_id: e12de2d9-6b21-4a4b-8b0b-c13f94551eb0-19
+    name: source_payload
+    description: Raw payload from detection source
+    data_type: JSONB
+    format: JSON object
+    nullable: true
+    semantic_role: attribute
+
+  - column_unique_id: e12de2d9-6b21-4a4b-8b0b-c13f94551eb0-20
+    name: created_at
+    description: Record creation timestamp
+    data_type: TIMESTAMPTZ
+    format: ISO-8601
+    nullable: false
+    semantic_role: attribute
+    default: now()
+
+  - column_unique_id: e12de2d9-6b21-4a4b-8b0b-c13f94551eb0-21
+    name: updated_at
+    description: Record last update timestamp
+    data_type: TIMESTAMPTZ
+    format: ISO-8601
+    nullable: false
+    semantic_role: attribute
+    default: now()
+
+  - column_unique_id: e12de2d9-6b21-4a4b-8b0b-c13f94551eb0-22
+    name: created_by
+    description: User or system that created this record
+    data_type: TEXT
+    format: String
+    nullable: true
+    semantic_role: attribute
+    default: "system"
+
+# =============================================================================
+# RELATIONSHIPS
+# =============================================================================
+
+relationships:
+  - type: foreign_key
+    from_column: company_unique_id
+    to_table: cl.company_identity
+    to_column: company_unique_id
+    cardinality: many-to-one
+    description: Links to company identity
+
+  - type: foreign_key
+    from_column: bit_event_id
+    to_table: bit.events
+    to_column: event_id
+    cardinality: many-to-one
+    description: Links to BIT event created from this movement
+
+# =============================================================================
+# TRIGGERS
+# =============================================================================
+
+triggers:
+  - name: trg_talent_flow_to_bit
+    description: Creates BIT event when verified movement is detected
+    event: INSERT OR UPDATE
+    condition: verification_status = 'verified' AND bit_event_created = false
+    action: Creates entry in bit.events with appropriate event_type
+
+# =============================================================================
+# DOCUMENT CONTROL
+# =============================================================================
+
+document_control:
+  created_at: "2026-01-08"
+  phase: Data Declaration
+  authority: imo-creator
+  author: Claude Code (IMO-Creator)

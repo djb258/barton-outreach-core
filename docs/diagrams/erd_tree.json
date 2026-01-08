@@ -1,0 +1,159 @@
+{
+  "metadata": {
+    "generated_at": "2026-01-08T00:00:00Z",
+    "phase": "Data Declaration",
+    "authority": "imo-creator",
+    "hub_unique_id": "e46bcbf0-6719-4c68-8a38-78c36b47e3d1"
+  },
+  "cc_hierarchy": {
+    "sovereign": {
+      "name": "Company Lifecycle (CL)",
+      "type": "external",
+      "tables": [
+        {
+          "qualified_name": "cl.company_identity",
+          "description": "Sovereign identity table - mints company_unique_id"
+        }
+      ]
+    },
+    "hub": {
+      "name": "barton-outreach-cc",
+      "hub_unique_id": "e46bcbf0-6719-4c68-8a38-78c36b47e3d1",
+      "tables": [
+        {
+          "table_unique_id": "a17f12b4-1d42-431c-9e58-7954270d085a",
+          "qualified_name": "outreach.outreach",
+          "description": "Master spine table for Outreach program",
+          "doctrine_id": "OUT.SPINE.001"
+        }
+      ],
+      "sub_hubs": [
+        {
+          "name": "company-target",
+          "subhub_unique_id": "73fe8c7a-13d2-4d49-80d4-65e2350de9ab",
+          "tables": [
+            {
+              "table_unique_id": "a495d7d6-9e08-4c69-bf98-e2d6b0ce8ec0",
+              "qualified_name": "outreach.company_target",
+              "description": "Internal anchor for companies in Outreach",
+              "doctrine_id": "OUT.TARGET.001"
+            }
+          ]
+        },
+        {
+          "name": "people-intelligence",
+          "subhub_unique_id": "2e5bf57e-4ca8-4d09-8c50-6ea785306b97",
+          "tables": [
+            {
+              "table_unique_id": "e12de2d9-6b21-4a4b-8b0b-c13f94551eb0",
+              "qualified_name": "svg_marketing.talent_flow_movements",
+              "description": "Executive movement tracking for BIT signals",
+              "doctrine_id": "SVG.TF.001",
+              "certification": "TF-001 PRODUCTION-READY"
+            },
+            {
+              "qualified_name": "outreach.people",
+              "description": "People records for outreach",
+              "doctrine_id": "OUT.PEOPLE.001"
+            }
+          ]
+        },
+        {
+          "name": "dol-filings",
+          "subhub_unique_id": "099de3fb-5331-407a-b191-fa4aff194d33",
+          "tables": [
+            {
+              "qualified_name": "dol.ein_linkage",
+              "description": "EIN resolution and linkage",
+              "doctrine_id": "DOL.EIN.001"
+            },
+            {
+              "qualified_name": "dol.violations",
+              "description": "DOL violation facts",
+              "doctrine_id": "DOL.VIO.001"
+            }
+          ]
+        },
+        {
+          "name": "blog-content",
+          "subhub_unique_id": "09047fdb-3ee1-4999-b507-e400187f4a5c",
+          "tables": [],
+          "status": "PLANNED"
+        },
+        {
+          "name": "outreach-execution",
+          "subhub_unique_id": "2e83d911-91a2-4d6d-8935-af2c1f5e4e54",
+          "tables": [
+            {
+              "table_unique_id": "42afe755-b805-44e4-a25f-88f4655d8726",
+              "qualified_name": "outreach_ctx.context",
+              "description": "Disposable execution context for outreach",
+              "doctrine_id": "OUT.CTX.001"
+            },
+            {
+              "qualified_name": "outreach.engagement_events",
+              "description": "Engagement event tracking",
+              "doctrine_id": "OUT.ENG.001"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "relationships": [
+    {
+      "from": "cl.company_identity",
+      "to": "outreach.outreach",
+      "type": "one-to-many",
+      "join_column": "company_unique_id → sovereign_id",
+      "description": "Identity gate: only PASS companies get outreach_id"
+    },
+    {
+      "from": "outreach.outreach",
+      "to": "outreach.company_target",
+      "type": "one-to-many",
+      "join_column": "outreach_id",
+      "description": "Spine to target"
+    },
+    {
+      "from": "outreach.outreach",
+      "to": "outreach.people",
+      "type": "one-to-many",
+      "join_column": "outreach_id",
+      "description": "Spine to people"
+    },
+    {
+      "from": "outreach.company_target",
+      "to": "outreach.people",
+      "type": "one-to-many",
+      "join_column": "target_id",
+      "description": "Target to people"
+    },
+    {
+      "from": "cl.company_identity",
+      "to": "svg_marketing.talent_flow_movements",
+      "type": "one-to-many",
+      "join_column": "company_unique_id",
+      "description": "Company to movements"
+    },
+    {
+      "from": "cl.company_identity",
+      "to": "dol.ein_linkage",
+      "type": "one-to-many",
+      "join_column": "company_unique_id",
+      "description": "Company to EIN"
+    },
+    {
+      "from": "dol.ein_linkage",
+      "to": "dol.violations",
+      "type": "one-to-many",
+      "join_column": "ein",
+      "description": "EIN to violations"
+    }
+  ],
+  "table_count": {
+    "declared": 4,
+    "referenced": 6,
+    "total_in_hierarchy": 10
+  }
+}

@@ -1,0 +1,121 @@
+# Observability - Company Target Sub-Hub
+# IMO-Creator Execution Wiring Phase
+# subhub_unique_id: 73fe8c7a-13d2-4d49-80d4-65e2350de9ab
+
+---
+
+# =============================================================================
+# PROCESS OBSERVABILITY
+# =============================================================================
+
+observability:
+  # Phase 1: Intake
+  - process_id: 40bb3fb5-d4a8-4878-b97f-fd80c2f0b7a3
+    process_name: phase_1
+    log_sink: ops/master_error_log/
+    error_sink: master_error_log table
+    metrics:
+      success: company_target.phase1.success
+      failure: company_target.phase1.failure
+      latency: company_target.phase1.latency_ms
+    retry_policy: none
+    max_retries: 0
+
+  # Phase 2: Domain Resolution
+  - process_id: 67bb76a6-af38-4665-a2c8-6e86b3d0f3d1
+    process_name: phase_2
+    log_sink: ops/master_error_log/
+    error_sink: master_error_log table
+    metrics:
+      success: company_target.phase2.success
+      failure: company_target.phase2.failure
+      latency: company_target.phase2.latency_ms
+    retry_policy: auto
+    max_retries: 3
+
+  # Phase 3: Email Pattern Waterfall
+  - process_id: 33d2e5d1-1ab3-4eeb-b8a3-9c58b67fcd2e
+    process_name: phase_3
+    log_sink: ops/master_error_log/
+    error_sink: master_error_log table
+    metrics:
+      success: company_target.phase3.success
+      failure: company_target.phase3.failure
+      latency: company_target.phase3.latency_ms
+      tier1_calls: company_target.phase3.tier1_calls
+    retry_policy: auto
+    max_retries: 2
+
+  # Phase 4: Pattern Verification
+  - process_id: 81cc5f2a-0a9d-4b9e-82cf-4c1e7a3e2b5d
+    process_name: phase_4
+    log_sink: ops/master_error_log/
+    error_sink: master_error_log table
+    metrics:
+      success: company_target.phase4.success
+      failure: company_target.phase4.failure
+      latency: company_target.phase4.latency_ms
+      tier2_calls: company_target.phase4.tier2_calls
+    retry_policy: none  # Tier-2 = no retries
+    max_retries: 0
+
+  # Phase 5: BIT Engine
+  - process_id: 45ad1e3c-78b6-4a2d-91ef-2d8c6b4e1a7f
+    process_name: phase_5
+    log_sink: ops/master_error_log/
+    error_sink: master_error_log table
+    metrics:
+      success: company_target.bit.success
+      failure: company_target.bit.failure
+      latency: company_target.bit.latency_ms
+      score_avg: company_target.bit.score_avg
+    retry_policy: auto
+    max_retries: 3
+
+  # Phase 6: Company Hub Orchestrator
+  - process_id: 2c9b8d7e-5f6a-4c3b-a2e1-d7f8c9b6a5e4
+    process_name: phase_6
+    log_sink: ops/master_error_log/
+    error_sink: master_error_log table
+    metrics:
+      success: company_target.hub.success
+      failure: company_target.hub.failure
+      latency: company_target.hub.latency_ms
+    retry_policy: manual
+    max_retries: 0
+
+  # Phase 7: Pipeline Orchestrator
+  - process_id: 9e7d6c5b-4a3f-2e1d-c0b9-a8f7e6d5c4b3
+    process_name: phase_7
+    log_sink: ops/master_error_log/
+    error_sink: master_error_log table
+    metrics:
+      success: company_target.pipeline.success
+      failure: company_target.pipeline.failure
+      latency: company_target.pipeline.latency_ms
+      companies_processed: company_target.pipeline.companies_processed
+    retry_policy: manual
+    max_retries: 0
+
+  # Phase 8: Output
+  - process_id: f1a2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c
+    process_name: phase_8
+    log_sink: ops/master_error_log/
+    error_sink: master_error_log table
+    metrics:
+      success: company_target.output.success
+      failure: company_target.output.failure
+      latency: company_target.output.latency_ms
+      rows_written: company_target.output.rows_written
+    retry_policy: auto
+    max_retries: 3
+
+# =============================================================================
+# DOCUMENT CONTROL
+# =============================================================================
+
+document_control:
+  created_at: "2026-01-08"
+  phase: Execution Wiring
+  authority: imo-creator
+  author: Claude Code (IMO-Creator)
