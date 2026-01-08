@@ -1,0 +1,140 @@
+# Hub Registry
+
+**Repository:** barton-outreach-cc
+**Version:** 1.0.0
+**Created:** 2026-01-08
+**Authority:** IMO-Creator
+
+---
+
+## Hub Identity
+
+name: barton-outreach-cc
+type: OUTREACH_ORCHESTRATION
+version: 1.1.0
+status: ACTIVE
+governance: imo-creator
+
+---
+
+## Sub-Hubs
+
+### company-target
+  location: hubs/company-target/
+  purpose: Company targeting and email pattern discovery
+  status: CERTIFIED
+  imo_structure: true
+  phases: 8
+
+### dol-filings
+  location: hubs/dol-filings/
+  purpose: DOL Form 5500 processing and EIN linkage
+  status: CERTIFIED
+  imo_structure: true
+
+### blog-content
+  location: hubs/blog-content/
+  purpose: Blog content signals and engagement tracking
+  status: ACTIVE
+  imo_structure: true
+
+### people-intelligence
+  location: hubs/people-intelligence/
+  purpose: Slot-based people intelligence and movement tracking
+  status: CERTIFIED
+  imo_structure: true
+  certifications:
+    - id: TF-001
+      system: Talent Flow
+      status: PRODUCTION-READY
+      date: 2026-01-08
+
+### outreach-execution
+  location: hubs/outreach-execution/
+  purpose: Campaign execution and delivery
+  status: ACTIVE
+  imo_structure: true
+
+---
+
+## Spokes
+
+### company-dol
+  location: spokes/company-dol/
+  connects: [company-target, dol-filings]
+  data_only: true
+
+### company-outreach
+  location: spokes/company-outreach/
+  connects: [company-target, outreach-execution]
+  data_only: true
+
+### company-people
+  location: spokes/company-people/
+  connects: [company-target, people-intelligence]
+  data_only: true
+
+### people-outreach
+  location: spokes/people-outreach/
+  connects: [people-intelligence, outreach-execution]
+  data_only: true
+
+### signal-company
+  location: spokes/signal-company/
+  connects: [blog-content, company-target]
+  data_only: true
+
+---
+
+## Operational Components
+
+### ops
+  location: ops/
+  contains:
+    - enforcement/   # Doctrine guards
+    - migrations/    # Database migrations
+    - scripts/       # Automation scripts
+    - tests/         # Test suites
+    - tooling/       # Development tools
+    - validation/    # Validators
+
+### docs
+  location: docs/
+  contains:
+    - prd/           # Product requirements
+    - adr/           # Architecture decisions
+    - audit/         # Audit reports
+    - dendron/       # Obsidian/Dendron notes
+    - diagrams/      # Visual documentation
+
+### contexts
+  location: contexts/
+  contains:
+    - global-config/ # Global configuration
+    - config/        # Environment configs
+
+### contracts
+  location: contracts/
+  purpose: Data contracts between hubs
+
+---
+
+## Waterfall Order
+
+execution_order:
+  1: company-target
+  2: dol-filings
+  3: blog-content
+  4: people-intelligence
+  5: outreach-execution
+
+rule: Each hub executes only after upstream dependencies pass
+
+---
+
+## Document Control
+
+created: 2026-01-08
+version: 1.0.0
+authority: imo-creator
+author: Claude Code (IMO-Creator)
