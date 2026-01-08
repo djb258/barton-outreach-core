@@ -38,6 +38,57 @@ Provide **timing signals** from news, funding events, and content sources. BIT m
 
 ---
 
+## 3.1 Scope Lock (DOCTRINE LOCK)
+
+> **The Blog Sub-Hub records *where* a company publishes, not *how large* the audience is.**
+
+### Company-Level Only
+
+The Blog Sub-Hub operates **exclusively at the company level**. It captures company-owned digital presence surfaces for **presence verification and timing signals only**.
+
+### Social Platform Treatment
+
+Social platforms (X/Twitter, Instagram, LinkedIn, YouTube, TikTok, etc.) are treated as:
+- **Company-owned distribution surfaces**
+- Captured for **presence + verification only**
+- Used to detect timing signals (funding announcements, leadership changes, etc.)
+
+### Explicitly Prohibited (HARD LAW)
+
+The following are **permanently forbidden** in Blog Sub-Hub:
+
+| Category | Forbidden Fields |
+|----------|-----------------|
+| **Audience Metrics** | `followers`, `follower_count`, `following`, `subscribers` |
+| **Engagement Metrics** | `likes`, `views`, `comments`, `shares`, `retweets`, `impressions` |
+| **Computed Scores** | `engagement_rate`, `engagement_score`, `reach`, `sentiment`, `sentiment_score` |
+| **Post Analytics** | `post_frequency`, `avg_engagement`, `virality_score` |
+| **People-Level Data** | Individual follower lists, commenter profiles, engagement by person |
+
+### Enforcement
+
+```
+DISALLOW_SOCIAL_METRICS = True
+```
+
+CI will **FAIL** if any forbidden field patterns appear in Blog code.
+
+### What Blog Sub-Hub DOES
+
+- Records that a company has a LinkedIn page (presence)
+- Detects funding announcements posted on social platforms (timing signal)
+- Classifies events from company press releases and news
+
+### What Blog Sub-Hub DOES NOT DO
+
+- Count followers or subscribers
+- Measure engagement rates or reach
+- Analyze sentiment on comments
+- Track post frequency or performance
+- Store any people-level social data
+
+---
+
 ## 4. CTB Placement
 
 | Field | Value | CC Layer |
@@ -135,6 +186,52 @@ Provide **timing signals** from news, funding events, and content sources. BIT m
 | Feed parse error | LOW | CC-04 | Log warning, continue |
 | Signal classification fails | LOW | CC-04 | Default to no BIT impact |
 | Context finalization fails | HIGH | CC-04 | Log error, mark context FAIL |
+
+---
+
+## 12.1 Error Handling Discipline (DOCTRINE LOCK)
+
+### First-Class Error Outputs
+
+Errors are **first-class outputs**, not hidden logging. Every failure MUST be persisted to `outreach.blog_errors`.
+
+```
+ENFORCE_ERROR_PERSISTENCE = True
+```
+
+### Error Table Schema
+
+| Column | Type | Required | Description |
+|--------|------|----------|-------------|
+| error_id | UUID | PK | Primary key |
+| outreach_id | UUID | FK | Spine anchor |
+| pipeline_stage | VARCHAR | Yes | ingest, parse, classify, write, emit |
+| failure_code | VARCHAR | Yes | BLOG-XXX code |
+| blocking_reason | TEXT | Yes | Human-readable |
+| severity | VARCHAR | Yes | INFO, WARN, ERROR, FATAL |
+| retry_allowed | BOOLEAN | Yes | Always FALSE |
+| process_id | UUID | Yes | Traceability |
+| raw_input | JSONB | No | Original payload |
+| stack_trace | TEXT | No | Exception trace |
+| created_at | TIMESTAMPTZ | Yes | When recorded |
+
+### Error Codes
+
+| Code | Stage | Description |
+|------|-------|-------------|
+| BLOG-I-NO-OUTREACH | ingest | No outreach_id provided |
+| BLOG-I-NOT-FOUND | ingest | outreach_id not in spine |
+| BLOG-I-NO-DOMAIN | ingest | No domain in spine |
+| BLOG-I-UPSTREAM-FAIL | ingest | CT not PASS |
+| BLOG-I-ALREADY-PROCESSED | ingest | Idempotent skip |
+| BLOG-M-CLASSIFY-FAIL | classify | Classification failed |
+| BLOG-O-WRITE-FAIL | write | Neon write failed |
+
+### No Silent Failures
+
+- CI Guard 13: Verifies `ENFORCE_ERROR_PERSISTENCE` assertion
+- CI Guard 14: Verifies `blog_errors` references exist
+- CI Guard 15: Checks for print statements bypassing persistence
 
 ---
 

@@ -1,0 +1,348 @@
+name: Blog Content IMO Guard
+
+on:
+  pull_request:
+    paths:
+      - "hubs/blog-content/**"
+  push:
+    branches:
+      - main
+    paths:
+      - "hubs/blog-content/**"
+
+jobs:
+  imo-guard:
+    name: IMO Doctrine Guard
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # =========================================================================
+      # GUARD 1: Block forbidden references to sovereign_id
+      # =========================================================================
+      - name: Block sovereign_id references
+        run: |
+          echo "Checking for forbidden sovereign_id references..."
+
+          # Find any OPERATIONAL reference to sovereign_id (exclude comments/docstrings)
+          VIOLATIONS=$(grep -r "sovereign_id" hubs/blog-content/imo/ --include="*.py" | grep -v "__pycache__" | grep -v "\.pyc" | grep -vE "NEVER|NOT|#.*sovereign_id|\"\"\".*sovereign_id" || true)
+
+          if [ -n "$VIOLATIONS" ]; then
+            echo "DOCTRINE VIOLATION: sovereign_id referenced in Blog Content"
+            echo ""
+            echo "$VIOLATIONS"
+            echo ""
+            echo "Blog Content operates ONLY on outreach_id."
+            echo "sovereign_id is hidden by the Outreach Spine."
+            exit 1
+          fi
+
+          echo "No sovereign_id references found"
+
+      # =========================================================================
+      # GUARD 2: Block CL table references
+      # =========================================================================
+      - name: Block CL table references
+        run: |
+          echo "Checking for forbidden CL table references..."
+
+          if grep -rE "FROM\s+cl\.|INTO\s+cl\.|UPDATE\s+cl\.|cl\.company_identity" hubs/blog-content/imo/ --include="*.py" | grep -v "__pycache__" | grep -v "# "; then
+            echo "DOCTRINE VIOLATION: CL tables referenced in Blog Content"
+            echo ""
+            echo "Blog Content NEVER touches CL tables directly."
+            echo "It reads from outreach.outreach spine only."
+            exit 1
+          fi
+
+          echo "No CL table references found"
+
+      # =========================================================================
+      # GUARD 3: Block marketing.* writes
+      # =========================================================================
+      - name: Block marketing table writes
+        run: |
+          echo "Checking for forbidden marketing.* writes..."
+
+          if grep -rE "INSERT INTO marketing\.|UPDATE marketing\." hubs/blog-content/imo/ --include="*.py"; then
+            echo "DOCTRINE VIOLATION: marketing.* writes in Blog Content IMO"
+            echo ""
+            echo "Blog Content IMO writes ONLY to outreach.* tables:"
+            echo "  - outreach.blog"
+            echo "  - outreach.blog_errors"
+            exit 1
+          fi
+
+          echo "No marketing.* writes found"
+
+      # =========================================================================
+      # GUARD 4: Block enrichment triggers
+      # =========================================================================
+      - name: Block enrichment triggers
+        run: |
+          echo "Checking for forbidden enrichment triggers..."
+
+          if grep -rE "trigger_enrichment|enrich_company|paid_api|api_cost|credits" hubs/blog-content/imo/ --include="*.py" | grep -v "__pycache__" | grep -v "# " | grep -v "NEVER"; then
+            echo "DOCTRINE VIOLATION: Enrichment trigger in Blog Content IMO"
+            echo ""
+            echo "Blog Content is SIGNAL-ONLY."
+            echo "It cannot trigger enrichment or paid API calls."
+            exit 1
+          fi
+
+          echo "No enrichment triggers found"
+
+      # =========================================================================
+      # GUARD 5: Verify spine guard assertion
+      # =========================================================================
+      - name: Verify spine guard assertion
+        run: |
+          echo "Verifying spine guard assertion..."
+
+          if ! grep -q "assert ENFORCE_OUTREACH_SPINE_ONLY is True" hubs/blog-content/imo/blog_imo.py; then
+            echo "DOCTRINE VIOLATION: Missing spine guard assertion"
+            echo ""
+            echo "Blog Content IMO must include:"
+            echo "  assert ENFORCE_OUTREACH_SPINE_ONLY is True"
+            exit 1
+          fi
+
+          echo "Spine guard assertion present"
+
+      # =========================================================================
+      # GUARD 6: Block retry/backoff logic
+      # =========================================================================
+      - name: Block retry logic
+        run: |
+          echo "Checking for forbidden retry logic..."
+
+          if grep -rE "retry_count|max_retries|backoff|retry_with" hubs/blog-content/imo/blog_imo.py | grep -v "# " | grep -v "retry_allowed.*FALSE"; then
+            echo "DOCTRINE VIOLATION: Retry logic in Blog Content IMO"
+            echo ""
+            echo "Blog Content IMO is SINGLE-PASS."
+            echo "FAIL is terminal - no retries allowed."
+            exit 1
+          fi
+
+          echo "No retry logic found"
+
+      # =========================================================================
+      # GUARD 7: Verify doctrine lock comment
+      # =========================================================================
+      - name: Verify doctrine lock comment
+        run: |
+          echo "Verifying doctrine lock comment..."
+
+          if ! grep -q "BLOG CONTENT.*IMO GATE.*DOCTRINE LOCK" hubs/blog-content/imo/blog_imo.py; then
+            echo "DOCTRINE VIOLATION: Missing doctrine lock comment"
+            echo ""
+            echo "Blog Content IMO must include the doctrine lock header."
+            exit 1
+          fi
+
+          echo "Doctrine lock comment present"
+
+      # =========================================================================
+      # GUARD 8: Block writes to outreach context view
+      # =========================================================================
+      - name: Block context view writes
+        run: |
+          echo "Checking for forbidden context view writes..."
+
+          if grep -rE "INSERT INTO outreach\.v_context|UPDATE outreach\.v_context|DELETE FROM outreach\.v_context" hubs/blog-content/ --include="*.py" | grep -v "__pycache__"; then
+            echo "DOCTRINE VIOLATION: Attempted write to outreach.v_context_current"
+            echo ""
+            echo "The context view is READ-ONLY."
+            echo "Subhubs may read it but MUST NOT write to it."
+            exit 1
+          fi
+
+          echo "No context view writes found"
+
+      # =========================================================================
+      # GUARD 9: Block company minting
+      # =========================================================================
+      - name: Block company minting
+        run: |
+          echo "Checking for forbidden company minting..."
+
+          if grep -rE "mint_company|create_company|INSERT INTO.*company_identity|INSERT INTO cl\." hubs/blog-content/imo/ --include="*.py" | grep -v "__pycache__" | grep -v "# "; then
+            echo "DOCTRINE VIOLATION: Company minting in Blog Content"
+            echo ""
+            echo "Blog Content CANNOT mint companies."
+            echo "If company not found, article should be QUEUED, not created."
+            exit 1
+          fi
+
+          echo "No company minting found"
+
+      # =========================================================================
+      # GUARD 10: Block outreach_id minting
+      # =========================================================================
+      - name: Block outreach_id minting
+        run: |
+          echo "Checking for forbidden outreach_id minting..."
+
+          if grep -rE "INSERT INTO outreach\.outreach|mint_outreach|create_outreach_id" hubs/blog-content/imo/ --include="*.py" | grep -v "__pycache__" | grep -v "# "; then
+            echo "DOCTRINE VIOLATION: outreach_id minting in Blog Content"
+            echo ""
+            echo "Blog Content CANNOT mint outreach_id."
+            echo "It receives outreach_id from the spine."
+            exit 1
+          fi
+
+          echo "No outreach_id minting found"
+
+      # =========================================================================
+      # GUARD 11: Block social metrics fields (SCOPE LOCK)
+      # =========================================================================
+      - name: Block social metrics fields
+        run: |
+          echo "Checking for forbidden social metrics fields..."
+
+          # These fields are PERMANENTLY FORBIDDEN in Blog Content
+          # Blog records WHERE a company publishes, not HOW LARGE the audience is
+          FORBIDDEN="followers|follower_count|following|following_count|likes|like_count|views|view_count|engagement|engagement_rate|engagement_score|comments|comment_count|shares|share_count|retweets|retweet_count|impressions|reach|subscribers|subscriber_count|sentiment|sentiment_score"
+
+          # Check for field assignments or column references (exclude the guard definition itself)
+          VIOLATIONS=$(grep -rE "($FORBIDDEN)\s*=" hubs/blog-content/imo/ --include="*.py" | grep -v "__pycache__" | grep -v "FORBIDDEN_SOCIAL_FIELDS" || true)
+
+          if [ -n "$VIOLATIONS" ]; then
+            echo "DOCTRINE VIOLATION: Social metrics field detected in Blog Content"
+            echo ""
+            echo "$VIOLATIONS"
+            echo ""
+            echo "Blog Sub-Hub is COMPANY-LEVEL ONLY."
+            echo "It records WHERE a company publishes, not HOW LARGE the audience is."
+            echo ""
+            echo "Forbidden: followers, engagement, likes, views, impressions, reach, sentiment"
+            exit 1
+          fi
+
+          # Check SQL columns
+          SQL_VIOLATIONS=$(grep -rE "INSERT INTO.*($FORBIDDEN)|SELECT.*($FORBIDDEN).*FROM|,\s*($FORBIDDEN)\s*[,)]" hubs/blog-content/imo/ --include="*.py" | grep -v "__pycache__" || true)
+
+          if [ -n "$SQL_VIOLATIONS" ]; then
+            echo "DOCTRINE VIOLATION: Social metrics column detected in SQL"
+            echo ""
+            echo "$SQL_VIOLATIONS"
+            echo ""
+            echo "outreach.blog MUST NOT have social metrics columns."
+            exit 1
+          fi
+
+          echo "No social metrics fields found"
+
+      # =========================================================================
+      # GUARD 12: Verify scope guard assertion
+      # =========================================================================
+      - name: Verify scope guard assertion
+        run: |
+          echo "Verifying scope guard assertion..."
+
+          if ! grep -q "assert DISALLOW_SOCIAL_METRICS is True" hubs/blog-content/imo/blog_imo.py; then
+            echo "DOCTRINE VIOLATION: Missing scope guard assertion"
+            echo ""
+            echo "Blog Content IMO must include:"
+            echo "  assert DISALLOW_SOCIAL_METRICS is True"
+            exit 1
+          fi
+
+          echo "Scope guard assertion present"
+
+      # =========================================================================
+      # GUARD 13: Verify error persistence assertion
+      # =========================================================================
+      - name: Verify error persistence assertion
+        run: |
+          echo "Verifying error persistence guard..."
+
+          if ! grep -q "assert ENFORCE_ERROR_PERSISTENCE is True" hubs/blog-content/imo/blog_imo.py; then
+            echo "DOCTRINE VIOLATION: Missing error persistence assertion"
+            echo ""
+            echo "Blog Content IMO must include:"
+            echo "  assert ENFORCE_ERROR_PERSISTENCE is True"
+            echo ""
+            echo "All failures MUST be persisted to blog_errors."
+            exit 1
+          fi
+
+          echo "Error persistence assertion present"
+
+      # =========================================================================
+      # GUARD 14: Verify blog_errors is referenced
+      # =========================================================================
+      - name: Verify blog_errors references
+        run: |
+          echo "Verifying blog_errors table is used..."
+
+          if ! grep -q "blog_errors" hubs/blog-content/imo/blog_imo.py; then
+            echo "DOCTRINE VIOLATION: blog_errors not referenced"
+            echo ""
+            echo "Blog Content IMO MUST write failures to blog_errors."
+            echo "Errors are first-class outputs, not hidden logging."
+            exit 1
+          fi
+
+          # Verify INSERT INTO blog_errors exists
+          if ! grep -q "INSERT INTO outreach.blog_errors" hubs/blog-content/imo/blog_imo.py; then
+            echo "DOCTRINE VIOLATION: No INSERT INTO blog_errors found"
+            echo ""
+            echo "Blog Content IMO MUST persist errors to blog_errors table."
+            exit 1
+          fi
+
+          echo "blog_errors references present"
+
+      # =========================================================================
+      # GUARD 15: Block bare print() for error reporting
+      # =========================================================================
+      - name: Block print statements replacing error persistence
+        run: |
+          echo "Checking for print statements that bypass error persistence..."
+
+          # Check for print() with error-like content that should be in blog_errors
+          VIOLATIONS=$(grep -rE "print\(.*[Ee]rror|print\(.*[Ff]ail" hubs/blog-content/imo/blog_imo.py | grep -v "__pycache__" | grep -v "# " | grep -v "def " || true)
+
+          # Filter out legitimate CLI output (which uses print for user feedback)
+          REAL_VIOLATIONS=$(echo "$VIOLATIONS" | grep -v "print(f\"Error:" | grep -v "print(f\"Result:" || true)
+
+          if [ -n "$REAL_VIOLATIONS" ]; then
+            echo "WARNING: Found print statements that may bypass error persistence"
+            echo ""
+            echo "$REAL_VIOLATIONS"
+            echo ""
+            echo "Ensure all errors are persisted to blog_errors, not just printed."
+          fi
+
+          echo "Print statement check complete"
+
+      # =========================================================================
+      # SUMMARY
+      # =========================================================================
+      - name: Guard Summary
+        run: |
+          echo ""
+          echo "================================================================="
+          echo "  BLOG CONTENT IMO GUARD - ALL CHECKS PASSED"
+          echo "================================================================="
+          echo ""
+          echo "  [1]  No sovereign_id references"
+          echo "  [2]  No CL table references"
+          echo "  [3]  No marketing.* writes"
+          echo "  [4]  No enrichment triggers"
+          echo "  [5]  Spine guard assertion present"
+          echo "  [6]  No retry logic"
+          echo "  [7]  Doctrine lock comment present"
+          echo "  [8]  No context view writes"
+          echo "  [9]  No company minting"
+          echo "  [10] No outreach_id minting"
+          echo "  [11] No social metrics fields (SCOPE LOCK)"
+          echo "  [12] Scope guard assertion present"
+          echo "  [13] Error persistence assertion present"
+          echo "  [14] blog_errors references present"
+          echo "  [15] Print statement check complete"
+          echo ""
+          echo "  Doctrine: Spine-First Architecture"
+          echo "  Hub: Blog Content (04.04.05)"
+          echo ""

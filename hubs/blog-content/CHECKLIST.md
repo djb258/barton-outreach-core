@@ -1,267 +1,320 @@
-# Blog Content — Compliance Checklist
+# Blog Content — IMO Compliance Checklist
+
+**Hub**: Blog Content (04.04.05)
+**Doctrine**: Spine-First Architecture v1.1
+**IMO Gate**: `blog_imo.py`
+**Last Updated**: 2026-01-08
 
 ---
 
-## Sovereign ID Compliance
+## 0. Spine-First Gate (DOCTRINE LOCK)
 
-- [ ] Uses company_sov_id as sole company identity
-- [ ] Cannot mint new companies
-- [ ] Cannot revive dead companies
-- [ ] Company Lifecycle read-only
+### Spine Enforcement
 
----
+- [x] `ENFORCE_OUTREACH_SPINE_ONLY = True` assertion present
+- [x] All operations key off `outreach_id` from spine
+- [x] NEVER references `sovereign_id` directly
+- [x] NEVER mints `outreach_id` (spine does that)
+- [x] Reads from `outreach.outreach` spine table only
 
-## Lifecycle Gate Compliance
+### Upstream Gate
 
-- [ ] Minimum lifecycle state = ACTIVE
-- [ ] Gate enforced before signal emission
-- [ ] Lifecycle state never modified by this hub
-
----
-
-## Signal-Only Compliance
-
-- [ ] BIT modulation only
-- [ ] Cannot trigger enrichment
-- [ ] No paid tools used
-- [ ] Signals emitted to BIT engine only
+- [x] Checks Company Target `execution_status = 'ready'` before processing
+- [x] Halts if upstream hub not PASS
+- [x] Does NOT proceed on upstream FAIL
 
 ---
 
-## Signal Types
+## 1. IMO Input Stage (I)
 
-- [ ] FUNDING_EVENT (+15.0) — configured correctly
-- [ ] ACQUISITION (+12.0) — configured correctly
-- [ ] LEADERSHIP_CHANGE (+8.0) — configured correctly
-- [ ] EXPANSION (+7.0) — configured correctly
-- [ ] PRODUCT_LAUNCH (+5.0) — configured correctly
-- [ ] PARTNERSHIP (+5.0) — configured correctly
-- [ ] LAYOFF (-3.0) — configured correctly
-- [ ] NEGATIVE_NEWS (-5.0) — configured correctly
+### Input Validation
+
+- [x] Validates `outreach_id` provided
+- [x] Validates `outreach_id` exists in spine
+- [x] Validates domain exists in spine record
+- [x] Check idempotency: if already PASS/FAIL, exit immediately
 
 ---
 
-## Error Handling Compliance
+## 2. IMO Middle Stage (M)
 
-### When Errors Are Emitted
+### M1 — Content Processing
 
-- [ ] Content ingest failure → `BC_SOURCE_UNAVAILABLE` or `BC_PARSE_ERROR`
-- [ ] Company match failure → `BC_COMPANY_NOT_FOUND` (expected for some)
-- [ ] Classification failure → `BC_UNKNOWN_EVENT_TYPE`
-- [ ] Lifecycle gate failure → `BC_LIFECYCLE_GATE_FAIL`
-- [ ] Signal emission failure → `BC_SIGNAL_EMIT_FAIL`
+- [x] Accepts optional content payload for processing
+- [x] No-content case handled gracefully (PASS with no signal)
 
-### Blocking Failures
+### M2 — Event Classification
 
-A failure is **blocking** if:
-- [ ] Content source completely unavailable
-- [ ] BIT engine error prevents signal emission
-- [ ] Critical parse error
+- [x] 8 event types with locked BIT impacts:
+  - FUNDING_EVENT (+15.0)
+  - ACQUISITION (+12.0)
+  - LEADERSHIP_CHANGE (+8.0)
+  - EXPANSION (+7.0)
+  - PRODUCT_LAUNCH (+5.0)
+  - PARTNERSHIP (+5.0)
+  - LAYOFF (-3.0)
+  - NEGATIVE_NEWS (-5.0)
 
-### Non-Blocking Failures
+### M3 — Keyword Classification
 
-These are **expected** and logged but do not block:
-- [ ] Company not found (cannot mint, just skip)
-- [ ] Unknown event type (log and skip)
-- [ ] Company not in ACTIVE lifecycle (skip signal)
-
-### Resolution Authority
-
-| Error Type | Resolver |
-|------------|----------|
-| Source errors | Agent (retry with new context) |
-| Company not found | N/A (cannot mint) |
-| Classification errors | Human (update rules) |
-| Signal errors | Agent (retry with new context) |
-
-### Error Table
-
-- [ ] All failures written to `outreach_errors.blog_content_errors`
-- [ ] Company not found logged as `info` (not blocking)
-- [ ] Unknown event type logged as `warning`
+- [x] Hard rules applied FIRST (deterministic)
+- [x] Confidence based on keyword match density
+- [x] UNKNOWN event type for no matches
 
 ---
 
-## 8. Signal Validity Compliance
+## 3. IMO Output Stage (O)
 
-### Execution Order
+### PASS Output
 
-- [ ] Executes LAST in canonical order (after CT, DOL, PI)
-- [ ] Verifies all upstream hubs PASS before proceeding
-- [ ] Halts on any upstream FAIL
+- [x] Write to `outreach.blog`
+- [x] `blog_id` generated (UUID)
+- [x] `outreach_id` foreign key set
+- [x] `context_summary` populated (if content provided)
+- [x] `source_type` populated
+- [x] `source_url` populated
+- [x] `context_timestamp` set
+- [x] `created_at` timestamp set
 
-### Signal Origin
+### FAIL Output
 
-- [ ] company_sov_id sourced via Company Target (origin: CL)
-- [ ] domain sourced from Company Target only
-- [ ] BIT_SCORE sourced from Company Target only
-- [ ] regulatory_signals sourced from DOL Filings only
-- [ ] slot_assignments sourced from People Intelligence only
-
-### Signal Validity
-
-- [ ] Signals are origin-bound (declared source only)
-- [ ] Signals are run-bound to current outreach_id
-- [ ] Signals from prior contexts are NOT authoritative
-- [ ] Signal age does NOT justify action
-- [ ] Signal age does NOT trigger enrichment
-- [ ] Signal age does NOT trigger spend
-
-### Non-Refreshing
-
-- [ ] Does NOT fix upstream errors
-- [ ] Does NOT refresh signals from prior contexts
-- [ ] Does NOT re-enrich upstream data
-- [ ] Missing upstream signal → FAIL (not retry)
-
-### Downstream Effects
-
-- [ ] On PASS: Context finalized as PASS
-- [ ] On FAIL: Context finalized as FAIL
-- [ ] No downstream hubs (last in order)
-- [ ] Emits timing signals to BIT Engine only
-
-### Blog-Specific Prohibitions
-
-- [ ] Does NOT trigger enrichment
-- [ ] Does NOT trigger spend
-- [ ] Does NOT mint or revive companies
-- [ ] Timing signals only — no authority signals
+- [x] Write to `outreach.blog_errors`
+- [x] `failure_code` populated (BLOG-XXX)
+- [x] `blocking_reason` populated
+- [x] `pipeline_stage` = 'blog_imo'
+- [x] `retry_allowed = FALSE`
+- [x] Execution STOPS (terminal)
 
 ---
 
-## 9. Kill-Switch Compliance
+## 4. Write Hygiene (HARD LAW)
 
-### UNKNOWN_ERROR Doctrine
+### Allowed Writes
 
-- [ ] `BC_UNKNOWN_ERROR` triggers immediate FAIL
-- [ ] Context is finalized with `final_state = 'FAIL'`
-- [ ] Spend is frozen for that context
-- [ ] Alert sent to on-call (PagerDuty/Slack)
-- [ ] Stack trace captured in error table
-- [ ] Human investigation required before retry
+- [x] `outreach.blog` (PASS)
+- [x] `outreach.blog_errors` (FAIL)
 
-### Cross-Hub Repair Rules
+### Forbidden Writes
 
-This hub operates independently with no cross-hub dependencies.
-
-| Error Type | Resolution |
-|------------|------------|
-| `BC_COMPANY_NOT_FOUND` | N/A (cannot mint companies) |
-| `BC_SOURCE_UNAVAILABLE` | Agent: Retry with new context |
-
-### SLA Aging
-
-- [ ] `sla_expires_at` enforced for all contexts
-- [ ] Auto-ABORT on SLA expiry
-- [ ] `outreach_ctx.abort_expired_sla()` runs every 5 minutes
+- [x] **NO** writes to `marketing.*` tables
+- [x] **NO** writes to `cl.*` tables
+- [x] **NO** writes to `intake.*` tables
+- [x] **NO** writes upstream
+- [x] **NO** writes to `outreach.outreach` (spine)
 
 ---
 
-## 10. Repair Doctrine Compliance
+## 5. Tool Registry Compliance
 
-### History Immutability
+### Tier 0 (FREE) — ALLOWED
 
-- [ ] Error rows are never deleted (only `resolved_at` set)
-- [ ] Signals once emitted are never modified
-- [ ] Prior contexts are never edited or reopened
-- [ ] Cost logs are never adjusted retroactively
+- [x] TOOL-LOCAL-001: KeywordClassifier (local regex)
 
-### Repair Scope
+### Forbidden Tools
 
-- [ ] This hub repairs only BC_* errors
-- [ ] Does NOT repair CT_*, PI_*, DOL_*, OE_* errors
-- [ ] Repairs unblock, they do not rewrite
-
-### Context Lineage
-
-- [ ] All retries create new `outreach_id`
-- [ ] New contexts do NOT inherit signals from prior contexts
-- [ ] Prior context remains for audit (never deleted)
+- [x] No paid tools in this hub
+- [x] No enrichment triggers
+- [x] No API calls that incur cost
 
 ---
 
-## 11. CI Doctrine Compliance
+## 6. Forbidden Patterns (DOCTRINE LOCK)
 
-### Tool Usage (DG-001, DG-002)
+The following are **permanently forbidden** in Blog Content:
 
-- [ ] No paid tools in this hub (signal processing only)
-- [ ] All tools listed in `tooling/tool_registry.md`
-
-### Hub Boundaries (DG-003)
-
-- [ ] Last in order — no downstream hubs to import from
-- [ ] No lateral hub-to-hub imports (only spoke imports)
-
-### Doctrine Sync (DG-005, DG-006)
-
-- [ ] PRD changes accompanied by CHECKLIST changes
-- [ ] Error codes registered in `docs/error_codes.md`
-
-### Signal Validity (DG-007, DG-008)
-
-- [ ] No old/prior context signal usage
-- [ ] No signal refresh patterns
-
-### Immutability (DG-009, DG-010, DG-011, DG-012)
-
-- [ ] No lifecycle state mutations
-- [ ] No error row deletions
-- [ ] No context resurrection
-- [ ] No signal mutations
+- [x] **NO** company minting
+- [x] **NO** outreach_id minting
+- [x] **NO** enrichment triggers
+- [x] **NO** paid API calls
+- [x] **NO** retry/backoff logic
+- [x] **NO** hold queues
+- [x] **NO** rescue patterns
+- [x] **NO** upstream data modification
 
 ---
 
-## 12. External CL + Program Scope Compliance
+## 7. Error Codes (v1.0)
 
-### CL is External
+| Code | Stage | Description |
+|------|-------|-------------|
+| `BLOG-I-NO-OUTREACH` | I | No outreach_id provided |
+| `BLOG-I-NOT-FOUND` | I | outreach_id not found in spine |
+| `BLOG-I-NO-DOMAIN` | I | No domain in spine record |
+| `BLOG-I-UPSTREAM-FAIL` | I | Company Target not PASS |
+| `BLOG-I-ALREADY-PROCESSED` | I | Idempotent skip (already done) |
+| `BLOG-M-NO-CONTENT` | M | No content to process |
+| `BLOG-M-CLASSIFY-FAIL` | M | Event classification failed |
+| `BLOG-M-NO-EVENT` | M | No actionable event detected |
+| `BLOG-O-WRITE-FAIL` | O | Failed to write to Neon |
 
-- [ ] Understands CL is NOT part of Outreach program
-- [ ] Does NOT invoke Company Lifecycle (CL is external)
-- [ ] Does NOT gate on CL operations (CL already verified existence)
-- [ ] Receives company_unique_id via Company Target (not directly from CL)
+---
 
-### Outreach Context Authority
+## 8. Logging (MANDATORY)
 
-- [ ] outreach_id sourced from Outreach Orchestration (not CL)
-- [ ] All operations bound by outreach_id
-- [ ] Does NOT mint outreach_id (Orchestration does)
-- [ ] Reads from outreach.outreach_context table
+Every IMO run MUST log:
 
-### Consumer-Only Compliance
+- [x] `outreach_id`
+- [x] IMO stage transitions (I → M → O)
+- [x] Tool IDs used
+- [x] PASS or FAIL outcome
+- [x] Duration in milliseconds
+- [x] Error details (if FAIL)
+- [x] Event type (if PASS)
 
-- [ ] CONSUMES all upstream data (does NOT enrich)
-- [ ] Provides TIMING signals only (no authority signals)
-- [ ] Does NOT trigger enrichment
-- [ ] Does NOT trigger spend
-- [ ] Does NOT duplicate upstream enrichment
+---
 
-### Program Boundary Compliance
+## 9. CI Guard Compliance
 
-| Boundary | This Hub | Action |
-|----------|----------|--------|
-| CL (external) | Blog Content | NO DIRECT ACCESS |
-| Company Target (upstream) | Blog Content | CONSUME company_unique_id, domain |
-| DOL Filings (upstream) | Blog Content | CONSUME regulatory_signals |
-| People Intelligence (upstream) | Blog Content | CONSUME slot_assignments |
-| BIT Engine (downstream) | Blog Content | EMIT timing_signals |
+The following guards run on every PR touching `hubs/blog-content/**`:
 
-### Explicit Prohibitions
+- [x] Guard 1: No `sovereign_id` references
+- [x] Guard 2: No CL table references
+- [x] Guard 3: No `marketing.*` writes
+- [x] Guard 4: No enrichment triggers
+- [x] Guard 5: Spine guard assertion present
+- [x] Guard 6: No retry logic
+- [x] Guard 7: Doctrine lock comment present
+- [x] Guard 8: No context view writes
+- [x] Guard 9: No company minting
+- [x] Guard 10: No outreach_id minting
+- [x] Guard 11: No social metrics fields (SCOPE LOCK)
+- [x] Guard 12: Scope guard assertion present
+- [x] Guard 13: Error persistence assertion present
+- [x] Guard 14: blog_errors references present
+- [x] Guard 15: Print statement check (no bypass)
 
-- [ ] Does NOT call CL APIs or endpoints
-- [ ] Does NOT verify company existence (CL did that)
-- [ ] Does NOT retry CL operations
-- [ ] Does NOT create outreach_id
-- [ ] Does NOT trigger any paid enrichment
+See: `.github/workflows/blog_imo_guard.yml`
+
+---
+
+## 10. Terminal Failure Doctrine
+
+> **FAIL is FOREVER. There are no retries.**
+
+- [x] Failed records go to `outreach.blog_errors`
+- [x] `retry_allowed = FALSE` on all errors
+- [x] Failed records do NOT proceed downstream
+- [x] Resolution requires human intervention + new `outreach_id`
+
+---
+
+## 11. Signal-Only Compliance
+
+### What Blog Content DOES
+
+- [x] Provides timing signals from news/content
+- [x] Classifies events with BIT impacts
+- [x] Writes context to `outreach.blog`
+
+### What Blog Content DOES NOT DO
+
+- [x] Does NOT mint companies
+- [x] Does NOT trigger enrichment
+- [x] Does NOT trigger paid API calls
+- [x] Does NOT modify upstream data
+- [x] Does NOT mint outreach_id
+
+---
+
+## 12. Waterfall Position
+
+Blog Content is the **4th (LAST)** sub-hub in the waterfall:
+
+| Order | Hub | Required State |
+|-------|-----|----------------|
+| 1 | Company Target | `execution_status = 'ready'` |
+| 2 | DOL Filings | (optional) |
+| 3 | People Intelligence | (optional) |
+| **4** | **Blog Content** | **LAST — context finalization** |
+
+---
+
+## 13. Scope Lock Compliance (DOCTRINE LOCK)
+
+> **The Blog Sub-Hub records *where* a company publishes, not *how large* the audience is.**
+
+### Scope Guard
+
+- [x] `DISALLOW_SOCIAL_METRICS = True` assertion present
+- [x] Forbidden fields list defined in code
+
+### Company-Level Only
+
+- [x] Operates exclusively at company level
+- [x] Social platforms = presence verification only
+- [x] NO audience metrics (followers, subscribers)
+- [x] NO engagement metrics (likes, views, comments)
+- [x] NO sentiment analysis
+- [x] NO people-level social data
+
+---
+
+## 14. Error Handling Discipline (DOCTRINE LOCK)
+
+> **Errors are first-class outputs, not hidden logging.**
+
+### Error Persistence Guard
+
+- [x] `ENFORCE_ERROR_PERSISTENCE = True` assertion present
+- [x] `BlogPipelineError` exception class exists
+- [x] Central error handler `_write_error()` exists
+
+### Error Table Compliance
+
+- [x] `outreach.blog_errors` table exists in Neon
+- [x] All required columns present:
+  - [x] `error_id` (UUID, PK)
+  - [x] `outreach_id` (UUID, FK)
+  - [x] `pipeline_stage` (VARCHAR)
+  - [x] `failure_code` (VARCHAR)
+  - [x] `blocking_reason` (TEXT)
+  - [x] `severity` (VARCHAR)
+  - [x] `retry_allowed` (BOOLEAN, FALSE)
+  - [x] `process_id` (UUID)
+  - [x] `raw_input` (JSONB)
+  - [x] `stack_trace` (TEXT)
+  - [x] `created_at` (TIMESTAMPTZ)
+
+### Error Output
+
+- [x] Every failure persists to `outreach.blog_errors`
+- [x] `error_persisted` field in result tracks persistence
+- [x] `process_id` captured for traceability
+- [x] No silent failures
+
+### Forced Failure Test
+
+- [x] `run_forced_failure_test()` function exists
+- [x] Test passes with all assertions green
+
+---
+
+## Prime Directive (v1.1)
+
+```
++===============================================================================+
+|                     BLOG CONTENT IMO — PRIME DIRECTIVE                        |
+|                                                                               |
+|   1. outreach_id is the ONLY identity                                         |
+|   2. Upstream gate MUST be checked (CT ready)                                 |
+|   3. Signal-only: NO enrichment, NO minting, NO spend                         |
+|   4. FAIL is terminal (no retries)                                            |
+|   5. All writes to outreach.blog or outreach.blog_errors only                 |
+|   6. Company-level only: NO social metrics                                    |
+|   7. Errors are first-class outputs: NO silent failures                       |
+|                                                                               |
++===============================================================================+
+```
 
 ---
 
 ## Compliance Rule
 
-**If any box is unchecked, this hub may not ship.**
+**All boxes MUST be checked for this hub to ship.**
 
 ---
 
-**Last Updated**: 2026-01-02
+**Last Updated**: 2026-01-08
 **Hub**: Blog Content (04.04.05)
-**Doctrine Version**: External CL + Outreach Program v1.0
+**Doctrine Version**: Spine-First Architecture v1.1
+**Status**: PRODUCTION LOCKED
