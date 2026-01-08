@@ -1,0 +1,98 @@
+# DOL Filings Sub-Hub Registry
+# Structural Instantiation v1.0.0
+# IMO-Creator Governance
+
+---
+
+# =============================================================================
+# SUB-HUB IDENTITY
+# =============================================================================
+
+subhub:
+  subhub_name: dol-filings
+  subhub_unique_id: 099de3fb-5331-407a-b191-fa4aff194d33
+  parent_hub_unique_id: e46bcbf0-6719-4c68-8a38-78c36b47e3d1
+  doctrine_id: "04.04.03"
+  type: sub-hub
+  version: "1.0.0"
+  status: CERTIFIED
+  created_at: "2026-01-08T00:00:00Z"
+  waterfall_position: 2
+
+# =============================================================================
+# PROCESS IDS (Immutable)
+# =============================================================================
+
+process_ids:
+  filing_ingestion:
+    process_id: 74d8abef-b115-4329-b326-09543923e230
+    name: Filing Ingestion
+    description: Ingest Form 5500 filings from federal sources
+
+  filing_parsing:
+    process_id: e77f10cf-0a86-4874-8826-9ff28e151122
+    name: Filing Parsing
+    description: Parse filing data and extract fields
+
+  ein_matching:
+    process_id: 74dc7e12-a1e5-467e-9a47-ff6be96bc6e8
+    name: EIN Matching
+    description: Match filings to companies via EIN linkage
+
+  schedule_a_extraction:
+    process_id: 11c66c19-e6a7-4bbd-9949-7e2a171ca6ea
+    name: Schedule A Extraction
+    description: Extract insurance broker data from Schedule A
+
+  renewal_calculation:
+    process_id: 50f159ee-85df-4d8e-98e7-5d0f63d30fea
+    name: Renewal Calculation
+    description: Calculate plan renewal dates
+
+  output:
+    process_id: 1ada5507-9de2-4a90-a24e-a14ed5d23e97
+    name: Output
+    description: Emit signals to company spoke
+
+# =============================================================================
+# OWNED RESPONSIBILITIES
+# =============================================================================
+
+owned_responsibilities:
+  - Form 5500 filing ingestion
+  - Filing parsing and extraction
+  - EIN-to-company matching
+  - Schedule A broker data
+  - Renewal date calculation
+  - Filing history tracking
+
+forbidden_responsibilities:
+  - Company identity minting (CL owns)
+  - EIN to company_unique_id mapping (CL owns)
+  - Lifecycle state changes (CL owns)
+
+# =============================================================================
+# IMO STRUCTURE
+# =============================================================================
+
+imo:
+  input:
+    location: imo/input/
+    purpose: Federal data ingestion
+  middle:
+    location: imo/middle/
+    purpose: Filing processing and matching
+  output:
+    location: imo/output/
+    purpose: Signal emission
+
+# =============================================================================
+# DOCUMENT CONTROL
+# =============================================================================
+
+document_control:
+  created_at: "2026-01-08T00:00:00Z"
+  instantiated_at: "2026-01-08T00:00:00Z"
+  version: "1.0.0"
+  authority: imo-creator
+  author: Claude Code (IMO-Creator)

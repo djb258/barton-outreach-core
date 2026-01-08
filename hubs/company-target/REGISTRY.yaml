@@ -1,0 +1,109 @@
+# Company Target Sub-Hub Registry
+# Structural Instantiation v1.0.0
+# IMO-Creator Governance
+
+---
+
+# =============================================================================
+# SUB-HUB IDENTITY
+# =============================================================================
+
+subhub:
+  subhub_name: company-target
+  subhub_unique_id: 73fe8c7a-13d2-4d49-80d4-65e2350de9ab
+  parent_hub_unique_id: e46bcbf0-6719-4c68-8a38-78c36b47e3d1
+  doctrine_id: "04.04.01"
+  type: sub-hub
+  version: "2.0.0"
+  status: CERTIFIED
+  created_at: "2026-01-08T00:00:00Z"
+  waterfall_position: 1
+
+# =============================================================================
+# PROCESS IDS (Immutable)
+# =============================================================================
+
+process_ids:
+  phase_1_targeting:
+    process_id: e9d41701-b973-439f-b134-9b66ccf483a0
+    name: Phase 1 - Targeting
+    description: Initial company targeting and filtering
+
+  phase_2_domain_resolution:
+    process_id: 4200e43f-4451-45bd-ad91-be96cce0a9ea
+    name: Phase 2 - Domain Resolution
+    description: Resolve company domain from available sources
+
+  phase_3_email_pattern:
+    process_id: 3a69084c-0ae8-4e5c-b548-2ca95f2cc2a5
+    name: Phase 3 - Email Pattern Waterfall
+    description: Discover email pattern via waterfall providers
+
+  phase_4_pattern_verification:
+    process_id: c197ae63-7082-4ea1-8887-7e823c8be720
+    name: Phase 4 - Pattern Verification
+    description: Verify discovered pattern with MillionVerifier
+
+  phase_5_bit_scoring:
+    process_id: 52f513eb-653c-4494-92d5-928522b053b9
+    name: Phase 5 - BIT Scoring
+    description: Calculate Buyer Intent Tool score
+
+  phase_6_lifecycle_gate:
+    process_id: bdb75709-b18a-4310-bf9e-4af242948cbb
+    name: Phase 6 - Lifecycle Gate
+    description: Check company lifecycle state
+
+  phase_7_output:
+    process_id: 00423d7f-3bc5-462e-ab43-068ad770bc8f
+    name: Phase 7 - Output
+    description: Emit results to spokes
+
+  phase_8_finalization:
+    process_id: 85ef42d2-ed3d-4a16-84ca-bb4c74760772
+    name: Phase 8 - Finalization
+    description: Final state recording
+
+# =============================================================================
+# OWNED RESPONSIBILITIES
+# =============================================================================
+
+owned_responsibilities:
+  - Company targeting and filtering
+  - Domain resolution
+  - Email pattern discovery
+  - Pattern verification
+  - BIT score calculation (local copy)
+  - Company Target anchor table maintenance
+
+forbidden_responsibilities:
+  - Company identity minting (CL owns)
+  - Sovereign ID management (CL owns)
+  - Lifecycle state promotion (CL owns)
+  - Fuzzy matching for new identities (CL owns)
+
+# =============================================================================
+# IMO STRUCTURE
+# =============================================================================
+
+imo:
+  input:
+    location: imo/input/
+    purpose: Data ingestion and validation
+  middle:
+    location: imo/middle/
+    purpose: Business logic and processing
+  output:
+    location: imo/output/
+    purpose: Data emission and exports
+
+# =============================================================================
+# DOCUMENT CONTROL
+# =============================================================================
+
+document_control:
+  created_at: "2026-01-08T00:00:00Z"
+  instantiated_at: "2026-01-08T00:00:00Z"
+  version: "1.0.0"
+  authority: imo-creator
+  author: Claude Code (IMO-Creator)

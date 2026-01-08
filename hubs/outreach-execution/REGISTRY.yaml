@@ -1,0 +1,98 @@
+# Outreach Execution Sub-Hub Registry
+# Structural Instantiation v1.0.0
+# IMO-Creator Governance
+
+---
+
+# =============================================================================
+# SUB-HUB IDENTITY
+# =============================================================================
+
+subhub:
+  subhub_name: outreach-execution
+  subhub_unique_id: 2e83d911-91a2-4d6d-8935-af2c1f5e4e54
+  parent_hub_unique_id: e46bcbf0-6719-4c68-8a38-78c36b47e3d1
+  doctrine_id: "04.04.06"
+  type: sub-hub
+  version: "1.0.0"
+  status: ACTIVE
+  created_at: "2026-01-08T00:00:00Z"
+  waterfall_position: 6
+
+# =============================================================================
+# PROCESS IDS (Immutable)
+# =============================================================================
+
+process_ids:
+  action_receipt:
+    process_id: 66e31dd1-7693-4de4-a5d0-68fd6ab86ed7
+    name: Action Receipt
+    description: Receive emit actions from spokes
+
+  action_validation:
+    process_id: 1a95b185-3b1c-4117-abfb-1cc4c46dd950
+    name: Action Validation
+    description: Validate action payloads before execution
+
+  outreach_dispatch:
+    process_id: 5680ad56-1723-4ce9-9cb3-819ae957ed10
+    name: Outreach Dispatch
+    description: Dispatch outreach to external providers
+
+  status_tracking:
+    process_id: 66caf553-5346-4cce-bf3f-6c7770f3ba3a
+    name: Status Tracking
+    description: Track execution status and delivery
+
+  outcome_capture:
+    process_id: 796ff908-399f-46d0-9ffe-5f0256246e1a
+    name: Outcome Capture
+    description: Capture delivery outcomes and responses
+
+  output:
+    process_id: e6142a5a-0915-4f9a-9f1a-3e044f92574f
+    name: Output
+    description: Emit completion signals and metrics
+
+# =============================================================================
+# OWNED RESPONSIBILITIES
+# =============================================================================
+
+owned_responsibilities:
+  - Outreach action execution
+  - External provider integration
+  - Delivery status tracking
+  - Outcome capture and logging
+  - Execution metrics emission
+
+forbidden_responsibilities:
+  - Audience selection (People Outreach spoke owns)
+  - Company targeting (Company Outreach spoke owns)
+  - Person slot creation (People Intelligence owns)
+  - Contact generation (spokes own)
+
+# =============================================================================
+# IMO STRUCTURE
+# =============================================================================
+
+imo:
+  input:
+    location: imo/input/
+    purpose: Action receipt from spokes
+  middle:
+    location: imo/middle/
+    purpose: Execution orchestration
+  output:
+    location: imo/output/
+    purpose: Status and outcome emission
+
+# =============================================================================
+# DOCUMENT CONTROL
+# =============================================================================
+
+document_control:
+  created_at: "2026-01-08T00:00:00Z"
+  instantiated_at: "2026-01-08T00:00:00Z"
+  version: "1.0.0"
+  authority: imo-creator
+  author: Claude Code (IMO-Creator)

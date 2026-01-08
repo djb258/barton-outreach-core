@@ -1,140 +1,195 @@
 # Hub Registry
-
-**Repository:** barton-outreach-cc
-**Version:** 1.0.0
-**Created:** 2026-01-08
-**Authority:** IMO-Creator
+# Structural Instantiation v1.0.0
+# IMO-Creator Governance
 
 ---
 
-## Hub Identity
+# =============================================================================
+# ROOT HUB IDENTITY
+# =============================================================================
 
-name: barton-outreach-cc
-type: OUTREACH_ORCHESTRATION
-version: 1.1.0
-status: ACTIVE
-governance: imo-creator
-
----
-
-## Sub-Hubs
-
-### company-target
-  location: hubs/company-target/
-  purpose: Company targeting and email pattern discovery
-  status: CERTIFIED
-  imo_structure: true
-  phases: 8
-
-### dol-filings
-  location: hubs/dol-filings/
-  purpose: DOL Form 5500 processing and EIN linkage
-  status: CERTIFIED
-  imo_structure: true
-
-### blog-content
-  location: hubs/blog-content/
-  purpose: Blog content signals and engagement tracking
+hub:
+  hub_name: barton-outreach-cc
+  hub_unique_id: e46bcbf0-6719-4c68-8a38-78c36b47e3d1
+  type: OUTREACH_ORCHESTRATION
+  doctrine_id: "04.04"
+  version: "1.1.0"
   status: ACTIVE
-  imo_structure: true
+  created_at: "2026-01-08T00:00:00Z"
+  governance: imo-creator
+  sovereign_parent: null  # This is the root hub
 
-### people-intelligence
-  location: hubs/people-intelligence/
-  purpose: Slot-based people intelligence and movement tracking
-  status: CERTIFIED
-  imo_structure: true
-  certifications:
-    - id: TF-001
-      system: Talent Flow
-      status: PRODUCTION-READY
-      date: 2026-01-08
+# =============================================================================
+# OWNED RESPONSIBILITIES
+# =============================================================================
 
-### outreach-execution
-  location: hubs/outreach-execution/
-  purpose: Campaign execution and delivery
-  status: ACTIVE
-  imo_structure: true
+owned_responsibilities:
+  - Outreach campaign orchestration
+  - Sub-hub coordination
+  - Waterfall execution ordering
+  - Spoke data routing
+  - Context lifecycle management
 
----
+forbidden_responsibilities:
+  - Company identity minting (CL owns)
+  - Sovereign ID management (CL owns)
+  - External API authentication (Infrastructure owns)
 
-## Spokes
+# =============================================================================
+# SUB-HUBS (Declared Boundaries)
+# =============================================================================
 
-### company-dol
-  location: spokes/company-dol/
-  connects: [company-target, dol-filings]
-  data_only: true
+sub_hubs:
+  company-target:
+    subhub_unique_id: 73fe8c7a-13d2-4d49-80d4-65e2350de9ab
+    location: hubs/company-target/
+    doctrine_id: "04.04.01"
+    purpose: Company targeting and email pattern discovery
+    status: CERTIFIED
+    waterfall_position: 1
+    registry_file: hubs/company-target/REGISTRY.yaml
 
-### company-outreach
-  location: spokes/company-outreach/
-  connects: [company-target, outreach-execution]
-  data_only: true
+  dol-filings:
+    subhub_unique_id: 099de3fb-5331-407a-b191-fa4aff194d33
+    location: hubs/dol-filings/
+    doctrine_id: "04.04.03"
+    purpose: DOL Form 5500 processing and EIN linkage
+    status: CERTIFIED
+    waterfall_position: 2
+    registry_file: hubs/dol-filings/REGISTRY.yaml
 
-### company-people
-  location: spokes/company-people/
-  connects: [company-target, people-intelligence]
-  data_only: true
+  blog-content:
+    subhub_unique_id: 09047fdb-3ee1-4999-b507-e400187f4a5c
+    location: hubs/blog-content/
+    doctrine_id: "04.04.05"
+    purpose: Blog content signals and engagement tracking
+    status: ACTIVE
+    waterfall_position: 3
+    registry_file: hubs/blog-content/REGISTRY.yaml
 
-### people-outreach
-  location: spokes/people-outreach/
-  connects: [people-intelligence, outreach-execution]
-  data_only: true
+  people-intelligence:
+    subhub_unique_id: 2e5bf57e-4ca8-4d09-8c50-6ea785306b97
+    location: hubs/people-intelligence/
+    doctrine_id: "04.04.02"
+    purpose: Slot-based people intelligence and movement tracking
+    status: CERTIFIED
+    waterfall_position: 4
+    registry_file: hubs/people-intelligence/REGISTRY.yaml
+    certifications:
+      - id: TF-001
+        system: Talent Flow
+        status: PRODUCTION-READY
+        date: "2026-01-08"
 
-### signal-company
-  location: spokes/signal-company/
-  connects: [blog-content, company-target]
-  data_only: true
+  outreach-execution:
+    subhub_unique_id: 2e83d911-91a2-4d6d-8935-af2c1f5e4e54
+    location: hubs/outreach-execution/
+    doctrine_id: "04.04.04"
+    purpose: Campaign execution and delivery
+    status: ACTIVE
+    waterfall_position: 5
+    registry_file: hubs/outreach-execution/REGISTRY.yaml
 
----
+# =============================================================================
+# SPOKES (Data-Only Interfaces)
+# =============================================================================
 
-## Operational Components
+spokes:
+  company-dol:
+    spoke_unique_id: 2eae5c3d-51be-47b9-962e-efd9217390b2
+    location: spokes/company-dol/
+    connects:
+      - 73fe8c7a-13d2-4d49-80d4-65e2350de9ab  # company-target
+      - 099de3fb-5331-407a-b191-fa4aff194d33  # dol-filings
+    data_only: true
 
-### ops
-  location: ops/
-  contains:
-    - enforcement/   # Doctrine guards
-    - migrations/    # Database migrations
-    - scripts/       # Automation scripts
-    - tests/         # Test suites
-    - tooling/       # Development tools
-    - validation/    # Validators
+  company-outreach:
+    spoke_unique_id: 21fdbb3c-5d1a-434b-87ac-56938aa5d860
+    location: spokes/company-outreach/
+    connects:
+      - 73fe8c7a-13d2-4d49-80d4-65e2350de9ab  # company-target
+      - 2e83d911-91a2-4d6d-8935-af2c1f5e4e54  # outreach-execution
+    data_only: true
 
-### docs
-  location: docs/
-  contains:
-    - prd/           # Product requirements
-    - adr/           # Architecture decisions
-    - audit/         # Audit reports
-    - dendron/       # Obsidian/Dendron notes
-    - diagrams/      # Visual documentation
+  company-people:
+    spoke_unique_id: c4349c1a-72d8-45ee-b9f3-29eea0c0b176
+    location: spokes/company-people/
+    connects:
+      - 73fe8c7a-13d2-4d49-80d4-65e2350de9ab  # company-target
+      - 2e5bf57e-4ca8-4d09-8c50-6ea785306b97  # people-intelligence
+    data_only: true
 
-### contexts
-  location: contexts/
-  contains:
-    - global-config/ # Global configuration
-    - config/        # Environment configs
+  people-outreach:
+    spoke_unique_id: 73474908-79f4-46a9-9b4b-701ccd77a122
+    location: spokes/people-outreach/
+    connects:
+      - 2e5bf57e-4ca8-4d09-8c50-6ea785306b97  # people-intelligence
+      - 2e83d911-91a2-4d6d-8935-af2c1f5e4e54  # outreach-execution
+    data_only: true
 
-### contracts
-  location: contracts/
-  purpose: Data contracts between hubs
+  signal-company:
+    spoke_unique_id: 937f56d5-3dca-43ce-8f0e-13535c9747d7
+    location: spokes/signal-company/
+    connects:
+      - 09047fdb-3ee1-4999-b507-e400187f4a5c  # blog-content
+      - 73fe8c7a-13d2-4d49-80d4-65e2350de9ab  # company-target
+    data_only: true
 
----
+# =============================================================================
+# OPERATIONAL COMPONENTS
+# =============================================================================
 
-## Waterfall Order
+operational_components:
+  ops:
+    location: ops/
+    contains:
+      - enforcement/
+      - migrations/
+      - scripts/
+      - tests/
+      - tooling/
+      - validation/
 
-execution_order:
-  1: company-target
-  2: dol-filings
-  3: blog-content
-  4: people-intelligence
-  5: outreach-execution
+  docs:
+    location: docs/
+    contains:
+      - prd/
+      - adr/
+      - audit/
+      - dendron/
+      - diagrams/
 
-rule: Each hub executes only after upstream dependencies pass
+  contexts:
+    location: contexts/
+    contains:
+      - global-config/
+      - config/
 
----
+  contracts:
+    location: contracts/
+    purpose: Data contracts between hubs
 
-## Document Control
+# =============================================================================
+# WATERFALL EXECUTION ORDER
+# =============================================================================
 
-created: 2026-01-08
-version: 1.0.0
-authority: imo-creator
-author: Claude Code (IMO-Creator)
+waterfall:
+  order:
+    1: company-target
+    2: dol-filings
+    3: blog-content
+    4: people-intelligence
+    5: outreach-execution
+  rule: Each hub executes only after upstream dependencies pass
+
+# =============================================================================
+# DOCUMENT CONTROL
+# =============================================================================
+
+document_control:
+  created_at: "2026-01-08T00:00:00Z"
+  instantiated_at: "2026-01-08T00:00:00Z"
+  version: "1.0.0"
+  authority: imo-creator
+  author: Claude Code (IMO-Creator)
+  structural_instantiation: COMPLETE

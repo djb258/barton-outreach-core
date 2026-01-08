@@ -1,0 +1,88 @@
+# Blog Content Sub-Hub Registry
+# Structural Instantiation v1.0.0
+# IMO-Creator Governance
+
+---
+
+# =============================================================================
+# SUB-HUB IDENTITY
+# =============================================================================
+
+subhub:
+  subhub_name: blog-content
+  subhub_unique_id: 09047fdb-3ee1-4999-b507-e400187f4a5c
+  parent_hub_unique_id: e46bcbf0-6719-4c68-8a38-78c36b47e3d1
+  doctrine_id: "04.04.05"
+  type: sub-hub
+  version: "1.0.0"
+  status: ACTIVE
+  created_at: "2026-01-08T00:00:00Z"
+  waterfall_position: 3
+
+# =============================================================================
+# PROCESS IDS (Immutable)
+# =============================================================================
+
+process_ids:
+  content_ingestion:
+    process_id: c28435e8-1503-474e-bfa1-3526fc1d48ec
+    name: Content Ingestion
+    description: Ingest news, funding alerts, content webhooks
+
+  event_processing:
+    process_id: b94b49dd-d924-46c0-9bad-822c4e7e008f
+    name: Event Processing
+    description: Process timing events and signals
+
+  bit_signal_emission:
+    process_id: 5df3a128-d259-44cd-ae48-e7798fdc4791
+    name: BIT Signal Emission
+    description: Emit BIT modulation signals
+
+  output:
+    process_id: 45474e7d-2289-4cf7-92b8-602f1536f1d7
+    name: Output
+    description: Emit signals to company spoke
+
+# =============================================================================
+# OWNED RESPONSIBILITIES
+# =============================================================================
+
+owned_responsibilities:
+  - Timing signal generation
+  - Content event processing
+  - BIT modulation signals
+  - Funding event detection
+  - Acquisition signal detection
+
+forbidden_responsibilities:
+  - Company identity minting (CL owns)
+  - Company revival (CL owns)
+  - Enrichment triggering (Company Target owns)
+  - Lifecycle mutation (CL owns)
+
+# =============================================================================
+# IMO STRUCTURE
+# =============================================================================
+
+imo:
+  input:
+    location: imo/input/
+    purpose: Content feed ingestion
+  middle:
+    location: imo/middle/
+    purpose: Event processing
+  output:
+    location: imo/output/
+    purpose: Signal emission
+
+# =============================================================================
+# DOCUMENT CONTROL
+# =============================================================================
+
+document_control:
+  created_at: "2026-01-08T00:00:00Z"
+  instantiated_at: "2026-01-08T00:00:00Z"
+  version: "1.0.0"
+  authority: imo-creator
+  author: Claude Code (IMO-Creator)
