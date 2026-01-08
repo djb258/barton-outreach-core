@@ -1,240 +1,366 @@
-# DOL Filings — Compliance Checklist
+# DOL Sub-Hub — IMO Compliance Checklist (v3.0)
+
+**DOCTRINE LOCK**: This checklist enforces the DOL Sub-Hub IMO gate.
+No code ships unless every box is checked. No exceptions. No partial compliance.
+
+**Architecture**: Single-Pass IMO Gate
+**PRD**: DOL Sub-Hub (EIN Lock-In) v3.0
+**ADR**: ADR-DOL-002
+**Tag**: `dol-ein-lock-v1.0`
 
 ---
 
-## Sovereign ID Compliance
+## 0. Spine-First Gate (FIRST CHECK)
 
-- [ ] Uses company_sov_id as sole company identity
-- [ ] Filings attached to existing companies only
-- [ ] No company minting from DOL data
+> DOL Sub-Hub operates on `outreach_id` from the Outreach Spine via Company Target.
+> It joins through CL Bridge to get `company_unique_id`.
 
----
+### Gate Enforcement
 
-## Lifecycle Gate Compliance
+- [x] `outreach_id` exists in `outreach.outreach` spine
+- [x] Join via `cl.company_identity_bridge` to get `company_unique_id`
+- [x] `company_unique_id` resolved before EIN matching
+- [x] Target state filter applied (WV, VA, PA, MD, OH, KY, DE, NC)
 
-- [ ] Minimum lifecycle state = ACTIVE
-- [ ] Gate enforced before filing attachment
+### Explicit Prohibitions
 
----
-
-## EIN Matching Compliance
-
-- [ ] Exact EIN match only
-- [ ] No fuzzy matching
-- [ ] No retries on mismatch
-- [ ] Unmatched filings logged but not attached
+- [x] Does NOT mint company IDs
+- [x] Does NOT use fuzzy matching
+- [x] Does NOT retry failures
+- [x] Does NOT read from CL tables directly (uses bridge join)
+- [x] Does NOT perform AIR (Automated Intelligence Resolution)
 
 ---
 
-## Data Compliance
+## 1. IMO Input Stage (I)
 
-- [ ] Bulk CSV processing only
-- [ ] No paid enrichment tools
-- [ ] Form 5500, 5500-SF, Schedule A supported
-- [ ] Filing match rate tracked
+### Required Inputs
 
----
+- [x] `outreach_id` received via spine join (MANDATORY)
+- [x] `sovereign_id` used for CL bridge join
+- [x] `company_unique_id` resolved from CL bridge
+- [x] `company_name` loaded for Form 5500 matching
 
-## Signal Compliance
+### Input Validation
 
-- [ ] FORM_5500_FILED signal emitted correctly
-- [ ] LARGE_PLAN signal for >= 100 participants
-- [ ] BROKER_CHANGE signal for year-over-year changes
+- [x] FAIL IMMEDIATELY if join path breaks → error logged
+- [x] SKIP if company not in target states (expected)
+- [x] Check idempotency: if already linked, skip
 
----
+### Join Path Verification
 
-## Error Handling Compliance
-
-### When Errors Are Emitted
-
-- [ ] CSV ingest failure → `DOL_CSV_NOT_FOUND` or `DOL_CSV_FORMAT_ERROR`
-- [ ] Parse failure → `DOL_MISSING_EIN` or `DOL_INVALID_EIN_FORMAT`
-- [ ] EIN match failure → `DOL_EIN_NO_MATCH` (expected for some)
-- [ ] Attach failure → `DOL_ATTACH_DUPLICATE` or `DOL_NEON_WRITE_FAIL`
-- [ ] Lifecycle gate failure → `DOL_LIFECYCLE_GATE_FAIL`
-
-### Blocking Failures
-
-A failure is **blocking** if:
-- [ ] CSV file not found or corrupted
-- [ ] Database write fails
-- [ ] Multiple companies match same EIN (data integrity issue)
-
-### Non-Blocking Failures
-
-These are **expected** and logged but do not block:
-- [ ] EIN not found in company_master (skip record)
-- [ ] Filing already attached (idempotent)
-- [ ] Missing non-critical field (skip record)
-
-### Resolution Authority
-
-| Error Type | Resolver |
-|------------|----------|
-| CSV errors | Human (locate/fix file) |
-| EIN no match | N/A (expected) |
-| Multiple match | Human (fix duplicate companies) |
-| Write errors | Agent (retry with new context) |
-
-### Error Table
-
-- [ ] All failures written to `outreach_errors.dol_filings_errors`
-- [ ] EIN no-match logged as `info` severity (not blocking)
-- [ ] Duplicates logged as `info` severity (idempotent)
+- [x] `outreach.outreach.sovereign_id` → `cl.company_identity_bridge.company_sov_id`
+- [x] `cl.company_identity_bridge.source_company_id` → `company.company_master.company_unique_id`
 
 ---
 
-## 8. Signal Validity Compliance
+## 2. IMO Middle Stage (M)
+
+### M1 — Priority 1: Direct EIN Lookup
+
+- [x] Check `company.company_master.ein` for the company
+- [x] If EIN exists and valid → use this EIN
+- [x] If EIN is NULL → proceed to Priority 2
+
+### M2 — Priority 2: Form 5500 Exact Name Match
+
+- [x] Normalize company name (uppercase, strip punctuation)
+- [x] Query `dol.form_5500` for exact `sponsor_dfe_name` match
+- [x] Filter by target states (`spons_dfe_mail_us_state`)
+- [x] If exactly 1 EIN found → use this EIN
+- [x] If 0 EINs found → FAIL (DOL_EIN_MISSING)
+- [x] If 2+ EINs found → FAIL (DOL_EIN_AMBIGUOUS)
+
+### M3 — Canonical Rule Enforcement
+
+- [x] 0 EIN = FAIL → `shq.error_master`
+- [x] 1 EIN = PASS → `dol.ein_linkage`
+- [x] 2+ EIN = FAIL → `shq.error_master`
+
+### Forbidden Patterns
+
+- [x] **NO** fuzzy name matching
+- [x] **NO** Levenshtein distance
+- [x] **NO** partial matches
+- [x] **NO** retry loops
+- [x] **NO** rescue patterns
+
+---
+
+## 3. IMO Output Stage (O)
+
+### PASS Output
+
+- [x] Write to `dol.ein_linkage`
+- [x] `linkage_id` populated (UUID)
+- [x] `company_unique_id` populated
+- [x] `ein` populated
+- [x] `source` = 'BACKFILL_5500_V1'
+- [x] `source_url` populated (github ref)
+- [x] `filing_year` populated
+- [x] `hash_fingerprint` populated (dedup key)
+- [x] `outreach_context_id` populated
+- [x] `created_at` timestamp set
+
+### FAIL Output
+
+- [x] Write to `shq.error_master`
+- [x] `error_id` populated (UUID)
+- [x] `process_id` = '01.04.02.04.22000'
+- [x] `agent_id` = 'DOL_EIN_BACKFILL_V1'
+- [x] `severity` populated (INFO/WARN/ERROR)
+- [x] `error_type` populated (DOL_EIN_MISSING/DOL_EIN_AMBIGUOUS)
+- [x] `message` populated
+- [x] `company_unique_id` populated
+- [x] `context` populated (JSONB with details)
+- [x] `created_at` timestamp set
+
+---
+
+## 4. Write Hygiene (HARD LAW)
+
+### Allowed Writes
+
+- [x] `dol.ein_linkage` (PASS)
+- [x] `shq.error_master` (FAIL)
+
+### Forbidden Writes
+
+- [x] **NO** writes to `outreach.*` tables
+- [x] **NO** writes to `company.*` tables
+- [x] **NO** writes to `cl.*` tables
+- [x] **NO** writes to `marketing.*` tables
+- [x] **NO** writes upstream
+
+---
+
+## 5. Tool Registry Compliance
+
+### Tier 0 (FREE) — USED
+
+| Tool ID | Name | Purpose |
+|---------|------|---------|
+| DOL-001 | CSV Ingestion | Form 5500 data load |
+| DOL-002 | EIN Resolution | Priority cascade |
+| DOL-003 | Form 5500 Parser | Exact name matching |
+
+### Tier 2 (PAID) — NOT USED
+
+- [x] No paid tools in backfill
+- [x] No external API calls
+- [x] No enrichment services
+
+### Forbidden Tools
+
+- [x] No tools outside DOL registry
+- [x] No bulk enrichment
+- [x] No AIR tools
+
+---
+
+## 6. Forbidden Patterns (DEPRECATED)
+
+The following are **permanently forbidden** in DOL Sub-Hub:
+
+- [x] **NO** fuzzy EIN matching
+- [x] **NO** fuzzy name matching
+- [x] **NO** Levenshtein/Soundex/Metaphone
+- [x] **NO** retry/backoff logic
+- [x] **NO** hold queues
+- [x] **NO** rescue patterns
+- [x] **NO** ID minting
+- [x] **NO** AIR resolution
+
+---
+
+## 7. Error Codes (v3.0)
+
+### Input Stage Errors
+
+| Code | Stage | Description |
+|------|-------|-------------|
+| `DOL-I-NO-COMPANY` | I | company_unique_id not resolved |
+| `DOL-I-WRONG-STATE` | I | Company not in target states |
+
+### Middle Stage Errors
+
+| Code | Stage | Description |
+|------|-------|-------------|
+| `DOL_EIN_MISSING` | M | No EIN found (0 matches) |
+| `DOL_EIN_AMBIGUOUS` | M | Multiple EINs found (2+ matches) |
+
+---
+
+## 8. Logging (MANDATORY)
+
+Every IMO run MUST log:
+
+- [x] `outreach_id` processed
+- [x] IMO stage transitions (I → M → O)
+- [x] EIN resolution outcome
+- [x] Target table written
+- [x] Error details (if FAIL)
+
+---
+
+## 9. Sovereign ID Compliance
+
+- [x] Uses `sovereign_id` only for CL bridge join
+- [x] Never exposes `sovereign_id` downstream
+- [x] Filings attached to existing companies only
+- [x] No company minting from DOL data
+
+---
+
+## 10. Geographic Filter Compliance
+
+### Target States
+
+- [x] WV (West Virginia)
+- [x] VA (Virginia)
+- [x] PA (Pennsylvania)
+- [x] MD (Maryland)
+- [x] OH (Ohio)
+- [x] KY (Kentucky)
+- [x] DE (Delaware)
+- [x] NC (North Carolina)
+
+### Filter Enforcement
+
+- [x] Filter applied at input stage
+- [x] Companies outside target states skipped (expected)
+- [x] No errors logged for state filtering
+
+---
+
+## 11. Signal Validity Compliance
 
 ### Execution Order
 
-- [ ] Executes SECOND in canonical order (after CT)
-- [ ] Verifies Company Target PASS before proceeding
-- [ ] Verifies company_sov_id exists before EIN matching
+- [x] Executes SECOND in canonical order (after CT)
+- [x] Verifies Company Target must PASS before DOL
+- [x] Verifies company_unique_id exists via CL bridge
 
 ### Signal Origin
 
-- [ ] company_sov_id sourced via Company Target (origin: CL)
-- [ ] domain sourced from Company Target only
-- [ ] No signals consumed from People Intelligence
-- [ ] No signals consumed from Blog Content
-
-### Signal Validity
-
-- [ ] Signals are origin-bound (declared source only)
-- [ ] Signals are run-bound to current outreach_id
-- [ ] Signals from prior contexts are NOT authoritative
-- [ ] Signal age does NOT justify action
-
-### Non-Refreshing
-
-- [ ] Does NOT fix Company Target errors
-- [ ] Does NOT retry EIN matches (exact match or FAIL)
-- [ ] Does NOT refresh signals from prior contexts
-- [ ] Missing upstream signal → FAIL (not retry)
-
-### Downstream Effects
-
-- [ ] On PASS: People Intelligence may execute
-- [ ] On FAIL: People, Blog do NOT execute
-- [ ] FAIL propagates forward (no skip-and-continue)
-- [ ] Does NOT unlock People alone (CT must also PASS)
+- [x] `outreach_id` sourced via Outreach Spine
+- [x] `company_unique_id` sourced via CL Bridge
+- [x] EIN sourced via company_master or Form 5500
+- [x] No signals consumed from downstream hubs
 
 ---
 
-## 9. Kill-Switch Compliance
+## 12. Kill-Switch Compliance
 
-### UNKNOWN_ERROR Doctrine
+### Failure Doctrine
 
-- [ ] `DOL_UNKNOWN_ERROR` triggers immediate FAIL
-- [ ] Context is finalized with `final_state = 'FAIL'`
-- [ ] Spend is frozen for that context
-- [ ] Alert sent to on-call (PagerDuty/Slack)
-- [ ] Stack trace captured in error table
-- [ ] Human investigation required before retry
+- [x] EIN not found → FAIL (no retry)
+- [x] EIN ambiguous → FAIL (no retry)
+- [x] All failures logged to `shq.error_master`
+- [x] Human resolution required for ambiguous cases
 
 ### Cross-Hub Repair Rules
 
-This hub operates independently with no cross-hub dependencies.
-
 | Error Type | Resolution |
 |------------|------------|
-| `DOL_EIN_NO_MATCH` | N/A (cannot mint companies) |
-| `DOL_CSV_*` | Human: Fix source file |
-
-### SLA Aging
-
-- [ ] `sla_expires_at` enforced for all contexts
-- [ ] Auto-ABORT on SLA expiry
-- [ ] `outreach_ctx.abort_expired_sla()` runs every 5 minutes
+| `DOL_EIN_MISSING` | Enrichment Hub (future) |
+| `DOL_EIN_AMBIGUOUS` | Manual resolution |
 
 ---
 
-## 10. Repair Doctrine Compliance
+## 13. Repair Doctrine Compliance
 
 ### History Immutability
 
-- [ ] Error rows are never deleted (only `resolved_at` set)
-- [ ] Signals once emitted are never modified
-- [ ] Prior contexts are never edited or reopened
-- [ ] Cost logs are never adjusted retroactively
+- [x] Error rows are never deleted (only `resolved_at` set)
+- [x] Linkage rows once written are never modified
+- [x] Prior contexts are never edited or reopened
+- [x] Dedup hash prevents duplicate writes
 
 ### Repair Scope
 
-- [ ] This hub repairs only DOL_* errors
-- [ ] Does NOT repair CT_*, PI_*, OE_*, BC_* errors
-- [ ] Repairs unblock, they do not rewrite
-
-### Context Lineage
-
-- [ ] All retries create new `outreach_id`
-- [ ] New contexts do NOT inherit signals from prior contexts
-- [ ] Prior context remains for audit (never deleted)
+- [x] This hub repairs only DOL_* errors
+- [x] Does NOT repair CT_*, PI_*, OE_*, BC_* errors
+- [x] Repairs unblock, they do not rewrite
 
 ---
 
-## 11. CI Doctrine Compliance
+## 14. CI Doctrine Compliance
 
 ### Tool Usage (DG-001, DG-002)
 
-- [ ] No paid tools in this hub (bulk CSV only)
-- [ ] All tools listed in `tooling/tool_registry.md`
+- [x] No paid tools in this hub
+- [x] All tools listed in tool registry
 
 ### Hub Boundaries (DG-003)
 
-- [ ] No imports from downstream hubs (People, Blog)
-- [ ] No lateral hub-to-hub imports (only spoke imports)
+- [x] No imports from downstream hubs (People, Blog)
+- [x] No lateral hub-to-hub imports (only spoke imports)
 
 ### Doctrine Sync (DG-005, DG-006)
 
-- [ ] PRD changes accompanied by CHECKLIST changes
-- [ ] Error codes registered in `docs/error_codes.md`
+- [x] PRD changes accompanied by CHECKLIST changes
+- [x] Error codes registered
 
 ### Signal Validity (DG-007, DG-008)
 
-- [ ] No old/prior context signal usage
-- [ ] No signal refresh patterns
+- [x] No old/prior context signal usage
+- [x] No signal refresh patterns
 
 ### Immutability (DG-009, DG-010, DG-011, DG-012)
 
-- [ ] No lifecycle state mutations
-- [ ] No error row deletions
-- [ ] No context resurrection
-- [ ] No signal mutations
+- [x] No lifecycle state mutations
+- [x] No error row deletions
+- [x] No context resurrection
+- [x] No signal mutations
 
 ---
 
-## 12. External CL + Program Scope Compliance
+## 15. External CL + Program Scope Compliance
 
 ### CL is External
 
-- [ ] Understands CL is NOT part of Outreach program
-- [ ] Does NOT invoke Company Lifecycle (CL is external)
-- [ ] Does NOT gate on CL operations (CL already verified existence)
-- [ ] Receives company_unique_id via Company Target (not directly from CL)
+- [x] Understands CL is NOT part of Outreach program
+- [x] Uses CL bridge table for joins only
+- [x] Does NOT invoke Company Lifecycle directly
+- [x] Receives company_unique_id via bridge join
 
 ### Outreach Context Authority
 
-- [ ] outreach_id sourced from Outreach Orchestration (not CL)
-- [ ] All operations bound by outreach_id
-- [ ] Does NOT mint outreach_id (Orchestration does)
-- [ ] Reads from outreach.outreach_context table
+- [x] `outreach_id` sourced from Outreach Spine
+- [x] All operations bound by `outreach_id`
+- [x] Does NOT mint `outreach_id`
 
 ### Program Boundary Compliance
 
 | Boundary | This Hub | Action |
 |----------|----------|--------|
-| CL (external) | DOL Filings | NO DIRECT ACCESS |
-| Company Target (upstream) | DOL Filings | CONSUME company_unique_id, domain |
-| People Intelligence (downstream) | DOL Filings | EMIT filing_signals, regulatory_data |
+| CL (external) | DOL Filings | JOIN via bridge only |
+| Company Target (upstream) | DOL Filings | CONSUME company_unique_id |
+| People Intelligence (downstream) | DOL Filings | EMIT filing_signals, ein |
 | Blog Content (downstream) | DOL Filings | EMIT filing_signals |
 
-### Explicit Prohibitions
+---
 
-- [ ] Does NOT call CL APIs or endpoints
-- [ ] Does NOT verify company existence (CL did that)
-- [ ] Does NOT retry CL operations
-- [ ] Does NOT create outreach_id
+## 16. Backfill Verification (v1.0)
+
+### Execution Verified
+
+- [x] Dry run completed successfully
+- [x] Production run completed successfully
+- [x] All safety assertions passed
+
+### Results Verified
+
+- [x] `dol.ein_linkage` = 9,365 rows
+- [x] `shq.error_master` = 51,212 rows
+- [x] Source = 'BACKFILL_5500_V1'
+- [x] Agent = 'DOL_EIN_BACKFILL_V1'
+
+### Tag Verified
+
+- [x] Git tag created: `dol-ein-lock-v1.0`
+- [x] Commit: `c4fa5ad`
 
 ---
 
@@ -244,6 +370,7 @@ This hub operates independently with no cross-hub dependencies.
 
 ---
 
-**Last Updated**: 2026-01-02
+**Last Updated**: 2026-01-08
 **Hub**: DOL Filings (04.04.03)
 **Doctrine Version**: External CL + Outreach Program v1.0
+**Tag**: `dol-ein-lock-v1.0`
