@@ -1,5 +1,17 @@
 # Welcome to your Lovable project
 
+---
+
+## Doctrine Certifications
+
+| Certification | System | Status | Date |
+|---------------|--------|--------|------|
+| **TF-001** | Talent Flow | 🚀 PRODUCTION-READY | 2026-01-08 |
+
+> **Note:** Scope expansion for any certified system requires new certification.
+
+---
+
 ## Project info
 
 **URL**: https://lovable.dev/projects/a8e59576-8676-4e68-b0fc-322fc78b5a7c

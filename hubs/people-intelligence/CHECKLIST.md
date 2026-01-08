@@ -307,16 +307,17 @@ A failure is **blocking** if:
 
 ## 14. Talent Flow Compliance (TF-001)
 
-### Certification Status: CERTIFIED
+### Certification Status: ✅ PRODUCTION-READY
 
 | Component | Status |
 |-----------|--------|
-| Doctrine Document | DONE |
-| CI Enforcement | DONE |
-| Guard Script | DONE |
-| Doctrine Tests | DONE |
-| Regression Lock | DONE |
-| Legacy Quarantine | DONE |
+| Doctrine Document | ✅ COMPLETE |
+| CI Enforcement | ✅ COMPLETE |
+| Guard Script | ✅ COMPLETE |
+| Doctrine Tests | ✅ COMPLETE (30 tests) |
+| Regression Lock | ✅ COMPLETE (9 tests) |
+| Legacy Quarantine | ✅ COMPLETE |
+| **Production Release** | ✅ **2026-01-08** |
 
 ### Invariants Enforced
 
@@ -369,4 +370,26 @@ A failure is **blocking** if:
 **Doctrine Version**: Barton IMO v1.1
 **Migration Hash**: `678a8d99`
 **Certification Status**: FULL PASS
-**Talent Flow Certification**: TF-001 CERTIFIED
+**Talent Flow Certification**: TF-001 PRODUCTION-READY
+
+---
+
+## Handoff Note
+
+### Talent Flow (TF-001) — SEALED
+
+Talent Flow is a **sealed sensor**. It observes executive movement on canonical slots and emits resolution signals. It does not act.
+
+**Any changes to Talent Flow require:**
+1. Formal doctrine review
+2. New certification (TF-002+)
+3. CI guard update
+
+**Legacy movement_engine refactor is explicitly deferred.**
+The quarantined code at `meta/legacy_quarantine/movement_engine/` is preserved for future refactor but is not part of this release.
+
+**CI Enforcement Active:**
+- Guard: `ops/enforcement/talent_flow_guard.py`
+- Workflow: `.github/workflows/talent_flow_guard.yml`
+- Tests: `ops/tests/test_talent_flow_doctrine.py` (30 tests)
+- Regression: `ops/tests/test_forbidden_signals_never_return.py` (9 tests)

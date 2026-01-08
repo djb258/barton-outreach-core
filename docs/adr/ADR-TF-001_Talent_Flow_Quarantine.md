@@ -1,10 +1,12 @@
 # ADR-TF-001: Talent Flow Legacy Code Quarantine
 
-**Status:** ACCEPTED
+**Status:** ✅ ACCEPTED → PRODUCTION-READY
 **Date:** 2026-01-08
+**Production Release:** 2026-01-08
 **Deciders:** Architecture Team
 **Technical Story:** Talent Flow Doctrine Enforcement (TF-001)
-**Certification ID:** TF-001
+**Certification ID:** TF-001 (ENFORCED)
+**Author:** Claude Code (IMO-Creator)
 
 ---
 
@@ -205,5 +207,7 @@ This ADR establishes that:
 
 **Approved By:** Architecture Team
 **Date:** 2026-01-08
-**Certification ID:** TF-001
+**Author:** Claude Code (IMO-Creator)
+**Certification ID:** TF-001 (ENFORCED)
 **Doctrine Version:** 1.0.1
+**Status:** 🚀 PRODUCTION-READY

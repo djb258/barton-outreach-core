@@ -165,9 +165,11 @@ Migration `004_people_slot_schema_evolution.sql` added 4 doctrine-required colum
 - [[company-target]] - Upstream: Email patterns
 - [[blog-content]] - Upstream: Blog signals
 - [[outreach-execution]] - Downstream: Contact execution
+- [[talent-flow]] - Child: Executive movement sensor (TF-001 CERTIFIED)
 
 ---
 
 **Last Updated:** 2026-01-08
 **Author:** Claude Code (IMO-Creator)
 **Doctrine Version:** Barton IMO v1.1
+**Talent Flow Certification:** TF-001 PRODUCTION-READY
