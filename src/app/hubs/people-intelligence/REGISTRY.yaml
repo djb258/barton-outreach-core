@@ -1,5 +1,5 @@
 # People Intelligence Sub-Hub Registry
-# Structural Instantiation v1.0.0
+# Structural Instantiation v2.2.0
 # IMO-Creator Governance
 
 ---
@@ -14,7 +14,7 @@ subhub:
   parent_hub_unique_id: e46bcbf0-6719-4c68-8a38-78c36b47e3d1
   doctrine_id: "04.04.02"
   type: sub-hub
-  version: "2.1.0"
+  version: "2.2.0"
   status: CERTIFIED
   created_at: "2026-01-08T00:00:00Z"
   waterfall_position: 4
@@ -36,6 +36,21 @@ certifications:
       - ops/enforcement/talent_flow_guard.py
       - .github/workflows/talent_flow_guard.yml
       - ops/tests/test_talent_flow_doctrine.py
+
+  - certification_id: SLOT-CONTRACT-001
+    system: People Slot Contract
+    status: ENFORCED
+    date: "2026-01-09"
+    enforcement:
+      - ops/validation/validation_rules.py
+      - ops/tests/test_people_slot_contract.py
+      - contracts/people-outreach.contract.yaml
+    definition: |
+      A slot is FILLED if and only if:
+        - full_name IS NOT NULL AND != ''
+        - title IS NOT NULL AND != ''
+        - linkedin_url IS NOT NULL AND != ''
+      Email is OPTIONAL enrichment (never blocks slot fill).
 
 # =============================================================================
 # PROCESS IDS (Immutable)

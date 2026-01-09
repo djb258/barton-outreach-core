@@ -149,6 +149,31 @@ Migration `004_people_slot_schema_evolution.sql` added 4 doctrine-required colum
 5. **Movement history is APPEND-ONLY (audit safe)**
 6. **No People table writes upstream — signals only**
 7. **LinkedIn URL is the external identity anchor**
+8. **Email is OPTIONAL enrichment — NEVER blocks slot fill** *(Added 2026-01-09)*
+
+## Slot Contract (Enforced 2026-01-09)
+
+> **DOCTRINE:** A slot is FILLED if and only if `full_name + title + linkedin_url` are all present and non-empty. Email is enrichment-only.
+
+See [[people-slot-contract]] for full documentation.
+
+### Contract Fields
+
+| Field | Requirement | Severity if Missing |
+|-------|-------------|---------------------|
+| `full_name` | **REQUIRED** | ❌ ERROR (blocks fill) |
+| `title` | **REQUIRED** | ❌ ERROR (blocks fill) |
+| `linkedin_url` | **REQUIRED** | ❌ ERROR (blocks fill) |
+| `email` | Optional enrichment | ⚠️ WARNING only |
+
+### Enforcement Artifacts
+
+| Artifact | Location |
+|----------|----------|
+| Validation function | `ops/validation/validation_rules.py::validate_slot_contract()` |
+| Regression tests | `ops/tests/test_people_slot_contract.py` (15 tests) |
+| Contract YAML | `contracts/people-outreach.contract.yaml` |
+| Doctrine YAML | `docs/doctrine/doctrine/slot_contract.yaml` |
 
 ## Neon Data Paths
 
@@ -218,6 +243,7 @@ WHERE NOT EXISTS (SELECT 1 FROM people.company_slot cs
 - [[blog-content]] - Upstream: Blog signals
 - [[outreach-execution]] - Downstream: Contact execution
 - [[talent-flow]] - Child: Executive movement sensor (TF-001 CERTIFIED)
+- [[people-slot-contract]] - Slot contract doctrine (SLOT-CONTRACT-001 ENFORCED)
 
 ---
 
@@ -226,3 +252,4 @@ WHERE NOT EXISTS (SELECT 1 FROM people.company_slot cs
 **Doctrine Version:** Barton IMO v1.2
 **Bulk Seed Status:** ✅ COMPLETE — 190,755 slots
 **Talent Flow Certification:** TF-001 PRODUCTION-READY
+**Slot Contract:** SLOT-CONTRACT-001 ENFORCED

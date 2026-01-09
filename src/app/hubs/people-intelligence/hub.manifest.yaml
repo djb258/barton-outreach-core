@@ -1,17 +1,46 @@
 # People Intelligence Hub Manifest
 # Altitude: 40k (System Infrastructure)
-# Version: 1.0.0
+# Version: 1.1.0
+# IMO-Creator Governance
 
 hub:
   id: HUB-PEOPLE
   name: People Intelligence Hub
   doctrine_id: "04.04.02"
   type: sub-hub
-  version: "1.0.0"
+  version: "1.1.0"
   description: |
     Owns human identity, employment state, and slot ASSIGNMENTS.
     Tracks the human lifecycle independently of companies.
     People churn - they change jobs - that's a People Hub event.
+
+# =============================================================================
+# SLOT CONTRACT (Enforced 2026-01-09)
+# =============================================================================
+
+slot_contract:
+  contract_id: SLOT-CONTRACT-001
+  version: "1.0.0"
+  status: ENFORCED
+  enforcement_date: "2026-01-09"
+  definition: |
+    A slot is FILLED if and only if:
+      1. full_name IS NOT NULL AND != ''
+      2. title IS NOT NULL AND != ''
+      3. linkedin_url IS NOT NULL AND != ''
+  required_fields:
+    - full_name
+    - title
+    - linkedin_url
+  optional_enrichment:
+    - email      # NEVER blocks slot fill
+    - phone      # NEVER blocks slot fill
+    - socials    # NEVER blocks slot fill
+  doctrine: |
+    Slots are containers, not people records.
+    Vendors propose candidates. The system decides truth.
+    Email enrichment may enhance a filled slot,
+    but MUST NEVER affect slot validity or status.
 
 core_metric:
   name: SLOT_FILL_RATE
