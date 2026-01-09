@@ -1,0 +1,93 @@
+# People Intelligence Hub Manifest
+# Altitude: 40k (System Infrastructure)
+# Version: 1.1.0
+# IMO-Creator Governance
+
+hub:
+  id: HUB-PEOPLE
+  name: People Intelligence Hub
+  doctrine_id: "04.04.02"
+  type: sub-hub
+  version: "1.1.0"
+  description: |
+    Owns human identity, employment state, and slot ASSIGNMENTS.
+    Tracks the human lifecycle independently of companies.
+    People churn - they change jobs - that's a People Hub event.
+
+# =============================================================================
+# SLOT CONTRACT (Enforced 2026-01-09)
+# =============================================================================
+
+slot_contract:
+  contract_id: SLOT-CONTRACT-001
+  version: "1.0.0"
+  status: ENFORCED
+  enforcement_date: "2026-01-09"
+  definition: |
+    A slot is FILLED if and only if:
+      1. full_name IS NOT NULL AND != ''
+      2. title IS NOT NULL AND != ''
+      3. linkedin_url IS NOT NULL AND != ''
+  required_fields:
+    - full_name
+    - title
+    - linkedin_url
+  optional_enrichment:
+    - email      # NEVER blocks slot fill
+    - phone      # NEVER blocks slot fill
+    - socials    # NEVER blocks slot fill
+  doctrine: |
+    Slots are containers, not people records.
+    Vendors propose candidates. The system decides truth.
+    Email enrichment may enhance a filled slot,
+    but MUST NEVER affect slot validity or status.
+
+core_metric:
+  name: SLOT_FILL_RATE
+  description: Percentage of target slots filled with verified contacts
+  aggregation: percentage
+  thresholds:
+    healthy: ">= 0.8"
+    degraded: ">= 0.5"
+    critical: "< 0.5"
+
+entities_owned:
+  - people_master
+  - slot_assignments
+  - movement_history
+  - enrichment_state
+  - email_verification
+
+imo:
+  input:
+    - person_intake
+    - company_spoke_receiver
+    - linkedin_receiver
+    - movement_receiver
+  middle:
+    - person_dedup
+    - title_normalizer
+    - slot_assigner
+    - email_generator
+    - email_verifier
+    - movement_processor
+  output:
+    - company_spoke_out
+    - outreach_spoke_out
+
+spokes:
+  ingress_from:
+    - SPOKE-COMPANY-EGRESS
+  egress_to:
+    - SPOKE-COMPANY-INGRESS
+    - SPOKE-OUTREACH-INGRESS
+
+boundary_rules:
+  does_not_own:
+    - slot_requirements     # Company Hub owns (structure)
+    - company_master        # Company Hub owns
+    - bit_scores            # Company Hub owns
+    - email_pattern         # Company Hub owns (pattern discovery)
+  slot_split: |
+    Company Hub defines WHAT roles are needed (slot_requirements).
+    People Hub defines WHO fills those roles (slot_assignments).

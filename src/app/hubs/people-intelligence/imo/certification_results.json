@@ -1,0 +1,50 @@
+{
+  "timestamp": "2026-01-08T09:08:13.485876",
+  "migration_hash": "678a8d99",
+  "checks": {
+    "doctrine_tables": {
+      "status": "PASS",
+      "tables": [
+        "company_slot",
+        "people_master",
+        "person_movement_history",
+        "people_sidecar",
+        "people_resolution_queue",
+        "people_invalid",
+        "people_errors"
+      ]
+    },
+    "schema_evolution": {
+      "status": "PASS",
+      "coverage": {
+        "total": 1359,
+        "with_outreach": 306,
+        "with_canonical": 1359,
+        "with_reason": 1359,
+        "with_status": 1359
+      }
+    },
+    "error_system": {
+      "status": "PASS",
+      "error_count": 1053,
+      "constraint_present": true
+    },
+    "indexes": {
+      "status": "PASS",
+      "indexes": [
+        "idx_company_slot_outreach_id",
+        "idx_company_slot_slot_status",
+        "idx_company_slot_canonical_flag"
+      ]
+    },
+    "modules": {
+      "status": "PASS",
+      "files": [
+        "people_errors.py",
+        "replay_worker.py"
+      ]
+    }
+  },
+  "passed": true,
+  "verdict": "FULL_PASS"
+}

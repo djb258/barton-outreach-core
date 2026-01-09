@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "meta": {
+    "name": "IMO_CONTROL",
+    "version": "1.1.0",
+    "created": "2026-01-08",
+    "authority": "imo-creator",
+    "status": "DOWNSTREAM",
+    "description": "Binding contract for barton-outreach-cc — governed by imo-creator",
+    "constitution_file": "CONSTITUTION.md"
+  },
+
+  "control_plane": {
+    "control_version": "1.0.0",
+    "upstream_repo": "imo-creator",
+    "upstream_commit": "bf1de681b",
+    "upstream_location": "C:/Users/CUSTOMER PC/Cursor Repo/imo-creator",
+    "drift_detection": {
+      "enabled": true,
+      "warn_on_outdated": true,
+      "check_frequency": "on_audit"
+    },
+    "last_audit": "2026-01-08T00:00:00Z"
+  },
+
+  "governance": {
+    "sovereign": "imo-creator",
+    "sovereignty_type": "ABSOLUTE",
+    "conformance_direction": "DOWNSTREAM_ONLY",
+    "interpretation_allowed": false,
+    "modification_requires": ["ADR", "HUMAN_APPROVAL"],
+    "local_policy": {
+      "structure_variant": "IMO_HUBS",
+      "description": "This repo uses hubs/ pattern with IMO (Input-Middle-Output) substructure"
+    }
+  },
+
+  "doctrine_files": {
+    "authority": "CONSTITUTIONAL",
+    "location": "imo-creator/templates/doctrine/",
+    "source": "EXTERNAL_REFERENCE",
+    "required": [
+      {
+        "file": "CANONICAL_ARCHITECTURE_DOCTRINE.md",
+        "purpose": "Operating physics - CC layers, hub-spoke, CTB branches, global vs local authority",
+        "version": "1.2.0"
+      },
+      {
+        "file": "HUB_SPOKE_ARCHITECTURE.md",
+        "purpose": "Geometry law - hub owns logic, spokes are interfaces",
+        "version": "1.2.0"
+      },
+      {
+        "file": "ALTITUDE_DESCENT_MODEL.md",
+        "purpose": "Descent law - CC-01→02→03→04 sequence",
+        "version": "1.1.0"
+      }
+    ],
+    "treatment": "EXECUTABLE_LAW"
+  },
+
+  "structure": {
+    "model": "IMO_HUBS",
+    "variant_note": "This repo uses hubs/ instead of src/ with IMO (input/middle/output) substructure",
+    "hub": {
+      "definition": "Repository root = Hub (barton-outreach-cc)",
+      "required_files": [
+        "REGISTRY.yaml",
+        "DOCTRINE.md",
+        "README.md"
+      ],
+      "optional_files": [
+        "CHECKLIST.md",
+        "CLAUDE.md"
+      ]
+    },
+    "subhub": {
+      "definition": "Major functional boundary within hub",
+      "location": "hubs/",
+      "structure": {
+        "pattern": "hubs/{subhub-name}/imo/{input,middle,output}/",
+        "examples": [
+          "hubs/company-target/imo/input/",
+          "hubs/company-target/imo/middle/",
+          "hubs/company-target/imo/output/",
+          "hubs/people-intelligence/imo/input/",
+          "hubs/people-intelligence/imo/middle/",
+          "hubs/people-intelligence/imo/output/"
+        ]
+      }
+    },
+    "spokes": {
+      "definition": "Interface contracts between hubs",
+      "location": "spokes/",
+      "rule": "Spokes carry data only, no logic"
+    },
+    "ops": {
+      "definition": "Operational infrastructure",
+      "location": "ops/",
+      "contains": ["migrations", "scripts", "tests", "enforcement", "tooling"]
+    }
+  },
+
+  "forbidden": {
+    "folders": [
+      {"name": "utils", "violation": "CTB_VIOLATION", "status": "TECHNICAL_DEBT", "remediation": "ADR required for refactor"},
+      {"name": "helpers", "violation": "CTB_VIOLATION"},
+      {"name": "common", "violation": "CTB_VIOLATION"},
+      {"name": "shared", "violation": "CTB_VIOLATION"},
+      {"name": "lib", "violation": "CTB_VIOLATION"},
+      {"name": "misc", "violation": "CTB_VIOLATION"}
+    ],
+    "patterns": [
+      {"pattern": "spoke-to-spoke communication", "violation": "GEOMETRY_VIOLATION"},
+      {"pattern": "logic in spokes", "violation": "HUB_SPOKE_VIOLATION"}
+    ]
+  },
+
+  "known_violations": {
+    "status": "DOCUMENTED_TECHNICAL_DEBT",
+    "items": [
+      {
+        "location": "hubs/company-target/imo/middle/utils/",
+        "violation": "CTB_VIOLATION",
+        "files": 9,
+        "remediation": "Requires ADR-approved refactor to redistribute files",
+        "blocked_by": "Import dependencies across codebase"
+      }
+    ]
+  },
+
+  "certifications": {
+    "TF-001": {
+      "system": "Talent Flow",
+      "status": "PRODUCTION-READY",
+      "date": "2026-01-08",
+      "enforcement": ["ops/enforcement/talent_flow_guard.py", ".github/workflows/talent_flow_guard.yml"]
+    }
+  },
+
+  "claude_code_behavior": {
+    "execution_order": [
+      "1. Locate and read IMO_CONTROL.json",
+      "2. Read DOCTRINE.md for governance reference",
+      "3. Audit repository structure against structure model",
+      "4. Identify violations against forbidden patterns",
+      "5. Check known_violations for documented technical debt",
+      "6. Report new violations (not in known_violations)",
+      "7. Verify descent gates are satisfied for intended work",
+      "8. Only then: proceed with requested task"
+    ],
+    "must": [
+      "Check IMO_CONTROL.json exists before any work",
+      "Treat doctrine as executable law",
+      "Respect IMO hub structure",
+      "Report violations explicitly"
+    ],
+    "must_not": [
+      "Invent structure beyond doctrine",
+      "Skip descent gates",
+      "Place files outside designated locations",
+      "Proceed despite new violations"
+    ]
+  }
+}

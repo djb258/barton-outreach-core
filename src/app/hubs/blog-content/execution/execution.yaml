@@ -1,0 +1,110 @@
+# Execution Wiring - Blog Content Sub-Hub
+# IMO-Creator Execution Wiring Phase
+# subhub_unique_id: 09047fdb-3ee1-4999-b507-e400187f4a5c
+
+---
+
+# =============================================================================
+# PROCESS → EXECUTABLE BINDINGS
+# =============================================================================
+
+bindings:
+  # Content Ingestion
+  - process_id: c28435e8-1503-474e-bfa1-3526fc1d48ec
+    process_name: content_ingestion
+    execution_type: script
+    executable_path: hubs/blog-content/imo/input/
+    runtime: python
+    invocation_method: sdk
+    status: DECLARED_BUT_NOT_IMPLEMENTED
+
+  # Event Processing
+  - process_id: b94b49dd-d924-46c0-9bad-822c4e7e008f
+    process_name: event_processing
+    execution_type: script
+    executable_path: hubs/blog-content/imo/middle/
+    runtime: python
+    invocation_method: sdk
+    status: DECLARED_BUT_NOT_IMPLEMENTED
+
+  # BIT Signal Emission
+  - process_id: 5df3a128-d259-44cd-ae48-e7798fdc4791
+    process_name: bit_signal_emission
+    execution_type: script
+    executable_path: hubs/blog-content/imo/middle/
+    runtime: python
+    invocation_method: sdk
+    status: DECLARED_BUT_NOT_IMPLEMENTED
+
+  # Output
+  - process_id: 45474e7d-2289-4cf7-92b8-602f1536f1d7
+    process_name: output
+    execution_type: script
+    executable_path: hubs/blog-content/imo/output/
+    runtime: python
+    invocation_method: sdk
+    status: DECLARED_BUT_NOT_IMPLEMENTED
+
+# =============================================================================
+# KILL SWITCHES
+# =============================================================================
+
+kill_switches:
+  - process_id: c28435e8-1503-474e-bfa1-3526fc1d48ec
+    process_name: content_ingestion
+    env_flag: BLOG_CONTENT_INGEST_ENABLED
+    default_state: enabled
+    safe_mode: noop
+    authority: agent_allowed
+
+  - process_id: b94b49dd-d924-46c0-9bad-822c4e7e008f
+    process_name: event_processing
+    env_flag: BLOG_CONTENT_EVENTS_ENABLED
+    default_state: enabled
+    safe_mode: dry-run
+    authority: agent_allowed
+
+  - process_id: 5df3a128-d259-44cd-ae48-e7798fdc4791
+    process_name: bit_signal_emission
+    env_flag: BLOG_CONTENT_BIT_ENABLED
+    default_state: enabled
+    safe_mode: dry-run
+    authority: agent_allowed
+
+  - process_id: 45474e7d-2289-4cf7-92b8-602f1536f1d7
+    process_name: output
+    env_flag: BLOG_CONTENT_OUTPUT_ENABLED
+    default_state: enabled
+    safe_mode: dry-run
+    authority: agent_allowed
+
+# =============================================================================
+# GLOBAL KILL SWITCH
+# =============================================================================
+
+global_kill_switch:
+  env_flag: BLOG_CONTENT_GLOBAL_ENABLED
+  default_state: enabled
+  safe_mode: full-disable
+  authority: human_only
+  description: Disables entire Blog Content sub-hub
+
+# =============================================================================
+# STATUS
+# =============================================================================
+
+status: PLANNED
+notes: |
+  Blog Content sub-hub is currently in PLANNED status.
+  All processes are DECLARED_BUT_NOT_IMPLEMENTED.
+  Execution wiring is complete for future implementation.
+
+# =============================================================================
+# DOCUMENT CONTROL
+# =============================================================================
+
+document_control:
+  created_at: "2026-01-08"
+  phase: Execution Wiring
+  authority: imo-creator
+  author: Claude Code (IMO-Creator)

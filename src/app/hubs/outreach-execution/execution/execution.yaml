@@ -1,0 +1,153 @@
+# Execution Wiring - Outreach Execution Sub-Hub
+# IMO-Creator Execution Wiring Phase
+# subhub_unique_id: 2e83d911-91a2-4d6d-8935-af2c1f5e4e54
+
+---
+
+# =============================================================================
+# PROCESS → EXECUTABLE BINDINGS
+# =============================================================================
+
+bindings:
+  # Action Receipt
+  - process_id: 66e31dd1-7693-4de4-a5d0-68fd6ab86ed7
+    process_name: action_receipt
+    execution_type: script
+    executable_path: hubs/outreach-execution/imo/input/
+    runtime: python
+    invocation_method: sdk
+    status: DECLARED_BUT_NOT_IMPLEMENTED
+
+  # Action Validation
+  - process_id: 1a95b185-3b1c-4117-abfb-1cc4c46dd950
+    process_name: action_validation
+    execution_type: script
+    executable_path: hubs/outreach-execution/imo/middle/
+    runtime: python
+    invocation_method: sdk
+    status: DECLARED_BUT_NOT_IMPLEMENTED
+
+  # Outreach Dispatch
+  - process_id: 5680ad56-1723-4ce9-9cb3-819ae957ed10
+    process_name: outreach_dispatch
+    execution_type: external
+    executable_path: null  # External provider (Instantly, etc.)
+    runtime: external
+    invocation_method: http
+    status: DECLARED_BUT_NOT_IMPLEMENTED
+
+  # Status Tracking
+  - process_id: 66caf553-5346-4cce-bf3f-6c7770f3ba3a
+    process_name: status_tracking
+    execution_type: script
+    executable_path: hubs/outreach-execution/imo/middle/
+    runtime: python
+    invocation_method: sdk
+    status: DECLARED_BUT_NOT_IMPLEMENTED
+
+  # Outcome Capture
+  - process_id: 796ff908-399f-46d0-9ffe-5f0256246e1a
+    process_name: outcome_capture
+    execution_type: script
+    executable_path: hubs/outreach-execution/imo/middle/
+    runtime: python
+    invocation_method: sdk
+    status: DECLARED_BUT_NOT_IMPLEMENTED
+
+  # Output
+  - process_id: e6142a5a-0915-4f9a-9f1a-3e044f92574f
+    process_name: output
+    execution_type: script
+    executable_path: hubs/outreach-execution/imo/output/
+    runtime: python
+    invocation_method: sdk
+    status: DECLARED_BUT_NOT_IMPLEMENTED
+
+# =============================================================================
+# KILL SWITCHES
+# =============================================================================
+
+kill_switches:
+  - process_id: 66e31dd1-7693-4de4-a5d0-68fd6ab86ed7
+    process_name: action_receipt
+    env_flag: OUTREACH_EXEC_RECEIPT_ENABLED
+    default_state: enabled
+    safe_mode: noop
+    authority: agent_allowed
+
+  - process_id: 1a95b185-3b1c-4117-abfb-1cc4c46dd950
+    process_name: action_validation
+    env_flag: OUTREACH_EXEC_VALIDATE_ENABLED
+    default_state: enabled
+    safe_mode: dry-run
+    authority: agent_allowed
+
+  - process_id: 5680ad56-1723-4ce9-9cb3-819ae957ed10
+    process_name: outreach_dispatch
+    env_flag: OUTREACH_EXEC_DISPATCH_ENABLED
+    default_state: disabled  # CRITICAL - external sends
+    safe_mode: full-disable
+    authority: human_only
+
+  - process_id: 66caf553-5346-4cce-bf3f-6c7770f3ba3a
+    process_name: status_tracking
+    env_flag: OUTREACH_EXEC_STATUS_ENABLED
+    default_state: enabled
+    safe_mode: noop
+    authority: agent_allowed
+
+  - process_id: 796ff908-399f-46d0-9ffe-5f0256246e1a
+    process_name: outcome_capture
+    env_flag: OUTREACH_EXEC_OUTCOME_ENABLED
+    default_state: enabled
+    safe_mode: noop
+    authority: agent_allowed
+
+  - process_id: e6142a5a-0915-4f9a-9f1a-3e044f92574f
+    process_name: output
+    env_flag: OUTREACH_EXEC_OUTPUT_ENABLED
+    default_state: enabled
+    safe_mode: dry-run
+    authority: agent_allowed
+
+# =============================================================================
+# GLOBAL KILL SWITCH
+# =============================================================================
+
+global_kill_switch:
+  env_flag: OUTREACH_EXEC_GLOBAL_ENABLED
+  default_state: enabled
+  safe_mode: full-disable
+  authority: human_only
+  description: Disables entire Outreach Execution sub-hub
+
+# =============================================================================
+# AUTONOMY SAFETY
+# =============================================================================
+
+autonomy_safety:
+  - process_id: 5680ad56-1723-4ce9-9cb3-819ae957ed10
+    process_name: outreach_dispatch
+    allowed_side_effects:
+      - Send emails via Instantly API
+      - Update delivery status
+    forbidden_side_effects:
+      - Delete contacts
+      - Modify templates
+      - Change sequences
+    idempotency_expectation: no
+    retry_behavior: none
+    notes: |
+      CRITICAL: External sends are NOT idempotent.
+      Kill switch default is DISABLED.
+      Human approval required before enabling.
+
+# =============================================================================
+# DOCUMENT CONTROL
+# =============================================================================
+
+document_control:
+  created_at: "2026-01-08"
+  phase: Execution Wiring
+  authority: imo-creator
+  author: Claude Code (IMO-Creator)

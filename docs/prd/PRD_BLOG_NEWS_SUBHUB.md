@@ -1,1064 +1,274 @@
-# PRD: Blog/News Sub-Hub v2.1
+# PRD: Blog Content Sub-Hub v3.0
 
-**Status:** Planned
-**Version:** 2.1 (Hardened per Barton Doctrine)
-**Last Updated:** 2025-12-17
-**Doctrine:** Bicycle Wheel v1.1
-**Barton ID Range:** `04.04.02.04.4XXXX.###`
-**Changes:** Correlation ID enforcement, Failure handling standardization, Signal idempotency, Tooling declarations, Promotion states
+**Status:** PRODUCTION LOCKED
+**Version:** 3.0 (Spine-First Architecture)
+**Last Updated:** 2026-01-08
+**Doctrine:** Spine-First Architecture v1.1
+**Waterfall Position:** 4th (LAST)
+**IMO Gate:** `hubs/blog-content/imo/blog_imo.py`
 
 ---
 
 ## Sub-Hub Ownership Statement
 
 ```
-╔═══════════════════════════════════════════════════════════════════════════════╗
-║                       BLOG/NEWS SUB-HUB OWNERSHIP                             ║
-║                                                                               ║
-║   This sub-hub OWNS:                                                          ║
-║   ├── Company news article ingestion                                         ║
-║   ├── Blog post and press release monitoring                                 ║
-║   ├── Funding event detection                                                ║
-║   ├── M&A activity tracking                                                  ║
-║   ├── Leadership change detection                                            ║
-║   ├── Layoff/workforce signal detection                                      ║
-║   └── Sentiment analysis and signal emission                                 ║
-║                                                                               ║
-║   This sub-hub DOES NOT OWN:                                                  ║
-║   ├── Company identity creation (company_id, domain)                         ║
-║   ├── Email pattern discovery or generation                                  ║
-║   ├── People lifecycle management or slot assignment                         ║
-║   ├── BIT Engine scoring or decision making                                  ║
-║   ├── Outreach decisions (who gets messaged, when, how)                      ║
-║   └── DOL filing ingestion                                                   ║
-║                                                                               ║
-║   This sub-hub EMITS SIGNALS to Company Hub. It NEVER makes decisions.       ║
-║                                                                               ║
-║   PREREQUISITE: company_id MUST exist before signal emission.                ║
-╚═══════════════════════════════════════════════════════════════════════════════╝
++===============================================================================+
+|                       BLOG CONTENT SUB-HUB OWNERSHIP                          |
+|                                                                               |
+|   This sub-hub OWNS:                                                          |
+|   +-- Company timing signals from news/content                                |
+|   +-- Event classification (8 locked types)                                   |
+|   +-- BIT impact modulation                                                   |
+|   +-- Context finalization (last hub in waterfall)                            |
+|                                                                               |
+|   This sub-hub DOES NOT OWN:                                                  |
+|   +-- Company identity (outreach_id comes from spine)                         |
+|   +-- Email patterns or enrichment                                            |
+|   +-- People lifecycle or slot assignment                                     |
+|   +-- Audience metrics or social engagement data                              |
+|                                                                               |
+|   IDENTITY: outreach_id is the ONLY identity. sovereign_id is hidden.         |
+|   SCOPE: Company-level only. Records WHERE a company publishes, not HOW LARGE.|
+|                                                                               |
++===============================================================================+
 ```
 
 ---
 
-## Correlation ID Doctrine
+## Doctrine Guards (LOCKED)
 
-```
-╔═══════════════════════════════════════════════════════════════════════════════╗
-║                       CORRELATION ID ENFORCEMENT                              ║
-╠═══════════════════════════════════════════════════════════════════════════════╣
-║                                                                               ║
-║   Every article ingested into the Blog/News Sub-Hub receives a correlation_id║
-║   (UUID v4) at ingest time. This ID propagates through:                      ║
-║                                                                               ║
-║   1. Article parsing                                                          ║
-║   2. Entity extraction                                                        ║
-║   3. Company matching                                                         ║
-║   4. Event classification                                                     ║
-║   5. Signal emission to BIT Engine                                           ║
-║   6. Error logging                                                            ║
-║                                                                               ║
-║   RULES:                                                                      ║
-║   1. Every article ingest MUST generate or receive correlation_id            ║
-║   2. Every signal emitted to BIT Engine MUST include correlation_id          ║
-║   3. Every error logged MUST include correlation_id                          ║
-║   4. correlation_id MUST NOT be modified after initial generation            ║
-║   5. Articles reprocessed use original correlation_id (idempotency)          ║
-║                                                                               ║
-║   FORMAT: UUID v4 (e.g., "550e8400-e29b-41d4-a716-446655440000")             ║
-║                                                                               ║
-╚═══════════════════════════════════════════════════════════════════════════════╝
-```
+```python
+# Spine Guard - sub-hubs don't see sovereign_id
+ENFORCE_OUTREACH_SPINE_ONLY = True
+assert ENFORCE_OUTREACH_SPINE_ONLY is True
 
----
+# Scope Guard - no social metrics
+DISALLOW_SOCIAL_METRICS = True
+assert DISALLOW_SOCIAL_METRICS is True
 
-## Signal Idempotency Doctrine
-
-```
-╔═══════════════════════════════════════════════════════════════════════════════╗
-║                       SIGNAL IDEMPOTENCY ENFORCEMENT                          ║
-╠═══════════════════════════════════════════════════════════════════════════════╣
-║                                                                               ║
-║   Blog/News Sub-Hub MUST ensure signals are not duplicated.                  ║
-║                                                                               ║
-║   DEDUPLICATION RULES:                                                        ║
-║   ├── Key: (company_id, signal_type, article_id)                             ║
-║   ├── Window: 30 days (news events are time-sensitive)                       ║
-║   └── Hash: SHA-256 of key fields for fast lookup                            ║
-║                                                                               ║
-║   DUPLICATE HANDLING:                                                         ║
-║   ├── Same article reprocessed → Skip signal emission                        ║
-║   ├── Same event from different source → Emit if confidence higher           ║
-║   └── Similar event (fuzzy) → Log for human review                           ║
-║                                                                               ║
-║   DEDUPLICATION FLOW:                                                         ║
-║   1. Generate signal_key hash                                                 ║
-║   2. Check signal_cache for existing key (30-day window)                     ║
-║   3. If exists and same source: SKIP                                         ║
-║   4. If exists and different source: Compare confidence, emit if higher      ║
-║   5. If not exists: Emit signal and cache key                                ║
-║                                                                               ║
-╚═══════════════════════════════════════════════════════════════════════════════╝
+# Error Guard - no silent failures
+ENFORCE_ERROR_PERSISTENCE = True
+assert ENFORCE_ERROR_PERSISTENCE is True
 ```
 
 ---
 
 ## 1. Purpose
 
-The Blog/News Sub-Hub monitors external news sources, company blogs, and press releases to detect business events that signal buyer intent. It processes unstructured content and emits structured signals to the BIT Engine.
+Provide **timing signals** from news, funding events, and content sources. BIT modulation only - cannot mint, revive, or trigger enrichment. FINAL hub in waterfall - context is finalized after this hub.
 
 ### Core Functions
 
-1. **News Ingestion** - Crawl and ingest company news articles
-2. **Event Detection** - Identify funding, M&A, leadership changes
-3. **Sentiment Analysis** - Analyze content for positive/negative signals
-4. **Entity Matching** - Match articles to Company Hub records
-5. **Signal Emission** - Emit intent signals to BIT Engine
-6. **Competitor Intel** - Track competitor mentions and movements
+1. **Event Classification** - Classify content into 8 locked event types
+2. **BIT Impact** - Emit signals with fixed impact values (+15.0 to -5.0)
+3. **Context Finalization** - Last hub, context finalized after PASS
 
-### Company-First Doctrine
+### Scope Lock
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                                                                         │
-│   IF company cannot be matched to company_id:                          │
-│       Queue article for Company Identity resolution.                    │
-│       DO NOT emit signals without valid company anchor.                 │
-│                                                                         │
-│   Blog/News Sub-Hub NEVER creates company identity.                    │
-│   Blog/News Sub-Hub requests identity creation from Company Hub.        │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+> **The Blog Sub-Hub records *where* a company publishes, not *how large* the audience is.**
+
+Social platforms (LinkedIn, Twitter, etc.) are treated as company-owned distribution surfaces for presence verification only. NO audience metrics, engagement metrics, or sentiment analysis.
 
 ---
 
-## 2. Data Sources
+## 2. Waterfall Position
 
-### Primary Sources
-
-| Source | Type | Frequency |
-|--------|------|-----------|
-| Company Blogs | RSS/Crawl | Daily |
-| Press Releases | PR Newswire, GlobeNewswire | Real-time |
-| News APIs | NewsAPI, Bing News | Hourly |
-| LinkedIn News | Company page posts | Daily |
-| SEC Filings | 8-K, press releases | Real-time |
-
-### Content Types
-
-| Type | Signal Potential | Priority |
-|------|-----------------|----------|
-| Funding Announcements | Very High (+15) | 1 |
-| M&A Announcements | Very High (+12) | 1 |
-| Leadership Changes | High (+8) | 2 |
-| Product Launches | Medium (+5) | 3 |
-| Layoff Announcements | Negative (-3) | 2 |
-| Expansion News | High (+7) | 2 |
-| Partnership Announcements | Medium (+5) | 3 |
+| Order | Hub | Gate Requirement |
+|-------|-----|------------------|
+| 0 | Outreach Spine | Mints outreach_id |
+| 1 | Company Target | **execution_status = 'ready'** |
+| 2 | DOL Filings | (optional) |
+| 3 | People Intelligence | (optional) |
+| **4** | **Blog Content** | **LAST - context finalization** |
 
 ---
 
-## 3. Tooling Declarations
+## 3. IMO Structure
 
-### News Ingestion Tools
+### Input Stage (I)
 
-| Tool | Purpose | Rate Limit | Cost Tier | Cache Policy |
-|------|---------|------------|-----------|--------------|
-| NewsAPI | News article search | 100 req/day (free) | $0-$449/mo | 1 hour |
-| Bing News Search | News aggregation | 1000 req/mo (free) | $7/1K transactions | 1 hour |
-| PR Newswire API | Press releases | Per contract | Enterprise | No cache |
-| GlobeNewswire | Press releases | Per contract | Enterprise | No cache |
-| SEC EDGAR API | 8-K filings | No limit (public) | Free | 24 hours |
-| Firecrawl | Company blog crawl | 500 pages/mo | $19-$99/mo | 24 hours |
+| Check | Error Code | Action |
+|-------|------------|--------|
+| outreach_id provided | BLOG-I-NO-OUTREACH | FAIL |
+| outreach_id in spine | BLOG-I-NOT-FOUND | FAIL |
+| Domain exists | BLOG-I-NO-DOMAIN | FAIL |
+| CT PASS (ready) | BLOG-I-UPSTREAM-FAIL | FAIL |
+| Not already processed | BLOG-I-ALREADY-PROCESSED | SKIP |
 
-### NLP/Entity Extraction Tools
+### Middle Stage (M)
 
-| Tool | Purpose | Rate Limit | Cost Tier | Cache Policy |
-|------|---------|------------|-----------|--------------|
-| spaCy (en_core_web_lg) | NER extraction | Local | Free | N/A |
-| OpenAI GPT-4 | Event classification | 10K TPM | $0.03/1K tokens | 1 hour |
-| Anthropic Claude | Event classification | 100K TPM | $0.008/1K tokens | 1 hour |
-| LangChain | Pipeline orchestration | N/A | Free | N/A |
+| Check | Error Code | Action |
+|-------|------------|--------|
+| Content processing | BLOG-M-CLASSIFY-FAIL | FAIL |
+| Event classification | BLOG-M-NO-EVENT | WARN |
 
-### Entity Matching Tools
+### Output Stage (O)
 
-| Tool | Purpose | Rate Limit | Cost Tier | Cache Policy |
-|------|---------|------------|-----------|--------------|
-| rapidfuzz | Fuzzy company matching | Local | Free | N/A |
-| PostgreSQL FTS | Full-text search | N/A | DB cost | N/A |
-| Company Hub API | Domain/name lookup | Internal | Free | 5 minutes |
-
-### Rate Limit Policy
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           RATE LIMIT POLICY                                  │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│   NewsAPI (Free Tier):                                                      │
-│   ├── 100 requests/day                                                      │
-│   ├── Backoff: Exponential (1s → 2s → 4s → 8s)                             │
-│   └── Fallback: Switch to Bing News Search                                 │
-│                                                                             │
-│   OpenAI/Anthropic:                                                         │
-│   ├── Rate limit: Token-based (TPM)                                         │
-│   ├── Backoff: Exponential with jitter                                     │
-│   └── Fallback: Queue for retry with 60s delay                             │
-│                                                                             │
-│   Firecrawl:                                                                 │
-│   ├── 500 pages/month (Hobby)                                               │
-│   ├── Priority: High-value company blogs only                              │
-│   └── Fallback: BeautifulSoup direct crawl                                 │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+| Outcome | Table | Action |
+|---------|-------|--------|
+| PASS | outreach.blog | Write blog record |
+| FAIL | outreach.blog_errors | Write error record |
 
 ---
 
-## 4. Owned Processes
+## 4. Event Types (LOCKED)
 
-### Blog Node Spoke (Planned)
-
-**File:** `ctb/sys/enrichment/pipeline_engine/spokes/blog_node/blog_node_spoke.py`
-**Status:** PLANNED
-**Purpose:** Process news articles and emit signals to BIT Engine
-
-#### Process Flow
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         BLOG NODE PROCESS FLOW                               │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-    NEWS SOURCES                           BLOG SUB-HUB
-    (External)                             (Signal Emitter)
-
-    ┌───────────────────┐                  ┌───────────────────┐
-    │ News APIs         │                  │ Blog Node Spoke   │
-    │                   │    Raw Article   │                   │
-    │ • NewsAPI         ├─────────────────►│ 1. Parse content  │
-    │ • PR Newswire     │                  │ 2. Extract entities│
-    │ • Company blogs   │                  │ 3. Match to company│
-    │ • SEC filings     │                  │ 4. Classify event │
-    └───────────────────┘                  └─────────┬─────────┘
-                                                     │
-                                                     │ company_id found?
-                                                     │
-                              ┌───────────────────────┴───────────────────────┐
-                              │ YES                                      NO   │
-                              ▼                                              ▼
-                    ┌───────────────────┐                    ┌───────────────────┐
-                    │ Classify Event    │                    │ Queue for         │
-                    │                   │                    │ Identity          │
-                    │ • Funding?        │                    │ Resolution        │
-                    │ • M&A?            │                    │                   │
-                    │ • Leadership?     │                    │ Request company   │
-                    │ • Layoff?         │                    │ creation from Hub │
-                    └─────────┬─────────┘                    └───────────────────┘
-                              │
-                              ▼
-                    ┌───────────────────┐
-                    │ Emit Signal       │
-                    │                   │
-                    │ • FUNDING_EVENT   │
-                    │ • ACQUISITION     │
-                    │ • LEADERSHIP_CHG  │
-                    │ • LAYOFF          │
-                    └─────────┬─────────┘
-                              │
-                              ▼
-                    ┌───────────────────┐
-                    │ BIT ENGINE        │
-                    │ (Company Hub)     │
-                    │                   │
-                    │ Aggregate signals │
-                    │ Calculate score   │
-                    └───────────────────┘
-```
-
-#### Input Contract: NewsArticle
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `correlation_id` | string (UUID v4) | Yes | **Pipeline trace ID - generated at ingest** |
-| `article_id` | string | Yes | Unique article identifier |
-| `title` | string | Yes | Article headline |
-| `content` | string | Yes | Full article text |
-| `source` | string | Yes | News source (NewsAPI, PR Newswire) |
-| `published_at` | datetime | Yes | Publication timestamp |
-| `url` | string | Yes | Source URL |
-| `company_mentions` | List[str] | No | Extracted company names |
-| `domain_mentions` | List[str] | No | Extracted domains |
-| `ingested_at` | datetime | Yes | When article was ingested |
-
-#### Output Contract
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `correlation_id` | string (UUID v4) | **Same as input - propagated unchanged** |
-| `status` | ResultStatus | SUCCESS, FAILED, SKIPPED |
-| `event_type` | EventType | FUNDING, ACQUISITION, etc. |
-| `company_id` | string | Matched company |
-| `confidence` | float | Event detection confidence (0.0-1.0) |
-| `signals_emitted` | List[Dict] | Signals sent to BIT Engine |
-| `processing_time_ms` | int | Time to process article |
-| `failure_reason` | string | Null if success, error code if failed |
+| Event Type | BIT Impact | Description |
+|------------|------------|-------------|
+| FUNDING_EVENT | +15.0 | Funding round, Series A/B/C |
+| ACQUISITION | +12.0 | M&A activity |
+| LEADERSHIP_CHANGE | +8.0 | CEO/CFO/CTO changes |
+| EXPANSION | +7.0 | New office, market entry |
+| PRODUCT_LAUNCH | +5.0 | New product/service |
+| PARTNERSHIP | +5.0 | Strategic partnership |
+| LAYOFF | -3.0 | Workforce reduction |
+| NEGATIVE_NEWS | -5.0 | Lawsuit, scandal |
+| UNKNOWN | 0.0 | No event detected |
 
 ---
 
-## 4. Signal Emission
+## 5. Data Model
 
-### Signal Types
+### outreach.blog (PASS)
 
-| Signal | Enum | Impact | When Emitted |
-|--------|------|--------|--------------|
-| `FUNDING_EVENT` | `SignalType.FUNDING_EVENT` | +15.0 | Funding round announced |
-| `ACQUISITION` | `SignalType.ACQUISITION` | +12.0 | M&A activity detected |
-| `LEADERSHIP_CHANGE` | `SignalType.LEADERSHIP_CHANGE` | +8.0 | C-suite change announced |
-| `EXPANSION` | `SignalType.EXPANSION` | +7.0 | New office/market expansion |
-| `PRODUCT_LAUNCH` | `SignalType.PRODUCT_LAUNCH` | +5.0 | New product announced |
-| `PARTNERSHIP` | `SignalType.PARTNERSHIP` | +5.0 | Partnership announced |
-| `LAYOFF` | `SignalType.LAYOFF` | -3.0 | Workforce reduction |
-| `NEGATIVE_NEWS` | `SignalType.NEGATIVE_NEWS` | -5.0 | Legal issues, scandals |
-
-### Signal Emission Code (Planned)
-
-```python
-class BlogNodeSpoke(Spoke):
-    """
-    Blog/News Node - Processes news and emits signals.
-
-    ONLY emits signals. NEVER makes outreach decisions.
-    """
-
-    def _send_signal(
-        self,
-        correlation_id: str,  # REQUIRED - propagated from article ingest
-        signal_type: SignalType,
-        company_id: str,
-        article_id: str,
-        impact: float,
-        confidence: float,
-        metadata: Dict = None
-    ):
-        """
-        Core signal emission with deduplication.
-
-        IDEMPOTENCY: Uses (company_id, signal_type, article_id) as dedup key.
-        WINDOW: 30 days (news events are time-sensitive).
-        """
-        # Generate deduplication key
-        dedup_key = f"{company_id}:{signal_type.value}:{article_id}"
-
-        # Check deduplication (30-day window for news events)
-        existing = self.signal_cache.get(dedup_key, window_days=30)
-        if existing:
-            # Same article already processed - skip
-            if existing['source'] == 'blog_node':
-                logger.info(
-                    f"Signal dedup: skipping duplicate",
-                    extra={
-                        'correlation_id': correlation_id,
-                        'dedup_key': dedup_key,
-                        'original_correlation_id': existing['correlation_id']
-                    }
-                )
-                return
-            # Different source with lower confidence - skip
-            if existing['confidence'] >= confidence:
-                logger.info(f"Signal dedup: existing signal has higher confidence")
-                return
-
-        # Emit signal to BIT Engine
-        self.bit_engine.create_signal(
-            correlation_id=correlation_id,  # REQUIRED
-            signal_type=signal_type,
-            company_id=company_id,
-            source_spoke='blog_node',
-            impact=impact,
-            metadata={
-                **(metadata or {}),
-                'confidence': confidence,
-                'detected_at': datetime.now().isoformat()
-            }
-        )
-
-        # Cache for deduplication
-        self.signal_cache.set(dedup_key, {
-            'correlation_id': correlation_id,
-            'source': 'blog_node',
-            'confidence': confidence,
-            'emitted_at': datetime.now().isoformat()
-        }, ttl_days=30)
-
-    def _emit_funding_signal(
-        self,
-        correlation_id: str,  # REQUIRED
-        company_id: str,
-        article: NewsArticle,
-        funding_details: FundingDetails
-    ):
-        """Emit funding event signal to BIT Engine"""
-        self._send_signal(
-            correlation_id=correlation_id,
-            signal_type=SignalType.FUNDING_EVENT,
-            company_id=company_id,
-            article_id=article.article_id,
-            impact=15.0,
-            confidence=funding_details.confidence,
-            metadata={
-                'article_id': article.article_id,
-                'funding_amount': funding_details.amount,
-                'funding_round': funding_details.round,  # Series A, B, etc.
-                'lead_investor': funding_details.lead_investor,
-                'source_url': article.url
-            }
-        )
-
-    def _emit_acquisition_signal(
-        self,
-        correlation_id: str,  # REQUIRED
-        company_id: str,
-        article: NewsArticle,
-        acquisition_details: AcquisitionDetails
-    ):
-        """Emit acquisition signal to BIT Engine"""
-        self._send_signal(
-            correlation_id=correlation_id,
-            signal_type=SignalType.ACQUISITION,
-            company_id=company_id,
-            article_id=article.article_id,
-            impact=12.0,
-            confidence=acquisition_details.confidence,
-            metadata={
-                'article_id': article.article_id,
-                'acquisition_type': acquisition_details.type,  # acquired, acquiring
-                'target_company': acquisition_details.target,
-                'deal_value': acquisition_details.value,
-                'source_url': article.url
-            }
-        )
-
-    def _emit_leadership_change_signal(
-        self,
-        correlation_id: str,  # REQUIRED
-        company_id: str,
-        article: NewsArticle,
-        leadership_details: LeadershipChange
-    ):
-        """Emit leadership change signal to BIT Engine"""
-        self._send_signal(
-            correlation_id=correlation_id,
-            signal_type=SignalType.LEADERSHIP_CHANGE,
-            company_id=company_id,
-            article_id=article.article_id,
-            impact=8.0,
-            confidence=leadership_details.confidence,
-            metadata={
-                'article_id': article.article_id,
-                'person_name': leadership_details.person_name,
-                'new_title': leadership_details.new_title,
-                'previous_title': leadership_details.previous_title,
-                'change_type': leadership_details.change_type,  # hired, promoted, departed
-                'source_url': article.url
-            }
-        )
-
-    def _emit_layoff_signal(
-        self,
-        correlation_id: str,  # REQUIRED
-        company_id: str,
-        article: NewsArticle,
-        layoff_details: LayoffDetails
-    ):
-        """Emit layoff signal to BIT Engine (negative impact)"""
-        self._send_signal(
-            correlation_id=correlation_id,
-            signal_type=SignalType.LAYOFF,
-            company_id=company_id,
-            article_id=article.article_id,
-            impact=-3.0,  # Negative impact
-            confidence=layoff_details.confidence,
-            metadata={
-                'article_id': article.article_id,
-                'headcount_affected': layoff_details.headcount,
-                'percentage': layoff_details.percentage,
-                'reason': layoff_details.reason,
-                'source_url': article.url
-            }
-        )
-```
-
----
-
-## 5. Event Detection
-
-### Event Classification Pipeline
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        EVENT CLASSIFICATION PIPELINE                         │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-    Raw Article
-         │
-         ▼
-┌─────────────────────┐
-│ 1. TEXT EXTRACTION  │
-│                     │
-│ • Strip HTML        │
-│ • Normalize text    │
-│ • Extract title     │
-└─────────┬───────────┘
-          │
-          ▼
-┌─────────────────────┐
-│ 2. ENTITY EXTRACTION│
-│                     │
-│ • Company names     │
-│ • Person names      │
-│ • Dollar amounts    │
-│ • Dates             │
-└─────────┬───────────┘
-          │
-          ▼
-┌─────────────────────┐
-│ 3. EVENT DETECTION  │
-│                     │
-│ • Funding keywords  │
-│ • M&A keywords      │
-│ • Leadership keywords│
-│ • Layoff keywords   │
-└─────────┬───────────┘
-          │
-          ▼
-┌─────────────────────┐
-│ 4. CONFIDENCE SCORE │
-│                     │
-│ • Keyword density   │
-│ • Entity quality    │
-│ • Source reliability│
-└─────────┬───────────┘
-          │
-          ▼
-┌─────────────────────┐
-│ 5. SIGNAL EMISSION  │
-│ (if confidence > threshold)│
-└─────────────────────┘
-```
-
-### Event Keyword Patterns
-
-#### Funding Events
-
-```python
-FUNDING_KEYWORDS = [
-    'raised', 'funding', 'series a', 'series b', 'series c',
-    'seed round', 'venture capital', 'investment round',
-    'led by', 'participated in', 'million in funding',
-    'billion in funding', 'closes', 'announces funding'
-]
-
-FUNDING_ENTITIES = [
-    'amount',           # $X million, $X billion
-    'round_type',       # Series A, seed, growth
-    'lead_investor',    # Led by XYZ Capital
-    'participating'     # With participation from
-]
-```
-
-#### M&A Events
-
-```python
-MA_KEYWORDS = [
-    'acquired', 'acquisition', 'merger', 'merged with',
-    'buys', 'purchased', 'deal', 'transaction',
-    'to acquire', 'acquisition of', 'merger agreement',
-    'combined company', 'will acquire'
-]
-
-MA_ENTITIES = [
-    'target_company',   # Company being acquired
-    'acquirer',         # Company doing the acquiring
-    'deal_value',       # Transaction value
-    'deal_type'         # Acquisition, merger, spin-off
-]
-```
-
-#### Leadership Changes
-
-```python
-LEADERSHIP_KEYWORDS = [
-    'appointed', 'named', 'promoted', 'joins',
-    'steps down', 'departs', 'resigned', 'retiring',
-    'new ceo', 'new cfo', 'new cto', 'new coo',
-    'chief executive', 'chief financial', 'chief technology'
-]
-
-LEADERSHIP_ENTITIES = [
-    'person_name',      # Executive name
-    'new_title',        # New position
-    'previous_title',   # Previous position
-    'previous_company'  # Where they came from
-]
-```
-
-#### Layoff Events
-
-```python
-LAYOFF_KEYWORDS = [
-    'layoff', 'layoffs', 'workforce reduction',
-    'cutting jobs', 'job cuts', 'downsizing',
-    'restructuring', 'letting go', 'eliminating',
-    'reducing headcount', 'staff reduction'
-]
-
-LAYOFF_ENTITIES = [
-    'headcount',        # Number affected
-    'percentage',       # Percentage of workforce
-    'departments',      # Affected departments
-    'reason'            # Why (cost cutting, restructuring)
-]
-```
-
----
-
-## 6. Entity Matching
-
-### Matching Process
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           ENTITY MATCHING                                    │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-1. Extract company mentions from article
-   └── NER (Named Entity Recognition)
-   └── Pattern matching (Inc., LLC, Corp., etc.)
-
-2. Normalize company names
-   └── Remove legal suffixes (Inc., LLC)
-   └── Lowercase and strip
-   └── Remove punctuation
-
-3. Query Company Hub
-   └── Exact match: company_name
-   └── Domain match: Extract domain from article URL or content
-   └── Fuzzy match: Similarity score >= 0.90
-
-4. Result:
-   ├── company_id found → Proceed to event classification
-   └── company_id NOT found → Queue for identity creation
-
-5. No-Match Queue
-   └── Store unmatched articles with:
-       • Extracted company name
-       • Article URL
-       • Source domain
-       • Source: 'blog_news'
-```
-
-### Matching Implementation (Planned)
-
-```python
-def match_company(self, article: NewsArticle) -> Optional[str]:
-    """
-    Match article to Company Hub record.
-
-    Returns company_id if found, None otherwise.
-    """
-    # Try domain match first (most reliable)
-    for domain in article.domain_mentions:
-        company_id = self.company_hub.lookup_by_domain(domain)
-        if company_id:
-            return company_id
-
-    # Try exact name match
-    for company_name in article.company_mentions:
-        normalized = self._normalize_company_name(company_name)
-        company_id = self.company_hub.lookup_by_name(normalized)
-        if company_id:
-            return company_id
-
-    # Try fuzzy match (with high threshold)
-    for company_name in article.company_mentions:
-        company_id = self.company_hub.fuzzy_lookup(
-            company_name,
-            threshold=0.90
-        )
-        if company_id:
-            return company_id
-
-    # No match - queue for identity creation
-    self._queue_for_identity(article)
-    return None
-```
-
----
-
-## 8. Failure Modes (Standardized)
-
-### Detection Failures
-
-| Failure | Error Code | Severity | Local Emit | Global Emit | Recovery |
-|---------|------------|----------|------------|-------------|----------|
-| Article parsing error | BLOG-001 | WARN | `blog_parsing_errors` | `shq_error_log` | Skip, queue for review |
-| NER extraction failed | BLOG-002 | WARN | `blog_ner_failures` | `shq_error_log` | Fall back to keywords |
-| Low confidence event | BLOG-003 | INFO | `blog_low_confidence` | — | Queue for human review |
-| Company not matched | BLOG-004 | INFO | `blog_unmatched` | — | Queue for Company Hub |
-| No events detected | — | DEBUG | — | — | Normal behavior |
-
-### Processing Failures
-
-| Failure | Error Code | Severity | Local Emit | Global Emit | Recovery |
-|---------|------------|----------|------------|-------------|----------|
-| NewsAPI rate limit | BLOG-101 | WARN | `blog_rate_limits` | `shq_error_log` | Exponential backoff |
-| Source unavailable | BLOG-102 | WARN | `blog_source_failures` | `shq_error_log` | Queue for next cycle |
-| Database connection | BLOG-103 | ERROR | `blog_db_errors` | `shq_error_log` | Retry with backoff, alert |
-| LLM API timeout | BLOG-104 | WARN | `blog_llm_timeouts` | `shq_error_log` | Retry 3x, then skip |
-| LLM API error | BLOG-105 | ERROR | `blog_llm_errors` | `shq_error_log` | Fall back to keywords |
-
-### Signal Emission Failures
-
-| Failure | Error Code | Severity | Local Emit | Global Emit | Recovery |
-|---------|------------|----------|------------|-------------|----------|
-| BIT Engine unavailable | BLOG-201 | ERROR | `blog_bit_failures` | `shq_error_log` | Queue signal for retry |
-| Invalid company_id | BLOG-202 | WARN | `blog_invalid_company` | `shq_error_log` | Skip, investigate |
-| Duplicate signal detected | BLOG-203 | DEBUG | — | — | Normal dedup behavior |
-| Signal emission timeout | BLOG-204 | WARN | `blog_signal_timeouts` | `shq_error_log` | Retry 3x |
-
-### Two-Layer Error Model
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         TWO-LAYER ERROR MODEL                                │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│   LAYER 1: LOCAL (Blog Sub-Hub owned)                                       │
-│   ├── Table: blog_processing_errors                                         │
-│   ├── Owner: Blog/News Sub-Hub                                              │
-│   ├── Purpose: Operational remediation                                      │
-│   └── Fields: correlation_id, article_id, error_code, timestamp             │
-│                                                                             │
-│   LAYER 2: GLOBAL (System-wide visibility)                                  │
-│   ├── Table: shq_error_log (public schema)                                  │
-│   ├── Owner: Platform team                                                  │
-│   ├── Purpose: Trend analysis, alerting                                     │
-│   └── Fields: correlation_id, component='blog_subhub', error_code, severity │
-│                                                                             │
-│   ERROR FLOW:                                                               │
-│   1. Error occurs during article processing                                 │
-│   2. Log to local table (blog_processing_errors)                           │
-│   3. If severity >= WARN: Also emit to shq_error_log                       │
-│   4. Include correlation_id in BOTH logs                                    │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Error Code Standards
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         ERROR CODE CONVENTIONS                               │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│   Format: BLOG-{CATEGORY}{NUMBER}                                           │
-│                                                                             │
-│   Categories:                                                               │
-│   ├── 0XX: Detection/Parsing errors                                         │
-│   ├── 1XX: Processing/API errors                                            │
-│   ├── 2XX: Signal emission errors                                           │
-│   └── 3XX: Matching/Identity errors                                         │
-│                                                                             │
-│   Examples:                                                                 │
-│   ├── BLOG-001: Article parsing failed                                      │
-│   ├── BLOG-101: NewsAPI rate limit exceeded                                 │
-│   ├── BLOG-201: BIT Engine unavailable                                      │
-│   └── BLOG-301: Company fuzzy match below threshold                         │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 9. Kill Switches
-
-### Sub-Hub Level
-
-```python
-# Blog/News Sub-Hub Kill Switch
-if os.environ.get('KILL_BLOG_SUBHUB', 'false').lower() == 'true':
-    logger.warning("Blog/News Sub-Hub killed by configuration")
-    return SpokeResult(
-        status=ResultStatus.SKIPPED,
-        failure_reason='killed_by_config'
-    )
-```
-
-### Process-Level Kill Switches
-
-| Switch | Scope | Effect |
-|--------|-------|--------|
-| `KILL_BLOG_SUBHUB` | All news processing | Stops entire sub-hub |
-| `KILL_FUNDING_DETECTION` | Funding events | Stops funding detection |
-| `KILL_MA_DETECTION` | M&A events | Stops M&A detection |
-| `KILL_LEADERSHIP_DETECTION` | Leadership changes | Stops leadership detection |
-| `KILL_BLOG_SIGNALS` | Signal emission | Stops signals to BIT Engine |
-
----
-
-## 10. Observability
-
-### Metrics
-
-| Metric | Type | Description |
+| Column | Type | Description |
 |--------|------|-------------|
-| `blog.articles.processed` | Counter | Total articles processed |
-| `blog.articles.matched` | Counter | Articles matched to company |
-| `blog.events.detected` | Counter | Events detected |
-| `blog.events.type.{type}` | Counter | Events by type |
-| `blog.signals.emitted` | Counter | Signals sent to BIT Engine |
-| `blog.confidence.avg` | Gauge | Average event confidence |
+| blog_id | UUID | Primary key |
+| outreach_id | UUID | FK to spine |
+| context_summary | TEXT | Article summary |
+| source_type | TEXT | manual, newsapi, rss |
+| source_url | TEXT | Original URL |
+| context_timestamp | TIMESTAMPTZ | Article date |
+| created_at | TIMESTAMPTZ | Record created |
 
-### Logging
+### outreach.blog_errors (FAIL)
 
-```python
-# Standard log format for Blog/News Sub-Hub
-logger.info(
-    "Article processed",
-    extra={
-        'sub_hub': 'blog_news',
-        'article_id': article.article_id,
-        'source': article.source,
-        'company_id': company_id,
-        'event_type': event_type,
-        'confidence': confidence
-    }
-)
-```
-
----
-
-## 11. Integration with Company Hub
-
-### Data Flow
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                       BLOG/NEWS → COMPANY HUB DATA FLOW                      │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-    NEWS SOURCES                             COMPANY HUB
-    (External)                               (Internal)
-
-    ┌───────────────────┐                    ┌───────────────────┐
-    │ NewsAPI           │                    │ Company Master    │
-    │ PR Newswire       │                    │                   │
-    │ Company blogs     │   Domain/Name      │ • company_id      │
-    │ SEC filings       ├───────────────────►│ • domain          │
-    │                   │      Query         │ • company_name    │
-    └───────────────────┘                    └─────────┬─────────┘
-                                                       │
-                                                       │ company_id
-                                                       │
-                                             ┌─────────▼─────────┐
-                                             │ Blog Sub-Hub      │
-                                             │                   │
-                                             │ • Parse article   │
-                                             │ • Detect events   │
-                                             │ • Emit signals    │
-                                             └─────────┬─────────┘
-                                                       │
-                                                       │ SIGNALS
-                                                       │ • FUNDING_EVENT
-                                                       │ • ACQUISITION
-                                                       │ • LEADERSHIP_CHANGE
-                                                       │ • LAYOFF
-                                                       │
-                                             ┌─────────▼─────────┐
-                                             │ BIT ENGINE        │
-                                             │ (Company Hub)     │
-                                             │                   │
-                                             │ News signals      │
-                                             │ contribute +15 to │
-                                             │ -5 to BIT score   │
-                                             └───────────────────┘
-```
+| Column | Type | Description |
+|--------|------|-------------|
+| error_id | UUID | Primary key |
+| outreach_id | UUID | FK to spine |
+| pipeline_stage | VARCHAR | ingest, classify, write |
+| failure_code | VARCHAR | BLOG-I-xxx, BLOG-M-xxx, BLOG-O-xxx |
+| blocking_reason | TEXT | Human-readable |
+| severity | VARCHAR | INFO, WARN, ERROR, FATAL |
+| retry_allowed | BOOLEAN | ALWAYS FALSE |
+| process_id | UUID | Traceability |
+| raw_input | JSONB | Original payload |
+| stack_trace | TEXT | Exception trace |
+| created_at | TIMESTAMPTZ | Error recorded |
 
 ---
 
-## 12. Configuration (Planned)
+## 6. Forbidden Patterns (HARD LAW)
 
-### Sub-Hub Configuration
-
-```python
-{
-    'blog_subhub': {
-        'enabled': False,               # PLANNED - not yet implemented
-        'sources': {
-            'newsapi': {
-                'enabled': True,
-                'api_key': 'env:NEWSAPI_KEY',
-                'rate_limit': 100       # requests/day
-            },
-            'pr_newswire': {
-                'enabled': True,
-                'crawl_frequency': 3600  # seconds
-            },
-            'company_blogs': {
-                'enabled': True,
-                'crawl_frequency': 86400 # daily
-            }
-        },
-        'detection': {
-            'min_confidence': 0.75,     # Min confidence to emit signal
-            'review_threshold': 0.50    # Queue for review if below
-        },
-        'matching': {
-            'exact_match': True,
-            'fuzzy_match': True,
-            'fuzzy_threshold': 0.90
-        }
-    }
-}
-```
-
-### Signal Configuration
-
-```python
-{
-    'signals': {
-        'FUNDING_EVENT': {
-            'enabled': True,
-            'impact': 15.0
-        },
-        'ACQUISITION': {
-            'enabled': True,
-            'impact': 12.0
-        },
-        'LEADERSHIP_CHANGE': {
-            'enabled': True,
-            'impact': 8.0
-        },
-        'LAYOFF': {
-            'enabled': True,
-            'impact': -3.0
-        }
-    }
-}
-```
+| Category | Forbidden |
+|----------|-----------|
+| Identity | NO company minting, NO outreach_id minting |
+| Enrichment | NO enrichment triggers, NO paid API calls |
+| Retry | NO retry logic, NO backoff, NO rescue patterns |
+| Upstream | NO upstream data modification |
+| Social Metrics | NO followers, engagement, likes, views, sentiment |
 
 ---
 
-## 13. Implementation Roadmap
+## 7. CI Guards (15 Total)
 
-### Phase 1: Foundation (Planned)
+| Guard | Check |
+|-------|-------|
+| 1 | No sovereign_id references |
+| 2 | No CL table references |
+| 3 | No marketing.* writes |
+| 4 | No enrichment triggers |
+| 5 | Spine guard assertion present |
+| 6 | No retry logic |
+| 7 | Doctrine lock comment present |
+| 8 | No context view writes |
+| 9 | No company minting |
+| 10 | No outreach_id minting |
+| 11 | No social metrics fields |
+| 12 | Scope guard assertion present |
+| 13 | Error persistence assertion present |
+| 14 | blog_errors references present |
+| 15 | Print statement check |
 
-- [ ] Create `blog_node_spoke.py` base structure
-- [ ] Implement NewsAPI integration
-- [ ] Build basic keyword-based event detection
-- [ ] Add company matching via domain lookup
-
-### Phase 2: Enhanced Detection (Planned)
-
-- [ ] Implement NER for entity extraction
-- [ ] Add funding event detection with amount extraction
-- [ ] Add M&A detection with target/acquirer identification
-- [ ] Add leadership change detection
-
-### Phase 3: Intelligence (Planned)
-
-- [ ] Add sentiment analysis
-- [ ] Implement confidence scoring model
-- [ ] Add competitor intelligence tracking
-- [ ] Build article deduplication
-
-### Phase 4: Scale (Planned)
-
-- [ ] Add PR Newswire integration
-- [ ] Add SEC 8-K filing integration
-- [ ] Implement company blog RSS crawling
-- [ ] Build real-time processing pipeline
+See: `.github/workflows/blog_imo_guard.yml`
 
 ---
 
-## 14. Promotion States
+## 8. Error Handling
 
-### Burn-In Mode vs Steady-State Mode
+### Doctrine
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         PROMOTION STATE DEFINITIONS                          │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│   BURN-IN MODE (Initial Deployment)                                         │
-│   ├── Duration: First 30 days of production                                 │
-│   ├── Thresholds: Higher confidence required (0.85 vs 0.75)                 │
-│   ├── Kill switches: More sensitive (3 errors → kill)                      │
-│   ├── Alerting: Immediate on any ERROR severity                            │
-│   └── Review: All signals queued for human verification                     │
-│                                                                             │
-│   STEADY-STATE MODE (After Validation)                                      │
-│   ├── Promotion: After passing all gates below                              │
-│   ├── Thresholds: Standard confidence (0.75)                                │
-│   ├── Kill switches: Standard sensitivity (10 errors → kill)               │
-│   ├── Alerting: Standard alerting rules                                    │
-│   └── Review: Only low-confidence signals reviewed                          │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+> **Errors are first-class outputs, not hidden logging.**
 
-### Promotion Gates (Burn-In → Steady-State)
+Every failure MUST be persisted to `outreach.blog_errors`. The `error_persisted` field in BlogIMOResult tracks whether persistence succeeded.
 
-| Gate | Criteria | Measurement |
-|------|----------|-------------|
-| G1 | ≥100 articles processed without critical error | `blog.articles.processed >= 100 AND blog.errors.critical == 0` |
-| G2 | Company match rate ≥ 60% | `blog.articles.matched / blog.articles.processed >= 0.60` |
-| G3 | Signal confidence mean ≥ 0.80 | `AVG(confidence) >= 0.80` |
-| G4 | No BIT Engine emission failures in 7 days | `blog_bit_failures.count(7d) == 0` |
-| G5 | Human review approval rate ≥ 90% | `blog.signals.approved / blog.signals.reviewed >= 0.90` |
-| G6 | All API integrations stable (99% uptime) | `blog.api.uptime >= 0.99` |
-| G7 | Deduplication working (≤ 1% duplicate signals) | `blog.signals.duplicates / blog.signals.emitted <= 0.01` |
-| G8 | False positive rate ≤ 5% | `blog.signals.false_positive / blog.signals.emitted <= 0.05` |
+### Error Codes
 
-### State Transition
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         STATE TRANSITION FLOW                                │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-    ┌───────────────┐                              ┌───────────────┐
-    │   BURN-IN     │    All gates G1-G8 pass     │  STEADY-STATE │
-    │               │─────────────────────────────►│               │
-    │  (30 days)    │                              │  (Ongoing)    │
-    └───────────────┘                              └───────────────┘
-           │                                              │
-           │  Critical failure                            │  Regression detected
-           │  or gate regression                         │  (fails G1-G8)
-           │                                              │
-           ▼                                              ▼
-    ┌───────────────┐                              ┌───────────────┐
-    │   SUSPENDED   │                              │   BURN-IN     │
-    │               │                              │   (Reset)     │
-    │  Manual fix   │                              │               │
-    │  required     │                              │  Re-validate  │
-    └───────────────┘                              └───────────────┘
-```
+| Code | Stage | Description |
+|------|-------|-------------|
+| BLOG-I-NO-OUTREACH | ingest | No outreach_id provided |
+| BLOG-I-NOT-FOUND | ingest | outreach_id not in spine |
+| BLOG-I-NO-DOMAIN | ingest | No domain in spine |
+| BLOG-I-UPSTREAM-FAIL | ingest | CT not PASS (ready) |
+| BLOG-I-ALREADY-PROCESSED | ingest | Idempotent skip (not persisted) |
+| BLOG-M-CLASSIFY-FAIL | classify | Classification failed |
+| BLOG-O-WRITE-FAIL | write | Neon write failed |
 
 ---
 
-## 15. Version History
+## 9. Implementation Status
+
+| Component | Status | File |
+|-----------|--------|------|
+| IMO Gate | DONE | `blog_imo.py` |
+| CI Guard | DONE | `blog_imo_guard.yml` |
+| Spine Guard | DONE | `ENFORCE_OUTREACH_SPINE_ONLY` |
+| Scope Guard | DONE | `DISALLOW_SOCIAL_METRICS` |
+| Error Guard | DONE | `ENFORCE_ERROR_PERSISTENCE` |
+| Neon Tables | DONE | outreach.blog, outreach.blog_errors |
+| Checklist | DONE | All items checked |
+| Production Verification | DONE | PRODUCTION_VERIFICATION.md |
+| Error Verification | DONE | ERROR_HANDLING_VERIFICATION.md |
+
+---
+
+## 10. Verification Tests
+
+### Replay Test
+
+- Run Blog IMO twice on 10 records
+- Assert: Same row count, zero duplicates, zero new errors
+
+### Forced Failure Test
+
+- Inject outreach_id with CT != ready
+- Assert: Error persisted to blog_errors with correct stage/code
+
+---
+
+## 11. ADR References
+
+| ADR | Decision |
+|-----|----------|
+| ADR-BLOG-001 | Signal-only hub, no authority |
+| ADR-BLOG-002 | Error discipline enforcement |
+| ADR-BLOG-003 | Scope lock (company-level only) |
+
+---
+
+## Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.0 | 2025-12-17 | Initial Blog/News Sub-Hub PRD (PLANNED status) |
-| 2.1 | 2025-12-17 | Hardened: Correlation ID, Signal Idempotency, Tooling, Failure Handling, Promotion States |
+| 1.0 | 2025-12-17 | Initial PRD (PLANNED) |
+| 2.1 | 2025-12-17 | Hardened: Correlation ID, Signal Idempotency |
+| 3.0 | 2026-01-08 | **PRODUCTION LOCKED**: Spine-First Architecture, IMO Gate, Error Discipline, Scope Lock |
 
 ---
 
-*Document Version: 2.1*
-*Last Updated: 2025-12-17*
-*Owner: Blog/News Sub-Hub*
-*Status: PLANNED*
-*Doctrine: Bicycle Wheel v1.1 / Barton Doctrine*
+**Document Version:** 3.0
+**Last Updated:** 2026-01-08
+**Owner:** Blog Content Sub-Hub
+**Status:** PRODUCTION LOCKED
+**Doctrine:** Spine-First Architecture v1.1

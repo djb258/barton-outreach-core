@@ -1,0 +1,162 @@
+%% IMO-Creator Data Declaration - ERD Tree
+%% Generated: 2026-01-08
+%% Authority: imo-creator (Constitutional)
+%% 
+%% CC Depth: sovereign → hub → sub-hub → process → table
+%% Tables grouped by owning hub/sub-hub
+
+erDiagram
+    %% =============================================================================
+    %% SOVEREIGN LEVEL (External - Company Lifecycle)
+    %% =============================================================================
+    
+    CL_COMPANY_IDENTITY {
+        uuid company_unique_id PK "Sovereign identity"
+        text company_name "Legal name"
+        text identity_status "INTAKE|MINTED|PASS|FAIL"
+        timestamptz created_at "Minting timestamp"
+    }
+
+    %% =============================================================================
+    %% HUB LEVEL (barton-outreach-cc)
+    %% hub_unique_id: e46bcbf0-6719-4c68-8a38-78c36b47e3d1
+    %% =============================================================================
+    
+    OUTREACH_OUTREACH {
+        uuid outreach_id PK "OUT.SPINE.001"
+        uuid sovereign_id FK "Receipt to CL"
+        timestamptz created_at "Minting timestamp"
+        timestamptz updated_at "Last update"
+    }
+
+    %% =============================================================================
+    %% SUB-HUB: company-target
+    %% subhub_unique_id: 73fe8c7a-13d2-4d49-80d4-65e2350de9ab
+    %% =============================================================================
+    
+    OUTREACH_COMPANY_TARGET {
+        uuid target_id PK "OUT.TARGET.001"
+        text company_unique_id FK "Join to CL"
+        uuid outreach_id FK "Spine reference"
+        text outreach_status "queued|active|paused|completed|disqualified"
+        int bit_score_snapshot "BIT 0-100"
+        timestamptz first_targeted_at "First targeting"
+        timestamptz last_targeted_at "Last targeting"
+        int sequence_count "Sequence count"
+        text active_sequence_id "Current sequence"
+        text source "Entry source"
+        timestamptz created_at "Created"
+        timestamptz updated_at "Updated"
+    }
+
+    %% =============================================================================
+    %% SUB-HUB: people-intelligence
+    %% subhub_unique_id: 2e5bf57e-4ca8-4d09-8c50-6ea785306b97
+    %% =============================================================================
+    
+    SVG_MARKETING_TALENT_FLOW_MOVEMENTS {
+        text movement_id PK "SVG.TF.001"
+        text company_unique_id FK "Company reference"
+        text person_unique_id FK "Person reference"
+        text movement_type "hire|departure|promotion|role_change|backfill"
+        text position_title "Job title"
+        text position_level "C-suite|VP|Director|Senior Manager"
+        text department "Department"
+        date movement_date "Movement date"
+        timestamptz detected_at "Detection time"
+        text detection_source "Source system"
+        numeric confidence_score "0.00-1.00"
+        text verification_status "pending|verified|rejected|needs_review"
+        boolean bit_event_created "BIT event flag"
+        text bit_event_id FK "BIT event reference"
+    }
+
+    OUTREACH_PEOPLE {
+        uuid person_id PK "OUT.PEOPLE.001"
+        uuid target_id FK "Company target ref"
+        uuid outreach_id FK "Spine reference"
+        text email "Verified email"
+        text first_name "First name"
+        text last_name "Last name"
+        text position_title "Job title"
+        text lifecycle_state "Contact lifecycle"
+        timestamptz created_at "Created"
+    }
+
+    %% =============================================================================
+    %% SUB-HUB: dol-filings
+    %% subhub_unique_id: 099de3fb-5331-407a-b191-fa4aff194d33
+    %% =============================================================================
+    
+    DOL_EIN_LINKAGE {
+        uuid linkage_id PK "DOL.EIN.001"
+        text company_unique_id FK "Company reference"
+        text ein "Employer ID Number"
+        text match_type "fuzzy|deterministic"
+        numeric confidence_score "0.00-1.00"
+        timestamptz linked_at "Linkage time"
+    }
+
+    DOL_VIOLATIONS {
+        uuid violation_id PK "DOL.VIO.001"
+        text ein FK "EIN reference"
+        text violation_type "OSHA|EBSA|WHD"
+        decimal penalty_current "Current penalty"
+        date violation_date "Violation date"
+        text status "open|closed|appealed"
+    }
+
+    %% =============================================================================
+    %% SUB-HUB: outreach-execution
+    %% subhub_unique_id: 2e83d911-91a2-4d6d-8935-af2c1f5e4e54
+    %% =============================================================================
+    
+    OUTREACH_CTX_CONTEXT {
+        uuid outreach_id PK "OUT.CTX.001"
+        uuid company_sov_id FK "Sovereign ref"
+        text context_type "run|epoch|campaign"
+        text context_name "Context name"
+        text lifecycle_state_at_creation "Gate state"
+        timestamptz created_at "Created"
+        timestamptz expires_at "Expiration"
+        boolean is_active "Active flag"
+        text final_state "PASS|FAIL|ABORTED"
+        decimal total_cost_credits "Cost tracking"
+        int tier0_calls "Free calls"
+        int tier1_calls "Low cost calls"
+        int tier2_calls "Expensive calls"
+    }
+
+    OUTREACH_ENGAGEMENT_EVENTS {
+        uuid event_id PK "OUT.ENG.001"
+        uuid person_id FK "Person reference"
+        uuid outreach_id FK "Spine reference"
+        text event_type "open|click|reply|bounce|unsubscribe"
+        timestamptz event_at "Event timestamp"
+        text event_source "Source system"
+    }
+
+    %% =============================================================================
+    %% RELATIONSHIPS
+    %% =============================================================================
+    
+    %% Sovereign to Hub
+    CL_COMPANY_IDENTITY ||--o{ OUTREACH_OUTREACH : "identity gate PASS"
+    
+    %% Hub spine to sub-hubs
+    OUTREACH_OUTREACH ||--o{ OUTREACH_COMPANY_TARGET : "FK outreach_id"
+    OUTREACH_OUTREACH ||--o{ OUTREACH_PEOPLE : "FK outreach_id"
+    OUTREACH_OUTREACH ||--o{ OUTREACH_CTX_CONTEXT : "FK sovereign_id"
+    OUTREACH_OUTREACH ||--o{ OUTREACH_ENGAGEMENT_EVENTS : "FK outreach_id"
+    
+    %% Company target relationships
+    OUTREACH_COMPANY_TARGET ||--o{ OUTREACH_PEOPLE : "FK target_id"
+    CL_COMPANY_IDENTITY ||--o{ OUTREACH_COMPANY_TARGET : "FK company_unique_id"
+    
+    %% People intelligence relationships
+    CL_COMPANY_IDENTITY ||--o{ SVG_MARKETING_TALENT_FLOW_MOVEMENTS : "FK company_unique_id"
+    OUTREACH_PEOPLE ||--o{ OUTREACH_ENGAGEMENT_EVENTS : "FK person_id"
+    
+    %% DOL relationships
+    CL_COMPANY_IDENTITY ||--o{ DOL_EIN_LINKAGE : "FK company_unique_id"
+    DOL_EIN_LINKAGE ||--o{ DOL_VIOLATIONS : "FK ein"

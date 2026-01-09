@@ -24,8 +24,14 @@ The Barton Outreach Core system needed a scalable architecture to handle multipl
 |-------|-------|
 | **Architecture** | Bicycle Wheel Hub-and-Spoke |
 | **Doctrine ID** | 04.04.02.04 |
-| **Central Hub** | Company Hub (company_master) |
-| **Source** | Barton Doctrine v1.1 |
+| **Central Authority** | Outreach Spine (`outreach.outreach`) |
+| **Execution Sub-Hub** | Company Target (IMO gate) |
+| **Source** | Barton Doctrine v1.1 (Spine-First Architecture) |
+
+> **Update (v3.0):** The original "Company Hub" concept has been split:
+> - **Identity**: Company Lifecycle (CL) — external, mints `sovereign_id`
+> - **Spine**: Outreach Spine — mints `outreach_id`, binds to CL
+> - **Execution Prep**: Company Target — single-pass IMO gate, operates on `outreach_id`
 
 ### Architecture Pattern
 
@@ -52,13 +58,18 @@ The Barton Outreach Core system needed a scalable architecture to handle multipl
                          └─────────────────┘
 ```
 
-### The Golden Rule
+### The Golden Rule (v3.0 — Spine-First)
 
 ```
-IF company_id IS NULL OR domain IS NULL OR email_pattern IS NULL:
+IF outreach_id IS NULL:
     STOP. DO NOT PROCEED.
-    → Route to Company Identity Pipeline first.
+    → outreach_id must be minted via Outreach Spine first
+    → Spine requires sovereign_id from CL with identity_status = 'PASS'
 ```
+
+> **DEPRECATED**: The original rule referenced `company_id` — this is replaced by `outreach_id`.
+> Company Target now operates as an IMO gate (execution-readiness), not an identity authority.
+> See `ADR-CT-IMO-001` for rationale.
 
 ---
 
@@ -106,10 +117,15 @@ IF company_id IS NULL OR domain IS NULL OR email_pattern IS NULL:
 ## Implementation
 
 ### Hub Components
-- `hub/company/company_hub.py` - Central hub with cache and fuzzy matching
-- `hub/company/company_pipeline.py` - Phase 1-4 execution
-- `hub/company/bit_engine.py` - Signal aggregation and scoring
-- `hub/company/neon_writer.py` - Persistence layer
+
+> **NOTE (2026-01-07):** Company Target has been refactored to a single-pass IMO gate.
+> See `ADR-CT-IMO-001` for details. The components below are partially deprecated.
+
+- `hubs/company-target/imo/middle/company_target_imo.py` - **PRIMARY**: Single-pass IMO gate
+- ~~`hub/company/company_hub.py`~~ - **DEPRECATED**: Central hub with cache and fuzzy matching
+- ~~`hub/company/company_pipeline.py`~~ - **DEPRECATED**: Phase 1-4 execution (Phase 1/1b moved to CL)
+- `hubs/company-target/imo/middle/bit_engine.py` - Signal aggregation and scoring
+- ~~`hub/company/neon_writer.py`~~ - **DEPRECATED**: IMO handles writes directly
 
 ### Spoke Components
 - `spokes/people/people_spoke.py` - Email generation, slot assignment
