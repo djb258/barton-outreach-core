@@ -1,16 +1,44 @@
 # People <-> Outreach Spoke Contract
-# Version: 1.0.0
+# Version: 1.1.0
+# Updated: 2026-01-09 - Enforce Minimal People Slot Contract
 
 contract:
   id: CONTRACT-PEOPLE-OUTREACH
-  version: "1.0.0"
+  version: "1.1.0"
   description: |
     Bidirectional spoke between People Intelligence Hub and Outreach Execution Hub.
     Handles contact selection (People -> Outreach) and contact state updates (Outreach -> People).
+    
+    DOCTRINE: A slot is FILLED if and only if it has:
+      - full_name (NOT NULL, non-empty)
+      - title (NOT NULL, non-empty)
+      - linkedin_url (NOT NULL, non-empty)
+    
+    Email is OPTIONAL enrichment and MUST NOT block slot fill.
 
 parties:
   hub_a: HUB-PEOPLE
   hub_b: HUB-OUTREACH
+
+# Minimal People Slot Contract
+slot_contract:
+  version: "1.0.0"
+  required_fields:
+    - full_name      # Contact's full name
+    - title          # Job title
+    - linkedin_url   # LinkedIn profile URL (primary identifier)
+  optional_enrichment:
+    - email          # NEVER blocks slot fill
+    - phone          # NEVER blocks slot fill
+    - socials        # NEVER blocks slot fill
+  validation:
+    full_name: "NOT NULL AND != ''"
+    title: "NOT NULL AND != ''"
+    linkedin_url: "NOT NULL AND != '' AND contains 'linkedin.com/in/'"
+  doctrine: |
+    Slots are containers, not people records. Vendors propose candidates.
+    The system decides truth. Email enrichment may enhance a filled slot,
+    but must NEVER affect slot validity or status.
 
 ingress:  # People -> Outreach
   name: contact_selection_spoke
@@ -21,7 +49,10 @@ ingress:  # People -> Outreach
     - person_id
   payload_type: contact_info
   data_flow:
-    - contact info (email, name)
+    - full_name (REQUIRED - slot contract)
+    - title (REQUIRED - slot contract)
+    - linkedin_url (REQUIRED - slot contract)
+    - email (OPTIONAL - enrichment only)
     - slot type (for personalization)
     - contact readiness status
   trigger: contact_requested_for_campaign
