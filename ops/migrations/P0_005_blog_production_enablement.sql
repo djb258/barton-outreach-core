@@ -238,8 +238,8 @@ candidates AS (
     SELECT
         o.outreach_id,
         o.sovereign_id,
-        ct.domain,
-        ct.company_name,
+        o.domain,
+        ci.company_name,
         -- Check if we've seen this company's blog before
         bsh.source_url AS known_url,
         bsh.last_checked_at,
@@ -252,9 +252,9 @@ candidates AS (
             ELSE 99                                               -- Skip
         END AS priority
     FROM outreach.outreach o
-    INNER JOIN outreach.company_target ct ON o.outreach_id = ct.outreach_id
+    LEFT JOIN cl.company_identity ci ON o.sovereign_id = ci.company_unique_id
     LEFT JOIN outreach.blog_source_history bsh ON o.outreach_id = bsh.outreach_id
-    WHERE ct.domain IS NOT NULL
+    WHERE o.domain IS NOT NULL
 )
 SELECT
     c.outreach_id,
@@ -386,7 +386,7 @@ Call BEFORE making any HTTP request.';
 DROP TRIGGER IF EXISTS set_updated_at ON outreach.blog_ingress_control;
 CREATE TRIGGER set_updated_at
     BEFORE UPDATE ON outreach.blog_ingress_control
-    FOR EACH ROW EXECUTE FUNCTION outreach.trigger_set_updated_at();
+    FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 -- =============================================================================
 -- VERIFICATION QUERIES

@@ -1,9 +1,22 @@
 # P0 Spine Remediation — Post-Migration Validation Checklist
 
-**Migration Date:** 2026-01-08
+**Version:** 1.1.0
+**Status:** ACTIVE
+**Date:** 2026-01-09
 **Author:** Claude Code (Schema Remediation Engineer)
 **Mode:** SAFE MODE
-**Scope:** DOL, Talent Flow, Outreach Execution
+**Scope:** DOL, Talent Flow, Outreach Execution, Path Integrity
+
+---
+
+## Quick Reference
+
+| Migration Series | Purpose | Status |
+|------------------|---------|--------|
+| P0_001-003 | Spine Alignment (DOL, Talent Flow, Execution) | PENDING |
+| P0_004 | History Sidecar Tables | PENDING |
+| P0_005-006 | Blog Production Enablement | PENDING |
+| **R0_002-003** | **Path Integrity (Slot FK)** | **COMPLETE** |
 
 ---
 
@@ -18,7 +31,60 @@ Before running migrations, verify:
 
 ---
 
-## Migration Execution Order
+## R0 Series: Path Integrity Remediation
+
+> **STATUS: COMPLETE** (2026-01-09)
+> See [[R0_REMEDIATION_REPORT]] for detailed results.
+
+### R0_002: Backfill Orphaned Slot outreach_ids
+
+**File:** `ops/migrations/R0_002_backfill_slot_outreach_id.sql`
+
+| Check | Query | Expected |
+|-------|-------|----------|
+| Snapshot exists | `SELECT COUNT(*) FROM people.slot_orphan_snapshot_r0_002;` | 1,053 rows |
+| Quarantine exists | `SELECT COUNT(*) FROM people.slot_quarantine_r0_002;` | 75 rows |
+| Remaining orphans | `SELECT COUNT(*) FROM people.company_slot WHERE outreach_id IS NULL;` | 75 rows |
+| Derivation breakdown | `SELECT derivation_status, COUNT(*) FROM people.slot_orphan_snapshot_r0_002 GROUP BY 1;` | DERIVED: 978, NON_DERIVABLE: 75 |
+
+**Pass Criteria:**
+- [x] Snapshot table created with 1,053 records
+- [x] 978 slots backfilled with derived outreach_id
+- [x] 75 non-derivable slots quarantined
+- [x] No FK violation candidates remain
+
+**Rollback:** `ops/migrations/R0_002_backfill_slot_outreach_id_ROLLBACK.sql`
+
+---
+
+### R0_003: FK Constraint on people.company_slot
+
+**File:** `ops/migrations/R0_003_slot_outreach_fk_constraint.sql`
+
+| Check | Query | Expected |
+|-------|-------|----------|
+| FK exists | `SELECT conname, contype FROM pg_constraint WHERE conrelid = 'people.company_slot'::regclass AND conname = 'fk_company_slot_outreach';` | fk_company_slot_outreach, f |
+| Index exists | `SELECT indexname FROM pg_indexes WHERE schemaname = 'people' AND indexname = 'idx_company_slot_outreach_id';` | idx_company_slot_outreach_id |
+| Path integrity | `SELECT COUNT(*) FROM people.company_slot WHERE outreach_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM outreach.outreach o WHERE o.outreach_id = company_slot.outreach_id);` | 0 |
+
+**Pass Criteria:**
+- [x] FK constraint `fk_company_slot_outreach` exists
+- [x] Partial index `idx_company_slot_outreach_id` exists
+- [x] No orphaned outreach_id values (path locked)
+
+**FK Enforcement Test:**
+```sql
+-- Should FAIL with FK violation
+INSERT INTO people.company_slot (company_slot_unique_id, company_unique_id, slot_type, outreach_id)
+VALUES ('test_fk_enforcement', 'test_company', 'CEO', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
+-- Expected: ERROR - violates foreign key constraint "fk_company_slot_outreach"
+```
+
+**Rollback:** `ops/migrations/R0_003_slot_outreach_fk_constraint_ROLLBACK.sql`
+
+---
+
+## P0 Series: Migration Execution Order
 
 Run migrations in this exact order:
 
@@ -224,7 +290,11 @@ SELECT outreach.promote_canary_to_global('your_name');
 If any validation fails:
 
 ```bash
-# Rollback in REVERSE order
+# R0 Series Rollback (if needed)
+psql -f ops/migrations/R0_003_slot_outreach_fk_constraint_ROLLBACK.sql
+psql -f ops/migrations/R0_002_backfill_slot_outreach_id_ROLLBACK.sql
+
+# P0 Series Rollback in REVERSE order
 psql -f ops/migrations/P0_006_blog_canary_infrastructure_ROLLBACK.sql
 psql -f ops/migrations/P0_005_blog_production_enablement_ROLLBACK.sql
 psql -f ops/migrations/P0_004_history_sidecar_tables_ROLLBACK.sql
@@ -241,9 +311,16 @@ Document any records that could not be backfilled:
 
 | Table | Issue | Count | Resolution Plan |
 |-------|-------|-------|-----------------|
+| people.company_slot | NO_BRIDGE_ENTRY | 18 | Add missing bridge entries OR delete slots |
+| people.company_slot | NO_OUTREACH_RECORD | 57 | Create outreach records OR delete slots |
 | dol.ein_linkage | NO_SPINE_RECORD | TBD | Needs spine record creation |
 | talent_flow.movements | NO_SPINE_RECORD (from) | TBD | Needs spine record creation |
 | talent_flow.movements | NO_SPINE_RECORD (to) | TBD | Needs spine record creation |
+
+**Quarantine Query:**
+```sql
+SELECT * FROM people.slot_quarantine_r0_002 ORDER BY quarantine_reason, company_unique_id;
+```
 
 ---
 
@@ -251,6 +328,7 @@ Document any records that could not be backfilled:
 
 | Role | Name | Date | Signature |
 |------|------|------|-----------|
+| Migration Author | Claude Code | 2026-01-09 | R0 Complete |
 | DBA | | | |
 | Engineering Lead | | | |
 | Architect | | | |
@@ -261,6 +339,7 @@ Document any records that could not be backfilled:
 
 Before proceeding to Phase 2 (FK enforcement + trigger rewrite):
 
+- [x] R0 Path Integrity locked (people.company_slot FK)
 - [ ] All `NO_SPINE_RECORD` entries resolved
 - [ ] Backfill coverage at 100% for all tables
 - [ ] Application code updated to use `outreach_id`
@@ -268,5 +347,15 @@ Before proceeding to Phase 2 (FK enforcement + trigger rewrite):
 
 ---
 
-**Last Updated:** 2026-01-08
-**Migration Status:** P0 COMPLETE (Pending Validation)
+## Related Documents
+
+- [[PATH_INTEGRITY_DOCTRINE]] — Waterfall join enforcement rules
+- [[R0_REMEDIATION_REPORT]] — Detailed R0 migration report
+- [[WATERFALL_ARCHITECTURE]] — Full architecture documentation
+- [[CLAUDE.md]] — Bootstrap guide with architecture overview
+
+---
+
+**Document Status:** ACTIVE
+**Last Updated:** 2026-01-09
+**Migration Status:** R0 COMPLETE | P0 PENDING
