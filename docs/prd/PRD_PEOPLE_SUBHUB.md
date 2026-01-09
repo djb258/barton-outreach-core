@@ -1,12 +1,38 @@
-# PRD: People Sub-Hub v2.1
+# PRD: People Sub-Hub v2.2
 
-**Version:** 2.1 (Hardened per Barton Doctrine)
+**Version:** 2.2 (Slot Infrastructure Seeded)
 **Status:** Active
 **Hardening Date:** 2025-12-17
-**Last Updated:** 2025-12-17
+**Last Updated:** 2026-01-09
 **Doctrine:** Bicycle Wheel v1.1 / Barton Doctrine
 **Barton ID Range:** `04.04.02.04.2XXXX.###`
-**Changes:** Correlation ID enforcement, Failure handling standardization, Signal idempotency, Tooling declarations, Promotion states
+**Changes:** Bulk slot seeding (190,755 slots), Sovereign bridge path documented, Kill switch infrastructure
+
+---
+
+## Slot Infrastructure Status (2026-01-09)
+
+```
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                    SLOT INFRASTRUCTURE — PRODUCTION READY                     ║
+╠═══════════════════════════════════════════════════════════════════════════════╣
+║                                                                               ║
+║   SLOTS SEEDED: 190,755 total                                                ║
+║   ├── CEO slots: 63,585                                                      ║
+║   ├── CFO slots: 63,585                                                      ║
+║   └── HR slots:  63,585                                                      ║
+║                                                                               ║
+║   COVERAGE: 63,585 unique outreach_ids (100% of eligible)                    ║
+║                                                                               ║
+║   KILL SWITCH: OFF (ingestion disabled until explicitly enabled)             ║
+║                                                                               ║
+║   DATA PATH: outreach.sovereign_id → cl.company_identity_bridge →            ║
+║              company.company_master (FK validated)                           ║
+║                                                                               ║
+║   ADR: docs/adr/ADR-PI-001_Slot_Seeding_Sovereign_Bridge.md                  ║
+║                                                                               ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+```
 
 ---
 

@@ -133,7 +133,7 @@ COMMENT ON COLUMN people.people_candidate.source IS
 
 CREATE OR REPLACE VIEW people.v_open_slots AS
 SELECT
-    cs.slot_id,
+    cs.company_slot_unique_id AS slot_id,
     cs.outreach_id,
     cs.company_unique_id,
     cs.slot_type,
@@ -226,7 +226,7 @@ BEGIN
     END IF;
 
     -- Check if slot exists
-    SELECT cs.slot_id, cs.slot_status
+    SELECT cs.company_slot_unique_id, cs.slot_status
     INTO v_slot_id, v_slot_status
     FROM people.company_slot cs
     WHERE cs.outreach_id = p_outreach_id
@@ -252,13 +252,18 @@ BEGIN
     END IF;
     
     -- Check resolution history for pending/active attempts
-    SELECT EXISTS (
-        SELECT 1 
-        FROM people.people_resolution_queue prq
-        WHERE prq.outreach_id = p_outreach_id
-          AND prq.slot_id = v_slot_id
-          AND prq.resolution_status = 'pending'
-    ) INTO v_resolution_pending;
+    -- Note: people_resolution_queue may not exist yet, handle gracefully
+    BEGIN
+        SELECT EXISTS (
+            SELECT 1 
+            FROM people.people_resolution_queue prq
+            WHERE prq.outreach_id = p_outreach_id
+              AND prq.slot_id = v_slot_id
+              AND prq.resolution_status = 'pending'
+        ) INTO v_resolution_pending;
+    EXCEPTION WHEN undefined_table THEN
+        v_resolution_pending := FALSE;
+    END;
     
     IF v_resolution_pending THEN
         RETURN QUERY SELECT 

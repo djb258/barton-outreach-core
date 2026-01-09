@@ -2,7 +2,7 @@
 id: people-intelligence
 title: People Intelligence Sub-Hub
 desc: Slot-based people intelligence - CEO/CFO/HR slot creation and person binding
-updated: 2026-01-08
+updated: 2026-01-09
 created: 2026-01-08
 tags:
   - hub
@@ -10,6 +10,7 @@ tags:
   - slots
   - imo
   - certified
+  - bulk-seeded
 ---
 
 # People Intelligence Sub-Hub
@@ -24,17 +25,20 @@ The People Intelligence Sub-Hub manages **slot creation and person binding** for
 |-------|-------|
 | **Hub ID** | HUB-PEOPLE |
 | **Doctrine ID** | 04.04.02 |
-| **Version** | 1.1.0 |
-| **Status** | ✅ FULL PASS |
+| **Version** | 1.2.0 |
+| **Status** | ✅ FULL PASS — BULK SEEDED |
 | **Migration Hash** | `678a8d99` |
 | **Certification Date** | 2026-01-08 |
+| **Bulk Seed Date** | 2026-01-09 |
 
 ## Ownership
 
 ### Owns (Write Access)
 
-- `people.company_slot` - Slot definitions per company (1,359 rows)
+- `people.company_slot` - Slot definitions per company (**190,755 rows** — bulk seeded 2026-01-09)
 - `people.people_master` - Person records (170 rows)
+- `people.people_candidate` - Candidate queue table (NEW — structure only)
+- `people.slot_ingress_control` - Kill switch table (NEW — OFF by default)
 - `people.person_movement_history` - Employment changes (append-only)
 - `people.people_sidecar` - Enrichment data
 - `people.people_resolution_queue` - Ambiguous bindings
@@ -146,6 +150,54 @@ Migration `004_people_slot_schema_evolution.sql` added 4 doctrine-required colum
 6. **No People table writes upstream — signals only**
 7. **LinkedIn URL is the external identity anchor**
 
+## Neon Data Paths
+
+### Sovereign Bridge Path (Canonical)
+
+The canonical path from `outreach_id` to valid `company_unique_id`:
+
+```
+outreach.outreach.sovereign_id           (UUID)
+        ↓ JOIN ON company_sov_id
+cl.company_identity_bridge.source_company_id   (04.04.01.xx.xxxxx.xxx)
+        ↓ FK VALIDATED
+company.company_master.company_unique_id       (string, FK target)
+```
+
+### Why This Path?
+
+| ID Source | Format | FK Valid? | Use Case |
+|-----------|--------|-----------|----------|
+| `outreach.company_target.company_unique_id` | UUID | ❌ NO | Different ID system |
+| `cl.company_identity_bridge.source_company_id` | `04.04.01.xx` | ✅ YES | Canonical path |
+| `company.company_master.company_unique_id` | `04.04.01.xx` | ✅ FK TARGET | Reference table |
+
+### Slot Creation Query
+
+```sql
+INSERT INTO people.company_slot (...)
+SELECT 
+    gen_random_uuid()::text,
+    cm.company_unique_id,        -- From company_master (FK valid)
+    o.outreach_id,
+    :slot_type,
+    'open', TRUE, 'bulk_seed', NOW()
+FROM outreach.outreach o
+JOIN cl.company_identity_bridge b ON b.company_sov_id = o.sovereign_id
+JOIN company.company_master cm ON cm.company_unique_id = b.source_company_id
+WHERE NOT EXISTS (SELECT 1 FROM people.company_slot cs 
+                  WHERE cs.outreach_id = o.outreach_id AND cs.slot_type = :slot_type);
+```
+
+### Bulk Seed Results (2026-01-09)
+
+| Slot Type | Count |
+|-----------|-------|
+| CEO | 63,585 |
+| CFO | 63,585 |
+| HR | 63,585 |
+| **Total** | **190,755** |
+
 ## Key Files
 
 | File | Purpose |
@@ -169,7 +221,8 @@ Migration `004_people_slot_schema_evolution.sql` added 4 doctrine-required colum
 
 ---
 
-**Last Updated:** 2026-01-08
+**Last Updated:** 2026-01-09
 **Author:** Claude Code (IMO-Creator)
-**Doctrine Version:** Barton IMO v1.1
+**Doctrine Version:** Barton IMO v1.2
+**Bulk Seed Status:** ✅ COMPLETE — 190,755 slots
 **Talent Flow Certification:** TF-001 PRODUCTION-READY
