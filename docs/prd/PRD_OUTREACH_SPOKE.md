@@ -307,6 +307,58 @@ CREATE INDEX idx_outreach_correlation ON marketing.outreach_log(correlation_id);
 
 ---
 
-**Last Updated:** 2025-12-19
+## 11. Database Schema (HARDENED 2026-01-13)
+
+### Schema: `outreach`
+
+| Table | Purpose | RLS Enabled |
+|-------|---------|-------------|
+| `company_target` | Company anchor records | Yes |
+| `people` | Contact/executive data | Yes |
+| `engagement_events` | Immutable event log | Yes (+ DELETE blocked) |
+| `campaigns` | Campaign definitions | Yes |
+| `sequences` | Multi-touch steps | Yes |
+| `send_log` | Delivery tracking | Yes |
+
+### RLS Roles
+
+| Role | Permissions |
+|------|-------------|
+| `outreach_hub_writer` | SELECT, INSERT, UPDATE on outreach.* |
+| `hub_reader` | SELECT only on outreach.* |
+
+### Immutability Enforcement
+
+```sql
+-- engagement_events DELETE blocked at trigger level
+CREATE TRIGGER trg_engagement_events_immutability_delete
+    BEFORE DELETE ON outreach.engagement_events
+    FOR EACH ROW
+    EXECUTE FUNCTION outreach.fn_engagement_events_immutability();
+```
+
+### Migration Reference
+
+```
+infra/migrations/2026-01-13-outreach-execution-complete.sql
+infra/migrations/2026-01-13-enable-rls-production-tables.sql
+```
+
+See `infra/MIGRATION_ORDER.md` for execution order.
+
+---
+
+## 12. Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 2.0 | 2025-12-19 | Initial Outreach Spoke PRD |
+| 2.1 | 2025-12-19 | Hardened: Primary contact selection, BIT threshold, cooling-off |
+| 2.2 | 2026-01-13 | Execution tables created (campaigns, sequences, send_log), RLS enabled |
+
+---
+
+**Last Updated:** 2026-01-13
 **Author:** Claude Code
 **Approved By:** Barton Doctrine
+**Doctrine:** CL Parent-Child Doctrine v1.0

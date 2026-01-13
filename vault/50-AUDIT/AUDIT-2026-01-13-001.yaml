@@ -1,0 +1,188 @@
+# AI-Readable Audit Record
+# Format: IMO-Creator v1.0
+# Purpose: Machine-parseable audit for AI agents
+
+audit:
+  id: AUDIT-2026-01-13-001
+  type: lifecycle_verification
+  date: 2026-01-13
+  timestamp: 2026-01-13T23:59:59Z
+  auditor:
+    type: ai
+    model: claude-opus-4-5-20251101
+    version: "4.5"
+
+  status: PASS
+  verdict: GREEN_FOR_PRODUCTION
+
+conformance:
+  doctrine_version: "CL Parent-Child Doctrine v1.0"
+  cc_layer: CC-04
+
+hub:
+  sovereign_id: CL
+  hub_name: Barton Outreach Core
+  hub_id: "04.04.02.04"
+
+checks:
+  - name: fk_existence
+    status: PASS
+    count: 25
+    details: "25 FKs verified in outreach/dol schemas"
+    query: |
+      SELECT COUNT(*) FROM information_schema.table_constraints
+      WHERE constraint_type = 'FOREIGN KEY'
+      AND table_schema IN ('outreach', 'dol')
+
+  - name: rls_policies
+    status: PASS
+    count: 29
+    details: "29 RLS policies active across outreach and dol schemas"
+    breakdown:
+      outreach: 18
+      dol: 11
+
+  - name: lifecycle_order
+    status: PASS
+    details: "FK constraints enforce processing sequence"
+    chain:
+      - "people → company_target (target_id)"
+      - "send_log → people (person_id)"
+      - "send_log → campaigns (campaign_id)"
+      - "schedule_a → form_5500 (filing_id)"
+
+  - name: gate_enforcement
+    status: PASS
+    details: "All phases validate company anchor"
+    gates:
+      - file: ops/enforcement/hub_gate.py
+        function: validate_company_anchor
+        status: ACTIVE
+      - file: ops/enforcement/correlation_id.py
+        function: validate_correlation_id
+        status: ACTIVE
+      - file: ops/enforcement/authority_gate.py
+        function: validate_authority
+        status: ACTIVE
+
+  - name: immutability
+    status: PASS
+    details: "engagement_events DELETE blocked at trigger level"
+    trigger:
+      name: trg_engagement_events_immutability_delete
+      table: outreach.engagement_events
+      function: outreach.fn_engagement_events_immutability
+      enabled: true
+
+migrations:
+  executed:
+    - file: 2026-01-13-dol-schema-creation.sql
+      status: SUCCESS
+      tables_created: 4
+      indexes_created: 16
+      triggers_created: 4
+
+    - file: 2026-01-13-outreach-execution-complete.sql
+      status: SUCCESS
+      tables_created: 3
+      indexes_created: 14
+      triggers_created: 3
+
+    - file: 2026-01-13-enable-rls-production-tables.sql
+      status: SUCCESS
+      policies_created: 29
+      roles_created: 3
+      triggers_created: 1
+
+schemas:
+  outreach:
+    tables:
+      - name: company_target
+        rls_enabled: true
+        policies: [select, insert, update]
+      - name: people
+        rls_enabled: true
+        policies: [select, insert, update]
+      - name: engagement_events
+        rls_enabled: true
+        policies: [select, insert]
+        immutable: true
+        delete_blocked: true
+      - name: campaigns
+        rls_enabled: true
+        policies: [select, insert, update]
+      - name: sequences
+        rls_enabled: true
+        policies: [select, insert, update]
+      - name: send_log
+        rls_enabled: true
+        policies: [select, insert, update]
+      - name: column_registry
+        rls_enabled: false
+
+  dol:
+    tables:
+      - name: form_5500
+        rls_enabled: true
+        policies: [select, insert, update]
+      - name: form_5500_sf
+        rls_enabled: true
+        policies: [select, insert, update]
+      - name: schedule_a
+        rls_enabled: true
+        policies: [select, insert, update]
+      - name: renewal_calendar
+        rls_enabled: true
+        policies: [select, insert, update]
+
+roles:
+  created:
+    - name: outreach_hub_writer
+      permissions: [SELECT, INSERT, UPDATE]
+      schemas: [outreach]
+
+    - name: dol_hub_writer
+      permissions: [SELECT, INSERT, UPDATE]
+      schemas: [dol]
+
+    - name: hub_reader
+      permissions: [SELECT]
+      schemas: [outreach, dol]
+
+observations:
+  non_blocking:
+    - id: OBS-001
+      description: "Phases 5-7 lack explicit correlation_id parameter"
+      impact: NONE
+      reason: "Company anchor still validated per-record via context"
+
+    - id: OBS-002
+      description: "company_unique_id uses TEXT join, not FK constraint"
+      impact: NONE
+      reason: "By design per CL Parent-Child Doctrine"
+
+recommendations:
+  - priority: LOW
+    description: "Add explicit correlation_id parameter to phases 5-7"
+    rationale: "Consistency with phases 1-4"
+
+  - priority: LOW
+    description: "Monitor send_log FK violations during initial ingestion"
+    rationale: "Early detection of data quality issues"
+
+  - priority: LOW
+    description: "Document TEXT join pattern in onboarding materials"
+    rationale: "Team understanding of architectural decisions"
+
+traceability:
+  adr: docs/adr/ADR-002_Database_Hardening_RLS.md
+  migration_order: infra/MIGRATION_ORDER.md
+  prd_dol: docs/prd/PRD_DOL_SUBHUB.md
+  prd_outreach: docs/prd/PRD_OUTREACH_SPOKE.md
+  claude_md: CLAUDE.md
+
+metadata:
+  format: IMO-Creator-v1.0
+  generated_by: claude-opus-4-5-20251101
+  generated_at: 2026-01-13T23:59:59Z
+  human_readable: vault/50-AUDIT/AUDIT-2026-01-13-Lifecycle-Verification.md

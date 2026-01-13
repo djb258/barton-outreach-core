@@ -807,16 +807,46 @@ if self._has_compliance_issues(company_id):
 
 ---
 
-## 15. Version History
+## 15. Database Schema (HARDENED 2026-01-13)
+
+### Schema: `dol`
+
+| Table | Purpose | RLS Enabled |
+|-------|---------|-------------|
+| `form_5500` | Large plan filings (>=100 participants) | Yes |
+| `form_5500_sf` | Small plan filings (<100 participants) | Yes |
+| `schedule_a` | Insurance broker/carrier data | Yes |
+| `renewal_calendar` | Plan renewal tracking | Yes |
+
+### RLS Roles
+
+| Role | Permissions |
+|------|-------------|
+| `dol_hub_writer` | SELECT, INSERT, UPDATE on dol.* |
+| `hub_reader` | SELECT only on dol.* |
+
+### Migration Reference
+
+```
+infra/migrations/2026-01-13-dol-schema-creation.sql
+infra/migrations/2026-01-13-enable-rls-production-tables.sql
+```
+
+See `infra/MIGRATION_ORDER.md` for execution order.
+
+---
+
+## 16. Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2025-12-17 | Initial DOL Sub-Hub PRD with clean boundaries |
 | 2.1 | 2025-12-17 | Hardened: Correlation ID, Signal idempotency, Two-layer errors, Promotion states |
+| 2.2 | 2026-01-13 | Database schema created, RLS enabled, lifecycle audit PASS |
 
 ---
 
-*Document Version: 2.1*
-*Last Updated: 2025-12-17*
+*Document Version: 2.2*
+*Last Updated: 2026-01-13*
 *Owner: DOL Sub-Hub*
-*Doctrine: Bicycle Wheel v1.1 / Barton Doctrine*
+*Doctrine: CL Parent-Child Doctrine v1.0*
