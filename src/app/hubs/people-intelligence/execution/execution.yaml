@@ -1,0 +1,112 @@
+# Execution Wiring - People Intelligence Sub-Hub
+# IMO-Creator Execution Wiring Phase
+# subhub_unique_id: 2e5bf57e-4ca8-4d09-8c50-6ea785306b97
+
+---
+
+# =============================================================================
+# PROCESS → EXECUTABLE BINDINGS
+# =============================================================================
+
+bindings:
+  # Slot Creation
+  - process_id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+    process_name: slot_creation
+    execution_type: script
+    executable_path: hubs/people-intelligence/imo/middle/slot_assignment.py
+    runtime: python
+    invocation_method: sdk
+    status: IMPLEMENTED
+
+  # Person Binding
+  - process_id: b2c3d4e5-f6a7-8901-bcde-f12345678901
+    process_name: person_binding
+    execution_type: script
+    executable_path: hubs/people-intelligence/imo/middle/people_hub.py
+    runtime: python
+    invocation_method: sdk
+    status: IMPLEMENTED
+
+  # Movement Tracking (Talent Flow)
+  - process_id: c3d4e5f6-a7b8-9012-cdef-123456789012
+    process_name: movement_tracking
+    execution_type: script
+    executable_path: hubs/people-intelligence/imo/middle/phases/
+    runtime: python
+    invocation_method: sdk
+    status: IMPLEMENTED
+    certification: TF-001 PRODUCTION-READY
+
+  # Email Discovery
+  - process_id: d4e5f6a7-b8c9-0123-def1-234567890123
+    process_name: email_discovery
+    execution_type: script
+    executable_path: hubs/people-intelligence/imo/middle/email/
+    runtime: python
+    invocation_method: sdk
+    status: IMPLEMENTED
+
+  # Link Resolution
+  - process_id: e5f6a7b8-c9d0-1234-ef12-345678901234
+    process_name: link_resolution
+    execution_type: script
+    executable_path: hubs/people-intelligence/imo/middle/sub_wheels/
+    runtime: python
+    invocation_method: sdk
+    status: IMPLEMENTED
+
+  # Enrichment Dispatch
+  - process_id: f6a7b8c9-d0e1-2345-f123-456789012345
+    process_name: enrichment_dispatch
+    execution_type: script
+    executable_path: hubs/people-intelligence/imo/middle/phases/phase7_enrichment_queue.py
+    runtime: python
+    invocation_method: sdk
+    status: IMPLEMENTED
+
+  # Signal Intake
+  - process_id: a7b8c9d0-e1f2-3456-0123-567890123456
+    process_name: signal_intake
+    execution_type: script
+    executable_path: hubs/people-intelligence/imo/input/
+    runtime: python
+    invocation_method: sdk
+    status: DECLARED_BUT_NOT_IMPLEMENTED
+
+  # State Mutation
+  - process_id: b8c9d0e1-f2a3-4567-1234-678901234567
+    process_name: state_mutation
+    execution_type: script
+    executable_path: hubs/people-intelligence/imo/middle/hub_gate.py
+    runtime: python
+    invocation_method: sdk
+    status: IMPLEMENTED
+
+  # Talent Flow (Certified)
+  - process_id: c9d0e1f2-a3b4-5678-2345-789012345678
+    process_name: talent_flow
+    execution_type: script
+    executable_path: hubs/people-intelligence/imo/middle/phases/
+    runtime: python
+    invocation_method: sdk
+    status: IMPLEMENTED
+    certification: TF-001 PRODUCTION-READY
+
+  # Output
+  - process_id: d0e1f2a3-b4c5-6789-3456-890123456789
+    process_name: output
+    execution_type: script
+    executable_path: hubs/people-intelligence/imo/output/neon_writer.py
+    runtime: python
+    invocation_method: sdk
+    status: IMPLEMENTED
+
+# =============================================================================
+# DOCUMENT CONTROL
+# =============================================================================
+
+document_control:
+  created_at: "2026-01-08"
+  phase: Execution Wiring
+  authority: imo-creator
+  author: Claude Code (IMO-Creator)

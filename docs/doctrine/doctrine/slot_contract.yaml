@@ -1,0 +1,190 @@
+# People Slot Contract Doctrine
+# IMO-Creator Governance
+# Version: 1.0.0
+
+---
+
+# =============================================================================
+# CONTRACT IDENTITY
+# =============================================================================
+
+contract:
+  contract_id: SLOT-CONTRACT-001
+  name: People Slot Contract
+  version: "1.0.0"
+  status: ENFORCED
+  enforcement_date: "2026-01-09"
+  commit_hash: "8561ad8"
+  hub: HUB-PEOPLE
+  doctrine_id: "04.04.02"
+
+# =============================================================================
+# CANONICAL DEFINITION
+# =============================================================================
+
+definition:
+  summary: |
+    A slot is FILLED if and only if it has:
+      1. full_name IS NOT NULL AND != ''
+      2. title IS NOT NULL AND != ''
+      3. linkedin_url IS NOT NULL AND != ''
+    
+    All other fields (email, phone, socials) are NON-BLOCKING.
+    Email enrichment may enhance a filled slot, but MUST NEVER
+    affect slot validity or status.
+
+  required_fields:
+    - field: full_name
+      type: TEXT
+      constraint: "NOT NULL AND != ''"
+      purpose: "Person's full name"
+      severity_if_missing: ERROR
+
+    - field: title
+      type: TEXT
+      constraint: "NOT NULL AND != ''"
+      purpose: "Job title"
+      severity_if_missing: ERROR
+
+    - field: linkedin_url
+      type: TEXT
+      constraint: "NOT NULL AND contains 'linkedin.com/in/'"
+      purpose: "Identity anchor (external)"
+      severity_if_missing: ERROR
+
+  optional_enrichment:
+    - field: email
+      type: TEXT
+      purpose: "Outreach delivery"
+      severity_if_missing: WARNING
+      doctrine_note: "NEVER blocks slot fill"
+
+    - field: phone
+      type: TEXT
+      purpose: "Secondary contact"
+      severity_if_missing: WARNING
+      doctrine_note: "NEVER blocks slot fill"
+
+    - field: socials
+      type: JSONB
+      purpose: "Additional channels"
+      severity_if_missing: INFO
+      doctrine_note: "NEVER blocks slot fill"
+
+# =============================================================================
+# DOCTRINE PRINCIPLES
+# =============================================================================
+
+principles:
+  - id: SLOT-P001
+    name: "Email is Enrichment, Not Identity"
+    statement: |
+      Email may be added after a slot is filled.
+      Email MUST NOT gate slot fill operations.
+
+  - id: SLOT-P002
+    name: "LinkedIn URL is the Identity Anchor"
+    statement: |
+      LinkedIn is the primary external identity anchor.
+      It provides unique identification, employment verification,
+      and public profile for enrichment.
+
+  - id: SLOT-P003
+    name: "Three Fields = Minimal Viable Person"
+    statement: |
+      Name → Who is this person?
+      Title → What role do they hold?
+      LinkedIn → How do we verify identity?
+
+  - id: SLOT-P004
+    name: "Slots are Containers"
+    statement: |
+      Slots are containers, not people records.
+      Vendors propose candidates. The system decides truth.
+
+# =============================================================================
+# ENFORCEMENT ARTIFACTS
+# =============================================================================
+
+enforcement:
+  code:
+    - file: ops/validation/validation_rules.py
+      function: validate_slot_contract
+      purpose: "Validates record against slot contract"
+
+    - file: ops/validation/validation_rules.py
+      function: validate_email
+      change: "Downgraded from ERROR to WARNING"
+
+  tests:
+    - file: ops/tests/test_people_slot_contract.py
+      count: 15
+      coverage:
+        - "Slot fill succeeds without email"
+        - "Slot fill fails with email-only"
+        - "Email missing is WARNING not ERROR"
+        - "All contract fields required"
+
+  contracts:
+    - file: contracts/people-outreach.contract.yaml
+      section: slot_contract
+      version: "1.1.0"
+
+# =============================================================================
+# VIOLATIONS ADDRESSED
+# =============================================================================
+
+violations:
+  - id: V-001
+    name: "Email Required as ERROR"
+    status: FIXED
+    description: "validate_email() returned ERROR severity"
+    fix: "Changed to WARNING severity"
+    commit: "8561ad8"
+
+  - id: V-002
+    name: "CHECK Constraint Allows Email-Only"
+    status: DEFERRED
+    description: "chk_contact_required allows email-only records"
+    fix: "Replace with chk_slot_contract"
+    priority: P2
+    reason: "Requires migration coordination"
+
+  - id: V-003
+    name: "Phone Fields on Slot Container"
+    status: DEFERRED
+    description: "company_slot has phone fields (belong on people_master)"
+    fix: "Mark deprecated, move to people_master"
+    priority: P3
+
+# =============================================================================
+# DATA STATE
+# =============================================================================
+
+data_state:
+  snapshot_date: "2026-01-09"
+  
+  slots:
+    total: 191808
+    filled: 154
+    open: 191654
+    fill_rate: "0.08%"
+
+  people_master:
+    total: 170
+    has_full_name: 170
+    has_title: 170
+    has_linkedin_url: 170
+    meets_contract: 170
+    compliance_rate: "100%"
+
+# =============================================================================
+# DOCUMENT CONTROL
+# =============================================================================
+
+document_control:
+  created_at: "2026-01-09T00:00:00Z"
+  last_updated: "2026-01-09T00:00:00Z"
+  version: "1.0.0"
+  authority: imo-creator
+  author: Claude Code (IMO-Creator)

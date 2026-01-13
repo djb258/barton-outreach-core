@@ -450,36 +450,100 @@ class PersonValidator:
     @staticmethod
     def validate_email(record: Dict) -> Optional[ValidationFailure]:
         """
-        Validate email field
-        Rule: Must be valid email format
+        Validate email field (OPTIONAL - enrichment only)
+        
+        DOCTRINE: Email is enrichment-only and MUST NOT block slot fill.
+        A slot is FILLED with {full_name, title, linkedin_url} only.
+        Email validation returns WARNING, never ERROR.
+        
+        Rule: If present, must be valid email format
         """
         email = record.get("email", "")
 
+        # Email is OPTIONAL - missing email is WARNING only, not blocking
         if not email or len(email.strip()) == 0:
             failure = ValidationFailure(
                 field="email",
-                rule="email_required",
-                message="Email is required",
-                severity=ValidationSeverity.ERROR
+                rule="email_missing",
+                message="Email not provided (optional - does not block slot fill)",
+                severity=ValidationSeverity.WARNING  # CHANGED: Was ERROR, now WARNING per slot contract
             )
             failure.current_value = email
             return failure
 
         email = email.strip()
 
-        # Basic email format validation
+        # Basic email format validation - WARNING only, not blocking
         email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         if not re.match(email_pattern, email):
             failure = ValidationFailure(
                 field="email",
                 rule="email_format",
-                message="Email must be in valid format (e.g., user@domain.com)",
-                severity=ValidationSeverity.ERROR
+                message="Email format invalid (optional - does not block slot fill)",
+                severity=ValidationSeverity.WARNING  # CHANGED: Was ERROR, now WARNING per slot contract
             )
             failure.current_value = email
             return failure
 
         return None
+
+    @staticmethod
+    def validate_slot_contract(record: Dict) -> Tuple[bool, List[ValidationFailure]]:
+        """
+        Validate record against the MINIMAL PEOPLE SLOT CONTRACT.
+        
+        DOCTRINE: A slot is FILLED if and only if:
+          1. full_name IS NOT NULL AND != ''
+          2. title IS NOT NULL AND != ''
+          3. linkedin_url IS NOT NULL AND != ''
+        
+        All other fields (email, phone, socials) are NON-BLOCKING.
+        Email enrichment may enhance a filled slot, but MUST NEVER
+        affect slot validity or status.
+        
+        Returns: (meets_contract, list_of_failures)
+        """
+        failures = []
+        
+        # Check full_name (REQUIRED for slot contract)
+        full_name = record.get("full_name", "")
+        if not full_name or len(str(full_name).strip()) == 0:
+            failures.append(ValidationFailure(
+                field="full_name",
+                rule="slot_contract_full_name",
+                message="Slot Contract: full_name is required",
+                severity=ValidationSeverity.ERROR
+            ))
+        
+        # Check title (REQUIRED for slot contract)
+        title = record.get("title", "")
+        if not title or len(str(title).strip()) == 0:
+            failures.append(ValidationFailure(
+                field="title",
+                rule="slot_contract_title",
+                message="Slot Contract: title is required",
+                severity=ValidationSeverity.ERROR
+            ))
+        
+        # Check linkedin_url (REQUIRED for slot contract)
+        linkedin_url = record.get("linkedin_url", "")
+        if not linkedin_url or len(str(linkedin_url).strip()) == 0:
+            failures.append(ValidationFailure(
+                field="linkedin_url",
+                rule="slot_contract_linkedin_url",
+                message="Slot Contract: linkedin_url is required",
+                severity=ValidationSeverity.ERROR
+            ))
+        elif "linkedin.com/in/" not in str(linkedin_url).lower():
+            failures.append(ValidationFailure(
+                field="linkedin_url",
+                rule="slot_contract_linkedin_url_format",
+                message="Slot Contract: linkedin_url must contain 'linkedin.com/in/'",
+                severity=ValidationSeverity.ERROR
+            ))
+        
+        meets_contract = len(failures) == 0
+        return meets_contract, failures
 
     @staticmethod
     def validate_title(record: Dict) -> Optional[ValidationFailure]:
@@ -631,21 +695,38 @@ class PersonValidator:
     @staticmethod
     def validate_all(record: Dict, valid_company_ids: set = None) -> Tuple[bool, List[ValidationFailure]]:
         """
-        Run all person validation rules
+        Run all person validation rules.
+        
+        DOCTRINE: Slot validity is determined ONLY by the slot contract:
+          - full_name, title, linkedin_url
+        
+        Email and other fields are enrichment-only (WARNING level).
+        A record passes validation if it meets the slot contract,
+        regardless of email/phone/social presence.
 
         Returns: (is_valid, list_of_failures)
         """
         failures = []
 
-        # Run all validation rules
-        rules = [
+        # 1. STRUCTURAL validations (always required)
+        structural_rules = [
             PersonValidator.validate_person_id(record),
-            PersonValidator.validate_full_name(record),
-            PersonValidator.validate_email(record),
-            PersonValidator.validate_title(record),
-            PersonValidator.validate_linkedin_url(record),
+        ]
+        
+        # 2. SLOT CONTRACT validations (determines slot fill eligibility)
+        # These are the ONLY fields that determine if a slot can be filled
+        contract_valid, contract_failures = PersonValidator.validate_slot_contract(record)
+        failures.extend(contract_failures)
+        
+        # 3. ENRICHMENT validations (WARNING only, never blocking)
+        # Email is optional enrichment - does not affect slot validity
+        enrichment_rules = [
+            PersonValidator.validate_email(record),  # Now returns WARNING, not ERROR
             PersonValidator.validate_timestamp_last_updated(record)
         ]
+        
+        # Collect all rule results
+        rules = structural_rules + enrichment_rules
 
         # Add company link validation if valid_company_ids provided
         if valid_company_ids is not None:

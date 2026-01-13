@@ -1,0 +1,225 @@
+# AI-Ready Schema Declaration
+# IMO-Creator Data Declaration Phase
+# Table: outreach_ctx.context
+
+---
+
+# =============================================================================
+# TABLE IDENTITY
+# =============================================================================
+
+table:
+  table_unique_id: 42afe755-b805-44e4-a25f-88f4655d8726
+  schema: outreach_ctx
+  name: context
+  qualified_name: outreach_ctx.context
+  description: |
+    Disposable execution context for outreach runs, epochs, and campaigns.
+    Tracks cost accounting, retry isolation, audit logs, and single-attempt
+    enforcement for Tier-2 tools. Context IDs are disposable, not identity.
+    Analogy: company_sov_id = VIN (permanent), outreach_id = Work Order (disposable)
+  
+  owning_hub_unique_id: e46bcbf0-6719-4c68-8a38-78c36b47e3d1
+  owning_subhub_unique_id: 2e83d911-91a2-4d6d-8935-af2c1f5e4e54  # outreach-execution
+  
+  source_of_truth: Neon PostgreSQL (barton-outreach-cc)
+  row_identity_strategy: outreach_id (UUID, auto-generated)
+  
+  doctrine_id: "OUT.CTX.001"
+  created_at: "2026-01-08"
+
+# =============================================================================
+# COLUMNS (AI-Ready)
+# =============================================================================
+
+columns:
+  - column_unique_id: 42afe755-b805-44e4-a25f-88f4655d8726-01
+    name: outreach_id
+    description: Primary identifier for this context (disposable)
+    data_type: UUID
+    format: UUID v4
+    nullable: false
+    semantic_role: identifier
+    is_primary_key: true
+
+  - column_unique_id: 42afe755-b805-44e4-a25f-88f4655d8726-02
+    name: company_sov_id
+    description: Sovereign company reference (REQUIRED, read-only)
+    data_type: UUID
+    format: UUID v4
+    nullable: false
+    semantic_role: foreign_key
+
+  - column_unique_id: 42afe755-b805-44e4-a25f-88f4655d8726-03
+    name: context_type
+    description: Type of execution context
+    data_type: VARCHAR(50)
+    format: ENUM(run, epoch, campaign)
+    nullable: false
+    semantic_role: attribute
+    default: "run"
+
+  - column_unique_id: 42afe755-b805-44e4-a25f-88f4655d8726-04
+    name: context_name
+    description: Human-readable name for this context
+    data_type: VARCHAR(255)
+    format: String
+    nullable: true
+    semantic_role: attribute
+
+  - column_unique_id: 42afe755-b805-44e4-a25f-88f4655d8726-05
+    name: lifecycle_state_at_creation
+    description: |
+      Lifecycle gate at creation time. Must be one of:
+      INTAKE, SOVEREIGN_MINTED, ACTIVE, TARGETABLE, ENGAGED, CLIENT, DORMANT, DEAD
+    data_type: VARCHAR(50)
+    format: ENUM
+    nullable: false
+    semantic_role: attribute
+
+  - column_unique_id: 42afe755-b805-44e4-a25f-88f4655d8726-06
+    name: created_at
+    description: Context creation timestamp
+    data_type: TIMESTAMPTZ
+    format: ISO-8601
+    nullable: false
+    semantic_role: attribute
+    default: now()
+
+  - column_unique_id: 42afe755-b805-44e4-a25f-88f4655d8726-07
+    name: expires_at
+    description: Context expiration timestamp (must be after created_at)
+    data_type: TIMESTAMPTZ
+    format: ISO-8601
+    nullable: false
+    semantic_role: attribute
+
+  - column_unique_id: 42afe755-b805-44e4-a25f-88f4655d8726-08
+    name: killed_at
+    description: Timestamp when context was manually killed
+    data_type: TIMESTAMPTZ
+    format: ISO-8601
+    nullable: true
+    semantic_role: attribute
+
+  - column_unique_id: 42afe755-b805-44e4-a25f-88f4655d8726-09
+    name: is_active
+    description: Whether this context is currently active
+    data_type: BOOLEAN
+    format: true/false
+    nullable: false
+    semantic_role: attribute
+    default: true
+
+  - column_unique_id: 42afe755-b805-44e4-a25f-88f4655d8726-10
+    name: sla_expires_at
+    description: Hard SLA deadline (NULL = no SLA, non-NULL = auto-ABORT on expiry)
+    data_type: TIMESTAMPTZ
+    format: ISO-8601
+    nullable: true
+    semantic_role: attribute
+
+  - column_unique_id: 42afe755-b805-44e4-a25f-88f4655d8726-11
+    name: final_state
+    description: Final state of context (immutable once set)
+    data_type: outreach_ctx.final_state_enum
+    format: ENUM(PASS, FAIL, ABORTED)
+    nullable: true
+    semantic_role: attribute
+
+  - column_unique_id: 42afe755-b805-44e4-a25f-88f4655d8726-12
+    name: finalized_at
+    description: Timestamp when final_state was set
+    data_type: TIMESTAMPTZ
+    format: ISO-8601
+    nullable: true
+    semantic_role: attribute
+
+  - column_unique_id: 42afe755-b805-44e4-a25f-88f4655d8726-13
+    name: total_cost_credits
+    description: Total cost in credits for this context
+    data_type: DECIMAL(12, 4)
+    format: Decimal with 4 decimal places
+    nullable: false
+    semantic_role: metric
+    default: 0
+
+  - column_unique_id: 42afe755-b805-44e4-a25f-88f4655d8726-14
+    name: tier0_calls
+    description: Count of Tier-0 (free) API calls
+    data_type: INTEGER
+    format: Non-negative integer
+    nullable: false
+    semantic_role: metric
+    default: 0
+
+  - column_unique_id: 42afe755-b805-44e4-a25f-88f4655d8726-15
+    name: tier1_calls
+    description: Count of Tier-1 (low cost) API calls
+    data_type: INTEGER
+    format: Non-negative integer
+    nullable: false
+    semantic_role: metric
+    default: 0
+
+  - column_unique_id: 42afe755-b805-44e4-a25f-88f4655d8726-16
+    name: tier2_calls
+    description: Count of Tier-2 (expensive, single-attempt) API calls
+    data_type: INTEGER
+    format: Non-negative integer
+    nullable: false
+    semantic_role: metric
+    default: 0
+
+  - column_unique_id: 42afe755-b805-44e4-a25f-88f4655d8726-17
+    name: created_by
+    description: User or system that created this context
+    data_type: VARCHAR(100)
+    format: String
+    nullable: true
+    semantic_role: attribute
+
+  - column_unique_id: 42afe755-b805-44e4-a25f-88f4655d8726-18
+    name: kill_reason
+    description: Reason for killing this context (if killed)
+    data_type: TEXT
+    format: Free text
+    nullable: true
+    semantic_role: attribute
+
+# =============================================================================
+# RELATIONSHIPS
+# =============================================================================
+
+relationships:
+  - type: foreign_key
+    from_column: company_sov_id
+    to_table: outreach.outreach
+    to_column: sovereign_id
+    cardinality: many-to-one
+    description: Links to company via sovereign ID
+
+# =============================================================================
+# INDEXES
+# =============================================================================
+
+indexes:
+  - name: idx_context_company
+    columns: [company_sov_id]
+    unique: false
+    description: Lookup contexts by company
+
+  - name: idx_context_active
+    columns: [is_active]
+    unique: false
+    description: Filter active contexts
+
+# =============================================================================
+# DOCUMENT CONTROL
+# =============================================================================
+
+document_control:
+  created_at: "2026-01-08"
+  phase: Data Declaration
+  authority: imo-creator
+  author: Claude Code (IMO-Creator)

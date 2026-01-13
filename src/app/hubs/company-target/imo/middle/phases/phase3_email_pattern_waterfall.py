@@ -1,0 +1,861 @@
+"""
+Phase 3: Email Pattern Waterfall
+================================
+Discovers email patterns using tiered approach:
+- Tier 0 (Free): Firecrawl, ScraperAPI, Google Places
+- Tier 1 (Low Cost): Hunter.io, Clearbit, Apollo
+- Tier 2 (Premium): Prospeo, Snov, Clay
+
+The waterfall stops as soon as a valid pattern is found.
+If no pattern found, suggests common patterns for verification in Phase 4.
+
+DOCTRINE ENFORCEMENT:
+- correlation_id is MANDATORY (FAIL HARD if missing)
+- outreach_id is MANDATORY (FAIL HARD if missing)
+- company_sov_id is MANDATORY (FAIL HARD if missing)
+- Tier-2 is SINGLE-SHOT per context (can_attempt_tier2 guard)
+- All tool attempts MUST be logged via log_tool_attempt()
+
+COST DOCTRINE:
+- Exhaust cheaper signals before spending more
+- Tier-2: ONE attempt per outreach_id TOTAL
+- If Tier-2 fails, no retry, no alternate provider
+"""
+
+import time
+from dataclasses import dataclass, field
+from typing import Optional, List, Dict, Any, Tuple
+from datetime import datetime
+from enum import Enum
+import pandas as pd
+
+# Doctrine enforcement imports
+from ops.enforcement.correlation_id import validate_correlation_id, CorrelationIDError
+
+# Context management (TRUTH SOURCE for cost safety)
+from ..utils.context_manager import (
+    OutreachContextManager,
+    MissingContextError,
+    MissingSovIdError,
+    Tier2BlockedError,
+    get_context_manager
+)
+
+from ..utils.normalization import normalize_domain
+from ..utils.patterns import (
+    extract_patterns_from_multiple,
+    suggest_patterns_for_domain,
+    PatternMatch,
+    COMMON_PATTERNS
+)
+from ..utils.providers import (
+    ProviderRegistry,
+    ProviderTier,
+    ProviderResult,
+    execute_tier_waterfall
+)
+from ..utils.logging import (
+    PipelineLogger,
+    EventType,
+    LogLevel,
+    log_phase_start,
+    log_phase_complete
+)
+
+# Provider Benchmark Engine (System-Level) - Optional import
+try:
+    from ctb.sys.enrichment.provider_benchmark import ProviderBenchmarkEngine
+    _PBE_AVAILABLE = True
+except ImportError:
+    _PBE_AVAILABLE = False
+
+
+class PatternSource(Enum):
+    """Source of pattern discovery."""
+    TIER_0 = "tier_0"               # Free providers
+    TIER_1 = "tier_1"               # Low cost providers
+    TIER_2 = "tier_2"               # Premium providers
+    INPUT_DATA = "input_data"       # From existing email in input
+    DATABASE = "database"           # From pattern cache/database
+    SUGGESTED = "suggested"         # Common pattern suggestion
+    NONE = "none"                   # No pattern found
+
+
+class PatternStatus(Enum):
+    """Status of pattern discovery."""
+    FOUND = "found"                 # Pattern discovered
+    SUGGESTED = "suggested"         # Pattern suggested but unverified
+    FAILED = "failed"               # All tiers exhausted, no pattern
+    SKIPPED = "skipped"             # Skipped (no domain, etc.)
+
+
+@dataclass
+class PatternResult:
+    """Result of email pattern discovery for a single domain."""
+    company_id: str
+    domain: str
+    pattern: Optional[str] = None       # e.g., '{first}.{last}'
+    pattern_source: PatternSource = PatternSource.NONE
+    pattern_status: PatternStatus = PatternStatus.FAILED
+    tier_used: Optional[int] = None     # 0, 1, or 2
+    provider_used: Optional[str] = None # Which provider found the pattern
+    confidence: float = 0.0
+    sample_emails: List[str] = field(default_factory=list)
+    suggested_patterns: List[str] = field(default_factory=list)
+    api_calls_made: int = 0
+    cost_credits: float = 0.0
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class Phase3Stats:
+    """Statistics for Phase 3 execution."""
+    total_input: int = 0
+    domains_processed: int = 0
+    patterns_found: int = 0
+    patterns_suggested: int = 0
+    patterns_failed: int = 0
+    tier_0_hits: int = 0
+    tier_1_hits: int = 0
+    tier_2_hits: int = 0
+    input_data_hits: int = 0
+    total_api_calls: int = 0
+    total_cost_credits: float = 0.0
+    duration_seconds: float = 0.0
+    correlation_id: str = ""  # Propagated unchanged
+
+
+class Phase3EmailPatternWaterfall:
+    """
+    Phase 3: Discover email patterns using tiered waterfall.
+
+    Tier progression:
+    - Start with Tier 0 (free providers)
+    - Escalate to Tier 1 if Tier 0 fails
+    - Escalate to Tier 2 if Tier 1 fails
+    - Suggest common patterns if all tiers fail
+
+    The waterfall stops as soon as a valid pattern is found.
+    """
+
+    def __init__(self, config: Dict[str, Any] = None, logger: PipelineLogger = None):
+        """
+        Initialize Phase 3.
+
+        Args:
+            config: Configuration with API keys and tier settings
+                - max_tier: Maximum tier to use (0, 1, or 2)
+                - min_confidence: Minimum pattern confidence (default: 0.7)
+                - suggest_if_failed: Whether to suggest patterns if all fail
+                - use_input_emails: Whether to extract patterns from input emails
+                - enable_tier_0: Enable/disable Tier 0
+                - enable_tier_1: Enable/disable Tier 1
+                - enable_tier_2: Enable/disable Tier 2
+            logger: Pipeline logger instance
+        """
+        self.config = config or {}
+        self.logger = logger or PipelineLogger()
+
+        # Configuration
+        self.max_tier = self.config.get('max_tier', 2)
+        self.min_confidence = self.config.get('min_confidence', 0.7)
+        self.suggest_if_failed = self.config.get('suggest_if_failed', True)
+        self.use_input_emails = self.config.get('use_input_emails', True)
+        self.enable_tier_0 = self.config.get('enable_tier_0', True)
+        self.enable_tier_1 = self.config.get('enable_tier_1', True)
+        self.enable_tier_2 = self.config.get('enable_tier_2', True)
+
+        # Initialize provider registry
+        provider_config = self.config.get('providers', {})
+        self.provider_registry = ProviderRegistry(provider_config)
+
+        # Cache for discovered patterns (domain -> PatternResult)
+        self._pattern_cache: Dict[str, PatternResult] = {}
+
+        # Provider Benchmark Engine reference
+        self._pbe = None
+        if _PBE_AVAILABLE:
+            try:
+                self._pbe = ProviderBenchmarkEngine.get_instance()
+            except Exception:
+                pass
+
+    def run(
+        self,
+        domain_df: pd.DataFrame,
+        correlation_id: str,
+        outreach_id: str,
+        company_sov_id: str,
+        context_manager: OutreachContextManager = None
+    ) -> Tuple[pd.DataFrame, Phase3Stats]:
+        """
+        Run email pattern waterfall.
+
+        DOCTRINE:
+        - correlation_id is MANDATORY (FAIL HARD if missing)
+        - outreach_id is MANDATORY (FAIL HARD if missing)
+        - company_sov_id is MANDATORY (FAIL HARD if missing)
+        - Tier-2 is single-shot per context
+
+        Args:
+            domain_df: DataFrame with domains from Phase 2
+                Expected columns: person_id, resolved_domain, matched_company_id
+            correlation_id: MANDATORY - End-to-end trace ID (UUID v4)
+            outreach_id: MANDATORY - Current execution context
+            company_sov_id: MANDATORY - Company sovereign ID
+            context_manager: Optional context manager (will create if not provided)
+
+        Returns:
+            Tuple of (result_df with pattern info, Phase3Stats)
+
+        Raises:
+            CorrelationIDError: If correlation_id is missing or invalid (FAIL HARD)
+            MissingContextError: If outreach_id is missing (FAIL HARD)
+            MissingSovIdError: If company_sov_id is missing (FAIL HARD)
+        """
+        # DOCTRINE ENFORCEMENT: Validate correlation_id (FAIL HARD)
+        process_id = "company.identity.pattern.phase3"
+        correlation_id = validate_correlation_id(correlation_id, process_id, "Phase 3")
+
+        # DOCTRINE ENFORCEMENT: Validate context params (FAIL HARD)
+        ctx_mgr = context_manager or get_context_manager()
+        outreach_id = ctx_mgr.validate_context_id(outreach_id)
+        company_sov_id = ctx_mgr.validate_sov_id(company_sov_id)
+
+        # Store context for internal methods
+        self._current_context_id = outreach_id
+        self._current_sov_id = company_sov_id
+        self._context_manager = ctx_mgr
+
+        start_time = time.time()
+        stats = Phase3Stats(total_input=len(domain_df), correlation_id=correlation_id)
+
+        log_phase_start(self.logger, 3, "Email Pattern Waterfall", len(domain_df))
+
+        # Get unique domains to process (avoid duplicate API calls)
+        unique_domains = self._get_unique_domains(domain_df)
+        stats.domains_processed = len(unique_domains)
+
+        # Process each unique domain
+        domain_patterns: Dict[str, PatternResult] = {}
+        for domain_info in unique_domains:
+            domain = domain_info['domain']
+            company_id = domain_info['company_id']
+            input_emails = domain_info.get('input_emails', [])
+
+            result = self._discover_pattern(domain, company_id, input_emails)
+            domain_patterns[domain] = result
+
+            # Update stats
+            stats.total_api_calls += result.api_calls_made
+            stats.total_cost_credits += result.cost_credits
+
+            if result.pattern_status == PatternStatus.FOUND:
+                stats.patterns_found += 1
+                if result.pattern_source == PatternSource.TIER_0:
+                    stats.tier_0_hits += 1
+                elif result.pattern_source == PatternSource.TIER_1:
+                    stats.tier_1_hits += 1
+                elif result.pattern_source == PatternSource.TIER_2:
+                    stats.tier_2_hits += 1
+                elif result.pattern_source == PatternSource.INPUT_DATA:
+                    stats.input_data_hits += 1
+            elif result.pattern_status == PatternStatus.SUGGESTED:
+                stats.patterns_suggested += 1
+            else:
+                stats.patterns_failed += 1
+
+        # Build output DataFrame
+        result_df = self._build_result_dataframe(domain_df, domain_patterns)
+
+        stats.duration_seconds = time.time() - start_time
+
+        log_phase_complete(
+            self.logger, 3, "Email Pattern Waterfall",
+            output_count=len(result_df),
+            duration_seconds=stats.duration_seconds,
+            stats={
+                'patterns_found': stats.patterns_found,
+                'patterns_suggested': stats.patterns_suggested,
+                'patterns_failed': stats.patterns_failed,
+                'tier_0_hits': stats.tier_0_hits,
+                'tier_1_hits': stats.tier_1_hits,
+                'tier_2_hits': stats.tier_2_hits,
+                'total_api_calls': stats.total_api_calls
+            }
+        )
+
+        return result_df, stats
+
+    def _get_unique_domains(self, df: pd.DataFrame) -> List[Dict[str, Any]]:
+        """
+        Extract unique domains with associated company IDs and any input emails.
+
+        Args:
+            df: Input DataFrame
+
+        Returns:
+            List of dicts with domain, company_id, and input_emails
+        """
+        unique_domains = {}
+
+        for idx, row in df.iterrows():
+            domain = row.get('resolved_domain', '') or row.get('domain', '')
+            if not domain:
+                continue
+
+            normalized = normalize_domain(domain)
+            if not normalized:
+                continue
+
+            if normalized not in unique_domains:
+                unique_domains[normalized] = {
+                    'domain': normalized,
+                    'company_id': row.get('matched_company_id', ''),
+                    'input_emails': []
+                }
+
+            # Collect any existing emails for pattern extraction
+            email = row.get('email', '')
+            if email and '@' in email:
+                email_domain = email.split('@')[1].lower()
+                if email_domain == normalized:
+                    unique_domains[normalized]['input_emails'].append({
+                        'email': email,
+                        'first_name': row.get('first_name', ''),
+                        'last_name': row.get('last_name', '')
+                    })
+
+        return list(unique_domains.values())
+
+    def _discover_pattern(self, domain: str, company_id: str,
+                          input_emails: List[Dict[str, str]] = None) -> PatternResult:
+        """
+        Discover email pattern for a domain using tiered waterfall.
+
+        DOCTRINE:
+        - Cost-first: Exhaust cheaper signals before spending
+        - Tier-2 single-shot: Enforced via can_attempt_tier2() guard
+        - All attempts logged via context manager
+
+        Order:
+        1. Check cache
+        2. Extract from input emails if available
+        3. Try Tier 0 (free)
+        4. Try Tier 1 (low cost)
+        5. Try Tier 2 (premium) - WITH GUARD
+        6. Suggest common patterns
+
+        Args:
+            domain: Domain to discover pattern for
+            company_id: Associated company ID
+            input_emails: Optional list of existing emails with name data
+
+        Returns:
+            PatternResult
+        """
+        # Check cache first
+        if domain in self._pattern_cache:
+            return self._pattern_cache[domain]
+
+        # Get context from run() - stored as instance attributes
+        ctx_id = getattr(self, '_current_context_id', None)
+        sov_id = getattr(self, '_current_sov_id', None)
+        ctx_mgr = getattr(self, '_context_manager', None)
+
+        result = PatternResult(
+            company_id=company_id,
+            domain=domain
+        )
+
+        # 1. Try extracting from input emails (FREE - no logging needed)
+        if self.use_input_emails and input_emails:
+            pattern_match = self._extract_from_input_emails(input_emails, domain)
+            if pattern_match and pattern_match.confidence >= self.min_confidence:
+                result.pattern = pattern_match.pattern
+                result.confidence = pattern_match.confidence
+                result.pattern_source = PatternSource.INPUT_DATA
+                result.pattern_status = PatternStatus.FOUND
+                result.sample_emails = pattern_match.sample_emails[:3]
+                result.metadata['extraction_method'] = 'input_emails'
+
+                self.logger.log_event(
+                    EventType.PATTERN_DISCOVERED,
+                    f"Pattern from input emails: {result.pattern}",
+                    entity_type="pattern",
+                    entity_id=domain,
+                    confidence=result.confidence,
+                    source="input_data"
+                )
+
+                self._pattern_cache[domain] = result
+                return result
+
+        # 2. Try Tier 0 (FREE)
+        if self.enable_tier_0:
+            tier0_result = self._discover_pattern_at_tier(
+                domain=domain,
+                tier=ProviderTier.TIER_0,
+                outreach_id=ctx_id,
+                company_sov_id=sov_id,
+                context_manager=ctx_mgr
+            )
+            if tier0_result and tier0_result.pattern_status == PatternStatus.FOUND:
+                result = tier0_result
+                result.company_id = company_id
+                self._pattern_cache[domain] = result
+                return result
+
+        # 3. Try Tier 1 (LOW COST)
+        if self.enable_tier_1:
+            tier1_result = self._discover_pattern_at_tier(
+                domain=domain,
+                tier=ProviderTier.TIER_1,
+                outreach_id=ctx_id,
+                company_sov_id=sov_id,
+                context_manager=ctx_mgr
+            )
+            if tier1_result and tier1_result.pattern_status == PatternStatus.FOUND:
+                result = tier1_result
+                result.company_id = company_id
+                self._pattern_cache[domain] = result
+                return result
+
+        # 4. Try Tier 2 (PREMIUM) - WITH GUARD
+        if self.enable_tier_2 and ctx_id and sov_id:
+            tier2_result = self.try_tier_2(
+                domain=domain,
+                outreach_id=ctx_id,
+                company_sov_id=sov_id,
+                context_manager=ctx_mgr
+            )
+            if tier2_result and tier2_result.pattern_status == PatternStatus.FOUND:
+                result = tier2_result
+                result.company_id = company_id
+                self._pattern_cache[domain] = result
+                return result
+
+        # 5. Suggest common patterns if all providers failed (fallback)
+        if self.suggest_if_failed:
+            suggestions = suggest_patterns_for_domain(domain)
+            if suggestions:
+                result.suggested_patterns = [s[0] for s in suggestions[:5]]
+                result.pattern = suggestions[0][0]  # Most common pattern
+                result.confidence = suggestions[0][1]  # Likelihood score
+                result.pattern_source = PatternSource.SUGGESTED
+                result.pattern_status = PatternStatus.SUGGESTED
+                result.metadata['suggestion_count'] = len(suggestions)
+
+                self.logger.log_event(
+                    EventType.PATTERN_DISCOVERED,
+                    f"Suggested pattern: {result.pattern} (unverified)",
+                    LogLevel.INFO,
+                    entity_type="pattern",
+                    entity_id=domain,
+                    confidence=result.confidence,
+                    source="suggestion"
+                )
+        else:
+            self.logger.log_event(
+                EventType.PATTERN_FAILED,
+                f"No pattern found for {domain}",
+                LogLevel.WARNING,
+                entity_type="pattern",
+                entity_id=domain
+            )
+
+        self._pattern_cache[domain] = result
+        return result
+
+    def _extract_from_input_emails(self, emails: List[Dict[str, str]],
+                                   domain: str) -> Optional[PatternMatch]:
+        """
+        Extract pattern from input email data.
+
+        Args:
+            emails: List of dicts with email, first_name, last_name
+            domain: Domain for validation
+
+        Returns:
+            PatternMatch if extracted, None otherwise
+        """
+        if not emails:
+            return None
+
+        return extract_patterns_from_multiple(emails, domain)
+
+    def _record_pbe_provider_result(self, provider_result: ProviderResult) -> None:
+        """
+        Record a provider result to Provider Benchmark Engine (PBE).
+
+        PBE Hook - records metrics for Phase 3 provider calls.
+        Silently ignores errors since metrics are non-critical.
+
+        Args:
+            provider_result: The ProviderResult from waterfall execution
+        """
+        if not self._pbe:
+            return
+        try:
+            has_pattern = bool(provider_result.success and provider_result.patterns)
+            confidence = 0.0
+            if has_pattern and provider_result.patterns:
+                confidence = max(p.get('confidence', 0) for p in provider_result.patterns)
+
+            self._pbe.record_waterfall_attempt(
+                provider_name=provider_result.provider,
+                success=has_pattern,
+                pattern_verified=confidence >= self.min_confidence,
+                latency_ms=provider_result.latency_ms if hasattr(provider_result, 'latency_ms') else 0.0
+            )
+        except Exception:
+            pass  # Silently ignore PBE errors - metrics are non-critical
+
+    def _build_result_dataframe(self, domain_df: pd.DataFrame,
+                                domain_patterns: Dict[str, PatternResult]) -> pd.DataFrame:
+        """Build output DataFrame with pattern results appended."""
+        # Create result columns
+        result_data = []
+
+        for idx, row in domain_df.iterrows():
+            domain = row.get('resolved_domain', '') or row.get('domain', '')
+            normalized = normalize_domain(domain) if domain else None
+
+            if normalized and normalized in domain_patterns:
+                pr = domain_patterns[normalized]
+                result_data.append({
+                    'person_id': row.get('person_id', idx),
+                    'email_pattern': pr.pattern,
+                    'pattern_source': pr.pattern_source.value if pr.pattern_source else None,
+                    'pattern_status': pr.pattern_status.value if pr.pattern_status else None,
+                    'pattern_confidence': pr.confidence,
+                    'pattern_tier': pr.tier_used,
+                    'pattern_provider': pr.provider_used,
+                    'pattern_needs_verification': pr.pattern_status == PatternStatus.SUGGESTED
+                })
+            else:
+                result_data.append({
+                    'person_id': row.get('person_id', idx),
+                    'email_pattern': None,
+                    'pattern_source': PatternSource.NONE.value,
+                    'pattern_status': PatternStatus.SKIPPED.value,
+                    'pattern_confidence': 0.0,
+                    'pattern_tier': None,
+                    'pattern_provider': None,
+                    'pattern_needs_verification': False
+                })
+
+        result_df = pd.DataFrame(result_data)
+
+        # Merge with original domain_df
+        if 'person_id' not in domain_df.columns:
+            domain_df = domain_df.reset_index()
+            domain_df = domain_df.rename(columns={'index': 'person_id'})
+
+        output_df = domain_df.merge(
+            result_df,
+            on='person_id',
+            how='left'
+        )
+
+        return output_df
+
+    def try_tier_0(self, domain: str) -> Optional[PatternResult]:
+        """
+        Try Tier 0 providers (free).
+
+        Providers:
+        - Firecrawl (website scraping)
+        - WebScraper
+        - Google Places
+
+        Args:
+            domain: Domain to discover pattern for
+
+        Returns:
+            PatternResult if found, None otherwise
+        """
+        if not self.enable_tier_0:
+            return None
+
+        result = self._discover_pattern_at_tier(domain, ProviderTier.TIER_0)
+        return result if result and result.pattern_status == PatternStatus.FOUND else None
+
+    def try_tier_1(self, domain: str) -> Optional[PatternResult]:
+        """
+        Try Tier 1 providers (low cost).
+
+        Providers:
+        - Hunter.io
+        - Clearbit
+        - Apollo
+
+        Args:
+            domain: Domain to discover pattern for
+
+        Returns:
+            PatternResult if found, None otherwise
+        """
+        if not self.enable_tier_1:
+            return None
+
+        result = self._discover_pattern_at_tier(domain, ProviderTier.TIER_1)
+        return result if result and result.pattern_status == PatternStatus.FOUND else None
+
+    def try_tier_2(
+        self,
+        domain: str,
+        outreach_id: str,
+        company_sov_id: str,
+        context_manager: OutreachContextManager = None
+    ) -> Optional[PatternResult]:
+        """
+        Try Tier 2 providers (premium).
+
+        DOCTRINE: Single-shot enforcement via can_attempt_tier2().
+        If guard returns FALSE, we MUST NOT proceed.
+
+        Providers:
+        - Prospeo
+        - Snov.io
+        - Clay
+
+        Args:
+            domain: Domain to discover pattern for
+            outreach_id: MANDATORY - Current execution context
+            company_sov_id: MANDATORY - Company sovereign ID
+            context_manager: Context manager for guard checks
+
+        Returns:
+            PatternResult if found, None otherwise
+
+        Raises:
+            Tier2BlockedError: If Tier-2 already attempted in this context
+            MissingContextError: If context ID missing
+            MissingSovIdError: If sovereign ID missing
+        """
+        if not self.enable_tier_2:
+            return None
+
+        # Get context manager
+        ctx_mgr = context_manager or get_context_manager()
+
+        # DOCTRINE GUARD: Validate inputs (FAIL HARD)
+        ctx_mgr.validate_context_id(outreach_id)
+        ctx_mgr.validate_sov_id(company_sov_id)
+
+        # TIER-2 FUSE: Check if ANY Tier-2 tool already attempted
+        tier2_providers = ['prospeo', 'snov', 'clay']
+        for provider_name in tier2_providers:
+            if not ctx_mgr.can_attempt_tier2(outreach_id, company_sov_id, provider_name):
+                self.logger.log_event(
+                    EventType.PATTERN_FAILED,
+                    f"TIER-2 FUSE BLOWN: {provider_name} blocked in context {outreach_id}",
+                    LogLevel.WARNING,
+                    entity_type="pattern",
+                    entity_id=domain,
+                    metadata={
+                        'blocked_provider': provider_name,
+                        'context_id': outreach_id,
+                        'reason': 'single_shot_enforcement'
+                    }
+                )
+                # SINGLE-SHOT ENFORCED - No retry, no alternate provider
+                return None
+
+        result = self._discover_pattern_at_tier(
+            domain=domain,
+            tier=ProviderTier.TIER_2,
+            outreach_id=outreach_id,
+            company_sov_id=company_sov_id,
+            context_manager=ctx_mgr
+        )
+        return result if result and result.pattern_status == PatternStatus.FOUND else None
+
+    def _discover_pattern_at_tier(
+        self,
+        domain: str,
+        tier: ProviderTier,
+        outreach_id: str = None,
+        company_sov_id: str = None,
+        context_manager: OutreachContextManager = None
+    ) -> Optional[PatternResult]:
+        """
+        Discover pattern using only a specific tier.
+
+        DOCTRINE: If context params provided, logs all tool attempts.
+
+        Args:
+            domain: Domain to discover pattern for
+            tier: Specific tier to use
+            outreach_id: Optional - for cost logging (required for Tier-2)
+            company_sov_id: Optional - for cost logging (required for Tier-2)
+            context_manager: Optional - for guard checks and logging
+
+        Returns:
+            PatternResult or None
+        """
+        result = PatternResult(
+            company_id=company_sov_id or '',
+            domain=domain
+        )
+
+        providers = self.provider_registry.get_providers_by_tier(tier)
+        for provider in providers:
+            try:
+                pr = provider.get_email_pattern(domain)
+                result.api_calls_made += 1
+                cost = pr.cost_credits if pr else 0
+                result.cost_credits += cost
+                success = pr.success if pr else False
+
+                # DOCTRINE: Log tool attempt if context provided
+                if context_manager and outreach_id and company_sov_id:
+                    context_manager.log_tool_attempt(
+                        outreach_id=outreach_id,
+                        company_sov_id=company_sov_id,
+                        tool_name=provider.name,
+                        tool_tier=tier.value,
+                        cost_credits=cost,
+                        success=success,
+                        result_summary=f"Pattern: {pr.pattern}" if pr and hasattr(pr, 'pattern') and pr.pattern else None,
+                        error_message=None,
+                        sub_hub="company-target"
+                    )
+
+                if pr and pr.success and pr.patterns:
+                    best = max(pr.patterns, key=lambda p: p.get('confidence', 0))
+                    if best.get('confidence', 0) >= self.min_confidence:
+                        result.pattern = best.get('pattern')
+                        result.confidence = best.get('confidence', 0.8)
+                        result.tier_used = tier.value
+                        result.provider_used = provider.name
+                        result.sample_emails = best.get('sample_emails', [])[:3]
+                        result.pattern_status = PatternStatus.FOUND
+
+                        if tier == ProviderTier.TIER_0:
+                            result.pattern_source = PatternSource.TIER_0
+                        elif tier == ProviderTier.TIER_1:
+                            result.pattern_source = PatternSource.TIER_1
+                        else:
+                            result.pattern_source = PatternSource.TIER_2
+
+                        return result
+
+            except Exception as e:
+                # Log error attempt if context provided
+                if context_manager and outreach_id and company_sov_id:
+                    context_manager.log_tool_attempt(
+                        outreach_id=outreach_id,
+                        company_sov_id=company_sov_id,
+                        tool_name=provider.name,
+                        tool_tier=tier.value,
+                        cost_credits=0,
+                        success=False,
+                        result_summary=None,
+                        error_message=str(e),
+                        sub_hub="company-target"
+                    )
+
+                self.logger.error(
+                    f"Provider {provider.name} failed for {domain}",
+                    error=e,
+                    metadata={'domain': domain, 'tier': tier.value}
+                )
+
+        return None
+
+    def get_pattern_statistics(self, result_df: pd.DataFrame) -> Dict[str, Any]:
+        """
+        Get statistics about pattern discovery results.
+
+        Args:
+            result_df: Output from run()
+
+        Returns:
+            Dict with pattern statistics
+        """
+        stats = {
+            'total': len(result_df),
+            'by_status': {},
+            'by_source': {},
+            'by_tier': {},
+            'needs_verification': 0,
+            'avg_confidence': 0.0
+        }
+
+        if 'pattern_status' in result_df.columns:
+            stats['by_status'] = result_df['pattern_status'].value_counts().to_dict()
+
+        if 'pattern_source' in result_df.columns:
+            stats['by_source'] = result_df['pattern_source'].value_counts().to_dict()
+
+        if 'pattern_tier' in result_df.columns:
+            tier_counts = result_df['pattern_tier'].dropna().value_counts().to_dict()
+            stats['by_tier'] = {int(k): v for k, v in tier_counts.items()}
+
+        if 'pattern_needs_verification' in result_df.columns:
+            stats['needs_verification'] = result_df['pattern_needs_verification'].sum()
+
+        if 'pattern_confidence' in result_df.columns:
+            valid_conf = result_df[result_df['pattern_confidence'] > 0]['pattern_confidence']
+            if len(valid_conf) > 0:
+                stats['avg_confidence'] = valid_conf.mean()
+
+        return stats
+
+    def get_verification_queue(self, result_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Extract records that need pattern verification.
+
+        Args:
+            result_df: Output from run()
+
+        Returns:
+            DataFrame of records needing verification
+        """
+        if 'pattern_needs_verification' not in result_df.columns:
+            return pd.DataFrame()
+
+        queue_df = result_df[result_df['pattern_needs_verification'] == True].copy()
+
+        # Add queue metadata
+        queue_df['verification_type'] = 'pattern'
+        queue_df['queued_at'] = datetime.now().isoformat()
+
+        return queue_df
+
+
+def discover_email_patterns(domain_df: pd.DataFrame,
+                            config: Dict[str, Any] = None) -> Tuple[pd.DataFrame, Phase3Stats]:
+    """
+    Convenience function to run email pattern discovery.
+
+    Args:
+        domain_df: DataFrame with domains from Phase 2
+        config: Optional configuration
+
+    Returns:
+        Tuple of (result_df, Phase3Stats)
+    """
+    phase3 = Phase3EmailPatternWaterfall(config=config)
+    return phase3.run(domain_df)
+
+
+def discover_pattern_for_domain(domain: str, max_tier: int = 2,
+                                config: Dict[str, Any] = None) -> PatternResult:
+    """
+    Discover email pattern for a single domain.
+
+    Args:
+        domain: Domain to discover pattern for
+        max_tier: Maximum tier to use (0, 1, or 2)
+        config: Optional configuration
+
+    Returns:
+        PatternResult
+    """
+    config = config or {}
+    config['max_tier'] = max_tier
+    phase3 = Phase3EmailPatternWaterfall(config=config)
+    return phase3._discover_pattern(normalize_domain(domain), '', [])

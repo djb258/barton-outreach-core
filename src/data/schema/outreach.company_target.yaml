@@ -1,0 +1,196 @@
+# AI-Ready Schema Declaration
+# IMO-Creator Data Declaration Phase
+# Table: outreach.company_target
+
+---
+
+# =============================================================================
+# TABLE IDENTITY
+# =============================================================================
+
+table:
+  table_unique_id: a495d7d6-9e08-4c69-bf98-e2d6b0ce8ec0
+  schema: outreach
+  name: company_target
+  qualified_name: outreach.company_target
+  description: |
+    Internal anchor table for companies in the Outreach program.
+    Acts as the join point between CL (company_unique_id) and Outreach (outreach_id).
+    Stores outreach-specific metadata like BIT score snapshot and sequence tracking.
+  
+  owning_hub_unique_id: e46bcbf0-6719-4c68-8a38-78c36b47e3d1
+  owning_subhub_unique_id: 73fe8c7a-13d2-4d49-80d4-65e2350de9ab  # company-target
+  
+  source_of_truth: Neon PostgreSQL (barton-outreach-cc)
+  row_identity_strategy: target_id (UUID, auto-generated)
+  
+  doctrine_id: "OUT.TARGET.001"
+  created_at: "2025-12-26"
+
+# =============================================================================
+# COLUMNS (AI-Ready)
+# =============================================================================
+
+columns:
+  - column_unique_id: a495d7d6-9e08-4c69-bf98-e2d6b0ce8ec0-01
+    name: target_id
+    description: Primary key for company target record
+    data_type: UUID
+    format: UUID v4
+    nullable: false
+    semantic_role: identifier
+    is_primary_key: true
+
+  - column_unique_id: a495d7d6-9e08-4c69-bf98-e2d6b0ce8ec0-02
+    name: company_unique_id
+    description: |
+      Foreign key to CL company identity. This is the JOIN point between
+      Company Lifecycle and Outreach.
+    data_type: TEXT
+    format: String (UUID format)
+    nullable: false
+    semantic_role: foreign_key
+    references:
+      table: cl.company_identity
+      column: company_unique_id
+
+  - column_unique_id: a495d7d6-9e08-4c69-bf98-e2d6b0ce8ec0-03
+    name: outreach_id
+    description: |
+      Foreign key to outreach.outreach spine table.
+      This is the ONLY FK sub-hubs use. They do NOT directly access sovereign_id.
+    data_type: UUID
+    format: UUID v4
+    nullable: true  # Nullable for backfill during migration
+    semantic_role: foreign_key
+    references:
+      table: outreach.outreach
+      column: outreach_id
+
+  - column_unique_id: a495d7d6-9e08-4c69-bf98-e2d6b0ce8ec0-04
+    name: outreach_status
+    description: Current status of this company in the outreach pipeline
+    data_type: TEXT
+    format: ENUM(queued, active, paused, completed, disqualified)
+    nullable: false
+    semantic_role: attribute
+    default: "queued"
+
+  - column_unique_id: a495d7d6-9e08-4c69-bf98-e2d6b0ce8ec0-05
+    name: bit_score_snapshot
+    description: Snapshot of BIT score at time of targeting (0-100)
+    data_type: INTEGER
+    format: Integer 0-100
+    nullable: true
+    semantic_role: metric
+
+  - column_unique_id: a495d7d6-9e08-4c69-bf98-e2d6b0ce8ec0-06
+    name: first_targeted_at
+    description: Timestamp when this company was first targeted for outreach
+    data_type: TIMESTAMPTZ
+    format: ISO-8601
+    nullable: true
+    semantic_role: attribute
+
+  - column_unique_id: a495d7d6-9e08-4c69-bf98-e2d6b0ce8ec0-07
+    name: last_targeted_at
+    description: Timestamp of most recent targeting action
+    data_type: TIMESTAMPTZ
+    format: ISO-8601
+    nullable: true
+    semantic_role: attribute
+
+  - column_unique_id: a495d7d6-9e08-4c69-bf98-e2d6b0ce8ec0-08
+    name: sequence_count
+    description: Number of outreach sequences this company has been through
+    data_type: INTEGER
+    format: Non-negative integer
+    nullable: false
+    semantic_role: metric
+    default: 0
+
+  - column_unique_id: a495d7d6-9e08-4c69-bf98-e2d6b0ce8ec0-09
+    name: active_sequence_id
+    description: ID of currently active outreach sequence (if any)
+    data_type: TEXT
+    format: String
+    nullable: true
+    semantic_role: foreign_key
+
+  - column_unique_id: a495d7d6-9e08-4c69-bf98-e2d6b0ce8ec0-10
+    name: source
+    description: How this company entered the target list
+    data_type: TEXT
+    format: String
+    nullable: true
+    semantic_role: attribute
+
+  - column_unique_id: a495d7d6-9e08-4c69-bf98-e2d6b0ce8ec0-11
+    name: created_at
+    description: Record creation timestamp
+    data_type: TIMESTAMPTZ
+    format: ISO-8601
+    nullable: false
+    semantic_role: attribute
+    default: now()
+
+  - column_unique_id: a495d7d6-9e08-4c69-bf98-e2d6b0ce8ec0-12
+    name: updated_at
+    description: Record last update timestamp
+    data_type: TIMESTAMPTZ
+    format: ISO-8601
+    nullable: false
+    semantic_role: attribute
+    default: now()
+
+# =============================================================================
+# RELATIONSHIPS
+# =============================================================================
+
+relationships:
+  - type: foreign_key
+    from_column: company_unique_id
+    to_table: cl.company_identity
+    to_column: company_unique_id
+    cardinality: many-to-one
+    description: Links to CL sovereign identity
+
+  - type: foreign_key
+    from_column: outreach_id
+    to_table: outreach.outreach
+    to_column: outreach_id
+    cardinality: many-to-one
+    on_delete: CASCADE
+    description: Links to outreach spine
+
+  - type: referenced_by
+    from_table: outreach.people
+    from_column: target_id
+    to_column: target_id
+    cardinality: one-to-many
+    description: People records FK to this target
+
+# =============================================================================
+# INDEXES
+# =============================================================================
+
+indexes:
+  - name: idx_company_target_company
+    columns: [company_unique_id]
+    unique: true
+    description: One target record per company
+
+  - name: idx_company_target_outreach
+    columns: [outreach_id]
+    unique: false
+    description: Lookup by outreach spine ID
+
+# =============================================================================
+# DOCUMENT CONTROL
+# =============================================================================
+
+document_control:
+  created_at: "2026-01-08"
+  phase: Data Declaration
+  authority: imo-creator
+  author: Claude Code (IMO-Creator)
