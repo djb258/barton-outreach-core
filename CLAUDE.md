@@ -370,6 +370,22 @@ hubs/outreach-execution/hub.manifest.yaml
 
 ## COMMON TASKS
 
+### Run CEO Email Pipeline (Phases 5-8)
+
+```bash
+# Process executive CSV with email generation + Neon promotion
+# Slot types: CEO, CFO, HR, CTO, CMO, COO
+
+# Basic usage (with email verification)
+doppler run -- python hubs/people-intelligence/imo/middle/phases/ceo_email_pipeline.py <csv_path>
+
+# Skip verification (bulk processing)
+doppler run -- python hubs/people-intelligence/imo/middle/phases/ceo_email_pipeline.py <csv_path> --skip-verification
+
+# Specify slot type
+doppler run -- python hubs/people-intelligence/imo/middle/phases/ceo_email_pipeline.py <csv_path> --slot-type HR --skip-verification
+```
+
 ### Run Pipeline for Company
 
 ```python
@@ -451,7 +467,7 @@ DOCTRINE_VERSION=04
 
 ---
 
-**Last Updated**: 2026-01-13
+**Last Updated**: 2026-01-14
 **Architecture**: CL Parent-Child Doctrine v1.0
 **Status**: HARDENED
 

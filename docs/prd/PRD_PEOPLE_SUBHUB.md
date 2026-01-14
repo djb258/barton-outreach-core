@@ -1107,12 +1107,71 @@ summary, stats = write_pipeline_output(
 
 ---
 
-## 14. Version History
+## 14. Production Implementation
+
+### CEO Email Pipeline (Phases 5-8)
+
+**Implementation File:** `hubs/people-intelligence/imo/middle/phases/ceo_email_pipeline.py`
+
+**ADR:** [ADR-003: CEO Email Pipeline Implementation](../adr/ADR-003_CEO_Email_Pipeline_Implementation.md)
+
+#### Supported Slot Types
+
+| Slot | Seniority | Title Keywords |
+|------|-----------|----------------|
+| CEO | 100 | Chief Executive, President, CEO, Managing Director |
+| CFO | 95 | Chief Financial, CFO, VP Finance, Finance Director |
+| CTO | 90 | Chief Technology, CTO, VP Engineering |
+| CMO | 85 | Chief Marketing, CMO, VP Marketing |
+| COO | 85 | Chief Operating, COO, VP Operations |
+| HR | 80 | Chief Human Resources, CHRO, HR Director, VP HR |
+
+#### CLI Usage
+
+```bash
+# Basic usage (with verification)
+doppler run -- python hubs/people-intelligence/imo/middle/phases/ceo_email_pipeline.py <csv_path>
+
+# Skip verification (bulk processing)
+doppler run -- python hubs/people-intelligence/imo/middle/phases/ceo_email_pipeline.py <csv_path> --skip-verification
+
+# Specify slot type
+doppler run -- python hubs/people-intelligence/imo/middle/phases/ceo_email_pipeline.py <csv_path> --slot-type HR --skip-verification
+```
+
+#### Email Verification Providers
+
+| Provider | API | Default | Notes |
+|----------|-----|---------|-------|
+| EmailVerify.io | REST | Yes | Default provider |
+| MillionVerifier | REST | No | Alternative |
+| Prospeo | REST | No | Single email mode |
+
+#### Key Features
+
+1. **Multi-slot support** - Single pipeline handles CEO, CFO, HR, CTO, CMO, COO
+2. **Skip-verification mode** - Bulk processing without API rate limits
+3. **Transaction rollback** - Individual failures don't abort entire batch
+4. **ASCII normalization** - Handles accented characters (é→e, ñ→n)
+5. **Audit trail** - Full CSV exports for transparency
+
+#### Output Files
+
+| File | Description |
+|------|-------------|
+| `{slot}_pipeline_audit_{timestamp}.csv` | Complete processing log |
+| `{slot}_valid_emails_{timestamp}.csv` | Emails promoted to Neon |
+| `{slot}_flagged_emails_{timestamp}.csv` | Verification failures |
+
+---
+
+## 15. Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2025-12-17 | Initial People Sub-Hub PRD with clean boundaries |
 | 2.1 | 2025-12-17 | Hardened: Correlation ID, Signal idempotency, TTL policies, Two-layer errors, Promotion states |
+| 2.2 | 2026-01-14 | Added: Production implementation details (CEO Email Pipeline, multi-slot support) |
 
 ---
 
