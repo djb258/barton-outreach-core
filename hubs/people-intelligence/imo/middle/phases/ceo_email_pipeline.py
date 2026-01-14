@@ -48,11 +48,19 @@ if sys.platform == 'win32':
 # =============================================================================
 
 VERIFICATION_TTL_DAYS = 30  # One verification per email per 30 days
+
+# Supported verification providers
+VERIFIER_MILLIONVERIFIER = "millionverifier"
+VERIFIER_EMAILVERIFYIO = "emailverifyio"
+DEFAULT_VERIFIER = VERIFIER_EMAILVERIFYIO  # Default to EmailVerify.io
+
+# API URLs
 MILLIONVERIFIER_API_URL = "https://api.millionverifier.com/api/v3/"
+EMAILVERIFYIO_API_URL = "https://app.emailverify.io/api/v1/"
 
 
 class VerificationStatus(Enum):
-    """MillionVerifier result statuses mapped to gate decisions."""
+    """Email verification result statuses mapped to gate decisions."""
     VALID = "VALID"         # Promote to Neon
     RISKY = "RISKY"         # Flag only, no action
     INVALID = "INVALID"     # Discard, do not promote
@@ -155,9 +163,9 @@ class PipelineGuard:
     """Enforcement guards that FAIL FAST on violations."""
 
     @staticmethod
-    def require_identity(candidate: CEOCandidate, phase: str) -> None:
-        """FAIL if company_unique_id or person_unique_id missing."""
-        if not candidate.company_unique_id:
+    def require_identity(candidate: CEOCandidate, phase: str, require_company: bool = True) -> None:
+        """FAIL if person_unique_id missing. company_unique_id optional for CSV imports."""
+        if require_company and not candidate.company_unique_id:
             raise ValueError(f"[GUARD FAIL] {phase}: company_unique_id required for {candidate.full_name}")
         if not candidate.person_unique_id:
             raise ValueError(f"[GUARD FAIL] {phase}: person_unique_id required for {candidate.full_name}")
@@ -219,20 +227,33 @@ def phase5_generate_emails(
 
     cursor = conn.cursor()
 
-    # Load verified patterns from company.company_master
+    # Load verified patterns from company.company_master (by ID and domain)
     print("  Loading verified patterns from company.company_master...")
     cursor.execute("""
-        SELECT company_unique_id, email_pattern, email_pattern_confidence
+        SELECT company_unique_id, website_url, email_pattern, email_pattern_confidence
         FROM company.company_master
         WHERE email_pattern IS NOT NULL AND email_pattern != ''
     """)
-    company_patterns = {row[0]: (row[1], row[2] or 50) for row in cursor.fetchall()}
-    print(f"  Loaded {len(company_patterns)} verified patterns")
+    company_patterns = {}  # company_unique_id -> (pattern, confidence)
+    domain_patterns = {}   # normalized domain -> (pattern, confidence, company_id)
+
+    for row in cursor.fetchall():
+        company_id, website, pattern, confidence = row
+        conf = confidence or 50
+        company_patterns[company_id] = (pattern, conf)
+
+        # Also index by domain for CSV imports
+        if website:
+            domain = website.lower().replace('https://', '').replace('http://', '').replace('www.', '').split('/')[0]
+            if domain:
+                domain_patterns[domain] = (pattern, conf, company_id)
+
+    print(f"  Loaded {len(company_patterns)} verified patterns ({len(domain_patterns)} domains)")
 
     for candidate in candidates:
-        # GUARD: Require identity
+        # GUARD: Require identity (company_unique_id optional for CSV imports)
         try:
-            PipelineGuard.require_identity(candidate, "Phase 5")
+            PipelineGuard.require_identity(candidate, "Phase 5", require_company=bool(candidate.company_unique_id))
         except ValueError as e:
             candidate.error = str(e)
             stats.errors.append(str(e))
@@ -244,8 +265,24 @@ def phase5_generate_emails(
             stats.emails_skipped_no_domain += 1
             continue
 
-        # Get pattern for company
-        pattern_data = company_patterns.get(candidate.company_unique_id)
+        # Normalize domain
+        domain = candidate.company_domain.lower().strip()
+
+        # Get pattern - try by company_unique_id first, then by domain
+        pattern_data = None
+        if candidate.company_unique_id:
+            pattern_data = company_patterns.get(candidate.company_unique_id)
+
+        if not pattern_data and domain:
+            # Try domain lookup (for CSV imports without company_unique_id)
+            domain_data = domain_patterns.get(domain)
+            if domain_data:
+                pattern, conf, company_id = domain_data
+                pattern_data = (pattern, conf)
+                # Populate company_unique_id for downstream phases
+                if not candidate.company_unique_id:
+                    candidate.company_unique_id = company_id
+
         if pattern_data:
             pattern, confidence = pattern_data
             candidate.email_pattern = pattern
@@ -261,7 +298,10 @@ def phase5_generate_emails(
         last = candidate.last_name.lower().strip() if candidate.last_name else ""
         domain = candidate.company_domain.lower().strip()
 
-        # Clean names (alphanumeric only)
+        # Clean names (ASCII alphanumeric only - strip accented chars)
+        import unicodedata
+        first = unicodedata.normalize('NFKD', first).encode('ascii', 'ignore').decode('ascii')
+        last = unicodedata.normalize('NFKD', last).encode('ascii', 'ignore').decode('ascii')
         first = ''.join(c for c in first if c.isalnum())
         last = ''.join(c for c in last if c.isalnum())
 
@@ -331,7 +371,18 @@ def phase6_assign_slots(
     }
 
     for candidate in candidates:
-        # GUARD: Require identity
+        # Skip if no email generated
+        if not candidate.generated_email:
+            continue
+
+        # For CSV imports without company_unique_id, mark as assigned but skip DB operations
+        if not candidate.company_unique_id:
+            candidate.slot_assigned = True
+            candidate.slot_resolution_reason = "csv_import_no_company"
+            stats.slots_assigned += 1
+            continue
+
+        # GUARD: Require identity for DB operations
         try:
             PipelineGuard.require_identity(candidate, "Phase 6")
         except ValueError as e:
@@ -339,7 +390,7 @@ def phase6_assign_slots(
             stats.errors.append(str(e))
             continue
 
-        # Skip if no email generated
+        # Skip if no email generated (redundant check after early exit)
         if not candidate.generated_email:
             stats.slots_skipped += 1
             continue
@@ -360,8 +411,8 @@ def phase6_assign_slots(
         cursor.execute("""
             SELECT company_slot_unique_id, person_unique_id, confidence_score, is_filled
             FROM people.company_slot
-            WHERE company_unique_id = %s AND slot_type = 'CEO'
-        """, (candidate.company_unique_id,))
+            WHERE company_unique_id = %s AND slot_type = %s
+        """, (candidate.company_unique_id, candidate.slot_type))
 
         existing_slot = cursor.fetchone()
 
@@ -382,7 +433,7 @@ def phase6_assign_slots(
                         slot_status = 'filled'
                     WHERE company_slot_unique_id = %s
                 """, (candidate.person_unique_id, candidate.seniority_score,
-                      'ceo_pipeline', slot_id))
+                      'executive_pipeline', slot_id))
 
                 candidate.slot_assigned = True
                 candidate.slot_resolution_reason = resolution_reason
@@ -406,10 +457,10 @@ def phase6_assign_slots(
                     slot_type, confidence_score, is_filled, filled_at,
                     source_system, slot_status, created_at
                 ) VALUES (
-                    %s, %s, %s, 'CEO', %s, TRUE, NOW(), 'ceo_pipeline', 'filled', NOW()
+                    %s, %s, %s, %s, %s, TRUE, NOW(), 'executive_pipeline', 'filled', NOW()
                 )
             """, (slot_unique_id, candidate.company_unique_id, candidate.person_unique_id,
-                  candidate.seniority_score))
+                  candidate.slot_type, candidate.seniority_score))
 
             candidate.slot_assigned = True
             candidate.slot_resolution_reason = SlotResolutionReason.FIRST_CANDIDATE.value
@@ -426,21 +477,15 @@ def phase6_assign_slots(
 
 
 # =============================================================================
-# PHASE 7: EMAIL VERIFICATION (MillionVerifier - HARD GATE)
+# PHASE 7: EMAIL VERIFICATION (MULTI-PROVIDER HARD GATE)
 # =============================================================================
 
-async def verify_single_email(
+async def verify_with_millionverifier(
     session: aiohttp.ClientSession,
     email: str,
     api_key: str
 ) -> Tuple[str, str]:
-    """
-    Verify a single email with MillionVerifier.
-
-    Returns: (status, raw_result)
-        status: VALID | RISKY | INVALID | UNKNOWN
-        raw_result: Original API response
-    """
+    """Verify email with MillionVerifier API."""
     url = f"{MILLIONVERIFIER_API_URL}?api={api_key}&email={email}"
 
     try:
@@ -449,7 +494,6 @@ async def verify_single_email(
                 data = await response.json()
                 result = data.get('result', 'unknown').lower()
 
-                # Map to gate statuses
                 if result in ['ok', 'valid', 'deliverable']:
                     return VerificationStatus.VALID.value, result
                 elif result in ['risky', 'catch_all', 'accept_all']:
@@ -460,37 +504,159 @@ async def verify_single_email(
                     return VerificationStatus.UNKNOWN.value, result
             else:
                 return VerificationStatus.UNKNOWN.value, f"api_error_{response.status}"
-
     except asyncio.TimeoutError:
         return VerificationStatus.UNKNOWN.value, "timeout"
     except Exception as e:
         return VerificationStatus.UNKNOWN.value, f"error_{str(e)[:50]}"
 
 
+async def verify_with_emailverifyio(
+    session: aiohttp.ClientSession,
+    emails: List[str],
+    api_key: str
+) -> Dict[str, Tuple[str, str]]:
+    """
+    Verify emails with EmailVerify.io API (batch).
+
+    Returns: {email: (status, raw_result)}
+    """
+    import time
+
+    # Create batch verification task
+    url = f"{EMAILVERIFYIO_API_URL}validate-batch"
+    payload = {
+        "title": f"CEO_Pipeline_{int(time.time())}",
+        "key": api_key,
+        "email_batch": [{"address": email} for email in emails]
+    }
+
+    results = {}
+
+    try:
+        # Submit batch
+        async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=60)) as response:
+            if response.status != 200:
+                error_msg = f"api_error_{response.status}"
+                return {email: (VerificationStatus.UNKNOWN.value, error_msg) for email in emails}
+
+            data = await response.json()
+            # API returns 'queued' or 'success' on successful submission
+            if data.get('status') not in ['success', 'queued']:
+                error_msg = data.get('message', 'unknown_error')
+                return {email: (VerificationStatus.UNKNOWN.value, error_msg) for email in emails}
+
+            task_id = data.get('task_id')
+            if not task_id:
+                return {email: (VerificationStatus.UNKNOWN.value, 'no_task_id') for email in emails}
+
+        # Poll for results (max 60 seconds)
+        get_url = f"{EMAILVERIFYIO_API_URL}get-result-bulk-verification-task?key={api_key}&task_id={task_id}"
+        max_attempts = 30
+
+        for attempt in range(max_attempts):
+            await asyncio.sleep(2)  # Wait 2 seconds between polls
+
+            async with session.get(get_url, timeout=aiohttp.ClientTimeout(total=30)) as response:
+                if response.status != 200:
+                    continue
+
+                data = await response.json()
+                status = data.get('status', '')
+
+                if status == 'verified':
+                    # Parse results
+                    email_batch = data.get('results', {}).get('email_batch', [])
+                    for item in email_batch:
+                        email = item.get('address', '').lower()
+                        result_status = item.get('status', 'unknown').lower()
+                        sub_status = item.get('sub_status', '')
+
+                        # Map EmailVerify.io statuses to our gate statuses
+                        # Valid statuses: 'valid', 'ok'
+                        # Risky statuses: 'catch_all', 'role_based', 'accept_all'
+                        # Invalid statuses: 'invalid', 'unknown', 'no_dns_entries', 'mailbox_not_found'
+                        if result_status in ['valid', 'ok']:
+                            results[email] = (VerificationStatus.VALID.value, result_status)
+                        elif result_status in ['catch_all', 'catch-all', 'role_based', 'accept_all', 'risky']:
+                            results[email] = (VerificationStatus.RISKY.value, f"{result_status}:{sub_status}")
+                        elif result_status in ['invalid', 'unknown', 'mailbox_not_found', 'syntax_error']:
+                            results[email] = (VerificationStatus.INVALID.value, f"{result_status}:{sub_status}")
+                        else:
+                            # Treat unrecognized statuses as UNKNOWN
+                            results[email] = (VerificationStatus.UNKNOWN.value, f"{result_status}:{sub_status}")
+
+                    # Fill in any missing emails
+                    for email in emails:
+                        if email.lower() not in results:
+                            results[email.lower()] = (VerificationStatus.UNKNOWN.value, 'not_in_response')
+
+                    return results
+
+                elif status in ['error', 'failed']:
+                    error_msg = data.get('message', 'task_failed')
+                    return {email: (VerificationStatus.UNKNOWN.value, error_msg) for email in emails}
+
+        # Timeout waiting for results
+        return {email: (VerificationStatus.UNKNOWN.value, 'poll_timeout') for email in emails}
+
+    except asyncio.TimeoutError:
+        return {email: (VerificationStatus.UNKNOWN.value, 'timeout') for email in emails}
+    except Exception as e:
+        return {email: (VerificationStatus.UNKNOWN.value, f"error_{str(e)[:50]}") for email in emails}
+
+
+async def verify_single_email(
+    session: aiohttp.ClientSession,
+    email: str,
+    api_key: str,
+    provider: str = VERIFIER_MILLIONVERIFIER
+) -> Tuple[str, str]:
+    """
+    Verify a single email with the specified provider.
+
+    Providers:
+        - millionverifier: MillionVerifier API
+        - emailverifyio: EmailVerify.io API
+    """
+    if provider == VERIFIER_MILLIONVERIFIER:
+        return await verify_with_millionverifier(session, email, api_key)
+    elif provider == VERIFIER_EMAILVERIFYIO:
+        # For single email, use batch with one email
+        results = await verify_with_emailverifyio(session, [email], api_key)
+        return results.get(email.lower(), (VerificationStatus.UNKNOWN.value, 'not_found'))
+    else:
+        return VerificationStatus.UNKNOWN.value, f"unknown_provider_{provider}"
+
+
 async def phase7_verify_emails(
     candidates: List[CEOCandidate],
     conn,
     stats: PipelineStats,
-    api_key: str
+    api_key: str,
+    provider: str = DEFAULT_VERIFIER
 ) -> List[CEOCandidate]:
     """
-    Phase 7: Email Verification (MillionVerifier - HARD GATE)
+    Phase 7: Email Verification (MULTI-PROVIDER HARD GATE)
 
-    - Send generated email candidates to MillionVerifier
-    - Capture response: VALID | RISKY | INVALID | UNKNOWN
-    - Kill switch:
-        - INVALID -> discard, do not promote
+    Supported providers:
+        - millionverifier: MillionVerifier API (single email)
+        - emailverifyio: EmailVerify.io API (batch)
+
+    Gate logic:
         - VALID -> eligible for persistence
+        - INVALID -> discard, do not promote
         - RISKY | UNKNOWN -> flag only, no action
-    - Enforce one verification per email per TTL
-    - No retries
+
+    Enforce one verification per email per TTL. No retries.
     """
+    provider_name = "MillionVerifier" if provider == VERIFIER_MILLIONVERIFIER else "EmailVerify.io"
+
     print("\n" + "="*60)
-    print("PHASE 7: EMAIL VERIFICATION (MillionVerifier - HARD GATE)")
+    print(f"PHASE 7: EMAIL VERIFICATION ({provider_name} - HARD GATE)")
     print("="*60)
 
     if not api_key:
-        print("  [FAIL] MILLIONVERIFIER_API_KEY not set")
+        print(f"  [FAIL] {provider.upper()}_API_KEY not set")
         for candidate in candidates:
             candidate.error = "no_api_key"
         return candidates
@@ -502,16 +668,15 @@ async def phase7_verify_emails(
     cursor.execute("""
         SELECT email, verified_at
         FROM company.email_verification
-        WHERE verification_service = 'MillionVerifier'
+        WHERE verification_service = %s
         AND verified_at > NOW() - INTERVAL '%s days'
-    """, (VERIFICATION_TTL_DAYS,))
+    """, (provider_name, VERIFICATION_TTL_DAYS))
     ttl_cache = {row[0].lower(): row[1] for row in cursor.fetchall()}
     print(f"  TTL cache entries: {len(ttl_cache)}")
 
     # Filter candidates for verification
     to_verify = []
     for candidate in candidates:
-        # GUARD: Require slot assignment before verification
         if not candidate.slot_assigned:
             continue
 
@@ -520,11 +685,9 @@ async def phase7_verify_emails(
 
         email_lower = candidate.generated_email.lower()
 
-        # Check TTL
         if email_lower in ttl_cache:
             stats.emails_skipped_ttl += 1
-            # Use cached result (mark as already verified)
-            candidate.verification_status = VerificationStatus.VALID.value  # Assume valid if in cache
+            candidate.verification_status = VerificationStatus.VALID.value
             candidate.verified_at = ttl_cache[email_lower]
             continue
 
@@ -538,51 +701,76 @@ async def phase7_verify_emails(
         cursor.close()
         return candidates
 
-    # Verify emails
-    print("  Starting verification...")
+    print(f"  Starting verification with {provider_name}...")
+
     async with aiohttp.ClientSession() as session:
-        for i, candidate in enumerate(to_verify):
-            status, raw_result = await verify_single_email(
-                session, candidate.generated_email, api_key
-            )
+        if provider == VERIFIER_EMAILVERIFYIO:
+            # Batch verification with EmailVerify.io
+            emails_to_verify = [c.generated_email for c in to_verify]
+            results = await verify_with_emailverifyio(session, emails_to_verify, api_key)
 
-            candidate.verification_status = status
-            candidate.verification_result_raw = raw_result
-            candidate.verified_at = datetime.now()
-            candidate.verifier = "MillionVerifier"
+            for candidate in to_verify:
+                email_lower = candidate.generated_email.lower()
+                status, raw_result = results.get(email_lower, (VerificationStatus.UNKNOWN.value, 'not_found'))
 
-            stats.emails_verified += 1
+                candidate.verification_status = status
+                candidate.verification_result_raw = raw_result
+                candidate.verified_at = datetime.now()
+                candidate.verifier = provider_name
 
-            if status == VerificationStatus.VALID.value:
-                stats.emails_valid += 1
-            elif status == VerificationStatus.RISKY.value:
-                stats.emails_risky += 1
-            elif status == VerificationStatus.INVALID.value:
-                stats.emails_invalid += 1
-            else:
-                stats.emails_unknown += 1
+                stats.emails_verified += 1
+                if status == VerificationStatus.VALID.value:
+                    stats.emails_valid += 1
+                elif status == VerificationStatus.RISKY.value:
+                    stats.emails_risky += 1
+                elif status == VerificationStatus.INVALID.value:
+                    stats.emails_invalid += 1
+                else:
+                    stats.emails_unknown += 1
+        else:
+            # Single email verification with MillionVerifier
+            for i, candidate in enumerate(to_verify):
+                status, raw_result = await verify_with_millionverifier(
+                    session, candidate.generated_email, api_key
+                )
 
-            # Log verification to company.email_verification (TTL tracking)
+                candidate.verification_status = status
+                candidate.verification_result_raw = raw_result
+                candidate.verified_at = datetime.now()
+                candidate.verifier = provider_name
+
+                stats.emails_verified += 1
+                if status == VerificationStatus.VALID.value:
+                    stats.emails_valid += 1
+                elif status == VerificationStatus.RISKY.value:
+                    stats.emails_risky += 1
+                elif status == VerificationStatus.INVALID.value:
+                    stats.emails_invalid += 1
+                else:
+                    stats.emails_unknown += 1
+
+                if (i + 1) % 50 == 0:
+                    print(f"    Verified: {i + 1}/{len(to_verify)}")
+
+        # Log all verifications to company.email_verification (TTL tracking)
+        for candidate in to_verify:
             try:
                 cursor.execute("""
                     INSERT INTO company.email_verification (
                         enrichment_id, email, verification_status, verification_service,
                         verification_result, verified_at, created_at
                     ) VALUES (
-                        0, %s, %s, 'MillionVerifier', %s::jsonb, NOW(), NOW()
+                        0, %s, %s, %s, %s::jsonb, NOW(), NOW()
                     )
                     ON CONFLICT DO NOTHING
                 """, (
                     candidate.generated_email,
-                    status,
-                    f'{{"raw_result": "{raw_result}"}}'
+                    candidate.verification_status,
+                    provider_name,
+                    f'{{"raw_result": "{candidate.verification_result_raw}"}}'
                 ))
             except Exception:
                 pass  # Non-critical, continue
-
-            # Progress indicator
-            if (i + 1) % 50 == 0:
-                print(f"    Verified: {i + 1}/{len(to_verify)}")
 
     conn.commit()
     cursor.close()
@@ -600,10 +788,11 @@ def phase7_verify_emails_sync(
     candidates: List[CEOCandidate],
     conn,
     stats: PipelineStats,
-    api_key: str
+    api_key: str,
+    provider: str = DEFAULT_VERIFIER
 ) -> List[CEOCandidate]:
     """Synchronous wrapper for async verification."""
-    return asyncio.run(phase7_verify_emails(candidates, conn, stats, api_key))
+    return asyncio.run(phase7_verify_emails(candidates, conn, stats, api_key, provider))
 
 
 # =============================================================================
@@ -636,6 +825,9 @@ def phase8_persist(
     cursor = conn.cursor()
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     os.makedirs(output_dir, exist_ok=True)
+
+    # Get slot type for filename prefix (lowercase)
+    slot_type_prefix = candidates[0].slot_type.lower() if candidates else "exec"
 
     output_files = {}
 
@@ -673,7 +865,9 @@ def phase8_persist(
 
         except Exception as e:
             candidate.error = str(e)
-            stats.errors.append(f"Neon write error: {e}")
+            stats.errors.append(f"Neon write error for {candidate.full_name}: {e}")
+            # Rollback failed transaction to continue with next record
+            conn.rollback()
 
     conn.commit()
     stats.records_promoted_neon = valid_count
@@ -683,7 +877,7 @@ def phase8_persist(
     print("\n  Writing ALL candidates to CSV (audit)...")
 
     # 1. Full audit CSV
-    audit_file = os.path.join(output_dir, f"ceo_pipeline_audit_{timestamp}.csv")
+    audit_file = os.path.join(output_dir, f"{slot_type_prefix}_pipeline_audit_{timestamp}.csv")
     with open(audit_file, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
         writer.writerow([
@@ -707,7 +901,7 @@ def phase8_persist(
     print(f"    Written: {audit_file} ({len(candidates)} records)")
 
     # 2. VALID only CSV (ready for send)
-    valid_file = os.path.join(output_dir, f"ceo_valid_emails_{timestamp}.csv")
+    valid_file = os.path.join(output_dir, f"{slot_type_prefix}_valid_emails_{timestamp}.csv")
     valid_candidates = [c for c in candidates if c.verification_status == VerificationStatus.VALID.value]
     with open(valid_file, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
@@ -725,7 +919,7 @@ def phase8_persist(
     print(f"    Written: {valid_file} ({len(valid_candidates)} records)")
 
     # 3. INVALID/RISKY CSV (flagged)
-    flagged_file = os.path.join(output_dir, f"ceo_flagged_emails_{timestamp}.csv")
+    flagged_file = os.path.join(output_dir, f"{slot_type_prefix}_flagged_emails_{timestamp}.csv")
     flagged = [c for c in candidates if c.verification_status in
                [VerificationStatus.INVALID.value, VerificationStatus.RISKY.value, VerificationStatus.UNKNOWN.value]]
     with open(flagged_file, 'w', newline='', encoding='utf-8') as f:
@@ -750,8 +944,8 @@ def phase8_persist(
 # MAIN PIPELINE
 # =============================================================================
 
-def load_candidates_from_csv(csv_path: str) -> List[CEOCandidate]:
-    """Load CEO candidates from CSV file."""
+def load_candidates_from_csv(csv_path: str, slot_type: str = "CEO") -> List[CEOCandidate]:
+    """Load candidates from CSV file."""
     candidates = []
 
     with open(csv_path, 'r', encoding='utf-8') as f:
@@ -768,18 +962,19 @@ def load_candidates_from_csv(csv_path: str) -> List[CEOCandidate]:
                 linkedin_url=row.get('LinkedIn Profile', row.get('linkedin_url', '')).strip(),
                 company_name=row.get('Company Name', row.get('company_name', '')).strip(),
                 company_domain=row.get('Company Domain', row.get('company_domain', '')).strip(),
+                slot_type=slot_type,
             )
             candidates.append(candidate)
 
     return candidates
 
 
-def load_candidates_from_neon(conn, limit: int = 1000) -> List[CEOCandidate]:
-    """Load CEO candidates from Neon people.people_master."""
+def load_candidates_from_neon(conn, limit: int = 1000, slot_type: str = "CEO") -> List[CEOCandidate]:
+    """Load candidates from Neon people.people_master."""
     cursor = conn.cursor()
 
     # Load people who need verification (no verified email yet)
-    # These already have CEO slots assigned
+    # These already have slots assigned of the specified type
     cursor.execute("""
         SELECT
             pm.unique_id, pm.company_unique_id, pm.first_name, pm.last_name,
@@ -788,11 +983,11 @@ def load_candidates_from_neon(conn, limit: int = 1000) -> List[CEOCandidate]:
             cs.company_slot_unique_id, cs.is_filled
         FROM people.people_master pm
         JOIN company.company_master cm ON pm.company_unique_id = cm.company_unique_id
-        JOIN people.company_slot cs ON pm.unique_id = cs.person_unique_id AND cs.slot_type = 'CEO'
+        JOIN people.company_slot cs ON pm.unique_id = cs.person_unique_id AND cs.slot_type = %s
         WHERE (pm.email_verified IS NULL OR pm.email_verified = FALSE)
         AND cs.is_filled = TRUE
         LIMIT %s
-    """, (limit,))
+    """, (slot_type, limit,))
 
     candidates = []
     for i, row in enumerate(cursor.fetchall()):
@@ -825,19 +1020,33 @@ def load_candidates_from_neon(conn, limit: int = 1000) -> List[CEOCandidate]:
 def run_pipeline(
     candidates: List[CEOCandidate],
     output_dir: str,
-    skip_verification: bool = False
+    skip_verification: bool = False,
+    verifier: str = DEFAULT_VERIFIER
 ) -> Tuple[PipelineStats, str]:
     """
     Run the full CEO Email Pipeline (Phases 5-8).
 
+    Args:
+        candidates: List of CEOCandidate objects
+        output_dir: Directory for output files
+        skip_verification: Skip Phase 7 verification
+        verifier: Email verification provider ('emailverifyio' or 'millionverifier')
+
     Returns: (stats, final_status)
         final_status: 'READY_FOR_SEND_PIPELINE' or 'FAILED (reason)'
     """
+    verifier_name = "EmailVerify.io" if verifier == VERIFIER_EMAILVERIFYIO else "MillionVerifier"
+
+    # Get slot type from first candidate (all should be same)
+    slot_type = candidates[0].slot_type if candidates else "CEO"
+
     print("="*60)
-    print("CEO EMAIL PIPELINE - Phases 5-8")
+    print(f"{slot_type} EMAIL PIPELINE - Phases 5-8")
     print("="*60)
     print(f"Started: {datetime.now().isoformat()}")
     print(f"Candidates: {len(candidates)}")
+    print(f"Slot Type: {slot_type}")
+    print(f"Verifier: {verifier_name}")
 
     stats = PipelineStats(total_records=len(candidates))
     conn = get_connection()
@@ -851,11 +1060,18 @@ def run_pipeline(
 
         # Phase 7: Email Verification
         if not skip_verification:
-            api_key = os.getenv('MILLIONVERIFIER_API_KEY')
-            if api_key:
-                candidates = phase7_verify_emails_sync(candidates, conn, stats, api_key)
+            # Get API key based on verifier
+            if verifier == VERIFIER_EMAILVERIFYIO:
+                api_key = os.getenv('EMAILVERIFYIO_API_KEY')
+                key_name = 'EMAILVERIFYIO_API_KEY'
             else:
-                print("\n  [WARN] MILLIONVERIFIER_API_KEY not set - skipping verification")
+                api_key = os.getenv('MILLIONVERIFIER_API_KEY')
+                key_name = 'MILLIONVERIFIER_API_KEY'
+
+            if api_key:
+                candidates = phase7_verify_emails_sync(candidates, conn, stats, api_key, verifier)
+            else:
+                print(f"\n  [WARN] {key_name} not set - skipping verification")
                 for c in candidates:
                     if c.slot_assigned and c.generated_email:
                         c.verification_status = VerificationStatus.UNKNOWN.value
@@ -912,11 +1128,43 @@ def run_pipeline(
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python ceo_email_pipeline.py <csv_path> [--skip-verification]")
-        print("       python ceo_email_pipeline.py --from-neon [--limit N] [--skip-verification]")
+        print("Usage: python ceo_email_pipeline.py <csv_path> [options]")
+        print("       python ceo_email_pipeline.py --from-neon [options]")
+        print("")
+        print("Options:")
+        print("  --skip-verification    Skip email verification (Phase 7)")
+        print("  --limit N              Limit records from Neon (default: 1000)")
+        print("  --verifier NAME        Email verifier: 'emailverifyio' (default) or 'millionverifier'")
+        print("  --slot-type TYPE       Slot type: CEO, CFO, HR (default: CEO)")
+        print("")
+        print("Environment Variables:")
+        print("  EMAILVERIFYIO_API_KEY    API key for EmailVerify.io")
+        print("  MILLIONVERIFIER_API_KEY  API key for MillionVerifier")
         sys.exit(1)
 
     skip_verification = '--skip-verification' in sys.argv
+
+    # Parse verifier option
+    verifier = DEFAULT_VERIFIER
+    if '--verifier' in sys.argv:
+        idx = sys.argv.index('--verifier')
+        if idx + 1 < len(sys.argv):
+            verifier = sys.argv[idx + 1].lower()
+            if verifier not in [VERIFIER_EMAILVERIFYIO, VERIFIER_MILLIONVERIFIER]:
+                print(f"[ERROR] Unknown verifier: {verifier}")
+                print(f"  Valid options: {VERIFIER_EMAILVERIFYIO}, {VERIFIER_MILLIONVERIFIER}")
+                sys.exit(1)
+
+    # Parse slot-type option
+    slot_type = "CEO"
+    if '--slot-type' in sys.argv:
+        idx = sys.argv.index('--slot-type')
+        if idx + 1 < len(sys.argv):
+            slot_type = sys.argv[idx + 1].upper()
+            if slot_type not in ['CEO', 'CFO', 'HR', 'CTO', 'CMO', 'COO']:
+                print(f"[ERROR] Unknown slot type: {slot_type}")
+                print(f"  Valid options: CEO, CFO, HR, CTO, CMO, COO")
+                sys.exit(1)
 
     if sys.argv[1] == '--from-neon':
         # Load from Neon
@@ -927,21 +1175,21 @@ if __name__ == "__main__":
 
         print(f"Loading candidates from Neon (limit: {limit})...")
         conn = get_connection()
-        candidates = load_candidates_from_neon(conn, limit)
+        candidates = load_candidates_from_neon(conn, limit, slot_type)
         conn.close()
         output_dir = "pipeline_output"
     else:
         # Load from CSV
         csv_path = sys.argv[1]
         print(f"Loading candidates from CSV: {csv_path}")
-        candidates = load_candidates_from_csv(csv_path)
+        candidates = load_candidates_from_csv(csv_path, slot_type)
         output_dir = os.path.join(os.path.dirname(csv_path), "pipeline_output")
 
     if not candidates:
         print("[FAIL] No candidates to process")
         sys.exit(1)
 
-    stats, final_status = run_pipeline(candidates, output_dir, skip_verification)
+    stats, final_status = run_pipeline(candidates, output_dir, skip_verification, verifier)
 
     # Exit code based on status
     if final_status.startswith("READY"):
