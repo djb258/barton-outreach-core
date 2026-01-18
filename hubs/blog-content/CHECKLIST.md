@@ -262,6 +262,31 @@ This hub operates independently with no cross-hub dependencies.
 
 ---
 
-**Last Updated**: 2026-01-02
+---
+
+## 13. URL Discovery Compliance (ADR-005)
+
+### Tables Created
+
+- [x] `company.company_source_urls` exists
+- [x] `company.url_discovery_failures` exists
+- [x] UNIQUE constraint on (company_unique_id, source_url)
+
+### Discovery Compliance
+
+- [x] URLs linked to company_unique_id (not outreach_id)
+- [x] Source types defined (leadership, about, team, press, careers, contact)
+- [x] Failed discoveries logged for retry
+- [x] Parallel processing implemented
+
+### Data Integrity
+
+- [x] 97,124 URLs discovered
+- [x] 42,348 failures logged
+- [x] All 9 target states processed
+
+---
+
+**Last Updated**: 2026-01-18
 **Hub**: Blog Content (04.04.05)
 **Doctrine Version**: External CL + Outreach Program v1.0

@@ -248,6 +248,50 @@ No paid enrichment tools. Signal processing only.
 
 ---
 
-**Last Updated**: 2026-01-02
+---
+
+## 11. URL Discovery System (ADR-005)
+
+### Purpose
+
+Catalog company web pages for future executive extraction and signal monitoring.
+
+### Tables
+
+| Table | Schema | Purpose |
+|-------|--------|---------|
+| `company_source_urls` | company | Discovered URLs linked to company_unique_id |
+| `url_discovery_failures` | company | Failed discovery attempts for retry |
+
+### Source Types
+
+| Type | Purpose | Extraction Target |
+|------|---------|-------------------|
+| leadership_page | Executive bios | People slots |
+| about_page | Company overview | Context |
+| team_page | Staff listings | People discovery |
+| press_page | News/announcements | Timing signals |
+| careers_page | Job postings | Expansion signals |
+| contact_page | Contact info | Verification |
+
+### Discovery Results (2026-01-18)
+
+| Metric | Value |
+|--------|-------|
+| Companies Processed | 73,119 |
+| URLs Discovered | 97,124 |
+| Success Rate | 42.1% |
+| Failed (for retry) | 42,348 |
+
+### Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `discover_urls_batch.py` | Parallel batch discovery |
+| `discovery_status.py` | Progress monitoring |
+
+---
+
+**Last Updated**: 2026-01-18
 **Hub**: Blog Content (04.04.05)
 **Doctrine**: External CL + Outreach Program v1.0
