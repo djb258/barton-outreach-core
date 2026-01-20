@@ -1,0 +1,359 @@
+# Canonical Chain (CC) Doctrine Guard
+# Enforces CC layer write boundaries per doctrine v1.1.0
+#
+# CC-04 (Process) may NOT write to CC-03 (Context) or above
+# This is a HARD FAIL - no exceptions
+
+name: CC Doctrine Guard
+
+on:
+  push:
+    branches: [main, develop, 'feature/**']
+  pull_request:
+    branches: [main, develop]
+
+env:
+  CC_VERSION: "v1.1.0"
+
+jobs:
+  cc-write-boundary-check:
+    name: CC Write Boundary Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Define CC Layer Paths
+        id: cc-paths
+        run: |
+          echo "Defining CC layer path boundaries..."
+
+          # CC-04 Process paths (may only READ CC-03+)
+          CC04_PATHS=(
+            "ops/"
+            "hubs/*/imo/middle/phases/"
+            "diagnostics/"
+          )
+
+          # CC-03+ Protected paths (no writes from CC-04)
+          PROTECTED_PATHS=(
+            "contexts/"
+            "contracts/"
+            "hubs/**/CC.md"
+            "CC_LAYER_MAP.md"
+            "CC_REFACTOR_VERIFICATION.md"
+            "config/"
+          )
+
+          echo "CC-04 paths: ${CC04_PATHS[*]}"
+          echo "Protected paths: ${PROTECTED_PATHS[*]}"
+
+      - name: Scan for CC-04 → CC-03+ Write Violations
+        id: cc-scan
+        run: |
+          echo "================================================"
+          echo "CC DOCTRINE GUARD - Write Boundary Check"
+          echo "Doctrine Version: $CC_VERSION"
+          echo "================================================"
+
+          VIOLATIONS=0
+          VIOLATION_LOG=""
+
+          # Define CC-04 source directories
+          CC04_DIRS=(
+            "ops"
+            "hubs/company-target/imo/middle/phases"
+            "hubs/dol-filings/imo/middle/phases"
+            "hubs/people-intelligence/imo/middle/phases"
+            "hubs/blog-content/imo/middle/phases"
+            "hubs/outreach-execution/imo/middle/phases"
+            "diagnostics"
+          )
+
+          # Define CC-03+ protected patterns
+          PROTECTED_PATTERNS=(
+            "contexts/"
+            "contracts/"
+            "/CC\.md"
+            "CC_LAYER_MAP"
+            "config/"
+          )
+
+          echo ""
+          echo "Scanning CC-04 code for writes to CC-03+ paths..."
+          echo ""
+
+          for cc04_dir in "${CC04_DIRS[@]}"; do
+            if [ -d "$cc04_dir" ]; then
+              echo "Scanning: $cc04_dir"
+
+              # Find Python files in CC-04 directories
+              while IFS= read -r -d '' pyfile; do
+                # Check for write patterns to protected paths
+                for pattern in "${PROTECTED_PATTERNS[@]}"; do
+
+                  # Check for file write operations targeting protected paths
+                  if grep -n "open.*['\"].*${pattern}.*['\"].*['\"]w" "$pyfile" 2>/dev/null; then
+                    echo "CC VIOLATION: $pyfile writes to CC-03+ path matching: $pattern"
+                    VIOLATIONS=$((VIOLATIONS + 1))
+                    VIOLATION_LOG="${VIOLATION_LOG}\n- $pyfile → $pattern"
+                  fi
+
+                  # Check for pathlib write operations
+                  if grep -n "write_text.*${pattern}" "$pyfile" 2>/dev/null; then
+                    echo "CC VIOLATION: $pyfile writes to CC-03+ path matching: $pattern"
+                    VIOLATIONS=$((VIOLATIONS + 1))
+                    VIOLATION_LOG="${VIOLATION_LOG}\n- $pyfile → $pattern"
+                  fi
+
+                  # Check for shutil copy/move to protected paths
+                  if grep -n "shutil\.\(copy\|move\).*${pattern}" "$pyfile" 2>/dev/null; then
+                    echo "CC VIOLATION: $pyfile writes to CC-03+ path matching: $pattern"
+                    VIOLATIONS=$((VIOLATIONS + 1))
+                    VIOLATION_LOG="${VIOLATION_LOG}\n- $pyfile → $pattern"
+                  fi
+
+                done
+              done < <(find "$cc04_dir" -name "*.py" -print0 2>/dev/null)
+            fi
+          done
+
+          echo ""
+          echo "================================================"
+
+          if [ $VIOLATIONS -gt 0 ]; then
+            echo "CC VIOLATION: CC-04 attempted write to CC-03+"
+            echo ""
+            echo "Violations found: $VIOLATIONS"
+            echo -e "Details:$VIOLATION_LOG"
+            echo ""
+            echo "DOCTRINE RULE: CC-04 (Process) may NOT write to CC-03 (Context) or above"
+            echo "Reference: CC_LAYER_MAP.md - Authorization Matrix"
+            echo ""
+            echo "================================================"
+            exit 1
+          else
+            echo "CC WRITE BOUNDARY CHECK: PASS"
+            echo "No CC-04 → CC-03+ write violations detected"
+            echo "================================================"
+          fi
+
+  cc-version-check:
+    name: CC Version Lock Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate CC Version Headers
+        run: |
+          echo "================================================"
+          echo "CC DOCTRINE GUARD - Version Lock Check"
+          echo "Expected CC_VERSION: $CC_VERSION"
+          echo "================================================"
+
+          VIOLATIONS=0
+
+          # Find all CC.md files
+          CC_FILES=$(find . -name "CC.md" -type f 2>/dev/null)
+
+          if [ -z "$CC_FILES" ]; then
+            echo "WARNING: No CC.md files found"
+            exit 0
+          fi
+
+          echo "Checking CC.md files for version lock headers..."
+          echo ""
+
+          for ccfile in $CC_FILES; do
+            echo "Checking: $ccfile"
+
+            # Check for CC_VERSION header
+            if ! grep -q "CC_VERSION:" "$ccfile"; then
+              echo "  ERROR: Missing CC_VERSION header"
+              VIOLATIONS=$((VIOLATIONS + 1))
+            else
+              VERSION=$(grep "CC_VERSION:" "$ccfile" | head -1 | awk '{print $2}')
+              if [ "$VERSION" != "$CC_VERSION" ]; then
+                echo "  ERROR: Version mismatch - found $VERSION, expected $CC_VERSION"
+                VIOLATIONS=$((VIOLATIONS + 1))
+              else
+                echo "  OK: Version $VERSION"
+              fi
+            fi
+
+            # Check for LAST_VERIFIED header
+            if ! grep -q "LAST_VERIFIED:" "$ccfile"; then
+              echo "  ERROR: Missing LAST_VERIFIED header"
+              VIOLATIONS=$((VIOLATIONS + 1))
+            else
+              VERIFIED=$(grep "LAST_VERIFIED:" "$ccfile" | head -1 | awk '{print $2}')
+              echo "  OK: Last verified $VERIFIED"
+            fi
+
+            echo ""
+          done
+
+          echo "================================================"
+
+          if [ $VIOLATIONS -gt 0 ]; then
+            echo "CC VERSION CHECK: FAIL"
+            echo "Violations: $VIOLATIONS"
+            echo ""
+            echo "Required header format in all CC.md files:"
+            echo "  CC_VERSION: $CC_VERSION"
+            echo "  LAST_VERIFIED: YYYY-MM-DD"
+            echo "================================================"
+            exit 1
+          else
+            echo "CC VERSION CHECK: PASS"
+            echo "All CC.md files have valid version lock headers"
+            echo "================================================"
+          fi
+
+  cc-layer-integrity:
+    name: CC Layer Integrity Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify CC Layer Structure
+        run: |
+          echo "================================================"
+          echo "CC DOCTRINE GUARD - Layer Integrity Check"
+          echo "================================================"
+
+          VIOLATIONS=0
+
+          # Required CC-02 hubs must have CC.md
+          REQUIRED_HUBS=(
+            "hubs/company-target"
+            "hubs/dol-filings"
+            "hubs/people-intelligence"
+            "hubs/blog-content"
+            "hubs/outreach-execution"
+          )
+
+          echo "Checking CC-02 Hub annotations..."
+          for hub in "${REQUIRED_HUBS[@]}"; do
+            if [ -d "$hub" ]; then
+              if [ ! -f "$hub/CC.md" ]; then
+                echo "  ERROR: Missing CC.md in $hub"
+                VIOLATIONS=$((VIOLATIONS + 1))
+              else
+                echo "  OK: $hub/CC.md exists"
+              fi
+            fi
+          done
+
+          echo ""
+          echo "Checking CC-03 annotations..."
+
+          # Required CC-03 directories
+          CC03_DIRS=("contexts" "contracts")
+          for dir in "${CC03_DIRS[@]}"; do
+            if [ -d "$dir" ]; then
+              if [ ! -f "$dir/CC.md" ]; then
+                echo "  ERROR: Missing CC.md in $dir"
+                VIOLATIONS=$((VIOLATIONS + 1))
+              else
+                echo "  OK: $dir/CC.md exists"
+              fi
+            fi
+          done
+
+          echo ""
+          echo "Checking CC-04 annotations..."
+
+          if [ -d "ops" ]; then
+            if [ ! -f "ops/CC.md" ]; then
+              echo "  ERROR: Missing CC.md in ops"
+              VIOLATIONS=$((VIOLATIONS + 1))
+            else
+              echo "  OK: ops/CC.md exists"
+            fi
+          fi
+
+          echo ""
+          echo "Checking root CC documentation..."
+
+          if [ ! -f "CC_LAYER_MAP.md" ]; then
+            echo "  ERROR: Missing CC_LAYER_MAP.md"
+            VIOLATIONS=$((VIOLATIONS + 1))
+          else
+            echo "  OK: CC_LAYER_MAP.md exists"
+          fi
+
+          echo ""
+          echo "================================================"
+
+          if [ $VIOLATIONS -gt 0 ]; then
+            echo "CC LAYER INTEGRITY: FAIL"
+            echo "Violations: $VIOLATIONS"
+            echo "================================================"
+            exit 1
+          else
+            echo "CC LAYER INTEGRITY: PASS"
+            echo "All required CC annotations present"
+            echo "================================================"
+          fi
+
+  cc-identity-guard:
+    name: CC Identity Minting Guard
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for Sovereign Identity Minting
+        run: |
+          echo "================================================"
+          echo "CC DOCTRINE GUARD - Identity Minting Check"
+          echo "================================================"
+          echo ""
+          echo "RULE: company_unique_id may ONLY be minted by CC-01 (CL)"
+          echo "Scanning for violations in CC-02+ code..."
+          echo ""
+
+          VIOLATIONS=0
+
+          # Patterns that indicate sovereign identity minting (FORBIDDEN)
+          FORBIDDEN_PATTERNS=(
+            "company_unique_id.*=.*uuid"
+            "company_unique_id.*=.*str\(uuid"
+            "INSERT INTO.*cl\.company_identity"
+            "CREATE.*company_unique_id.*DEFAULT.*uuid"
+          )
+
+          # Directories to scan (CC-02+, exclude external CL repo)
+          SCAN_DIRS=(
+            "hubs"
+            "spokes"
+            "ops"
+            "contexts"
+          )
+
+          for dir in "${SCAN_DIRS[@]}"; do
+            if [ -d "$dir" ]; then
+              for pattern in "${FORBIDDEN_PATTERNS[@]}"; do
+                MATCHES=$(grep -rn "$pattern" "$dir" --include="*.py" 2>/dev/null | grep -v "# VIOLATION" | grep -v "test_" || true)
+                if [ -n "$MATCHES" ]; then
+                  echo "POTENTIAL CC VIOLATION: Sovereign identity minting detected"
+                  echo "Pattern: $pattern"
+                  echo "Matches:"
+                  echo "$MATCHES"
+                  echo ""
+                  # Note: This is a warning, manual review required
+                  # Not auto-failing because uuid may be used for correlation_id, etc.
+                fi
+              done
+            fi
+          done
+
+          echo "================================================"
+          echo "Identity minting scan complete"
+          echo "Manual review recommended for any flagged patterns"
+          echo "================================================"
