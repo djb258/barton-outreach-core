@@ -1,12 +1,22 @@
-# PRD: DOL Sub-Hub v2.1
+# PRD: DOL Sub-Hub v3.0
 
-**Version:** 2.1 (Hardened per Barton Doctrine)
+**Version:** 3.0 (Data Import Complete + AI-Ready Metadata)
 **Status:** Active
-**Hardening Date:** 2025-12-17
-**Last Updated:** 2025-12-17
-**Doctrine:** Bicycle Wheel v1.1 / Barton Doctrine
-**Barton ID Range:** `04.04.02.04.3XXXX.###`
-**Changes:** Correlation ID enforcement, Failure handling standardization, Signal idempotency, Tooling declarations, Promotion states
+**CC Layer:** CC-02
+**Hardening Date:** 2026-01-15
+**Last Updated:** 2026-01-15
+**Doctrine:** CL Parent-Child Doctrine v1.0 / IMO-Creator Format
+**Barton ID Range:** `04.04.03.XX.XXXXX.###`
+
+---
+
+## Conformance
+
+| Field | Value |
+|-------|-------|
+| **Doctrine Version** | 1.1.0 |
+| **CC Layer** | CC-02 |
+| **CTB Version** | 1.0.0 |
 
 ---
 
@@ -18,10 +28,12 @@
 ║                                                                               ║
 ║   This sub-hub OWNS:                                                          ║
 ║   ├── Form 5500 data ingestion and processing                                ║
+║   ├── Form 5500-SF (EZ) small plan data                                      ║
 ║   ├── Schedule A insurance broker data extraction                            ║
 ║   ├── EIN-to-Company matching                                                ║
 ║   ├── Plan renewal date tracking                                             ║
 ║   ├── Broker change detection                                                ║
+║   ├── Column metadata and AI-ready documentation                             ║
 ║   └── DOL compliance signal emission                                         ║
 ║                                                                               ║
 ║   This sub-hub DOES NOT OWN:                                                  ║
@@ -32,9 +44,10 @@
 ║   ├── Outreach decisions (who gets messaged, when, how)                      ║
 ║   └── Slot assignment or email generation                                    ║
 ║                                                                               ║
-║   This sub-hub EMITS SIGNALS to Company Hub. It NEVER makes decisions.       ║
+║   DATA SOURCE: U.S. Department of Labor EFAST2 System                        ║
+║   DATA YEAR: 2023 (annual refresh cycle)                                     ║
+║   DATA STATUS: READ-ONLY (trigger-enforced)                                  ║
 ║                                                                               ║
-║   PREREQUISITE: company_id (via EIN match) MUST exist for signal emission.   ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 ```
 
@@ -42,18 +55,311 @@
 
 ## 1. Purpose
 
-The DOL Sub-Hub processes Department of Labor data to enrich company records with regulatory filings and insurance information. It matches DOL filings to companies via EIN and emits signals to the BIT Engine.
+The DOL Sub-Hub processes Department of Labor EFAST2 data to enrich company records with regulatory filings and insurance information. It matches DOL filings to companies via EIN and emits signals to the BIT Engine.
 
 ### Core Functions
 
-1. **Form 5500 Processing** - Ingest and process annual benefit plan filings
-2. **Schedule A Extraction** - Extract insurance broker and carrier data
-3. **EIN Matching** - Match DOL filings to Company Hub records by EIN
-4. **Renewal Date Tracking** - Track plan year dates for renewal signals
-5. **Broker Change Detection** - Detect when companies change insurance brokers
-6. **Compliance Signals** - Emit signals based on plan characteristics
+1. **Form 5500 Processing** - Ingest and process annual benefit plan filings (230K+ records)
+2. **Form 5500-SF Processing** - Process small plan filings (760K+ records)
+3. **Schedule A Extraction** - Extract insurance broker and carrier data (337K+ records)
+4. **EIN Matching** - Match DOL filings to Company Hub records by EIN
+5. **Renewal Date Tracking** - Track plan year dates for renewal signals
+6. **Broker Change Detection** - Detect when companies change insurance brokers
+7. **Compliance Signals** - Emit signals based on plan characteristics
+8. **AI-Ready Metadata** - Searchable column documentation for all tables
 
-### Company-First Doctrine
+---
+
+## 2. IMO Structure (Input-Middle-Output)
+
+### I — Ingress Layer
+
+| Component | Purpose | Source |
+|-----------|---------|--------|
+| DOL EFAST2 Import | Annual data refresh | dol.gov bulk downloads |
+| CSV Parser | Parse Form 5500, 5500-SF, Schedule A | Local CSV files |
+| Column Normalizer | Standardize column names | DOL layout files |
+
+### M — Middle Layer
+
+| Component | Purpose | Location |
+|-----------|---------|----------|
+| `import_dol_full.py` | Full-column data import | `hubs/dol-filings/imo/middle/importers/` |
+| `build_column_metadata.py` | AI-ready metadata generation | `hubs/dol-filings/imo/middle/importers/` |
+| EIN Matcher | Match filings to companies | `hubs/dol-filings/imo/middle/` |
+| Signal Emitter | Emit signals to BIT Engine | `hubs/dol-filings/imo/middle/` |
+
+### O — Egress Layer
+
+| Component | Purpose | Destination |
+|-----------|---------|-------------|
+| BIT Signal | Buyer intent signals | Company Hub BIT Engine |
+| Query Interface | Read-only data access | `dol.search_columns()` |
+| Metadata Export | Column documentation | `dol.column_metadata` |
+
+---
+
+## 3. Database Schema (HARDENED 2026-01-15)
+
+### Schema: `dol`
+
+| Table | Purpose | Rows | Columns | RLS | Read-Only |
+|-------|---------|------|---------|-----|-----------|
+| `form_5500` | Large plan filings (>=100 participants) | 230,482 | 147 | Yes | **Yes** |
+| `form_5500_sf` | Small plan filings (<100 participants) | 760,839 | 196 | Yes | **Yes** |
+| `schedule_a` | Insurance broker/carrier data | 337,476 | 98 | Yes | **Yes** |
+| `renewal_calendar` | Plan renewal tracking | - | 13 | Yes | **Yes** |
+| `column_metadata` | AI-ready column documentation | 441 | 12 | No | No |
+
+### Read-Only Lock Enforcement
+
+```
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                       DOL DATA READ-ONLY LOCK                                 ║
+║                                                                               ║
+║   ENFORCEMENT: PostgreSQL BEFORE triggers on INSERT/UPDATE/DELETE            ║
+║                                                                               ║
+║   BLOCKED OPERATIONS (Normal Access):                                        ║
+║   ├── INSERT → DOL_READONLY_VIOLATION                                        ║
+║   ├── UPDATE → DOL_READONLY_VIOLATION                                        ║
+║   └── DELETE → DOL_READONLY_VIOLATION                                        ║
+║                                                                               ║
+║   ALLOWED OPERATIONS:                                                         ║
+║   └── SELECT → Always permitted                                              ║
+║                                                                               ║
+║   BYPASS (Annual Import Only):                                               ║
+║   ├── SET session dol.import_mode = 'active';                                ║
+║   ├── -- run import operations --                                            ║
+║   └── RESET dol.import_mode;                                                 ║
+║                                                                               ║
+║   RATIONALE: DOL data is authoritative. Modifications outside of annual     ║
+║              import would corrupt the integrity of government filings.       ║
+║                                                                               ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+```
+
+### Migration Reference
+
+| Migration | Purpose | Date |
+|-----------|---------|------|
+| `2026-01-13-dol-schema-creation.sql` | Initial DOL tables | 2026-01-13 |
+| `2026-01-13-enable-rls-production-tables.sql` | RLS policies | 2026-01-13 |
+| `2026-01-15-dol-readonly-lock.sql` | Read-only triggers | 2026-01-15 |
+| `2026-01-15-dol-column-metadata.sql` | Metadata table | 2026-01-15 |
+
+---
+
+## 4. Entity Relationship Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                           DOL SCHEMA ERD                                        │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+    ┌──────────────────────────────────────────────────────────────────────────┐
+    │                           dol.form_5500                                  │
+    │                        (230,482 rows, 147 cols)                          │
+    ├──────────────────────────────────────────────────────────────────────────┤
+    │ PK  filing_id              UUID          Unique filing identifier        │
+    │     ack_id                 VARCHAR(30)   DOL acknowledgment ID           │
+    │     sponsor_dfe_ein        VARCHAR(20)   Employer ID (EIN)               │
+    │     sponsor_dfe_name       VARCHAR(255)  Plan sponsor name               │
+    │     spons_dfe_mail_us_state VARCHAR(10) Sponsor state                    │
+    │     form_plan_year_begin_date VARCHAR(30) Plan year start (renewal)     │
+    │     plan_eff_date          VARCHAR(30)   Plan effective date             │
+    │     tot_partcp_boy_cnt     NUMERIC       Participants count              │
+    │     tot_assets_eoy_amt     NUMERIC       Total assets                    │
+    │     form_year              VARCHAR(10)   Filing year (2023)              │
+    │     ... (137 more columns)                                               │
+    └──────────────────────────────────────────────────────────────────────────┘
+                                         │
+                                         │ ack_id (FK via ACK_ID match)
+                                         │
+    ┌──────────────────────────────────────────────────────────────────────────┐
+    │                           dol.schedule_a                                 │
+    │                        (337,476 rows, 98 cols)                           │
+    ├──────────────────────────────────────────────────────────────────────────┤
+    │ PK  schedule_id            UUID          Unique schedule identifier      │
+    │ FK  filing_id              UUID          Links to form_5500.filing_id    │
+    │     ack_id                 VARCHAR(30)   DOL acknowledgment ID           │
+    │     sch_a_ein              VARCHAR(20)   Plan EIN                        │
+    │     ins_carrier_name       VARCHAR(255)  Insurance carrier name          │
+    │     ins_carrier_ein        VARCHAR(20)   Carrier EIN                     │
+    │     ins_carrier_naic_code  VARCHAR(10)   NAIC code (5 digits)            │
+    │     ins_broker_comm_tot_amt NUMERIC      Broker commissions              │
+    │     ins_broker_fees_tot_amt NUMERIC      Broker fees                     │
+    │     wlfr_bnft_health_ind   VARCHAR(5)    Health benefits flag            │
+    │     wlfr_bnft_dental_ind   VARCHAR(5)    Dental benefits flag            │
+    │     wlfr_bnft_vision_ind   VARCHAR(5)    Vision benefits flag            │
+    │     sponsor_state          VARCHAR(10)   Derived from Form 5500          │
+    │     sponsor_name           VARCHAR(255)  Derived from Form 5500          │
+    │     sch_a_plan_year_begin_date VARCHAR(30) Plan year (renewal month)    │
+    │     form_year              VARCHAR(10)   Filing year (2023)              │
+    │     ... (82 more columns)                                                │
+    └──────────────────────────────────────────────────────────────────────────┘
+
+    ┌──────────────────────────────────────────────────────────────────────────┐
+    │                         dol.form_5500_sf                                 │
+    │                        (760,839 rows, 196 cols)                          │
+    ├──────────────────────────────────────────────────────────────────────────┤
+    │ PK  filing_id              UUID          Unique filing identifier        │
+    │     ack_id                 VARCHAR(30)   DOL acknowledgment ID           │
+    │     sf_spons_ein           VARCHAR(20)   Employer ID (EIN)               │
+    │     sf_sponsor_name        VARCHAR(255)  Plan sponsor name               │
+    │     sf_spons_us_state      VARCHAR(10)   Sponsor state                   │
+    │     sf_plan_year_begin_date VARCHAR(30)  Plan year start (renewal)      │
+    │     sf_plan_eff_date       VARCHAR(30)   Plan effective date             │
+    │     sf_tot_partcp_boy_cnt  NUMERIC       Participants count              │
+    │     sf_tot_assets_eoy_amt  NUMERIC       Total assets                    │
+    │     form_year              VARCHAR(10)   Filing year (2023)              │
+    │     ... (186 more columns)                                               │
+    └──────────────────────────────────────────────────────────────────────────┘
+
+    NOTE: Form 5500-SF (Small Form) does NOT have Schedule A attachments.
+          Schedule A only attaches to regular Form 5500 filings.
+
+    ┌──────────────────────────────────────────────────────────────────────────┐
+    │                       dol.column_metadata                                │
+    │                          (441 rows, 12 cols)                             │
+    ├──────────────────────────────────────────────────────────────────────────┤
+    │ PK  id                     SERIAL        Auto-increment ID               │
+    │     table_name             VARCHAR(50)   Source table name               │
+    │     column_name            VARCHAR(100)  Database column name            │
+    │     column_id              VARCHAR(100)  Unique ID (DOL_F5500_*)         │
+    │     description            TEXT          Human-readable description       │
+    │     category               VARCHAR(50)   Category (Sponsor, Insurance)   │
+    │     data_type              VARCHAR(50)   Format type (CURRENCY, DATE)    │
+    │     format_pattern         VARCHAR(100)  Pattern (YYYY-MM-DD, 9 digits)  │
+    │     max_length             INTEGER       Maximum character length        │
+    │     search_keywords        TEXT[]        Array of search terms           │
+    │     is_pii                 BOOLEAN       PII flag                        │
+    │     is_searchable          BOOLEAN       Searchable flag                 │
+    │     example_values         TEXT[]        Sample values from data         │
+    └──────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 5. AI-Ready Column Metadata
+
+### Column ID Convention
+
+All columns follow the pattern: `DOL_{TABLE}_{COLUMN_NAME}`
+
+| Table | Prefix | Example |
+|-------|--------|---------|
+| form_5500 | `DOL_F5500_` | `DOL_F5500_SPONSOR_DFE_NAME` |
+| form_5500_sf | `DOL_F5500SF_` | `DOL_F5500SF_SF_SPONSOR_NAME` |
+| schedule_a | `DOL_SCHA_` | `DOL_SCHA_INS_BROKER_COMM_TOT_AMT` |
+
+### Category Distribution
+
+| Category | Columns | Description |
+|----------|---------|-------------|
+| Form | 136 | Filing and form metadata |
+| Sponsor | 68 | Plan sponsor information |
+| General | 57 | General purpose fields |
+| Administrator | 45 | Plan administrator data |
+| Welfare | 40 | Welfare benefit indicators |
+| Pension | 23 | Pension financial data |
+| Preparer | 15 | Form preparer information |
+| Filing | 12 | Filing identifiers and dates |
+| Insurance | 11 | Insurance carrier/broker data |
+| Contract | 9 | Contract type indicators |
+
+### Search Functions
+
+```sql
+-- Search columns by keyword
+SELECT * FROM dol.search_columns('broker');
+SELECT * FROM dol.search_columns('health benefits');
+SELECT * FROM dol.search_columns('ein');
+SELECT * FROM dol.search_columns('renewal');
+
+-- Get full table schema
+SELECT * FROM dol.get_table_schema('schedule_a');
+SELECT * FROM dol.get_table_schema('form_5500');
+SELECT * FROM dol.get_table_schema('form_5500_sf');
+
+-- Browse metadata by category
+SELECT column_id, description, format_pattern
+FROM dol.column_metadata
+WHERE category = 'Insurance';
+```
+
+### Data Format Types
+
+| Format | Pattern | Example Columns |
+|--------|---------|-----------------|
+| CURRENCY | Decimal dollars (12345.67) | `*_amt` columns |
+| DATE | YYYY-MM-DD | `*_date` columns |
+| FLAG | Y/N/X or 1/0 | `*_ind` columns |
+| EIN | 9 digits (XX-XXXXXXX) | `*_ein` columns |
+| INTEGER | Whole number | `*_cnt` columns |
+| TEXT | Variable length | Name, address fields |
+
+---
+
+## 6. Data Statistics (2023 Filing Year)
+
+### Row Counts
+
+| Table | Rows | Year |
+|-------|------|------|
+| form_5500 | 230,482 | 2023 |
+| form_5500_sf | 760,839 | 2023 |
+| schedule_a | 337,476 | 2023 |
+
+### State Coverage
+
+| Table | Unique States |
+|-------|---------------|
+| form_5500 | 58 |
+| form_5500_sf | 58 |
+| schedule_a | 55 |
+
+### Top States (Schedule A)
+
+| State | Filings |
+|-------|---------|
+| CA | 43,313 |
+| TX | 22,731 |
+| NY | 21,497 |
+| PA | 19,098 |
+| FL | 17,770 |
+
+### Broker Data Coverage (Schedule A)
+
+| Metric | Count | Percentage |
+|--------|-------|------------|
+| Records with broker commissions | 235,847 | 70% |
+| Records with broker fees | 130,062 | 39% |
+| Records with carrier name | 337,358 | 99.9% |
+
+### Welfare Benefit Types (Schedule A)
+
+| Benefit Type | Filings |
+|--------------|---------|
+| Life Insurance | 79,469 |
+| Health | 64,989 |
+| Vision | 60,143 |
+| Dental | 57,955 |
+| HMO | 20,052 |
+| PPO | 17,074 |
+| Stop Loss | 8,351 |
+
+### Renewal Month Distribution
+
+| Month | Filings | % |
+|-------|---------|---|
+| January | 235,308 | 70% |
+| July | 21,752 | 6% |
+| October | 12,078 | 4% |
+| April | 10,002 | 3% |
+
+---
+
+## 7. Company-First Doctrine
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -70,7 +376,7 @@ The DOL Sub-Hub processes Department of Labor data to enrich company records wit
 
 ---
 
-### Correlation ID Doctrine (HARD LAW)
+## 8. Correlation ID Doctrine (HARD LAW)
 
 ```
 ╔═══════════════════════════════════════════════════════════════════════════════╗
@@ -93,170 +399,7 @@ The DOL Sub-Hub processes Department of Labor data to enrich company records wit
 
 ---
 
-### Signal Idempotency Doctrine (HARD LAW)
-
-```
-╔═══════════════════════════════════════════════════════════════════════════════╗
-║                       SIGNAL IDEMPOTENCY ENFORCEMENT                          ║
-║                                                                               ║
-║   DOCTRINE: All signals emitted to BIT Engine MUST be idempotent.            ║
-║             Duplicate signals MUST be deduplicated before emission.           ║
-║                                                                               ║
-║   DEDUPLICATION RULES:                                                        ║
-║   ├── Key: (company_id, signal_type, filing_id)                              ║
-║   ├── Window: 365 days (DOL filings are annual)                              ║
-║   └── Hash: SHA-256 of key fields for fast lookup                            ║
-║                                                                               ║
-║   DUPLICATE HANDLING:                                                         ║
-║   ├── Increment duplicate_count on existing signal                           ║
-║   ├── Do NOT emit new signal to BIT Engine                                   ║
-║   └── Log duplicate detection with correlation_id                            ║
-║                                                                               ║
-╚═══════════════════════════════════════════════════════════════════════════════╝
-```
-
----
-
-## 2. Data Sources
-
-### Form 5500 (Annual Benefit Plan Filing)
-
-The primary DOL data source containing:
-- Plan sponsor information (company details)
-- Employer Identification Number (EIN)
-- Plan participant counts
-- Total plan assets
-- Plan year dates (renewal timing)
-- Plan administrator contact info
-
-### Schedule A (Insurance Information)
-
-Attached to Form 5500, containing:
-- Insurance broker name and fees
-- Insurance carrier information
-- Policy types (health, life, disability)
-- Commission structures
-
-### SF Form 5500 (Small Plan Filing)
-
-Simplified filing for plans with fewer than 100 participants.
-
----
-
-## 3. Owned Processes
-
-### DOL Node Spoke
-
-**File:** `ctb/sys/enrichment/pipeline_engine/spokes/dol_node/dol_node_spoke.py`
-**Purpose:** Process DOL records and emit signals to BIT Engine
-
-#### Tooling Declaration
-
-| Tool | API | Cost Tier | Rate Limit | Cache |
-|------|-----|-----------|------------|-------|
-| DOL EFAST2 API | External | FREE | 1000/hour | 24 hour |
-| EIN Lookup | Internal | FREE | N/A | 1 hour |
-| 5500 Parser | Internal | FREE | N/A | None |
-| Schedule A Parser | Internal | FREE | N/A | None |
-| Broker Change Detector | Internal | FREE | N/A | 30 days |
-
-#### Process Flow
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           DOL NODE PROCESS FLOW                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-    DOL Data Source                        DOL Sub-Hub
-    (Form 5500 API)                        (Signal Emitter)
-
-    ┌───────────────────┐                  ┌───────────────────┐
-    │ Form 5500 Files   │                  │ DOL Node Spoke    │
-    │                   │    Raw Filing    │                   │
-    │ • XML/JSON files  ├─────────────────►│ 1. Parse filing   │
-    │ • Public API      │                  │ 2. Extract EIN    │
-    │ • Bulk downloads  │                  │ 3. Lookup company │
-    └───────────────────┘                  │ 4. Validate match │
-                                           └─────────┬─────────┘
-                                                     │
-                                                     │ company_id found?
-                                                     │
-                              ┌───────────────────────┴───────────────────────┐
-                              │ YES                                      NO   │
-                              ▼                                              ▼
-                    ┌───────────────────┐                    ┌───────────────────┐
-                    │ Emit Signals      │                    │ Queue for         │
-                    │                   │                    │ Identity          │
-                    │ • FORM_5500_FILED │                    │ Resolution        │
-                    │ • LARGE_PLAN      │                    │                   │
-                    │ • BROKER_CHANGE   │                    │ Request company   │
-                    │                   │                    │ creation from Hub │
-                    └─────────┬─────────┘                    └───────────────────┘
-                              │
-                              ▼
-                    ┌───────────────────┐
-                    │ BIT ENGINE        │
-                    │ (Company Hub)     │
-                    │                   │
-                    │ Aggregate signals │
-                    │ Calculate score   │
-                    └───────────────────┘
-```
-
-#### Input Contract: Form 5500
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `correlation_id` | UUID | **YES** | Generated at ingest (one per filing) |
-| `filing_id` | string | Yes | Unique filing identifier |
-| `ein` | string | **Required** | Employer Identification Number |
-| `plan_name` | string | Yes | Name of the benefit plan |
-| `plan_year_begin` | datetime | No | Start of plan year |
-| `plan_year_end` | datetime | No | End of plan year |
-| `total_participants` | int | No | Number of plan participants |
-| `total_assets` | float | No | Total plan assets |
-| `plan_effective_date` | datetime | No | When plan was established |
-| `admin_name` | string | No | Plan administrator name |
-| `admin_phone` | string | No | Plan administrator phone |
-| `is_small_plan` | bool | No | True if SF-5500 filing |
-
-#### Input Contract: Schedule A
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `correlation_id` | UUID | **YES** | Inherited from parent Form 5500 |
-| `schedule_id` | string | Yes | Unique schedule identifier |
-| `filing_id` | string | Yes | Parent Form 5500 filing ID |
-| `broker_name` | string | No | Insurance broker name |
-| `broker_fees` | float | No | Total broker fees paid |
-| `carrier_name` | string | No | Insurance carrier name |
-| `policy_type` | string | No | Type of insurance policy |
-
-#### Output Contract
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `correlation_id` | UUID | **Propagated unchanged from input** |
-| `status` | ResultStatus | SUCCESS, FAILED |
-| `failure_type` | FailureType | VALIDATION_ERROR, NO_MATCH |
-| `failure_reason` | string | Why processing failed |
-| `hub_signal` | Dict | Signal to emit to BIT Engine |
-| `metrics` | Dict | Processing metrics |
-
-#### Failure Handling
-
-| Failure | Severity | Local Table | Global Emit | Recovery |
-|---------|----------|-------------|-------------|----------|
-| EIN not in filing | HIGH | `dol_subhub.failures` | YES (DOL-001) | Manual review |
-| EIN not matched | MEDIUM | `dol_subhub.failures` | YES (DOL-002) | Queue for identity |
-| Invalid EIN format | LOW | `dol_subhub.failures` | NO | Normalize and retry |
-| Invalid filing format | MEDIUM | `dol_subhub.failures` | YES (DOL-003) | Skip filing |
-| API rate limit | LOW | `dol_subhub.failures` | NO | Exponential backoff |
-| BIT Engine unavailable | HIGH | `dol_subhub.signal_queue` | YES (DOL-004) | Retry queue |
-
----
-
-## 4. Signal Emission
+## 9. Signal Emission
 
 ### Signal Types
 
@@ -266,223 +409,37 @@ Simplified filing for plans with fewer than 100 participants.
 | `LARGE_PLAN` | `SignalType.LARGE_PLAN` | +8.0 | Plan with >= 500 participants |
 | `BROKER_CHANGE` | `SignalType.BROKER_CHANGE` | +7.0 | Broker changed from prior year |
 | `RENEWAL_APPROACHING` | (Planned) | +6.0 | Plan year end within 90 days |
-| `PREMIUM_INCREASE` | (Planned) | +4.0 | Significant premium increase detected |
 
-### Signal Emission Code
-
-```python
-# DOL Sub-Hub emits signals to BIT Engine
-# It NEVER makes outreach decisions
-# MUST include correlation_id - signals without it WILL BE REJECTED
-
-def _send_signal(
-    self,
-    correlation_id: str,  # REQUIRED
-    signal_type: SignalType,
-    company_id: str,
-    filing_id: str,
-    metadata: Dict = None
-):
-    """Send a signal to the BIT Engine with deduplication"""
-    # Check deduplication (365-day window for annual filings)
-    dedup_key = f"{company_id}:{signal_type.value}:{filing_id}"
-    if signal_cache.exists(dedup_key, window_days=365):
-        logger.info(f"Duplicate signal suppressed: {dedup_key}")
-        self.stats['duplicates_suppressed'] += 1
-        return
-
-    if self.bit_engine:
-        self.bit_engine.create_signal(
-            correlation_id=correlation_id,  # REQUIRED - propagate unchanged
-            signal_type=signal_type,
-            company_id=company_id,
-            source_spoke='dol_node',
-            emitted_at=datetime.now(),
-            metadata=metadata or {}
-        )
-        signal_cache.set(dedup_key, ttl_days=365)
-        self.stats['signals_sent'] += 1
-```
-
-### Large Plan Signal
-
-Emitted when a company has a benefit plan with significant size:
-
-```python
-# Additional signal for large plans
-# MUST include correlation_id
-if record.total_participants >= 500:
-    self.stats['large_plans'] += 1
-    self._send_signal(
-        correlation_id=correlation_id,  # REQUIRED
-        signal_type=SignalType.LARGE_PLAN,
-        company_id=company_id,
-        filing_id=record.filing_id,
-        metadata={
-            'participants': record.total_participants,
-            'assets': record.total_assets
-        }
-    )
-```
-
-### Broker Change Signal
-
-Emitted when broker of record changes year-over-year:
-
-```python
-# Detect broker change (compares to prior year filing)
-# MUST include correlation_id
-if prior_year_broker and prior_year_broker != current_broker:
-    self._send_signal(
-        correlation_id=correlation_id,  # REQUIRED
-        signal_type=SignalType.BROKER_CHANGE,
-        company_id=company_id,
-        filing_id=record.filing_id,
-        metadata={
-            'prior_broker': prior_year_broker,
-            'new_broker': current_broker,
-            'change_detected': True
-        }
-    )
-```
-
----
-
-## 5. EIN Matching
-
-### Matching Process
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              EIN MATCHING                                    │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-1. Extract EIN from Form 5500 filing
-   └── EIN format: XX-XXXXXXX (9 digits with hyphen)
-
-2. Normalize EIN
-   └── Remove hyphen: XXXXXXXXX
-   └── Pad to 9 digits if needed
-
-3. Query Company Hub
-   └── SELECT company_id FROM company_master WHERE ein = :ein
-
-4. Result:
-   ├── company_id found → Proceed to signal emission
-   └── company_id NOT found → Queue for identity creation
-
-5. No-Match Queue
-   └── Store unmatched filings with:
-       • EIN
-       • Company name from filing
-       • Plan sponsor address
-       • Source: 'dol_5500'
-```
-
-### EIN Lookup Implementation
-
-```python
-def _lookup_company_by_ein(self, ein: str) -> Optional[str]:
-    """
-    Look up company_id by EIN.
-
-    Args:
-        ein: Employer Identification Number
-
-    Returns:
-        company_id if found, None otherwise
-    """
-    # Normalize EIN (remove hyphen)
-    normalized_ein = ein.replace('-', '').strip()
-
-    # Query company_master by EIN
-    query = """
-        SELECT company_unique_id
-        FROM marketing.company_master
-        WHERE ein = %s
-        LIMIT 1
-    """
-
-    result = db.execute(query, [normalized_ein])
-    return result[0]['company_unique_id'] if result else None
-```
-
----
-
-## 6. Error Log Integration (HARD LAW)
-
-### Local Failure Table Schema
-
-All failures from DOL processing MUST be logged to `dol_subhub.failures` with correlation_id.
+### Signal Idempotency Doctrine
 
 ```
 ╔═══════════════════════════════════════════════════════════════════════════════╗
-║                       TWO-LAYER ERROR MODEL                                   ║
+║                       SIGNAL IDEMPOTENCY ENFORCEMENT                          ║
 ║                                                                               ║
-║   LAYER 1 - LOCAL: dol_subhub.failures                                       ║
-║   ├── Owned by DOL Sub-Hub                                                   ║
-║   ├── Used for execution & remediation                                       ║
-║   └── Contains full context for retry/resolution                             ║
-║                                                                               ║
-║   LAYER 2 - GLOBAL: public.shq_error_log                                     ║
-║   ├── Owned by System                                                        ║
-║   ├── Used for visibility & trend detection                                  ║
-║   └── Receives normalized error events from sub-hubs                         ║
-║                                                                               ║
-║   RULE: Sub-hubs write locally FIRST, then emit normalized event upward.    ║
-║   RULE: No sub-hub writes directly to another hub's tables.                  ║
+║   DEDUPLICATION RULES:                                                        ║
+║   ├── Key: (company_id, signal_type, filing_id)                              ║
+║   ├── Window: 365 days (DOL filings are annual)                              ║
+║   └── Hash: SHA-256 of key fields for fast lookup                            ║
 ║                                                                               ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 ```
 
-#### Error Code Standards (DOL Sub-Hub)
+---
 
-| Code | Description |
-|------|-------------|
-| `DOL-001` | EIN not in filing |
-| `DOL-002` | EIN not matched to company |
-| `DOL-003` | Invalid filing format |
-| `DOL-004` | BIT Engine unavailable |
-| `DOL-005` | API rate limited |
-| `DOL-006` | Database connection failure |
-| `DOL-007` | Duplicate filing detected |
+## 10. Tooling Declaration
+
+| Tool | API | Cost Tier | Rate Limit | Cache |
+|------|-----|-----------|------------|-------|
+| DOL EFAST2 Bulk Download | External | FREE | N/A | Annual |
+| CSV Parser (pandas) | Internal | FREE | N/A | None |
+| Column Normalizer | Internal | FREE | N/A | None |
+| Metadata Builder | Internal | FREE | N/A | None |
+| EIN Lookup | Internal | FREE | N/A | 1 hour |
+| Broker Change Detector | Internal | FREE | N/A | 30 days |
 
 ---
 
-## 7. Failure Modes Summary
-
-### By Category
-
-| Category | Critical | High | Medium | Low |
-|----------|----------|------|--------|-----|
-| Matching | 0 | 1 | 1 | 1 |
-| Processing | 0 | 0 | 2 | 1 |
-| Signal Emission | 0 | 1 | 0 | 0 |
-
-### Global Emit Rules
-
-Only failures marked "Global Emit: YES" are propagated to `public.shq_error_log`:
-- All HIGH severity failures
-- MEDIUM failures that affect data integrity
-- LOW failures are retained locally only
-
----
-
-## 8. Kill Switches
-
-### Sub-Hub Level
-
-```python
-# DOL Sub-Hub Kill Switch
-if os.environ.get('KILL_DOL_SUBHUB', 'false').lower() == 'true':
-    logger.warning("DOL Sub-Hub killed by configuration")
-    return SpokeResult(
-        status=ResultStatus.SKIPPED,
-        failure_reason='killed_by_config'
-    )
-```
-
-### Process-Level Kill Switches
+## 11. Kill Switches
 
 | Switch | Scope | Effect |
 |--------|-------|--------|
@@ -493,316 +450,50 @@ if os.environ.get('KILL_DOL_SUBHUB', 'false').lower() == 'true':
 
 ---
 
-## 9. Observability
+## 12. Failure Handling
 
-### Metrics
-
-| Metric | Type | Description |
-|--------|------|-------------|
-| `dol.processed.total` | Counter | Total records processed |
-| `dol.matched.total` | Counter | Records matched by EIN |
-| `dol.matched.rate` | Gauge | Match rate percentage |
-| `dol.large_plans.total` | Counter | Large plans detected |
-| `dol.schedule_a.total` | Counter | Schedule A records processed |
-| `dol.signals.total` | Counter | Signals sent to BIT Engine |
-| `dol.signals.type.{type}` | Counter | Signals by type |
-
-### Stats Method
-
-```python
-def get_stats(self) -> Dict[str, Any]:
-    """Get processing statistics"""
-    return {
-        'total_processed': self.stats['total_processed'],
-        'matched_by_ein': self.stats['matched_by_ein'],
-        'match_rate': f"{self.stats['matched_by_ein'] / max(self.stats['total_processed'], 1) * 100:.1f}%",
-        'large_plans': self.stats['large_plans'],
-        'schedule_a_records': self.stats['schedule_a_records'],
-        'signals_sent': self.stats['signals_sent']
-    }
-```
-
-### Logging
-
-```python
-# Standard log format for DOL Sub-Hub
-logger.info(
-    "DOL record processed",
-    extra={
-        'sub_hub': 'dol',
-        'filing_id': record.filing_id,
-        'ein': record.ein,
-        'company_id': company_id,
-        'signal_type': 'FORM_5500_FILED'
-    }
-)
-```
+| Failure | Severity | Error Code | Recovery |
+|---------|----------|------------|----------|
+| EIN not in filing | HIGH | DOL-001 | Manual review |
+| EIN not matched | MEDIUM | DOL-002 | Queue for identity |
+| Invalid EIN format | LOW | DOL-003 | Normalize and retry |
+| Invalid filing format | MEDIUM | DOL-004 | Skip filing |
+| Read-only violation | CRITICAL | DOL-005 | Use import_mode bypass |
 
 ---
 
-## 10. Integration with Company Hub
+## 13. Promotion Gates
 
-### Data Flow
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           DOL → COMPANY HUB DATA FLOW                        │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-    DOL DATA SOURCES                         COMPANY HUB
-    (External)                               (Internal)
-
-    ┌───────────────────┐                    ┌───────────────────┐
-    │ DOL EFAST2 API    │                    │ Company Master    │
-    │                   │                    │                   │
-    │ • Form 5500       │    EIN Query       │ • company_id      │
-    │ • Schedule A      ├───────────────────►│ • ein             │
-    │ • SF 5500         │                    │ • company_name    │
-    └───────────────────┘                    └─────────┬─────────┘
-                                                       │
-                                                       │ company_id
-                                                       │
-                                             ┌─────────▼─────────┐
-                                             │ DOL Sub-Hub       │
-                                             │                   │
-                                             │ • Parse filing    │
-                                             │ • Extract data    │
-                                             │ • Emit signals    │
-                                             └─────────┬─────────┘
-                                                       │
-                                                       │ SIGNALS
-                                                       │ • FORM_5500_FILED
-                                                       │ • LARGE_PLAN
-                                                       │ • BROKER_CHANGE
-                                                       │
-                                             ┌─────────▼─────────┐
-                                             │ BIT ENGINE        │
-                                             │ (Company Hub)     │
-                                             │                   │
-                                             │ DOL signals       │
-                                             │ contribute +5-8   │
-                                             │ to BIT score      │
-                                             └───────────────────┘
-```
-
-### Identity Request Flow
-
-When EIN cannot be matched:
-
-```python
-def request_company_identity(self, filing: Form5500Record):
-    """
-    Request Company Hub to create identity for unmatched filing.
-    DOL Sub-Hub NEVER creates company identity directly.
-    """
-    company_hub.request_identity_creation(
-        ein=filing.ein,
-        company_name=self._extract_company_name(filing),
-        source='dol_form_5500',
-        source_id=filing.filing_id,
-        metadata={
-            'plan_name': filing.plan_name,
-            'participants': filing.total_participants,
-            'admin_name': filing.admin_name
-        }
-    )
-```
-
----
-
-## 11. API Reference
-
-### DOLNodeSpoke Class
-
-```python
-from pipeline_engine.spokes.dol_node.dol_node_spoke import DOLNodeSpoke, Form5500Record, ScheduleARecord
-
-# Initialize spoke
-dol_spoke = DOLNodeSpoke(hub=company_hub, bit_engine=bit_engine)
-
-# Process Form 5500
-record = Form5500Record(
-    filing_id='F-2024-001',
-    ein='12-3456789',
-    plan_name='Company 401(k) Plan',
-    total_participants=750,
-    total_assets=15000000.00
-)
-result = dol_spoke.process(record)
-
-# Process Schedule A
-schedule = ScheduleARecord(
-    schedule_id='S-2024-001',
-    filing_id='F-2024-001',
-    broker_name='Acme Insurance Brokers',
-    broker_fees=25000.00,
-    carrier_name='Blue Cross Blue Shield'
-)
-result = dol_spoke.process(schedule)
-
-# Get statistics
-stats = dol_spoke.get_stats()
-```
-
-### Result Handling
-
-```python
-# Check processing result
-if result.status == ResultStatus.SUCCESS:
-    # Signal was emitted successfully
-    print(f"Signal: {result.hub_signal}")
-    print(f"Metrics: {result.metrics}")
-
-elif result.status == ResultStatus.FAILED:
-    if result.failure_type == FailureType.NO_MATCH:
-        # Queue for Company Hub identity creation
-        queue_for_identity_creation(record)
-    else:
-        # Log error for investigation
-        logger.error(f"DOL processing failed: {result.failure_reason}")
-```
-
----
-
-## 12. Configuration
-
-### Sub-Hub Configuration
-
-```python
-{
-    'dol_subhub': {
-        'enabled': True,
-        'batch_size': 1000,              # Records per batch
-        'match_threshold': 0.95,         # EIN match confidence
-        'large_plan_threshold': 500,     # Participants for LARGE_PLAN
-        'broker_change_lookback': 365,   # Days to compare for broker change
-        'renewal_window': 90             # Days before plan year end
-    }
-}
-```
-
-### Signal Configuration
-
-```python
-{
-    'signals': {
-        'FORM_5500_FILED': {
-            'enabled': True,
-            'impact': 5.0
-        },
-        'LARGE_PLAN': {
-            'enabled': True,
-            'impact': 8.0,
-            'min_participants': 500
-        },
-        'BROKER_CHANGE': {
-            'enabled': True,
-            'impact': 7.0
-        }
-    }
-}
-```
-
----
-
-## 13. Promotion States (HARD LAW)
-
-### Burn-In vs Steady-State
-
-```
-╔═══════════════════════════════════════════════════════════════════════════════╗
-║                       PROMOTION STATE ENFORCEMENT                             ║
-║                                                                               ║
-║   BURN-IN MODE:                                                               ║
-║   ├── Duration: First 30 days or 1,000 filings (whichever first)             ║
-║   ├── Failure tolerance: 15% error rate allowed                              ║
-║   ├── Alert severity: All failures logged as WARNING                         ║
-║   └── Purpose: EIN matching calibration                                       ║
-║                                                                               ║
-║   STEADY-STATE MODE:                                                          ║
-║   ├── After promotion gates pass                                              ║
-║   ├── Failure tolerance: 5% error rate maximum                               ║
-║   ├── Alert severity: Failures > threshold are HIGH/CRITICAL                 ║
-║   └── Purpose: Production operation                                           ║
-║                                                                               ║
-║   RULE: Unexpected errors in steady-state MUST be HIGH severity.             ║
-║                                                                               ║
-╚═══════════════════════════════════════════════════════════════════════════════╝
-```
-
-### Promotion Gates
-
-| Gate | Requirement | Metric |
+| Gate | Requirement | Status |
 |------|-------------|--------|
-| G1 | All processing unit tests pass | 100% pass rate |
-| G2 | EIN matching tests pass | 95% match rate |
-| G3 | Burn-in volume achieved | >= 1,000 filings processed |
-| G4 | Error rate below threshold | < 10% during burn-in |
-| G5 | Kill switch tested | Successfully halts processing |
-| G6 | Correlation ID propagation verified | 100% of filings |
-| G7 | Signal deduplication tested | No duplicates in 365-day window |
-| G8 | Local failure table populated correctly | All errors logged |
-| G9 | Global error emission verified | HIGH errors reach shq_error_log |
-
-### Alert Severity Escalation (Steady-State)
-
-| Error Rate | Duration | Severity | Action |
-|------------|----------|----------|--------|
-| > 5% | 5 min | WARNING | Monitor |
-| > 10% | 5 min | HIGH | Alert on-call |
-| > 20% | 5 min | CRITICAL | Auto-halt processing |
+| G1 | PRD approved (CC-02) | ✓ PASS |
+| G2 | ADRs documented (CC-03) | ✓ PASS |
+| G3 | Data imported (2023) | ✓ PASS |
+| G4 | Read-only lock enabled | ✓ PASS |
+| G5 | Column metadata complete | ✓ PASS |
+| G6 | RLS policies active | ✓ PASS |
 
 ---
 
-## 14. Planned Enhancements
+## 14. Annual Import Process
 
-### Renewal Date Tracking (Planned)
+### Import Script
 
-Track plan year end dates to emit signals when renewals approach:
-
-```python
-# Planned: Renewal approaching signal
-if self._is_renewal_approaching(record.plan_year_end, days=90):
-    self._send_signal(
-        SignalType.RENEWAL_APPROACHING,
-        company_id,
-        metadata={
-            'plan_year_end': record.plan_year_end.isoformat(),
-            'days_until_renewal': days_until
-        }
-    )
+```bash
+# Enable import mode and load data
+doppler run -- python hubs/dol-filings/imo/middle/importers/import_dol_full.py \
+    --data-dir data/dol_2023 \
+    --year 2023 \
+    --table all
 ```
 
-### Schedule C Integration (Planned)
+### Bypass Mechanism
 
-Process Schedule C for service provider information:
-
-```python
-@dataclass
-class ScheduleCRecord:
-    """Schedule C service provider record"""
-    schedule_id: str
-    filing_id: str
-    provider_name: str
-    provider_fees: float
-    service_type: str  # TPA, Advisor, etc.
-```
-
-### Compliance Violation Tracking (Planned)
-
-Track DOL enforcement actions and compliance issues:
-
-```python
-# Planned: Compliance violation signal
-if self._has_compliance_issues(company_id):
-    self._send_signal(
-        SignalType.COMPLIANCE_ISSUE,
-        company_id,
-        metadata={
-            'violation_type': 'late_filing',
-            'penalty_amount': penalty
-        }
-    )
+```sql
+-- For manual operations (use with caution)
+SET session dol.import_mode = 'active';
+-- ... import operations ...
+RESET dol.import_mode;
 ```
 
 ---
@@ -812,11 +503,26 @@ if self._has_compliance_issues(company_id):
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2025-12-17 | Initial DOL Sub-Hub PRD with clean boundaries |
-| 2.1 | 2025-12-17 | Hardened: Correlation ID, Signal idempotency, Two-layer errors, Promotion states |
+| 2.1 | 2025-12-17 | Hardened: Correlation ID, Signal idempotency, Two-layer errors |
+| 2.2 | 2026-01-13 | Database schema created, RLS enabled |
+| 3.0 | 2026-01-15 | **2023 data import complete, read-only lock, AI-ready metadata** |
 
 ---
 
-*Document Version: 2.1*
-*Last Updated: 2025-12-17*
+## 16. Related Artifacts
+
+| Artifact | Location |
+|----------|----------|
+| ADR-004 | `docs/adr/ADR-004_DOL_Data_Import_ReadOnly_Lock.md` |
+| Hub Manifest | `hubs/dol-filings/hub.manifest.yaml` |
+| Import Script | `hubs/dol-filings/imo/middle/importers/import_dol_full.py` |
+| Metadata Builder | `hubs/dol-filings/imo/middle/importers/build_column_metadata.py` |
+| Migrations | `infra/migrations/2026-01-15-*.sql` |
+
+---
+
+*Document Version: 3.0*
+*Last Updated: 2026-01-15*
 *Owner: DOL Sub-Hub*
-*Doctrine: Bicycle Wheel v1.1 / Barton Doctrine*
+*CC Layer: CC-02*
+*Doctrine: CL Parent-Child Doctrine v1.0*

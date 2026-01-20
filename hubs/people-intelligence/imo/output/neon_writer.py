@@ -183,7 +183,8 @@ class NeonDatabaseWriter:
 
             for idx, row in people_df.iterrows():
                 try:
-                    # Extract fields
+                    # Extract fields - preserve original data_source if provided
+                    raw_data_source = row.get('data_source', '') or row.get('source', '')
                     person_data = {
                         'person_unique_id': str(row.get('person_id', '')),
                         'full_name': row.get('full_name', '') or f"{row.get('first_name', '')} {row.get('last_name', '')}".strip(),
@@ -198,7 +199,7 @@ class NeonDatabaseWriter:
                         'email_confidence': row.get('email_confidence', ''),
                         'pattern_used': row.get('pattern_used', ''),
                         'slot_type': row.get('slot_type', ''),
-                        'data_source': 'people_pipeline',
+                        'data_source': raw_data_source if raw_data_source else 'people_pipeline',
                         'correlation_id': correlation_id,
                     }
 
@@ -297,32 +298,37 @@ class NeonDatabaseWriter:
 
             for idx, row in slot_df.iterrows():
                 try:
+                    # Extract data_source for history tracking
+                    raw_data_source = row.get('data_source', '') or row.get('source', '')
                     slot_data = {
                         'company_unique_id': row.get('company_id', ''),
                         'person_unique_id': row.get('person_id', ''),
                         'slot_type': row.get('slot_type', ''),
                         'slot_reason': row.get('slot_reason', ''),
                         'seniority_score': float(row.get('seniority_score', 0) or 0),
+                        'data_source': raw_data_source if raw_data_source else 'people_pipeline',
                     }
 
                     if not slot_data['company_unique_id'] or not slot_data['person_unique_id']:
                         continue
 
+                    # Note: Uses people.company_slot (not marketing.company_slot)
+                    # The trg_slot_assignment_history trigger will capture history on person changes
                     cursor.execute("""
-                        INSERT INTO marketing.company_slot (
-                            company_unique_id, person_unique_id, slot_type,
-                            slot_reason, seniority_score, is_filled, filled_at, created_at, updated_at
+                        INSERT INTO people.company_slot (
+                            company_slot_unique_id, company_unique_id, person_unique_id, slot_type,
+                            source_system, is_filled, filled_at, confidence_score, created_at, slot_status
                         ) VALUES (
-                            %(company_unique_id)s, %(person_unique_id)s, %(slot_type)s,
-                            %(slot_reason)s, %(seniority_score)s, TRUE, NOW(), NOW(), NOW()
+                            gen_random_uuid()::text, %(company_unique_id)s, %(person_unique_id)s, %(slot_type)s,
+                            %(data_source)s, TRUE, NOW(), %(seniority_score)s, NOW(), 'filled'
                         )
                         ON CONFLICT (company_unique_id, slot_type) DO UPDATE SET
                             person_unique_id = EXCLUDED.person_unique_id,
-                            slot_reason = EXCLUDED.slot_reason,
-                            seniority_score = EXCLUDED.seniority_score,
+                            source_system = EXCLUDED.source_system,
+                            confidence_score = EXCLUDED.confidence_score,
                             is_filled = TRUE,
                             filled_at = NOW(),
-                            updated_at = NOW()
+                            slot_status = 'filled'
                     """, slot_data)
 
                     result.records_written += 1

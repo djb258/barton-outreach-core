@@ -41,7 +41,7 @@ NEON_CONFIG = {
 }
 
 
-def backfill_ein(dry_run=False, threshold=0.8, limit=None):
+def backfill_ein(dry_run=False, threshold=0.8, limit=None, state=None):
     """
     Backfill EIN from DOL Form 5500 data to company.company_master.
 
@@ -49,6 +49,7 @@ def backfill_ein(dry_run=False, threshold=0.8, limit=None):
         dry_run: If True, don't make any changes
         threshold: Minimum trigram similarity threshold (0.0-1.0)
         limit: Optional limit on records to process
+        state: Optional state filter (e.g., 'NC', 'PA')
     """
     if sys.platform == 'win32':
         sys.stdout.reconfigure(encoding='utf-8')
@@ -63,6 +64,7 @@ def backfill_ein(dry_run=False, threshold=0.8, limit=None):
     print(f"Mode: {'DRY RUN' if dry_run else 'LIVE'}")
     print(f"Similarity threshold: {threshold}")
     print(f"Limit: {limit or 'None'}")
+    print(f"State filter: {state or 'All states'}")
     print()
 
     # Step 1: Check current EIN status
@@ -85,6 +87,8 @@ def backfill_ein(dry_run=False, threshold=0.8, limit=None):
     print("Finding matches (State → City → Name)...")
 
     limit_clause = f"LIMIT {limit}" if limit else ""
+    state_clause = "AND cm.address_state = %s" if state else ""
+    params = [threshold, state] if state else [threshold]
 
     cur.execute(f'''
         WITH ranked_matches AS (
@@ -107,11 +111,12 @@ def backfill_ein(dry_run=False, threshold=0.8, limit=None):
             WHERE cm.ein IS NULL
               AND d.sponsor_dfe_ein IS NOT NULL
               AND SIMILARITY(LOWER(cm.company_name), LOWER(d.sponsor_dfe_name)) > %s
+              {state_clause}
         )
         SELECT * FROM ranked_matches WHERE rn = 1
         ORDER BY similarity DESC
         {limit_clause}
-    ''', (threshold,))
+    ''', params)
 
     matches = cur.fetchall()
 
@@ -228,6 +233,7 @@ def main():
     parser.add_argument('--dry-run', action='store_true', help='Preview changes without updating')
     parser.add_argument('--threshold', type=float, default=0.8, help='Minimum similarity threshold (default: 0.8)')
     parser.add_argument('--limit', type=int, help='Limit number of records to process')
+    parser.add_argument('--state', type=str, help='Filter by state (e.g., NC, PA)')
 
     args = parser.parse_args()
 
@@ -238,7 +244,8 @@ def main():
     backfill_ein(
         dry_run=args.dry_run,
         threshold=args.threshold,
-        limit=args.limit
+        limit=args.limit,
+        state=args.state.upper() if args.state else None
     )
 
 

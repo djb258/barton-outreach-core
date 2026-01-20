@@ -1,0 +1,74 @@
+# HEIR Doctrine Template
+# Copy to hub root as: heir.doctrine.yaml
+# Replace all <placeholders> with actual values
+# Reference: CANONICAL_ARCHITECTURE_DOCTRINE.md
+
+# --- Conformance ---
+conformance:
+  doctrine_version: "1.1.0"
+  ctb_version: "1.0.0"
+  schema_version: "HEIR/2.0"
+
+# --- Sovereign Declaration (CC-01) ---
+sovereign:
+  identity: "<sovereign-id>"
+  boundary: "<sovereign-boundary-description>"
+
+# --- Hub Identity (CC-02) ---
+hub:
+  name: "<hub-name>"
+  id: "<hub-id>"
+  purpose: "<one-line-purpose>"
+  ctb_placement:
+    trunk: "<trunk>"
+    branch: "<branch>"
+    leaf: "<leaf>"
+
+# --- Process Identity (CC-04) ---
+process:
+  id_pattern: "<hub-id>-${TIMESTAMP}-${RANDOM_HEX}"
+  session_pattern: "<hub-id>-session-${SESSION_ID}"
+
+# --- IMO Structure ---
+imo:
+  ingress:
+    description: "<ingress-layer-description>"
+    spokes: []
+  middle:
+    description: "<middle-layer-description>"
+    owns_logic: true
+    owns_state: true
+  egress:
+    description: "<egress-layer-description>"
+    spokes: []
+
+# --- Services (Abstract) ---
+services:
+  - name: "<service-name>"
+    port: "<service-port>"
+    type: "<service-type>"
+
+# --- Environment (Abstract) ---
+environment:
+  secrets_provider: "<secrets-provider-name>"
+  variables:
+    - key: "<VARIABLE_NAME>"
+      source: "${SECRETS_PROVIDER:<KEY>}"
+
+# --- Contracts ---
+contracts:
+  acceptance:
+    - "<acceptance-criterion-1>"
+    - "<acceptance-criterion-2>"
+
+# --- Build Actions ---
+build:
+  ci_checks:
+    - "<ci-check-command>"
+  validation:
+    - "<validation-command>"
+
+# --- Traceability ---
+traceability:
+  prd: "<prd-reference>"
+  adrs: []

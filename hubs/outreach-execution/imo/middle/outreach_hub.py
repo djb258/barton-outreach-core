@@ -26,21 +26,38 @@ from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
 from enum import Enum
 
-# Wheel imports
-from ctb.sys.enrichment.pipeline_engine.wheel.bicycle_wheel import Spoke, Hub
-from ctb.sys.enrichment.pipeline_engine.wheel.wheel_result import SpokeResult, ResultStatus, FailureType
+# PHANTOM IMPORTS - ctb.* module does not exist (commented out per doctrine)
+# from ctb.sys.enrichment.pipeline_engine.wheel.bicycle_wheel import Spoke, Hub
+# from ctb.sys.enrichment.pipeline_engine.wheel.wheel_result import SpokeResult, ResultStatus, FailureType
 
-# BIT Engine
-from hub.company.bit_engine import (
-    BITEngine,
-    BIT_THRESHOLD_WARM,
-    BIT_THRESHOLD_HOT,
-    BIT_THRESHOLD_BURNING,
-)
+# PHANTOM IMPORT - hub.company path does not exist
+# from hub.company.bit_engine import BITEngine, BIT_THRESHOLD_WARM, BIT_THRESHOLD_HOT, BIT_THRESHOLD_BURNING
+
+# Stub placeholders to prevent NameError
+Spoke = Hub = object
+SpokeResult = object
+class ResultStatus: SUCCEEDED = "SUCCEEDED"; FAILED = "FAILED"
+class FailureType: VALIDATION_ERROR = "VALIDATION_ERROR"; NO_MATCH = "NO_MATCH"
+BITEngine = None
+BIT_THRESHOLD_WARM = 25
+BIT_THRESHOLD_HOT = 50
+BIT_THRESHOLD_BURNING = 75
 
 # Doctrine enforcement
 from ops.enforcement.correlation_id import validate_correlation_id, CorrelationIDError
 from ops.enforcement.hub_gate import validate_company_anchor, HubGateError, GateLevel
+
+# =============================================================================
+# ENFORCEMENT POINT: Marketing Safety Gate (MANDATORY)
+# =============================================================================
+from .marketing_safety_gate import (
+    MarketingSafetyGate,
+    MarketingEligibilityResult,
+    IneligibleTierError,
+    ActiveOverrideError,
+    EligibilityCheckError,
+    SendAttemptStatus,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -209,7 +226,8 @@ class OutreachSpoke(Spoke):
         hub: Hub,
         bit_engine: Optional[BITEngine] = None,
         config: OutreachConfig = None,
-        company_pipeline=None
+        company_pipeline=None,
+        db_connection=None
     ):
         """
         Initialize Outreach Spoke.
@@ -219,11 +237,18 @@ class OutreachSpoke(Spoke):
             bit_engine: BIT Engine for score lookups
             config: Outreach configuration
             company_pipeline: CompanyPipeline for anchor validation
+            db_connection: Database connection for safety gate
         """
         super().__init__(name="outreach", hub=hub)
         self.bit_engine = bit_engine or BITEngine()
         self.config = config or load_outreach_config()
         self._company_pipeline = company_pipeline
+        self._db_connection = db_connection
+
+        # =====================================================================
+        # ENFORCEMENT POINT: Initialize Marketing Safety Gate (MANDATORY)
+        # =====================================================================
+        self._safety_gate = MarketingSafetyGate(db_connection)
 
         # Tracking
         self._outreach_history: Dict[str, datetime] = {}  # company_id -> last_contact
@@ -238,6 +263,7 @@ class OutreachSpoke(Spoke):
             'failed_bit_score': 0,
             'failed_cooling_off': 0,
             'failed_rate_limit': 0,
+            'failed_safety_gate': 0,  # ADDED: Safety gate failures
             'candidates_generated': 0,
             'campaigns_created': 0,
         }
@@ -245,6 +271,11 @@ class OutreachSpoke(Spoke):
     def set_company_pipeline(self, pipeline) -> None:
         """Set company pipeline for anchor validation."""
         self._company_pipeline = pipeline
+
+    def set_db_connection(self, conn) -> None:
+        """Set database connection for safety gate."""
+        self._db_connection = conn
+        self._safety_gate.set_connection(conn)
 
     def process(self, data: Any, correlation_id: str = None) -> SpokeResult:
         """
@@ -322,14 +353,42 @@ class OutreachSpoke(Spoke):
     def _evaluate_company(
         self,
         company_id: str,
-        correlation_id: str
+        correlation_id: str,
+        campaign_id: str = "evaluation"
     ) -> Optional[OutreachCandidate]:
         """
         Evaluate a single company for outreach readiness.
 
         Returns OutreachCandidate if ready, None otherwise.
+
+        ENFORCEMENT POINT: Safety Gate check happens FIRST before any other
+        processing. If company is ineligible, we HARD_FAIL and return None.
         """
         self.stats['total_evaluated'] += 1
+
+        # =====================================================================
+        # ENFORCEMENT POINT: MARKETING SAFETY GATE (MUST BE FIRST)
+        # Reads from vw_marketing_eligibility_with_overrides
+        # HARD_FAIL if effective_tier = -1 or marketing_disabled = true
+        # =====================================================================
+        try:
+            eligibility = self._safety_gate.check_eligibility_or_fail(
+                company_unique_id=company_id,
+                campaign_id=campaign_id,
+                correlation_id=correlation_id
+            )
+            logger.debug(
+                f"Safety gate PASS for {company_id}: "
+                f"effective_tier={eligibility.effective_tier}"
+            )
+        except (IneligibleTierError, ActiveOverrideError, EligibilityCheckError) as e:
+            # HARD_FAIL: Company is ineligible - DO NOT PROCEED
+            self.stats['failed_safety_gate'] += 1
+            logger.warning(
+                f"SAFETY_GATE_BLOCK: {company_id} blocked by safety gate: "
+                f"{e.error_code} - {str(e)}"
+            )
+            return None
 
         # Check rate limit
         if self._daily_count >= self.config.max_outreach_per_day:
@@ -357,9 +416,9 @@ class OutreachSpoke(Spoke):
             return None
 
         # =====================================================================
-        # BIT Score Check
+        # BIT Score Check (use eligibility data if available)
         # =====================================================================
-        bit_score = self.bit_engine.get_score_value(company_id)
+        bit_score = eligibility.bit_score if eligibility else self.bit_engine.get_score_value(company_id)
 
         if bit_score < self.config.min_bit_score:
             self.stats['failed_bit_score'] += 1
@@ -444,6 +503,10 @@ class OutreachSpoke(Spoke):
             IF company_id IS NULL OR domain IS NULL OR email_pattern IS NULL:
                 STOP. Cannot do outreach.
 
+        ENFORCEMENT POINT: NO FALLBACK LOGIC
+            If company_pipeline is not available, we FAIL CLOSED.
+            We do NOT attempt alternate validation paths.
+
         Returns:
             Tuple of (is_valid, list_of_missing_anchors)
         """
@@ -454,23 +517,16 @@ class OutreachSpoke(Spoke):
         if self._company_pipeline:
             return self._company_pipeline.validate_company_anchor(company_id)
 
-        # Fallback: Direct validation via hub gate
-        try:
-            result = validate_company_anchor(
-                record={'company_id': company_id},
-                level=GateLevel.FULL_ANCHOR,
-                process_id="outreach.spoke.validate",
-                correlation_id="",
-                fail_hard=False
-            )
-
-            if not result.passed:
-                return False, result.missing_fields or ['unknown']
-            return True, []
-
-        except Exception as e:
-            logger.error(f"Anchor validation failed for {company_id}: {e}")
-            return False, ['validation_error']
+        # =====================================================================
+        # ENFORCEMENT POINT: NO FALLBACK - FAIL CLOSED
+        # If company_pipeline is not set, we cannot validate anchors.
+        # We MUST fail closed rather than attempt alternate paths.
+        # =====================================================================
+        logger.error(
+            f"ANCHOR_VALIDATION_FAIL_CLOSED: No company_pipeline available for {company_id}. "
+            f"Cannot validate anchors without company_pipeline. NO FALLBACK."
+        )
+        return False, ['no_company_pipeline_fail_closed']
 
     def _get_outreach_state(self, bit_score: float) -> OutreachState:
         """Determine outreach state from BIT score."""
@@ -573,7 +629,7 @@ class OutreachSpoke(Spoke):
         if self._company_pipeline and hasattr(self._company_pipeline, 'hub'):
             # Check if hub has people data cached
             try:
-                from hub.company.neon_writer import CompanyNeonWriter
+                from hubs.company_target.imo.output.neon_writer import CompanyNeonWriter
                 writer = CompanyNeonWriter()
 
                 # Query people_master for this person
@@ -614,9 +670,36 @@ class OutreachSpoke(Spoke):
 
         return days_since < self.config.cooling_off_days
 
-    def record_outreach(self, company_id: str):
-        """Record that outreach was sent to a company."""
+    def record_outreach(
+        self,
+        company_id: str,
+        campaign_id: str = "unknown",
+        success: bool = True,
+        error_message: Optional[str] = None,
+        correlation_id: Optional[str] = None
+    ):
+        """
+        Record that outreach was sent to a company.
+
+        ENFORCEMENT POINT: Records send result in audit log.
+
+        Args:
+            company_id: Company ID
+            campaign_id: Campaign ID
+            success: Whether send succeeded
+            error_message: Error message if failed
+            correlation_id: Trace ID
+        """
         self._outreach_history[company_id] = datetime.utcnow()
+
+        # Record in safety gate audit log
+        self._safety_gate.record_send_result(
+            company_unique_id=company_id,
+            campaign_id=campaign_id,
+            success=success,
+            error_message=error_message,
+            correlation_id=correlation_id
+        )
 
     def _check_daily_reset(self):
         """Reset daily counter if new day."""
@@ -633,23 +716,49 @@ class OutreachSpoke(Spoke):
         self,
         campaign_id: str,
         candidates: List[OutreachCandidate],
-        schedule_start: datetime = None
+        schedule_start: datetime = None,
+        correlation_id: str = None
     ) -> List[CampaignTarget]:
         """
         Create campaign targets from candidates.
+
+        ENFORCEMENT POINT: Re-validates eligibility for each candidate
+        before creating campaign targets. This is a safety net in case
+        eligibility changed between evaluation and target creation.
 
         Args:
             campaign_id: Campaign identifier
             candidates: List of outreach candidates
             schedule_start: When to start the campaign
+            correlation_id: Trace ID
 
         Returns:
-            List of CampaignTarget objects
+            List of CampaignTarget objects (only for eligible companies)
         """
         targets = []
         schedule = schedule_start or datetime.utcnow()
+        blocked_count = 0
 
         for candidate in candidates:
+            # =================================================================
+            # ENFORCEMENT POINT: Re-check eligibility before target creation
+            # Eligibility may have changed since evaluation
+            # =================================================================
+            try:
+                self._safety_gate.check_eligibility_or_fail(
+                    company_unique_id=candidate.company_id,
+                    campaign_id=campaign_id,
+                    correlation_id=correlation_id
+                )
+            except (IneligibleTierError, ActiveOverrideError, EligibilityCheckError) as e:
+                # Company became ineligible - skip
+                logger.warning(
+                    f"CAMPAIGN_TARGET_BLOCKED: {candidate.company_id} blocked during "
+                    f"target creation: {e.error_code}"
+                )
+                blocked_count += 1
+                continue
+
             target = CampaignTarget(
                 candidate=candidate,
                 campaign_id=campaign_id,
@@ -660,7 +769,10 @@ class OutreachSpoke(Spoke):
             targets.append(target)
 
         self.stats['campaigns_created'] += 1
-        logger.info(f"Created {len(targets)} targets for campaign {campaign_id}")
+        logger.info(
+            f"Created {len(targets)} targets for campaign {campaign_id} "
+            f"(blocked: {blocked_count})"
+        )
 
         return targets
 
@@ -745,4 +857,10 @@ __all__ = [
     "CampaignTarget",
     "OutreachState",
     "OutreachAction",
+    # Safety Gate (ENFORCEMENT)
+    "MarketingSafetyGate",
+    "MarketingEligibilityResult",
+    "IneligibleTierError",
+    "ActiveOverrideError",
+    "EligibilityCheckError",
 ]

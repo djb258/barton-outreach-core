@@ -244,8 +244,11 @@ Where:
 | Attribute | Details |
 |-----------|---------|
 | **File** | `spokes/people/phases/phase5_email_generation.py` |
+| **Production Implementation** | `hubs/people-intelligence/imo/middle/phases/ceo_email_pipeline.py` |
 | **Input** | Matched people + Pattern DataFrame |
 | **Output** | People with generated emails |
+
+> **Production Note (2026-01-14):** The CEO Email Pipeline (`ceo_email_pipeline.py`) implements Phases 5-8 in a single unified pipeline with multi-slot support (CEO, CFO, HR, CTO, CMO, COO). See [ADR-003](adr/ADR-003_CEO_Email_Pipeline_Implementation.md) for details.
 
 #### Email Generation Waterfall
 
@@ -263,15 +266,21 @@ Where:
 | Attribute | Details |
 |-----------|---------|
 | **File** | `spokes/people/phases/phase6_slot_assignment.py` |
+| **Production Implementation** | `hubs/people-intelligence/imo/middle/phases/ceo_email_pipeline.py` |
 | **Input** | People with emails |
 | **Output** | Slotted + unslotted people |
 
-#### Slot Hierarchy (HR-Focused)
+#### Slot Hierarchy (Executive-Focused)
 
 | Slot | Seniority Score | Keywords |
 |------|-----------------|----------|
-| **CHRO** | 100 | chief hr, chief people, chro, cpo, vp hr, svp hr, evp hr |
-| **HR_MANAGER** | 80 | hr director, hr manager, head of hr, hr lead |
+| **CEO** | 100 | chief executive, president, ceo, managing director |
+| **CFO** | 95 | chief financial, cfo, vp finance, finance director |
+| **CTO** | 90 | chief technology, cto, vp engineering |
+| **CMO** | 85 | chief marketing, cmo, vp marketing |
+| **COO** | 85 | chief operating, coo, vp operations |
+| **CHRO/HR** | 80 | chief hr, chief people, chro, hr director, vp hr |
+| **HR_MANAGER** | 70 | hr manager, head of hr, hr lead |
 | **BENEFITS_LEAD** | 60 | benefits director, total rewards, compensation |
 | **PAYROLL_ADMIN** | 50 | payroll director, payroll manager |
 | **HR_SUPPORT** | 30 | hr coordinator, hr specialist, hrbp, hr generalist |

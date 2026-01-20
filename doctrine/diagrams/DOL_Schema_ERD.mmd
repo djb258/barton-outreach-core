@@ -1,0 +1,100 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#2563eb', 'primaryTextColor': '#fff', 'primaryBorderColor': '#1e40af', 'lineColor': '#64748b', 'secondaryColor': '#f59e0b', 'tertiaryColor': '#10b981'}}}%%
+
+erDiagram
+    %% ============================================================
+    %% DOL SCHEMA ENTITY RELATIONSHIP DIAGRAM
+    %% CC Layer: CC-03 | Hub: DOL Sub-Hub (04.04.03)
+    %% Status: HARDENED 2026-01-15
+    %% ============================================================
+
+    FORM_5500 {
+        uuid filing_id PK "Unique filing identifier"
+        varchar ack_id UK "DOL acknowledgment ID"
+        varchar sponsor_dfe_ein "Employer ID (9 digits)"
+        varchar sponsor_dfe_name "Plan sponsor name"
+        varchar spons_dfe_mail_us_state "Sponsor state (2-letter)"
+        varchar form_plan_year_begin_date "Plan year start (renewal)"
+        varchar plan_eff_date "Plan effective date"
+        numeric tot_partcp_boy_cnt "Participants at BOY"
+        numeric tot_assets_eoy_amt "Total assets at EOY"
+        varchar form_year "Filing year (2023)"
+        varchar admin_name "Administrator name"
+        varchar admin_ein "Administrator EIN"
+        timestamp created_at "Record created"
+        timestamp updated_at "Record updated"
+    }
+
+    FORM_5500_SF {
+        uuid filing_id PK "Unique filing identifier"
+        varchar ack_id UK "DOL acknowledgment ID"
+        varchar sf_spons_ein "Employer ID (9 digits)"
+        varchar sf_sponsor_name "Plan sponsor name"
+        varchar sf_spons_us_state "Sponsor state (2-letter)"
+        varchar sf_plan_year_begin_date "Plan year start (renewal)"
+        varchar sf_plan_eff_date "Plan effective date"
+        numeric sf_tot_partcp_boy_cnt "Participants at BOY"
+        numeric sf_tot_assets_eoy_amt "Total assets at EOY"
+        varchar form_year "Filing year (2023)"
+        timestamp created_at "Record created"
+        timestamp updated_at "Record updated"
+    }
+
+    SCHEDULE_A {
+        uuid schedule_id PK "Unique schedule identifier"
+        uuid filing_id FK "Links to form_5500"
+        varchar ack_id "DOL acknowledgment ID"
+        varchar sch_a_ein "Plan EIN"
+        varchar ins_carrier_name "Insurance carrier name"
+        varchar ins_carrier_ein "Carrier EIN"
+        varchar ins_carrier_naic_code "NAIC code (5 digits)"
+        numeric ins_broker_comm_tot_amt "Broker commissions"
+        numeric ins_broker_fees_tot_amt "Broker fees"
+        varchar wlfr_bnft_health_ind "Health benefits Y/N"
+        varchar wlfr_bnft_dental_ind "Dental benefits Y/N"
+        varchar wlfr_bnft_vision_ind "Vision benefits Y/N"
+        varchar wlfr_bnft_life_insur_ind "Life insurance Y/N"
+        varchar sponsor_state "State (derived)"
+        varchar sponsor_name "Name (derived)"
+        varchar sch_a_plan_year_begin_date "Plan year (renewal)"
+        varchar form_year "Filing year (2023)"
+    }
+
+    COLUMN_METADATA {
+        serial id PK "Auto-increment ID"
+        varchar table_name "Source table"
+        varchar column_name "Database column"
+        varchar column_id UK "Unique ID (DOL_*)"
+        text description "Human-readable description"
+        varchar category "Category (Sponsor, Insurance)"
+        varchar data_type "Format (CURRENCY, DATE)"
+        varchar format_pattern "Pattern (YYYY-MM-DD)"
+        integer max_length "Max character length"
+        text_array search_keywords "Search terms"
+        boolean is_pii "PII flag"
+        boolean is_searchable "Searchable flag"
+        text_array example_values "Sample values"
+    }
+
+    RENEWAL_CALENDAR {
+        uuid calendar_id PK "Unique calendar ID"
+        varchar company_id FK "Company reference"
+        varchar ein "Employer ID"
+        varchar renewal_month "Month (01-12)"
+        varchar plan_year "Plan year"
+        timestamp next_renewal_date "Next renewal date"
+        varchar source "Data source"
+    }
+
+    %% Relationships
+    FORM_5500 ||--o{ SCHEDULE_A : "has attachments"
+    FORM_5500 ||--o{ RENEWAL_CALENDAR : "generates"
+    FORM_5500_SF ||--o{ RENEWAL_CALENDAR : "generates"
+    COLUMN_METADATA }|--|| FORM_5500 : "documents"
+    COLUMN_METADATA }|--|| FORM_5500_SF : "documents"
+    COLUMN_METADATA }|--|| SCHEDULE_A : "documents"
+
+    %% Notes
+    %% - Form 5500-SF does NOT have Schedule A attachments
+    %% - Schedule A links to Form 5500 via ACK_ID
+    %% - All tables except column_metadata are READ-ONLY
+    %% - Total: 1.33M rows, 441 documented columns
