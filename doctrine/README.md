@@ -1,9 +1,36 @@
 # SVG-PLE Doctrine Library
 
 **Version**: 1.0.0
-**Last Updated**: 2025-11-07
-**Barton Doctrine Compliance**: 100% ✅
-**Status**: Production Ready
+**Last Updated**: 2026-01-20
+**Barton Doctrine Compliance**: 100%
+**Status**: v1.0 OPERATIONAL BASELINE
+
+---
+
+## v1.0 OPERATIONAL BASELINE STATUS
+
+**Certification Date**: 2026-01-19
+**Certification Status**: PASS (Safe to enable live marketing)
+**Baseline Freeze Date**: 2026-01-20
+
+### Key Documents
+
+| Document | Purpose |
+|----------|---------|
+| [GO-LIVE_STATE_v1.0.md](../docs/GO-LIVE_STATE_v1.0.md) | What is live vs intentionally incomplete |
+| [DO_NOT_MODIFY_REGISTRY.md](./DO_NOT_MODIFY_REGISTRY.md) | Frozen components requiring change request |
+| [FINAL_CERTIFICATION_REPORT_2026-01-19.md](../docs/reports/FINAL_CERTIFICATION_REPORT_2026-01-19.md) | Certification audit results |
+
+### Frozen Components
+
+The following are FROZEN at v1.0 and require formal change request to modify:
+- Authoritative views (vw_marketing_eligibility_with_overrides, vw_sovereign_completion)
+- Tier computation logic and assignment rules
+- Kill switch system (manual_overrides, override_audit_log)
+- Marketing safety gate (HARD_FAIL enforcement)
+- Hub registry and waterfall order
+
+See [DO_NOT_MODIFY_REGISTRY.md](./DO_NOT_MODIFY_REGISTRY.md) for complete list.
 
 ---
 

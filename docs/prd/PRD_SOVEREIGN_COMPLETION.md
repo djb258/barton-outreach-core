@@ -220,6 +220,43 @@ This system answers the question: "Is this company ready for marketing, and at w
 
 ---
 
+## v1.0 Operational Baseline
+
+| Field | Value |
+|-------|-------|
+| **Certification Date** | 2026-01-19 |
+| **Baseline Freeze Date** | 2026-01-20 |
+| **Status** | CERTIFIED + FROZEN |
+| **Safe for Live Marketing** | YES |
+
+### Certification Results
+
+| Section | Status |
+|---------|--------|
+| Infrastructure | PASS |
+| Doctrine Compliance | PASS |
+| Data Integrity | PASS |
+| Operational Safety | PASS |
+
+### Frozen Components
+
+The following are FROZEN at v1.0:
+- `vw_marketing_eligibility_with_overrides` (authoritative view)
+- `vw_sovereign_completion` (sovereign view)
+- Marketing tier computation logic
+- Kill switch system
+- Hub registry and waterfall order
+
+See `doctrine/DO_NOT_MODIFY_REGISTRY.md` for complete list.
+
+### Deferred Work Orders
+
+| Work Order | Status | Description |
+|------------|--------|-------------|
+| WO-DOL-001 | DEFERRED | DOL enrichment pipeline (EIN resolution) |
+
+---
+
 ## Approval
 
 | Role | Name | Date |
@@ -227,6 +264,8 @@ This system answers the question: "Is this company ready for marketing, and at w
 | Sovereign (CC-01) | Barton Enterprises | 2026-01-19 |
 | Hub Owner (CC-02) | Outreach Core | 2026-01-19 |
 | Reviewer | Claude Code | 2026-01-19 |
+| **v1.0 Certification** | Final Certification Agent | 2026-01-19 |
+| **Baseline Freeze** | Doctrine Freeze Agent | 2026-01-20 |
 
 ---
 
@@ -238,3 +277,8 @@ This system answers the question: "Is this company ready for marketing, and at w
 | Hub/Spoke Doctrine | HUB_SPOKE_ARCHITECTURE.md |
 | ADR | ADR-006_Sovereign_Completion_Infrastructure.md |
 | ADR | ADR-007_Kill_Switch_System.md |
+| ADR | ADR-008_V1_Operational_Baseline.md |
+| ADR | ADR-009_Tier_Telemetry_Analytics.md |
+| ADR | ADR-010_Marketing_Safety_Gate.md |
+| GO-LIVE State | docs/GO-LIVE_STATE_v1.0.md |
+| DO NOT MODIFY Registry | doctrine/DO_NOT_MODIFY_REGISTRY.md |

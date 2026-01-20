@@ -1,4 +1,25 @@
 -- =============================================================================
+-- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+--                         DO NOT MODIFY WITHOUT CHANGE REQUEST
+-- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+--
+-- STATUS: FROZEN (v1.0 Operational Baseline)
+-- FREEZE DATE: 2026-01-20
+-- REFERENCE: docs/GO-LIVE_STATE_v1.0.md
+--
+-- This file contains AUTHORITATIVE views and logic that are FROZEN at v1.0.
+-- Any modification requires:
+--   1. Formal Change Request with justification
+--   2. Impact analysis on all dependent systems
+--   3. Full re-certification after changes
+--   4. Technical lead sign-off
+--
+-- AUTHORITATIVE COMPONENTS IN THIS FILE:
+--   - outreach.vw_marketing_eligibility_with_overrides (THE source of truth)
+--   - outreach.manual_overrides (Kill switch enforcement)
+--   - Override enum types and audit tables
+--
+-- =============================================================================
 -- KILL SWITCHES - Manual Override System
 -- =============================================================================
 --

@@ -10,6 +10,41 @@
 
 ---
 
+## v1.0 OPERATIONAL BASELINE
+
+**Status**: CERTIFIED AND FROZEN
+**Certification Date**: 2026-01-19
+**Baseline Freeze Date**: 2026-01-20
+**Safe to Enable Live Marketing**: YES
+
+### Key Documentation
+
+| Document | Purpose |
+|----------|---------|
+| `docs/GO-LIVE_STATE_v1.0.md` | What is live vs intentionally incomplete |
+| `doctrine/DO_NOT_MODIFY_REGISTRY.md` | Frozen components requiring change request |
+| `docs/reports/FINAL_CERTIFICATION_REPORT_2026-01-19.md` | Certification audit results |
+
+### Deferred Work Orders
+
+| Work Order | Status | Description |
+|------------|--------|-------------|
+| WO-DOL-001 | DEFERRED | DOL enrichment pipeline (EIN resolution) |
+
+### DO NOT MODIFY (v1.0 Frozen)
+
+The following components are **FROZEN** and require formal change request:
+- `outreach.vw_marketing_eligibility_with_overrides` (authoritative view)
+- `outreach.vw_sovereign_completion` (sovereign view)
+- Tier computation logic and assignment rules
+- Kill switch system (manual_overrides, override_audit_log)
+- Marketing safety gate (HARD_FAIL enforcement)
+- Hub registry and waterfall order
+
+See `doctrine/DO_NOT_MODIFY_REGISTRY.md` for complete list.
+
+---
+
 ## CORE ARCHITECTURE: CL PARENT-CHILD
 
 ### The Golden Rule
@@ -467,9 +502,9 @@ DOCTRINE_VERSION=04
 
 ---
 
-**Last Updated**: 2026-01-14
-**Architecture**: CL Parent-Child Doctrine v1.0
-**Status**: HARDENED
+**Last Updated**: 2026-01-20
+**Architecture**: CL Parent-Child Doctrine v1.1
+**Status**: v1.0 OPERATIONAL BASELINE (CERTIFIED + FROZEN)
 
 ---
 
