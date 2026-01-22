@@ -15,6 +15,8 @@
 **Status**: CERTIFIED AND FROZEN
 **Certification Date**: 2026-01-19
 **Baseline Freeze Date**: 2026-01-20
+**Sovereign Cleanup**: 2026-01-21 (23,025 records archived)
+**CL-Outreach Alignment**: 51,148 = 51,148 ✓
 **Safe to Enable Live Marketing**: YES
 
 ### Key Documentation
@@ -45,84 +47,171 @@ See `doctrine/DO_NOT_MODIFY_REGISTRY.md` for complete list.
 
 ---
 
-## CORE ARCHITECTURE: CL PARENT-CHILD
+## CORE ARCHITECTURE: CL AUTHORITY REGISTRY + OUTREACH SPINE
 
 ### The Golden Rule
 
 ```
-IF company_unique_id IS NULL:
+IF outreach_id IS NULL:
     STOP. DO NOT PROCEED.
-    → Request identity from Company Lifecycle (CL) parent hub first.
+    1. Mint outreach_id in outreach.outreach (operational spine)
+    2. Write outreach_id ONCE to cl.company_identity (authority registry)
+    3. If CL write fails (already claimed) → HARD FAIL
+
+ALIGNMENT RULE:
+outreach.outreach count = cl.company_identity (outreach_id NOT NULL) count
+Current: 51,148 = 51,148 ✓ ALIGNED
 ```
 
-### Architecture Diagram — External CL + Outreach Program
+### CL Authority Registry (LOCKED)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                         EXTERNAL SYSTEM (NOT OUTREACH)                       │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  COMPANY LIFECYCLE (CL)                                                      │
-│  https://github.com/djb258/company-lifecycle-cl.git                          │
-│  • Mints company_unique_id (SOVEREIGN, IMMUTABLE)                            │
-│  • Owns cl.* schema (company_identity, lifecycle_state)                      │
-│  • Shared across programs (Outreach, Client Intake, Analytics)               │
-│  • Outreach does NOT invoke or gate CL                                       │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    │ company_unique_id (consumed)
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                      OUTREACH PROGRAM (PROGRAM-SCOPED)                       │
+│                    CL = AUTHORITY REGISTRY (Identity Pointers Only)          │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  0. OUTREACH ORCHESTRATION (Context Authority) ─────────────► RUN CREATED   │
-│     • Mints outreach_context_id (program-scoped)                             │
-│     • Binds outreach_context_id ⇄ company_unique_id                          │
-│     • Establishes execution + audit boundary                                 │
-│     • Performs NO enrichment, discovery, or scoring                          │
-│     • Table: outreach.outreach_context                                       │
+│  cl.company_identity                                                         │
+│  ────────────────────                                                        │
+│  sovereign_company_id   PK, IMMUTABLE (minted by CL)                         │
+│  outreach_id            WRITE-ONCE (minted by Outreach, written here)        │
+│  sales_process_id       WRITE-ONCE (minted by Sales, written here)           │
+│  client_id              WRITE-ONCE (minted by Client, written here)          │
+│                                                                              │
+│  ╔═══════════════════════════════════════════════════════════════════════╗   │
+│  ║ CL stores IDENTITY POINTERS only — never workflow state               ║   │
+│  ║ Each hub mints its own ID and registers it ONCE in CL                 ║   │
+│  ╚═══════════════════════════════════════════════════════════════════════╝   │
+│                                                                              │
+│  v_company_lifecycle_status (READ-ONLY VIEW)                                 │
+│  → Exposes which hubs have claimed each company                              │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+        ┌───────────────────────────┼───────────────────────────┐
+        │                           │                           │
+        ▼                           ▼                           ▼
+┌───────────────┐           ┌───────────────┐           ┌───────────────┐
+│   OUTREACH    │           │    SALES      │           │    CLIENT     │
+│   (THIS HUB)  │           │               │           │               │
+├───────────────┤           ├───────────────┤           ├───────────────┤
+│ Mints:        │           │ Mints:        │           │ Mints:        │
+│ outreach_id   │           │ sales_process │           │ client_id     │
+│               │           │ _id           │           │               │
+│ Writes to CL: │           │ Writes to CL: │           │ Writes to CL: │
+│ outreach_id   │           │ sales_process │           │ client_id     │
+│ (ONCE)        │           │ _id (ONCE)    │           │ (ONCE)        │
+└───────────────┘           └───────────────┘           └───────────────┘
+```
+
+### Outreach Operational Spine
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    OUTREACH OPERATIONAL SPINE (Workflow State)               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  outreach.outreach (OPERATIONAL SPINE)                                       │
+│  ─────────────────────────────────────                                       │
+│  outreach_id            PK (minted here, registered in CL)                   │
+│  sovereign_company_id   FK → cl.company_identity                             │
+│  status                 WORKFLOW STATE (not in CL)                           │
+│  created_at, updated_at OPERATIONAL TIMESTAMPS                               │
+│                                                                              │
+│  ╔═══════════════════════════════════════════════════════════════════════╗   │
+│  ║ outreach.outreach = operational spine (workflow state lives here)     ║   │
+│  ║ cl.company_identity = authority registry (identity pointer only)      ║   │
+│  ╚═══════════════════════════════════════════════════════════════════════╝   │
+│                                                                              │
 │                                    │                                         │
-│                                    │ outreach_context_id                     │
+│                                    │ outreach_id (FK for all sub-hubs)       │
 │                                    ▼                                         │
 │  1. COMPANY TARGET (04.04.01) ──────────────────────────────► PASS REQUIRED │
-│     • Domain resolution                                                      │
-│     • Email pattern discovery                                                │
-│     • EMITS: verified_pattern, domain                                        │
+│     • Domain resolution, email pattern discovery                             │
+│     • Table: outreach.company_target (FK: outreach_id)                       │
 │                                    │                                         │
 │                                    ▼                                         │
 │  2. DOL FILINGS (04.04.03) ─────────────────────────────────► PASS REQUIRED │
-│     • EIN resolution                                                         │
-│     • Form 5500 + Schedule A                                                 │
-│     • EMITS: ein, filing_signals                                             │
+│     • EIN resolution, Form 5500 + Schedule A                                 │
+│     • Table: outreach.dol (FK: outreach_id)                                  │
 │                                    │                                         │
 │                                    ▼                                         │
 │  3. PEOPLE INTELLIGENCE (04.04.02) ─────────────────────────► PASS REQUIRED │
-│     • CONSUMER ONLY - Does NOT discover patterns or EINs                     │
-│     • CONSUMES: verified_pattern (CT), ein/signals (DOL)                     │
-│     • EMITS: slot_assignments, people_records                                │
+│     • Slot assignment, email generation                                      │
+│     • Table: outreach.people (FK: outreach_id)                               │
 │                                    │                                         │
 │                                    ▼                                         │
 │  4. BLOG CONTENT (04.04.05) ────────────────────────────────► PASS          │
 │     • Content signals, news monitoring                                       │
-│     • CONSUMER ONLY                                                          │
+│     • Table: outreach.blog (FK: outreach_id)                                 │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### External Dependencies & Program Scope
+### Outreach Init Pattern (LOCKED)
 
-| Boundary | System | Ownership |
-|----------|--------|-----------|
-| **External** | Company Lifecycle (CL) | Mints company_unique_id, shared across all programs |
-| **Program** | Outreach Orchestration | Mints outreach_context_id, program-scoped |
-| **Sub-Hub** | CT, DOL, People, Blog | Reference outreach_context_id for all operations |
+```python
+# STEP 1: Verify company exists in CL and outreach_id is NULL
+SELECT sovereign_company_id FROM cl.company_identity
+WHERE sovereign_company_id = $sid
+  AND outreach_id IS NULL;
+
+# STEP 2: Mint outreach_id in operational spine
+INSERT INTO outreach.outreach (outreach_id, sovereign_company_id, status)
+VALUES ($new_outreach_id, $sid, 'INIT');
+
+# STEP 3: Register outreach_id in CL authority registry (WRITE-ONCE)
+UPDATE cl.company_identity
+SET outreach_id = $new_outreach_id
+WHERE sovereign_company_id = $sid
+  AND outreach_id IS NULL;
+
+# MUST check affected rows
+if affected_rows != 1:
+    ROLLBACK()
+    HARD_FAIL("Outreach ID already claimed or invalid SID")
+```
+
+### Data Ownership (LOCKED)
+
+| Location | Stores | Example |
+|----------|--------|---------|
+| **cl.company_identity** | Identity pointers ONLY | outreach_id, sales_process_id, client_id |
+| **outreach.outreach** | Operational spine + workflow state | status, timestamps |
+| **outreach.*** | Outreach sub-hub data | people, signals, contacts, attempts |
+
+### Outreach Responsibilities (LOCKED)
+
+| Outreach DOES | Outreach DOES NOT |
+|---------------|-------------------|
+| Mint outreach_id | Mint sales_process_id or client_id |
+| Write outreach_id to CL (ONCE) | Write workflow state to CL |
+| Drive calendar link generation | Perform Sales or Client logic |
+| Handoff via booking webhook | Live-sync with downstream hubs |
+| Own: contacts, people, signals | Own: sales pipeline, client records |
+
+### Calendar Handoff Pattern
+
+```
+OUTREACH                                    SALES
+   │                                          │
+   │ ──► Generate calendar link               │
+   │     (signed: sid + oid + sig + TTL)      │
+   │                                          │
+   │ ──► Meeting booked webhook ─────────────►│
+   │                                          │
+   │     [OUTREACH ENDS HERE]                 │ Sales Init worker
+   │                                          │ (snapshots Outreach data)
+   │                                          │ Mints sales_process_id
+   │                                          │ Writes to CL (ONCE)
+```
 
 ### Key Doctrine (LOCKED)
 
-- **CL is external** — Outreach consumes company_unique_id, does NOT invoke CL
-- **Outreach run identity** — All operations bound by outreach_context_id
-- **Context table** — outreach.outreach_context is the root audit record
-- **No sub-hub writes without valid outreach_context_id**
+- **CL is authority registry** — Identity pointers only, never workflow state
+- **outreach.outreach is operational spine** — Workflow state lives here
+- **WRITE-ONCE to CL** — Each hub mints its ID and registers ONCE
+- **No sub-hub writes without valid outreach_id**
+- **Handoff via webhook** — Outreach does not invoke Sales directly
 
 ### Waterfall Doctrine Rules (LOCKED)
 
@@ -159,11 +248,12 @@ IF company_unique_id IS NULL:
 
 ### Key Doctrine Rules
 
-1. **CL is PARENT** - Mints company_unique_id, Outreach receives only
-2. **Company Target is internal anchor** - FK join point for sub-hubs
-3. **Spokes are I/O ONLY** - No logic, no state, no transformation
-4. **No identity minting** - NEVER create company_unique_id
-5. **Signal to CL** - Engagement events flow back to parent
+1. **CL is AUTHORITY REGISTRY** - Stores identity pointers only (outreach_id, sales_process_id, client_id)
+2. **CL mints sovereign_company_id** - Outreach receives, never creates
+3. **Outreach mints outreach_id** - Written to CL ONCE, workflow state stays in outreach.outreach
+4. **outreach.outreach is operational spine** - All sub-hubs FK to outreach_id
+5. **Spokes are I/O ONLY** - No logic, no state, no transformation
+6. **Handoff via webhook** - Outreach does not invoke Sales/Client directly
 
 ---
 
@@ -392,14 +482,20 @@ hubs/outreach-execution/hub.manifest.yaml
 
 ## NEVER DO THESE THINGS
 
+- **NEVER** mint sovereign_company_id (CL owns this)
+- **NEVER** mint sales_process_id or client_id (those hubs own them)
+- **NEVER** write workflow state to CL (CL = identity pointers only)
+- **NEVER** write outreach_id to CL more than ONCE
+- **NEVER** bypass the CL write guard (affected_rows check)
 - **NEVER** put logic in spokes (spokes are I/O only)
 - **NEVER** store state in spokes
 - **NEVER** make sideways hub-to-hub calls
-- **NEVER** process records without company anchor
+- **NEVER** process records without valid outreach_id
 - **NEVER** skip the BIT_SCORE metric for company selection
 - **NEVER** mix slot requirements with slot assignments
 - **NEVER** bypass RLS in Neon
 - **NEVER** hardcode database credentials
+- **NEVER** invoke Sales or Client logic directly (handoff via webhook)
 
 ---
 
@@ -502,9 +598,10 @@ DOCTRINE_VERSION=04
 
 ---
 
-**Last Updated**: 2026-01-20
+**Last Updated**: 2026-01-22
 **Architecture**: CL Parent-Child Doctrine v1.1
 **Status**: v1.0 OPERATIONAL BASELINE (CERTIFIED + FROZEN)
+**CL-Outreach Alignment**: 51,148 = 51,148 ✓
 
 ---
 
@@ -531,3 +628,34 @@ Runtime doctrine enforcement is implemented in `ops/enforcement/`:
 | `2026-01-13-enable-rls-production-tables.sql` | RLS on all production tables |
 
 See `infra/MIGRATION_ORDER.md` for execution order.
+
+---
+
+## SOVEREIGN CLEANUP (2026-01-21)
+
+| Migration | Purpose |
+|-----------|---------|
+| `2026-01-21-sovereign-cleanup-cascade.sql` | Cascade cleanup after CL sovereign cleanup |
+
+**Cleanup Results**:
+- 23,025 orphaned outreach_ids archived
+- Archive tables created for all affected entities
+- CL-Outreach alignment restored: 51,148 = 51,148
+
+**Archive Tables**:
+- `outreach.outreach_archive`
+- `outreach.company_target_archive`
+- `outreach.people_archive`
+- `people.company_slot_archive`
+- `people.people_master_archive`
+
+**Post-Cleanup State**:
+| Sub-Hub | Table | Records | Notes |
+|---------|-------|---------|-------|
+| Spine | outreach.outreach | 51,148 | ALIGNED WITH CL |
+| CT | outreach.company_target | 51,148 | 91.4% with email_method |
+| DOL | outreach.dol | 13,829 | 27% coverage |
+| People | outreach.people | 426 | |
+| People | people.company_slot | 153,444 | CEO: 27.1%, CFO: 8.6%, HR: 13.7% |
+| Blog | outreach.blog | 51,148 | 100% coverage |
+| BIT | outreach.bit_scores | 17,227 | |

@@ -1,22 +1,64 @@
 # Barton Outreach Core - Complete System ERD
 ## Hub-and-Spoke Architecture with All Tables and Pipelines
 
-**Version:** 3.2.0
-**Last Updated:** 2026-01-03
-**Architecture:** Bicycle Wheel Doctrine v1.1
+**Version:** 4.1.0
+**Last Updated:** 2026-01-22
+**Architecture:** CL Authority Registry + Outreach Operational Spine
+**ADR:** ADR-011_CL_Authority_Registry_Outreach_Spine.md
 **DOL Subhub:** EIN Resolution + Violation Discovery
 **Join Doctrine:** All DOL/Government data joins on EIN
+**Sovereign Cleanup:** 2026-01-21 (23,025 records archived)
 
 ---
 
 ## Visual Architecture Overview
 
 ```
-                              COMPANY LIFECYCLE (CL)
-                              [EXTERNAL PARENT HUB]
-                              Mints company_unique_id
+┌─────────────────────────────────────────────────────────────────────────────┐
+│               CL = AUTHORITY REGISTRY (Identity Pointers Only)               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  cl.company_identity                                                         │
+│  ────────────────────                                                        │
+│  sovereign_company_id   PK, IMMUTABLE (minted by CL)         51,910 total   │
+│  outreach_id            WRITE-ONCE (minted by Outreach)      51,148 claimed │
+│  sales_process_id       WRITE-ONCE (minted by Sales)         —              │
+│  client_id              WRITE-ONCE (minted by Client)        —              │
+│                                                                              │
+│  ╔═══════════════════════════════════════════════════════════════════════╗  │
+│  ║ CL stores IDENTITY POINTERS only — never workflow state               ║  │
+│  ╚═══════════════════════════════════════════════════════════════════════╝  │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
                                         │
-                                        │ company_unique_id (consumed)
+        ┌───────────────────────────────┼───────────────────────────────┐
+        │                               │                               │
+        ▼                               ▼                               ▼
+┌───────────────┐               ┌───────────────┐               ┌───────────────┐
+│   OUTREACH    │               │    SALES      │               │    CLIENT     │
+│  (THIS REPO)  │               │   (FUTURE)    │               │   (FUTURE)    │
+└───────┬───────┘               └───────────────┘               └───────────────┘
+        │
+        │ outreach_id minted here, written ONCE to CL
+        ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│              OUTREACH OPERATIONAL SPINE (Workflow State)                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  outreach.outreach: 51,148 rows                                              │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  outreach_id            PK (minted here, registered in CL)                   │
+│  sovereign_company_id   FK → cl.company_identity                             │
+│  status                 WORKFLOW STATE (not in CL)                           │
+│  created_at, updated_at OPERATIONAL TIMESTAMPS                               │
+│                                                                              │
+│  ╔═══════════════════════════════════════════════════════════════════════╗  │
+│  ║ outreach.outreach = operational spine (workflow state lives here)     ║  │
+│  ╚═══════════════════════════════════════════════════════════════════════╝  │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        │ outreach_id (all sub-hubs FK to this)
                                         ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                         OUTREACH PROGRAM (4 SUBHUBS)                        │
@@ -25,9 +67,10 @@
 │    ┌─────────────────────────────────────────────────────────────────────┐ │
 │    │  SUBHUB 1: COMPANY TARGET (04.04.01)                    [ACTIVE]    │ │
 │    │  ───────────────────────────────────────────────────────────────    │ │
+│    │  Records: 51,148 | 91.4% with email_method | 5,539 errors           │ │
 │    │  • Domain resolution                                                │ │
 │    │  • Email pattern discovery                                          │ │
-│    │  • company_master, company_slot                                     │ │
+│    │  • company_target (FK: outreach_id)                                 │ │
 │    │  • EMITS: verified_pattern, domain                                  │ │
 │    └─────────────────────────────────────────────────────────────────────┘ │
 │                                        │                                   │
@@ -35,32 +78,33 @@
 │    ┌─────────────────────────────────────────────────────────────────────┐ │
 │    │  SUBHUB 2: DOL FILINGS (04.04.03)                       [ACTIVE]    │ │
 │    │  ───────────────────────────────────────────────────────────────    │ │
-│    │  • EIN resolution (fuzzy + deterministic)                           │ │
+│    │  Records: 13,829 | 27% coverage | 37,319 errors                     │ │
+│    │  • EIN resolution (deterministic)                                   │ │
 │    │  • Form 5500 + Schedule A filings                                   │ │
-│    │  • Violation discovery (OSHA, EBSA, WHD)                            │ │
-│    │  • ein_linkage, violations, form_5500                               │ │
-│    │  • EMITS: ein, filing_signals, violation_facts                      │ │
+│    │  • dol (FK: outreach_id)                                            │ │
+│    │  • EMITS: ein, filing_signals, funding_type                         │ │
 │    └─────────────────────────────────────────────────────────────────────┘ │
 │                                        │                                   │
 │                                        ▼                                   │
 │    ┌─────────────────────────────────────────────────────────────────────┐ │
 │    │  SUBHUB 3: PEOPLE INTELLIGENCE (04.04.02)               [ACTIVE]    │ │
 │    │  ───────────────────────────────────────────────────────────────    │ │
+│    │  outreach.people: 426 | people.company_slot: 153,444                │ │
+│    │  CEO: 27.1% | CFO: 8.6% | HR: 13.7% filled                          │ │
 │    │  • CONSUMER ONLY - Does NOT discover patterns or EINs               │ │
 │    │  • Slot assignment (seniority-based)                                │ │
-│    │  • Email verification (sub-wheel)                                   │ │
-│    │  • people_master, person_scores, person_movement_history            │ │
+│    │  • Email verification (MillionVerifier)                             │ │
 │    │  • CONSUMES: verified_pattern (CT), ein/signals (DOL)               │ │
 │    │  • EMITS: slot_assignments, people_records                          │ │
 │    └─────────────────────────────────────────────────────────────────────┘ │
 │                                        │                                   │
 │                                        ▼                                   │
 │    ┌─────────────────────────────────────────────────────────────────────┐ │
-│    │  SUBHUB 4: BLOG CONTENT (04.04.05)                      [PLANNED]   │ │
+│    │  SUBHUB 4: BLOG CONTENT (04.04.05)                      [ACTIVE]    │ │
 │    │  ───────────────────────────────────────────────────────────────    │ │
+│    │  Records: 51,148 | 100% coverage                                    │ │
 │    │  • Content signals, news monitoring                                 │ │
-│    │  • CONSUMER ONLY                                                    │ │
-│    │  • company_events (news/blog signals)                               │ │
+│    │  • blog (FK: outreach_id)                                           │ │
 │    │  • EMITS: content_signals, bit_impact_scores                        │ │
 │    └─────────────────────────────────────────────────────────────────────┘ │
 │                                        │                                   │
@@ -68,10 +112,20 @@
 │    ┌─────────────────────────────────────────────────────────────────────┐ │
 │    │  BIT ENGINE + OUTREACH EXECUTION                                    │ │
 │    │  ───────────────────────────────────────────────────────────────    │ │
+│    │  BIT Scores: 17,227                                                 │ │
 │    │  • Aggregates signals from all 4 subhubs                            │ │
 │    │  • Calculates BIT Score (0-100)                                     │ │
 │    │  • Triggers outreach campaigns                                      │ │
 │    └─────────────────────────────────────────────────────────────────────┘ │
+│                                                                             │
+│  ═══════════════════════════════════════════════════════════════════════   │
+│  ARCHIVE TABLES (Sovereign Cleanup 2026-01-21)                             │
+│  • outreach.outreach_archive: 23,025 rows                                   │
+│  • outreach.company_target_archive                                          │
+│  • outreach.people_archive                                                  │
+│  • people.company_slot_archive                                              │
+│  • people.people_master_archive                                             │
+│  ═══════════════════════════════════════════════════════════════════════   │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -983,92 +1037,109 @@ erDiagram
 
 ## Complete Table Summary
 
-### Core Hub Tables
+### CL Authority Registry (Identity Pointers Only)
 
 | Schema | Table | Rows | Purpose | Key Relationships |
 |--------|-------|------|---------|-------------------|
-| **marketing** | company_master | 453 | **MASTER HUB** | PK: company_unique_id |
-| **marketing** | company_slot | 1,359 | Slot assignments | FK: company_unique_id, person_unique_id |
-| **marketing** | company_events | 0 | News/blog signals | FK: company_unique_id |
-| **marketing** | pipeline_events | 2,185 | Audit trail | FK: company_id, person_id |
+| **cl** | company_identity | 51,910 | **AUTHORITY REGISTRY** | PK: sovereign_company_id |
+| | | | Stores identity pointers: | outreach_id (WRITE-ONCE) |
+| | | | - outreach_id: 51,148 claimed | sales_process_id (WRITE-ONCE) |
+| | | | - sales_process_id: — | client_id (WRITE-ONCE) |
+| | | | - client_id: — | |
+| **cl** | company_identity_archive | 22,263 | Archived identities | Archive from cleanup |
 
-### People Spoke Tables
+**CL DOES NOT store workflow state. Identity pointers only.**
 
-| Schema | Table | Rows | Purpose | Key Relationships |
-|--------|-------|------|---------|-------------------|
-| **people** | people_master | 170 | People records | FK: company_unique_id, company_slot_unique_id |
-| **people** | person_scores | 0 | BIT scores | FK: person_unique_id |
-| **people** | person_movement_history | 0 | Job changes | FK: person_unique_id, company_from_id, company_to_id |
-| **people** | people_resolution_queue | 1,206 | Manual review | FK: various |
-
-### DOL Subhub Tables (EIN Resolution + Violations)
+### Outreach Operational Spine (Workflow State)
 
 | Schema | Table | Rows | Purpose | Key Relationships |
 |--------|-------|------|---------|-------------------|
-| **dol** | form_5500 | 230,009 | Large plans (source) | Join: ein → ein_linkage.ein |
-| **dol** | form_5500_sf | 759,569 | Small plans (source) | Join: ein → ein_linkage.ein |
-| **dol** | schedule_a | 336,817 | Insurance info (source) | Join: ack_id → form_5500.ack_id |
-| **dol** | ein_linkage | NEW | **EIN ↔ Company Linkage** | FK: company_unique_id → company_master |
-| **dol** | violations | NEW | **DOL Violation Facts** | FK: ein → ein_linkage.ein |
-| **dol** | violation_categories | NEW | Violation type reference | - |
-| **dol** | air_log | NEW | Audit trail (truth) | FK: company_unique_id |
+| **outreach** | outreach | 51,148 | **MASTER SPINE** - ALIGNED WITH CL | FK: sovereign_id → cl.company_identity |
+| **outreach** | outreach_archive | 23,025 | Archived records | Sovereign cleanup 2026-01-21 |
 
-### DOL Subhub Views
-
-| Schema | View | Purpose | Key Joins |
-|--------|------|---------|-----------|
-| **dol** | v_companies_with_violations | Outreach targeting | ein_linkage → violations |
-| **dol** | v_violation_summary | Aggregate stats | ein_linkage → violations (grouped) |
-| **dol** | v_recent_violations | Last 90 days | violations → ein_linkage |
-| **dol** | v_violations_with_5500_context | **EIN-based join pattern** | violations → 5500 → ein_linkage (via EIN) |
-| **dol** | v_violations_outreach_ready | **Full outreach chain** | violations → 5500 → ein_linkage → company_master |
-| **analytics** | v_5500_renewal_month | Renewal month signals | ein_linkage → form_5500 |
-| **analytics** | v_5500_insurance_facts | Schedule A/EZ facts | ein_linkage → schedule_a |
-| **analytics** | v_company_target_ein_enrichment_queue | Enrichment queue | shq.error_master filtered |
-
-### Operations & Error Tables
+### Sub-Hub Tables
 
 | Schema | Table | Rows | Purpose | Key Relationships |
 |--------|-------|------|---------|-------------------|
-| **shq** | error_master | NEW | **Canonical error table** | process_id, company_unique_id |
+| **outreach** | company_target | 51,148 | Company targeting | FK: outreach_id |
+| **outreach** | company_target_errors | 5,539 | CT errors | FK: outreach_id |
+| **outreach** | dol | 13,829 | DOL filing facts (27% coverage) | FK: outreach_id |
+| **outreach** | dol_errors | 37,319 | DOL errors | FK: outreach_id |
+| **outreach** | people | 426 | Contact records | FK: outreach_id |
+| **outreach** | people_errors | — | People errors | FK: outreach_id |
+| **outreach** | blog | 51,148 | Blog content (100% coverage) | FK: outreach_id |
+| **outreach** | blog_errors | — | Blog errors | FK: outreach_id |
 
-### Intake/Quarantine Tables
+### People Intelligence Tables
 
 | Schema | Table | Rows | Purpose | Key Relationships |
 |--------|-------|------|---------|-------------------|
-| **intake** | quarantine | 114 | Invalid records | - |
-| **intake** | company_raw_intake | 563 | Raw imports | Pipeline input |
-| **intake** | people_raw_intake | 0 | Raw imports | Pipeline input |
+| **people** | people_master | ~190K | Master people records | FK: company_unique_id |
+| **people** | company_slot | 153,444 | Slot assignments | FK: outreach_id, person_unique_id |
+| **people** | company_slot_archive | — | Archived slots | Sovereign cleanup |
+| **people** | people_resolution_history | — | Resolution audit | FK: outreach_id |
+
+### BIT Engine Tables
+
+| Schema | Table | Rows | Purpose | Key Relationships |
+|--------|-------|------|---------|-------------------|
+| **outreach** | bit_scores | 17,227 | BIT scoring | FK: outreach_id |
+| **outreach** | bit_signals | — | Scoring signals | FK: outreach_id |
+| **outreach** | bit_input_history | — | Input audit | FK: outreach_id |
+
+### DOL Source Tables
+
+| Schema | Table | Rows | Purpose | Key Relationships |
+|--------|-------|------|---------|-------------------|
+| **dol** | form_5500 | 230,009 | Large plans (source) | Join: ein |
+| **dol** | form_5500_sf | 759,569 | Small plans (source) | Join: ein |
+| **dol** | schedule_a | 336,817 | Insurance info (source) | Join: ack_id |
+
+### Sovereign Completion Views
+
+| Schema | View | Purpose |
+|--------|------|---------|
+| **outreach** | vw_sovereign_completion | Hub completion aggregation |
+| **outreach** | vw_marketing_eligibility | Base eligibility |
+| **outreach** | vw_marketing_eligibility_with_overrides | **AUTHORITATIVE** |
+| **outreach** | hub_registry | Hub definitions (6 hubs) |
+| **outreach** | company_hub_status | Status per hub |
+| **outreach** | manual_overrides | Kill switches |
 
 ---
 
-**Total: 35+ tables/views, 2.4M+ rows across 6 schemas**
+**Total: 40+ tables/views, 2.4M+ rows across 7 schemas**
 
 ### Schema Summary
 
 | Schema | Purpose | Key Tables |
 |--------|---------|------------|
-| `marketing` | Company Hub | company_master, company_slot |
-| `people` | People Spoke | people_master, person_scores |
-| `dol` | DOL Subhub | ein_linkage, violations, form_5500 |
-| `analytics` | Projection Views | v_5500_renewal_month, v_5500_insurance_facts |
+| `cl` | **EXTERNAL PARENT** | company_identity (SOVEREIGN) |
+| `outreach` | Outreach Spine + Sub-Hubs | outreach, company_target, dol, people, blog |
+| `people` | People Intelligence | people_master, company_slot |
+| `dol` | DOL Source Data | form_5500, form_5500_sf, schedule_a |
+| `marketing` | Legacy (deprecated) | company_master (pre-spine) |
 | `shq` | Operations | error_master |
 | `intake` | Raw Data | quarantine, company_raw_intake |
 
 ---
 
-## The Golden Rule
+## The Golden Rule (CL Parent-Child v1.1)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                                                                             │
-│   IF company_id IS NULL OR domain IS NULL OR email_pattern IS NULL:        │
+│   IF outreach_id IS NULL:                                                  │
 │                                                                             │
 │       STOP. DO NOT PROCEED.                                                │
-│       → Route to Company Identity Pipeline first.                          │
+│       → Mint outreach_id via outreach.outreach spine first.                │
+│       → Spine requires sovereign_id from CL with identity_status = 'PASS'  │
 │                                                                             │
-│   NO spoke pipeline should EVER process a record that lacks                │
-│   a valid company anchor.                                                  │
+│   NO sub-hub should EVER process a record that lacks a valid outreach_id.  │
+│                                                                             │
+│   ALIGNMENT RULE:                                                          │
+│   outreach.outreach count = cl.company_identity (PASS) count               │
+│   Current: 51,148 = 51,148 ✓ ALIGNED                                       │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -1085,4 +1156,5 @@ erDiagram
 
 ---
 
-*Generated: 2025-12-18 | Barton Outreach Core v2.1 | Bicycle Wheel Doctrine v1.1*
+*Generated: 2026-01-22 | Barton Outreach Core v4.0 | CL Parent-Child Doctrine v1.1*
+*Sovereign Cleanup: 2026-01-21 | 23,025 records archived | CL-Outreach aligned at 51,148*

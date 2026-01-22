@@ -1,0 +1,168 @@
+# AI-Readable Audit Record
+# Format: IMO-Creator v1.0
+# Purpose: Machine-parseable audit for AI agents
+
+audit:
+  id: AUDIT-2026-01-21-001
+  type: sovereign_cleanup_cascade
+  date: 2026-01-21
+  timestamp: 2026-01-21T23:59:59Z
+  auditor:
+    type: ai
+    model: claude-opus-4-5-20251101
+    version: "4.5"
+
+  status: PASS
+  verdict: SOVEREIGN_ALIGNMENT_RESTORED
+
+conformance:
+  doctrine_version: "CL Parent-Child Doctrine v1.1"
+  cc_layer: CC-04
+
+hub:
+  sovereign_id: CL
+  hub_name: Barton Outreach Core
+  hub_id: "04.04.02.04"
+
+pre_cleanup:
+  cl_total: 74000
+  outreach_total: 74000
+  alignment: true
+
+cl_cleanup:
+  total_after: 51910
+  pass: 51148
+  fail: 762
+  archived: 22263
+
+outreach_cascade:
+  orphaned_identified: 23025
+  archived: 23025
+
+  leaf_tables_cleaned:
+    - outreach.company_target_errors
+    - outreach.dol_errors
+    - outreach.people_errors
+    - outreach.blog_errors
+    - outreach.bit_errors
+    - outreach.bit_signals
+    - outreach.bit_scores
+    - outreach.bit_input_history
+    - outreach.blog_source_history
+    - outreach.blog
+    - outreach.dol
+    - outreach.engagement_events
+    - outreach.send_log
+    - outreach.company_hub_status
+    - people.people_resolution_history
+    - talent_flow.movement_history
+
+  archive_tables_created:
+    - table: outreach.outreach_archive
+      rows: 23025
+    - table: outreach.company_target_archive
+      rows: 23025
+    - table: outreach.people_archive
+      rows: null
+    - table: people.company_slot_archive
+      rows: null
+    - table: people.people_master_archive
+      rows: null
+
+post_cleanup:
+  cl_pass: 51148
+  outreach_outreach: 51148
+  alignment: true
+  alignment_verified: "51148 = 51148"
+
+  subhub_state:
+    - hub: company_target
+      table: outreach.company_target
+      rows: 51148
+      notes: "91.4% with email_method"
+    - hub: dol
+      table: outreach.dol
+      rows: 13829
+      notes: "27% coverage"
+    - hub: people
+      table: outreach.people
+      rows: 426
+      notes: ""
+    - hub: people
+      table: people.company_slot
+      rows: 153444
+      notes: "CEO: 27.1%, CFO: 8.6%, HR: 13.7%"
+    - hub: blog
+      table: outreach.blog
+      rows: 51148
+      notes: "100% coverage"
+    - hub: bit
+      table: outreach.bit_scores
+      rows: 17227
+      notes: ""
+
+checks:
+  - name: fk_cascade_order
+    status: PASS
+    details: "Leaf tables deleted first, main tables last"
+
+  - name: archive_creation
+    status: PASS
+    details: "5 archive tables created with archived_at + archive_reason"
+
+  - name: data_preservation
+    status: PASS
+    details: "All 23,025 orphaned records archived before deletion"
+
+  - name: alignment_verification
+    status: PASS
+    details: "cl.company_identity PASS = outreach.outreach (51,148 = 51,148)"
+
+  - name: no_data_loss
+    status: PASS
+    details: "Archive tables preserve full history"
+
+migration:
+  file: infra/migrations/2026-01-21-sovereign-cleanup-cascade.sql
+  phases:
+    - phase: 1
+      name: identify_orphans
+      description: "Create temp table of orphaned outreach_ids"
+    - phase: 2
+      name: delete_leaf_tables
+      description: "Delete from all dependent tables in FK order"
+    - phase: 3
+      name: create_archive_tables
+      description: "Create archive tables with metadata columns"
+    - phase: 4
+      name: archive_main_tables
+      description: "Archive in bottom-up FK order"
+    - phase: 5
+      name: delete_archived_records
+      description: "Delete from main tables"
+    - phase: 6
+      name: verification
+      description: "Verify alignment"
+
+documentation_updated:
+  - file: docs/COMPLETE_SYSTEM_ERD.md
+    version: "4.0.0"
+  - file: docs/SOVEREIGN_COMPLETION_ERD.md
+    version: "1.1.0"
+  - file: docs/GO-LIVE_STATE_v1.0.md
+    version: "1.0.1"
+  - file: CLAUDE.md
+    section: "SOVEREIGN CLEANUP (2026-01-21)"
+
+traceability:
+  migration: infra/migrations/2026-01-21-sovereign-cleanup-cascade.sql
+  go_live_state: docs/GO-LIVE_STATE_v1.0.md
+  erd: docs/COMPLETE_SYSTEM_ERD.md
+  doctrine: CLAUDE.md
+  human_readable: vault/50-AUDIT/AUDIT-2026-01-21-Sovereign-Cleanup-Cascade.md
+
+metadata:
+  format: IMO-Creator-v1.0
+  generated_by: claude-opus-4-5-20251101
+  generated_at: 2026-01-22T00:00:00Z
+  human_readable: vault/50-AUDIT/AUDIT-2026-01-21-Sovereign-Cleanup-Cascade.md

@@ -2,10 +2,11 @@
 ## Version 1.0 Operational Baseline
 
 **Document ID**: `04.04.02.04.50000.001`
-**Version**: 1.0.0
-**Last Updated**: 2026-01-20
+**Version**: 1.0.1
+**Last Updated**: 2026-01-22
 **Status**: OPERATIONAL BASELINE
 **Certification**: FINAL_CERTIFICATION_REPORT_2026-01-19.md
+**Sovereign Cleanup**: 2026-01-21 (23,025 records archived, CL-Outreach aligned)
 
 ---
 
@@ -25,12 +26,14 @@ This document defines the **v1.0 operational baseline** for Barton Outreach, cer
 
 | Component | Status | Record Count | Notes |
 |-----------|--------|--------------|-------|
+| `cl.company_identity` | LIVE | 51,148 PASS / 762 FAIL | **SOVEREIGN PARENT** |
+| `outreach.outreach` | LIVE | 51,148 rows | **MASTER SPINE** (aligned with CL) |
 | `outreach.hub_registry` | LIVE | 6 hubs | All hubs registered |
-| `outreach.company_hub_status` | LIVE | 135,684 rows | Hub status tracking |
+| `outreach.company_hub_status` | LIVE | ~306K rows | Hub status tracking (6 hubs × 51K) |
 | `outreach.manual_overrides` | LIVE | — | RLS enabled |
-| `outreach.vw_sovereign_completion` | LIVE | 33,922 rows | Sovereign view |
+| `outreach.vw_sovereign_completion` | LIVE | 51,148 rows | Sovereign view |
 | `outreach.vw_marketing_eligibility` | LIVE | — | Base eligibility |
-| `outreach.vw_marketing_eligibility_with_overrides` | LIVE | 33,922 rows | **AUTHORITATIVE** |
+| `outreach.vw_marketing_eligibility_with_overrides` | LIVE | 51,148 rows | **AUTHORITATIVE** |
 
 ### Sub-Hubs (Waterfall Order)
 
@@ -198,6 +201,9 @@ Hub waterfall order is FROZEN:
 | 2026-01-19 | Operational Safety | PASS |
 | 2026-01-19 | Final Certification | **PASS** |
 | 2026-01-20 | v1.0 Baseline Freeze | ACTIVE |
+| 2026-01-21 | CL Sovereign Cleanup | **PASS** |
+| 2026-01-21 | Outreach Cascade Cleanup | **PASS** |
+| 2026-01-22 | CL-Outreach Alignment Verified | **51,148 = 51,148** |
 
 ---
 
@@ -220,9 +226,11 @@ Any modification to FROZEN components requires:
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0.0 | 2026-01-20 | Doctrine Freeze Agent | Initial v1.0 baseline freeze |
+| 1.0.1 | 2026-01-22 | claude-opus-4-5-20251101 | Sovereign cleanup cascade (23,025 archived), CL-Outreach aligned |
 
 ---
 
 **Document Classification**: OPERATIONAL BASELINE
 **Modification Authority**: CHANGE REQUEST REQUIRED
-**Last Certified**: 2026-01-19
+**Last Certified**: 2026-01-22
+**CL-Outreach Alignment**: 51,148 = 51,148 ✓

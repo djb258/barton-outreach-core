@@ -1,12 +1,107 @@
-# PRD: Outreach Spoke v2.1
+# PRD: Outreach Spoke v3.0
 
-**Version:** 2.1 (Hardened per Barton Doctrine)
+**Version:** 3.0 (CL Authority Registry + Outreach Operational Spine)
 **Status:** Active
 **Hardening Date:** 2025-12-19
-**Last Updated:** 2025-12-19
-**Doctrine:** Bicycle Wheel v1.1 / Barton Doctrine
+**Last Updated:** 2026-01-22
+**Doctrine:** CL Authority Registry + Outreach Operational Spine
+**ADR:** ADR-011_CL_Authority_Registry_Outreach_Spine.md
 **Barton ID Range:** `04.04.02.04.6XXXX.###`
-**Changes:** Primary contact selection, BIT threshold enforcement, cooling-off period, correlation ID propagation
+**Changes:** CL registry clarification, outreach_id minting pattern, calendar handoff
+
+---
+
+## CL Authority Registry + Outreach Spine (LOCKED)
+
+```
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                   CL AUTHORITY REGISTRY + OUTREACH SPINE                      ║
+║                                                                               ║
+║   CL = AUTHORITY REGISTRY (Identity Pointers Only)                            ║
+║   ──────────────────────────────────────────────────                          ║
+║   cl.company_identity stores:                                                 ║
+║   ├── sovereign_company_id  PK (minted by CL)                                 ║
+║   ├── outreach_id           WRITE-ONCE (minted by Outreach)                   ║
+║   ├── sales_process_id      WRITE-ONCE (minted by Sales)                      ║
+║   └── client_id             WRITE-ONCE (minted by Client)                     ║
+║                                                                               ║
+║   CL does NOT store workflow state, timestamps, or operational data.          ║
+║                                                                               ║
+║   OUTREACH = OPERATIONAL SPINE (Workflow State)                               ║
+║   ─────────────────────────────────────────────                               ║
+║   outreach.outreach stores:                                                   ║
+║   ├── outreach_id           PK (minted here, registered in CL)                ║
+║   ├── sovereign_company_id  FK → cl.company_identity                          ║
+║   ├── status                WORKFLOW STATE                                    ║
+║   └── timestamps            OPERATIONAL DATA                                  ║
+║                                                                               ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+```
+
+## Outreach Init Pattern (LOCKED)
+
+```python
+# STEP 1: Verify company exists in CL and outreach_id is NULL
+SELECT sovereign_company_id FROM cl.company_identity
+WHERE sovereign_company_id = $sid
+  AND outreach_id IS NULL;
+
+# STEP 2: Mint outreach_id in operational spine
+INSERT INTO outreach.outreach (outreach_id, sovereign_company_id, status)
+VALUES ($new_outreach_id, $sid, 'INIT');
+
+# STEP 3: Register outreach_id in CL authority registry (WRITE-ONCE)
+UPDATE cl.company_identity
+SET outreach_id = $new_outreach_id
+WHERE sovereign_company_id = $sid
+  AND outreach_id IS NULL;
+
+# STEP 4: Verify write succeeded
+if affected_rows != 1:
+    ROLLBACK()
+    HARD_FAIL("Outreach ID already claimed or invalid SID")
+```
+
+## Outreach Hub Responsibilities (LOCKED)
+
+```
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                      OUTREACH HUB RESPONSIBILITIES                            ║
+║                                                                               ║
+║   OUTREACH DOES:                                                              ║
+║   ├── Mint outreach_id in outreach.outreach (operational spine)               ║
+║   ├── Write outreach_id to CL (ONCE, guarded)                                 ║
+║   ├── Generate signed calendar links (sid + oid + sig + TTL)                  ║
+║   ├── Drive meetings via calendar booking                                     ║
+║   └── Handoff to Sales via booking webhook (NOT direct invocation)            ║
+║                                                                               ║
+║   OUTREACH DOES NOT:                                                          ║
+║   ├── Mint sovereign_company_id (CL owns this)                                ║
+║   ├── Mint sales_process_id or client_id (those hubs own them)                ║
+║   ├── Write workflow state to CL (CL = identity pointers only)                ║
+║   ├── Invoke Sales or Client logic directly                                   ║
+║   └── Live-sync with downstream hubs (snapshot at handoff)                    ║
+║                                                                               ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+```
+
+## Calendar Handoff Pattern
+
+```
+OUTREACH                                    SALES
+   │                                          │
+   │ ──► Generate calendar link               │
+   │     https://calendar.example.com/book?   │
+   │       sid=...&oid=...&sig=...            │
+   │     (signed params, short TTL)           │
+   │                                          │
+   │ ──► Meeting booked webhook ─────────────►│
+   │                                          │
+   │     [OUTREACH ENDS HERE]                 │ Sales Init worker starts
+   │                                          │ ├── Snapshots Outreach data
+   │                                          │ ├── Mints sales_process_id
+   │                                          │ └── Writes to CL (ONCE)
+```
 
 ---
 
@@ -34,7 +129,7 @@
 ║                                                                               ║
 ║   This spoke is the OUTPUT spoke - final decision point before sending.       ║
 ║                                                                               ║
-║   PREREQUISITE: company_id + domain + email_pattern + bit_score >= 50         ║
+║   PREREQUISITE: outreach_id + company anchor + bit_score >= 50                ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 ```
 
@@ -355,10 +450,12 @@ See `infra/MIGRATION_ORDER.md` for execution order.
 | 2.0 | 2025-12-19 | Initial Outreach Spoke PRD |
 | 2.1 | 2025-12-19 | Hardened: Primary contact selection, BIT threshold, cooling-off |
 | 2.2 | 2026-01-13 | Execution tables created (campaigns, sequences, send_log), RLS enabled |
+| 3.0 | 2026-01-22 | CL Authority Registry + Outreach Spine clarification, calendar handoff pattern |
 
 ---
 
-**Last Updated:** 2026-01-13
+**Last Updated:** 2026-01-22
 **Author:** Claude Code
 **Approved By:** Barton Doctrine
-**Doctrine:** CL Parent-Child Doctrine v1.0
+**Doctrine:** CL Authority Registry + Outreach Operational Spine
+**ADR:** ADR-011_CL_Authority_Registry_Outreach_Spine.md

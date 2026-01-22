@@ -1,8 +1,9 @@
 # Sovereign Completion - Entity Relationship Diagram
 
-## Version: 1.0.0
-## Last Updated: 2026-01-19
+## Version: 1.1.0
+## Last Updated: 2026-01-22
 ## Architecture: CL Parent-Child Doctrine v1.1
+## Sovereign Cleanup: 2026-01-21 (23,025 records archived)
 
 ---
 
@@ -30,9 +31,19 @@
 │                                    │ hub_id                                 │
 │                                    ▼                                        │
 │   ┌─────────────────────────────────────────────────────────────────────┐  │
-│   │              COMPANY HUB STATUS (135,684 rows)                       │  │
+│   │                CL ALIGNMENT (51,148 = 51,148)                        │  │
 │   │  ┌─────────────────────────────────────────────────────────────────┐│  │
-│   │  │ company_unique_id (TEXT) ──────────────────► company_target     ││  │
+│   │  │ cl.company_identity (PASS): 51,148                              ││  │
+│   │  │ outreach.outreach:          51,148 ✓ ALIGNED                    ││  │
+│   │  └─────────────────────────────────────────────────────────────────┘│  │
+│   └─────────────────────────────────────────────────────────────────────┘  │
+│                                    │                                        │
+│                                    │ company_unique_id                      │
+│                                    ▼                                        │
+│   ┌─────────────────────────────────────────────────────────────────────┐  │
+│   │              COMPANY HUB STATUS (~306K rows)                         │  │
+│   │  ┌─────────────────────────────────────────────────────────────────┐│  │
+│   │  │ company_unique_id (TEXT) ──────────────────► outreach.outreach  ││  │
 │   │  │ hub_id (VARCHAR) ──────────────────────────► hub_registry       ││  │
 │   │  │ status (hub_status_enum) ── PASS | IN_PROGRESS | FAIL | BLOCKED ││  │
 │   │  │ metric_value (NUMERIC) ── Hub-specific metric                   ││  │
@@ -44,7 +55,7 @@
 │                                    │ Aggregates                             │
 │                                    ▼                                        │
 │   ┌─────────────────────────────────────────────────────────────────────┐  │
-│   │           vw_sovereign_completion (33,922 rows)                      │  │
+│   │           vw_sovereign_completion (51,148 rows)                      │  │
 │   │  ┌─────────────────────────────────────────────────────────────────┐│  │
 │   │  │ company_unique_id                                               ││  │
 │   │  │ company_target_status | dol_status | people_status | tf_status  ││  │
@@ -58,7 +69,7 @@
 │                                    │ Derives                                │
 │                                    ▼                                        │
 │   ┌─────────────────────────────────────────────────────────────────────┐  │
-│   │           vw_marketing_eligibility (33,922 rows)                     │  │
+│   │           vw_marketing_eligibility (51,148 rows)                     │  │
 │   │  ┌─────────────────────────────────────────────────────────────────┐│  │
 │   │  │ company_unique_id                                               ││  │
 │   │  │ marketing_tier ── -1 | 0 | 1 | 2 | 3                            ││  │
@@ -70,7 +81,7 @@
 │                                    │ Applies overrides                      │
 │                                    ▼                                        │
 │   ┌─────────────────────────────────────────────────────────────────────┐  │
-│   │    vw_marketing_eligibility_with_overrides (33,922 rows)             │  │
+│   │    vw_marketing_eligibility_with_overrides (51,148 rows)             │  │
 │   │    *** AUTHORITATIVE VIEW - USE THIS FOR MARKETING DECISIONS ***     │  │
 │   │  ┌─────────────────────────────────────────────────────────────────┐│  │
 │   │  │ company_unique_id                                               ││  │
@@ -300,13 +311,15 @@ erDiagram
 
 | Table/View | Schema | Rows | Purpose |
 |------------|--------|------|---------|
+| company_identity | cl | 51,910 | **SOVEREIGN PARENT** (51,148 PASS / 762 FAIL) |
+| outreach | outreach | 51,148 | **MASTER SPINE** - ALIGNED WITH CL PASS |
 | hub_registry | outreach | 6 | Hub definitions |
-| company_hub_status | outreach | 135,684 | Company status per hub |
+| company_hub_status | outreach | ~306K | Company status per hub (6 hubs × 51K) |
 | manual_overrides | outreach | 0 | Kill switches |
 | override_audit_log | outreach | 0 | Audit trail |
-| vw_sovereign_completion | outreach | 33,922 | Hub aggregation |
-| vw_marketing_eligibility | outreach | 33,922 | Tier computation |
-| vw_marketing_eligibility_with_overrides | outreach | 33,922 | Authoritative eligibility |
+| vw_sovereign_completion | outreach | 51,148 | Hub aggregation |
+| vw_marketing_eligibility | outreach | 51,148 | Tier computation |
+| vw_marketing_eligibility_with_overrides | outreach | 51,148 | **AUTHORITATIVE** eligibility |
 
 ---
 
@@ -332,4 +345,5 @@ erDiagram
 
 ---
 
-**Generated: 2026-01-19 | Barton Outreach Core v1.1.0 | CL Parent-Child Doctrine v1.1**
+**Generated: 2026-01-22 | Barton Outreach Core v1.1.0 | CL Parent-Child Doctrine v1.1**
+**Sovereign Cleanup: 2026-01-21 | CL-Outreach aligned at 51,148**
