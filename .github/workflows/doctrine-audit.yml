@@ -1,0 +1,159 @@
+name: Doctrine Audit
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  imo-compliance:
+    name: IMO Template Compliance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Run IMO Compliance Audit
+        run: python scripts/ci/audit_imo_compliance.py
+
+  schema-drift:
+    name: Neon Schema Drift Check
+    runs-on: ubuntu-latest
+    # Only run on PRs to avoid exposing secrets on forks
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: pip install psycopg2-binary
+
+      - name: Install Doppler CLI
+        uses: dopplerhq/cli-action@v3
+
+      - name: Run Schema Drift Verification
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+        run: doppler run -- python scripts/ci/verify_schema_drift.py
+
+  forbidden-folders:
+    name: CTB Forbidden Folders Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for forbidden folders
+        run: |
+          echo "Checking for forbidden folder names (utils, helpers, common, shared, lib, misc)..."
+          FORBIDDEN="utils helpers common shared lib misc"
+          FOUND=""
+          for folder in $FORBIDDEN; do
+            MATCHES=$(find hubs -type d -name "$folder" 2>/dev/null || true)
+            if [ -n "$MATCHES" ]; then
+              FOUND="$FOUND $MATCHES"
+            fi
+          done
+          if [ -n "$FOUND" ]; then
+            echo "FAIL: Forbidden folders found:"
+            echo "$FOUND"
+            echo ""
+            echo "CTB VIOLATION: These folders are prohibited by doctrine."
+            echo "See: CANONICAL_ARCHITECTURE_DOCTRINE.md §1.3"
+            exit 1
+          else
+            echo "PASS: No forbidden folders found"
+          fi
+
+  mermaid-erd:
+    name: Mermaid ERD Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check SCHEMA.md files have Mermaid ERDs
+        run: |
+          echo "Checking SCHEMA.md files for Mermaid erDiagram format..."
+          FAILED=""
+          for schema in $(find hubs -name "SCHEMA.md" 2>/dev/null); do
+            if ! grep -q "erDiagram" "$schema"; then
+              FAILED="$FAILED $schema"
+            fi
+          done
+          if [ -n "$FAILED" ]; then
+            echo "FAIL: Missing Mermaid erDiagram in:"
+            echo "$FAILED"
+            echo ""
+            echo "All SCHEMA.md files MUST use Mermaid erDiagram format."
+            echo "ASCII diagrams are PROHIBITED."
+            exit 1
+          else
+            echo "PASS: All SCHEMA.md files have Mermaid ERDs"
+          fi
+
+  neon-authority:
+    name: Neon Authority Declaration Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check SCHEMA.md files have Neon authority
+        run: |
+          echo "Checking SCHEMA.md files for Neon authority declaration..."
+          FAILED=""
+          for schema in $(find hubs -name "SCHEMA.md" 2>/dev/null); do
+            if ! grep -q "AUTHORITY.*Neon" "$schema"; then
+              FAILED="$FAILED $schema"
+            fi
+          done
+          if [ -n "$FAILED" ]; then
+            echo "FAIL: Missing Neon authority declaration in:"
+            echo "$FAILED"
+            echo ""
+            echo "All SCHEMA.md files MUST declare Neon as source of truth."
+            exit 1
+          else
+            echo "PASS: All SCHEMA.md files have Neon authority declaration"
+          fi
+
+  summary:
+    name: Audit Summary
+    runs-on: ubuntu-latest
+    needs: [imo-compliance, forbidden-folders, mermaid-erd, neon-authority]
+    if: always()
+    steps:
+      - name: Check audit results
+        run: |
+          echo "=" * 60
+          echo "DOCTRINE AUDIT SUMMARY"
+          echo "=" * 60
+
+          if [ "${{ needs.imo-compliance.result }}" != "success" ] || \
+             [ "${{ needs.forbidden-folders.result }}" != "success" ] || \
+             [ "${{ needs.mermaid-erd.result }}" != "success" ] || \
+             [ "${{ needs.neon-authority.result }}" != "success" ]; then
+            echo "RESULT: FAIL"
+            echo ""
+            echo "One or more doctrine checks failed."
+            echo "Review the individual job logs for details."
+            echo ""
+            echo "Doctrine: IMO_CANONICAL_v1.0"
+            echo "Any drift requires ADR + version bump."
+            exit 1
+          else
+            echo "RESULT: PASS"
+            echo ""
+            echo "All doctrine checks passed."
+            echo "This PR is compliant with IMO_CANONICAL_v1.0"
+          fi
