@@ -24,15 +24,15 @@ import pandas as pd
 # Doctrine enforcement imports
 from ops.enforcement.correlation_id import validate_correlation_id, CorrelationIDError
 
-from ..utils.patterns import apply_pattern, validate_pattern_format
-from ..utils.verification import (
-    verify_email,
-    verify_email_format,
-    verify_mx_records,
-    VerificationResult as EmailVerificationResult,
-    VerificationStatus
+from ..verification import (
+    apply_pattern,
+    validate_pattern_format,
+    verify_email_deliverable,
+    check_mx_records,
+    EmailVerificationResult,
+    VerificationStatus as EmailVerificationStatus,
 )
-from ..utils.logging import (
+from ..logging_config import (
     PipelineLogger,
     EventType,
     LogLevel,

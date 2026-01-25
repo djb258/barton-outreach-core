@@ -199,6 +199,13 @@ def detect_pattern_from_local_part(local_part: str,
     return None
 
 
+def detect_pattern_from_sample(email: str, first_name: str, last_name: str) -> Optional[str]:
+    """
+    Alias for extract_pattern_from_email for backward compatibility.
+    """
+    return extract_pattern_from_email(email, first_name, last_name)
+
+
 def extract_patterns_from_multiple(emails: List[Dict[str, str]],
                                    domain: str) -> Optional[PatternMatch]:
     """
@@ -335,6 +342,12 @@ def apply_pattern(pattern: str, first_name: str, last_name: str,
     return f"{local_part}@{domain}"
 
 
+def generate_email_from_pattern(pattern: str, first_name: str, last_name: str,
+                                 domain: str) -> Optional[str]:
+    """Alias for apply_pattern for backward compatibility."""
+    return apply_pattern(pattern, first_name, last_name, domain)
+
+
 def validate_pattern_format(pattern: str) -> bool:
     """
     Validate that pattern string is valid.
@@ -421,6 +434,42 @@ def score_pattern_likelihood(pattern: str) -> float:
 
     # Default score for unknown patterns
     return 0.3
+
+
+def rank_patterns_by_likelihood(patterns: List[str]) -> List[Tuple[str, float]]:
+    """
+    Rank patterns by their likelihood scores.
+
+    Args:
+        patterns: List of pattern strings
+
+    Returns:
+        List of (pattern, score) tuples, sorted by score descending
+    """
+    scored = [(p, score_pattern_likelihood(p)) for p in patterns]
+    return sorted(scored, key=lambda x: x[1], reverse=True)
+
+
+def extract_name_parts(full_name: str) -> Tuple[str, str]:
+    """
+    Extract first and last name from a full name string.
+
+    Args:
+        full_name: Full name string (e.g., "John Smith")
+
+    Returns:
+        Tuple of (first_name, last_name)
+    """
+    if not full_name or not isinstance(full_name, str):
+        return ("", "")
+
+    parts = full_name.strip().split()
+    if len(parts) == 0:
+        return ("", "")
+    elif len(parts) == 1:
+        return (parts[0], "")
+    else:
+        return (parts[0], parts[-1])
 
 
 def suggest_patterns_for_domain(domain: str) -> List[Tuple[str, float]]:

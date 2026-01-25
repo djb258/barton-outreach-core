@@ -29,7 +29,7 @@ import json
 # Doctrine enforcement imports
 from ops.enforcement.correlation_id import validate_correlation_id, CorrelationIDError
 
-from ..utils.logging import (
+from ..logging_config import (
     PipelineLogger,
     EventType,
     LogLevel,

@@ -65,7 +65,7 @@ class SMTPStatus(Enum):
 # =============================================================================
 
 @dataclass
-class DomainVerificationResult:
+class DomainHealth:
     """Result of domain verification."""
     domain: str
     status: DomainHealthStatus
@@ -85,7 +85,7 @@ class DomainVerificationResult:
 
 
 @dataclass
-class VerificationResult:
+class EmailVerificationResult:
     """Result of email verification."""
     email: str
     status: VerificationStatus
@@ -136,57 +136,7 @@ SMTP_TIMEOUT = 10.0
 # TOOL 5: DNS/MX VALIDATOR
 # =============================================================================
 
-def verify_domain_dns(domain: str, timeout: float = DNS_TIMEOUT) -> bool:
-    """
-    Tool 5: Verify domain has valid DNS records.
-
-    Args:
-        domain: Domain to verify
-        timeout: DNS lookup timeout in seconds
-
-    Returns:
-        True if domain resolves, False otherwise
-    """
-    if not domain or not _is_valid_domain_format(domain):
-        return False
-
-    try:
-        resolver = dns.resolver.Resolver()
-        resolver.timeout = timeout
-        resolver.lifetime = timeout
-
-        # Try A record first
-        try:
-            resolver.resolve(domain, 'A')
-            return True
-        except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
-            pass
-
-        # Try AAAA record
-        try:
-            resolver.resolve(domain, 'AAAA')
-            return True
-        except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
-            pass
-
-        # Try MX record (domain might only have mail)
-        try:
-            resolver.resolve(domain, 'MX')
-            return True
-        except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
-            pass
-
-        return False
-
-    except dns.resolver.Timeout:
-        logger.warning(f"DNS timeout for domain: {domain}")
-        return False
-    except Exception as e:
-        logger.error(f"DNS error for domain {domain}: {e}")
-        return False
-
-
-def verify_mx_records(domain: str, timeout: float = DNS_TIMEOUT) -> List[str]:
+def check_mx_records(domain: str, timeout: float = DNS_TIMEOUT) -> List[str]:
     """
     Tool 5: Get MX records for domain.
 
@@ -225,7 +175,7 @@ def verify_mx_records(domain: str, timeout: float = DNS_TIMEOUT) -> List[str]:
         return []
 
 
-def verify_domain_health(domain: str, timeout: float = DNS_TIMEOUT) -> DomainVerificationResult:
+def verify_domain_health(domain: str, timeout: float = DNS_TIMEOUT) -> DomainHealth:
     """
     Tool 5: Comprehensive domain health check.
 
@@ -234,12 +184,12 @@ def verify_domain_health(domain: str, timeout: float = DNS_TIMEOUT) -> DomainVer
         timeout: DNS lookup timeout in seconds
 
     Returns:
-        DomainVerificationResult with full details
+        DomainHealth with full details
     """
     start_time = time.time()
 
     # Initialize result
-    result = DomainVerificationResult(
+    result = DomainHealth(
         domain=domain,
         status=DomainHealthStatus.INVALID
     )
@@ -303,103 +253,55 @@ def verify_domain_health(domain: str, timeout: float = DNS_TIMEOUT) -> DomainVer
     return result
 
 
+def check_catch_all(domain: str, mx_host: str = None, timeout: float = SMTP_TIMEOUT) -> bool:
+    """
+    Check if a domain is a catch-all (accepts all email addresses).
+
+    Args:
+        domain: Domain to check
+        mx_host: Optional MX host to use
+        timeout: SMTP timeout
+
+    Returns:
+        True if domain is catch-all
+    """
+    import random
+    import string
+
+    if not mx_host:
+        mx_records = check_mx_records(domain)
+        if not mx_records:
+            return False
+        mx_host = mx_records[0]
+
+    # Generate random invalid address
+    random_local = ''.join(random.choices(string.ascii_lowercase + string.digits, k=20))
+    test_email = f"{random_local}@{domain}"
+
+    try:
+        smtp = smtplib.SMTP(timeout=timeout)
+        smtp.connect(mx_host, 25)
+        smtp.helo("verify.local")
+        smtp.mail("verify@verify.local")
+
+        code, msg = smtp.rcpt(test_email)
+        smtp.quit()
+
+        return code == 250  # Server accepts invalid address
+
+    except Exception:
+        return False
+
+
 # =============================================================================
 # TOOL 8: EMAIL VERIFIER LIGHT (DNS + SMTP)
 # =============================================================================
 
-def verify_email_format(email: str) -> bool:
-    """
-    Verify email format is valid.
-
-    Args:
-        email: Email address to verify
-
-    Returns:
-        True if format is valid
-    """
-    if not email:
-        return False
-
-    # RFC 5322 compliant regex (simplified)
-    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    return bool(re.match(pattern, email.lower().strip()))
-
-
-def smtp_check(
-    email: str,
-    mx_host: str = None,
-    timeout: float = SMTP_TIMEOUT
-) -> Tuple[SMTPStatus, Optional[str]]:
-    """
-    Tool 8: SMTP handshake verification.
-
-    Performs RCPT TO check without sending actual email.
-
-    Args:
-        email: Email address to verify
-        mx_host: MX host to connect to (auto-detected if None)
-        timeout: SMTP connection timeout
-
-    Returns:
-        Tuple of (SMTPStatus, response_message)
-    """
-    if not verify_email_format(email):
-        return (SMTPStatus.ERROR, "Invalid email format")
-
-    domain = email.split('@')[1]
-
-    # Get MX host if not provided
-    if not mx_host:
-        mx_records = verify_mx_records(domain)
-        if not mx_records:
-            return (SMTPStatus.ERROR, "No MX records found")
-        mx_host = mx_records[0]
-
-    try:
-        # Connect to SMTP server
-        smtp = smtplib.SMTP(timeout=timeout)
-        smtp.connect(mx_host, 25)
-
-        # Say hello
-        code, msg = smtp.helo("verify.local")
-        if code != 250:
-            smtp.quit()
-            return (SMTPStatus.BLOCKED, f"HELO rejected: {msg}")
-
-        # Set sender (use generic address)
-        code, msg = smtp.mail("verify@verify.local")
-        if code != 250:
-            smtp.quit()
-            return (SMTPStatus.BLOCKED, f"MAIL FROM rejected: {msg}")
-
-        # Check recipient
-        code, msg = smtp.rcpt(email)
-        smtp.quit()
-
-        if code == 250:
-            # Additional check: test invalid address to detect catch-all
-            return _detect_catch_all(email, mx_host, timeout)
-        elif code in [550, 551, 552, 553, 554]:
-            return (SMTPStatus.UNDELIVERABLE, f"RCPT TO rejected: {msg}")
-        elif code in [450, 451, 452]:
-            return (SMTPStatus.GREYLISTED, f"Temporary rejection: {msg}")
-        else:
-            return (SMTPStatus.UNKNOWN, f"Unexpected response {code}: {msg}")
-
-    except smtplib.SMTPConnectError:
-        return (SMTPStatus.BLOCKED, "Connection refused")
-    except socket.timeout:
-        return (SMTPStatus.TIMEOUT, "Connection timed out")
-    except Exception as e:
-        logger.error(f"SMTP check error for {email}: {e}")
-        return (SMTPStatus.ERROR, str(e))
-
-
-def verify_email(
+def verify_email_deliverable(
     email: str,
     check_smtp: bool = True,
     smtp_timeout: float = SMTP_TIMEOUT
-) -> VerificationResult:
+) -> EmailVerificationResult:
     """
     Tool 8: Complete email verification (light).
 
@@ -415,17 +317,17 @@ def verify_email(
         smtp_timeout: SMTP timeout in seconds
 
     Returns:
-        VerificationResult with full details
+        EmailVerificationResult with full details
     """
     start_time = time.time()
 
-    result = VerificationResult(
+    result = EmailVerificationResult(
         email=email,
         status=VerificationStatus.UNKNOWN
     )
 
     # Step 1: Format validation
-    if not verify_email_format(email):
+    if not _verify_email_format(email):
         result.status = VerificationStatus.INVALID
         result.error_message = "Invalid email format"
         result.verification_time_ms = int((time.time() - start_time) * 1000)
@@ -446,14 +348,15 @@ def verify_email(
         return result
 
     # Step 2: Domain DNS check
-    if not verify_domain_dns(domain):
+    domain_health = verify_domain_health(domain)
+    if not domain_health.is_valid():
         result.status = VerificationStatus.INVALID
         result.error_message = "Domain does not resolve"
         result.verification_time_ms = int((time.time() - start_time) * 1000)
         return result
 
     # Step 3: MX record check
-    mx_records = verify_mx_records(domain)
+    mx_records = check_mx_records(domain)
     if not mx_records:
         result.status = VerificationStatus.RISKY
         result.error_message = "No MX records (may use A record for mail)"
@@ -464,7 +367,7 @@ def verify_email(
 
     # Step 4: SMTP verification (if enabled)
     if check_smtp:
-        smtp_status, smtp_response = smtp_check(email, result.mx_host, smtp_timeout)
+        smtp_status, smtp_response = _smtp_check(email, result.mx_host, smtp_timeout)
         result.smtp_status = smtp_status
         result.smtp_response = smtp_response
 
@@ -497,12 +400,51 @@ def verify_email(
     return result
 
 
-def bulk_verify(
+def batch_verify_domains(
+    domains: List[str],
+    max_workers: int = 10,
+    timeout: float = DNS_TIMEOUT
+) -> List[DomainHealth]:
+    """
+    Batch verify multiple domains.
+
+    Args:
+        domains: List of domains to verify
+        max_workers: Maximum concurrent verifications
+        timeout: DNS timeout per domain
+
+    Returns:
+        List of DomainHealth objects
+    """
+    results = []
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {
+            executor.submit(verify_domain_health, domain, timeout): domain
+            for domain in domains
+        }
+
+        for future in as_completed(futures):
+            try:
+                result = future.result()
+                results.append(result)
+            except Exception as e:
+                domain = futures[future]
+                results.append(DomainHealth(
+                    domain=domain,
+                    status=DomainHealthStatus.ERROR,
+                    error_message=str(e)
+                ))
+
+    return results
+
+
+def batch_verify_emails(
     emails: List[str],
     check_smtp: bool = True,
     max_workers: int = 10,
     smtp_timeout: float = SMTP_TIMEOUT
-) -> List[VerificationResult]:
+) -> List[EmailVerificationResult]:
     """
     Bulk verify multiple email addresses.
 
@@ -513,13 +455,13 @@ def bulk_verify(
         smtp_timeout: SMTP timeout per email
 
     Returns:
-        List of VerificationResult objects
+        List of EmailVerificationResult objects
     """
     results = []
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {
-            executor.submit(verify_email, email, check_smtp, smtp_timeout): email
+            executor.submit(verify_email_deliverable, email, check_smtp, smtp_timeout): email
             for email in emails
         }
 
@@ -529,7 +471,7 @@ def bulk_verify(
                 results.append(result)
             except Exception as e:
                 email = futures[future]
-                results.append(VerificationResult(
+                results.append(EmailVerificationResult(
                     email=email,
                     status=VerificationStatus.ERROR,
                     error_message=str(e)
@@ -550,6 +492,16 @@ def _is_valid_domain_format(domain: str) -> bool:
     # Basic domain format check
     pattern = r'^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$'
     return bool(re.match(pattern, domain.lower().strip()))
+
+
+def _verify_email_format(email: str) -> bool:
+    """Verify email format is valid."""
+    if not email:
+        return False
+
+    # RFC 5322 compliant regex (simplified)
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return bool(re.match(pattern, email.lower().strip()))
 
 
 def _check_parked_domain(domain: str, a_records: List[str]) -> bool:
@@ -574,7 +526,57 @@ def _check_parked_domain(domain: str, a_records: List[str]) -> bool:
     return False
 
 
-def _detect_catch_all(
+def _smtp_check(
+    email: str,
+    mx_host: str,
+    timeout: float = SMTP_TIMEOUT
+) -> Tuple[SMTPStatus, Optional[str]]:
+    """
+    SMTP handshake verification.
+
+    Performs RCPT TO check without sending actual email.
+    """
+    try:
+        # Connect to SMTP server
+        smtp = smtplib.SMTP(timeout=timeout)
+        smtp.connect(mx_host, 25)
+
+        # Say hello
+        code, msg = smtp.helo("verify.local")
+        if code != 250:
+            smtp.quit()
+            return (SMTPStatus.BLOCKED, f"HELO rejected: {msg}")
+
+        # Set sender (use generic address)
+        code, msg = smtp.mail("verify@verify.local")
+        if code != 250:
+            smtp.quit()
+            return (SMTPStatus.BLOCKED, f"MAIL FROM rejected: {msg}")
+
+        # Check recipient
+        code, msg = smtp.rcpt(email)
+        smtp.quit()
+
+        if code == 250:
+            # Additional check: test invalid address to detect catch-all
+            return _detect_catch_all_smtp(email, mx_host, timeout)
+        elif code in [550, 551, 552, 553, 554]:
+            return (SMTPStatus.UNDELIVERABLE, f"RCPT TO rejected: {msg}")
+        elif code in [450, 451, 452]:
+            return (SMTPStatus.GREYLISTED, f"Temporary rejection: {msg}")
+        else:
+            return (SMTPStatus.ERROR, f"Unexpected response {code}: {msg}")
+
+    except smtplib.SMTPConnectError:
+        return (SMTPStatus.BLOCKED, "Connection refused")
+    except socket.timeout:
+        return (SMTPStatus.TIMEOUT, "Connection timed out")
+    except Exception as e:
+        logger.error(f"SMTP check error for {email}: {e}")
+        return (SMTPStatus.ERROR, str(e))
+
+
+def _detect_catch_all_smtp(
     email: str,
     mx_host: str,
     timeout: float = SMTP_TIMEOUT
@@ -622,15 +624,14 @@ __all__ = [
     "VerificationStatus",
     "SMTPStatus",
     # Data classes
-    "DomainVerificationResult",
-    "VerificationResult",
+    "DomainHealth",
+    "EmailVerificationResult",
     # Tool 5: DNS/MX Validator
-    "verify_domain_dns",
-    "verify_mx_records",
+    "check_mx_records",
     "verify_domain_health",
+    "check_catch_all",
     # Tool 8: Email Verifier Light
-    "verify_email_format",
-    "smtp_check",
-    "verify_email",
-    "bulk_verify",
+    "verify_email_deliverable",
+    "batch_verify_domains",
+    "batch_verify_emails",
 ]

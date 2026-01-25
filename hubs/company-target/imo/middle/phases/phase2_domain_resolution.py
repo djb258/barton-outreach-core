@@ -26,14 +26,13 @@ import pandas as pd
 # Doctrine enforcement imports
 from ops.enforcement.correlation_id import validate_correlation_id, CorrelationIDError
 
-from ..utils.normalization import normalize_domain
-from ..utils.verification import (
-    verify_domain_dns,
+from ..matching import normalize_domain
+from ..verification import (
     verify_domain_health,
     DomainHealthStatus,
-    DomainVerificationResult
+    DomainHealth,
 )
-from ..utils.logging import (
+from ..logging_config import (
     PipelineLogger,
     EventType,
     LogLevel,

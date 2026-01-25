@@ -23,34 +23,30 @@ import pandas as pd
 # Doctrine enforcement imports
 from ops.enforcement.correlation_id import validate_correlation_id, CorrelationIDError
 
-from ..utils.normalization import (
+from ..matching import (
     normalize_company_name,
     normalize_domain,
     normalize_city,
-    normalize_state
-)
-from ..utils.fuzzy import (
+    normalize_state,
     MatchTier,
     MatchCandidate,
     MatchResult as FuzzyMatchResult,
     jaro_winkler_similarity,
     apply_city_guardrail,
     resolve_multi_candidate,
-    check_ambiguous_collision
+    check_ambiguous_collision,
+    AbacusFuzzyArbitrator,
+    CollisionCandidate,
+    ArbitrationResult,
+    create_arbitrator,
 )
-from ..utils.logging import (
+from ..logging_config import (
     PipelineLogger,
     EventType,
     log_phase_start,
     log_phase_complete
 )
-from ..utils.config import MatchingConfig
-from ..utils.fuzzy_arbitration import (
-    AbacusFuzzyArbitrator,
-    CollisionCandidate,
-    ArbitrationResult,
-    create_arbitrator
-)
+from ..config import get_config
 
 
 class MatchType(Enum):

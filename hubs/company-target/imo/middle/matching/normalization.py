@@ -377,7 +377,7 @@ def extract_domain_from_email(email: str) -> Optional[str]:
     return normalized.split('@')[-1]
 
 
-def is_personal_email_domain(domain: str) -> bool:
+def is_personal_email(domain: str) -> bool:
     """
     Check if domain is a personal email provider.
 
@@ -420,3 +420,14 @@ def normalize_for_matching(text: str) -> str:
     result = re.sub(r'[^a-z0-9]', '', result)
 
     return result
+
+
+# Alias for backward compatibility
+def remove_company_suffix(name: str) -> str:
+    """Alias for normalize_company_name with remove_suffixes=True."""
+    return normalize_company_name(name, remove_suffixes=True)
+
+
+def clean_company_name(name: str) -> str:
+    """Alias for normalize_company_name."""
+    return normalize_company_name(name)

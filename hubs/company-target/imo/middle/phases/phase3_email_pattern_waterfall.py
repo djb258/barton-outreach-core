@@ -33,7 +33,7 @@ import pandas as pd
 from ops.enforcement.correlation_id import validate_correlation_id, CorrelationIDError
 
 # Context management (TRUTH SOURCE for cost safety)
-from ..utils.context_manager import (
+from ..context_manager import (
     OutreachContextManager,
     MissingContextError,
     MissingSovIdError,
@@ -41,20 +41,18 @@ from ..utils.context_manager import (
     get_context_manager
 )
 
-from ..utils.normalization import normalize_domain
-from ..utils.patterns import (
-    extract_patterns_from_multiple,
-    suggest_patterns_for_domain,
+from ..matching import normalize_domain
+from ..verification import (
+    COMMON_PATTERNS,
     PatternMatch,
-    COMMON_PATTERNS
 )
-from ..utils.providers import (
+from ..providers import (
     ProviderRegistry,
     ProviderTier,
     ProviderResult,
     execute_tier_waterfall
 )
-from ..utils.logging import (
+from ..logging_config import (
     PipelineLogger,
     EventType,
     LogLevel,

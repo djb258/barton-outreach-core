@@ -565,7 +565,7 @@ class CompanyPipeline:
             CLNotVerifiedError: If company not found in CL
         """
         # DOCTRINE ENFORCEMENT: FAIL HARD on missing context
-        from .utils.context_manager import (
+        from .context_manager import (
             OutreachContextManager,
             MissingContextError,
             MissingSovIdError
@@ -576,7 +576,7 @@ class CompanyPipeline:
         # CL UPSTREAM GATE: Verify company exists in Company Lifecycle
         # DOCTRINE: Outreach is a CONSUMER of CL truth, not a creator
         # If CL did not mint the sovereign ID, Outreach MUST NOT proceed
-        from .utils.cl_gate import CLGate
+        from .gates import CLGate
         CLGate.enforce_or_fail(company_sov_id, outreach_context_id)
 
         if not correlation_id:
