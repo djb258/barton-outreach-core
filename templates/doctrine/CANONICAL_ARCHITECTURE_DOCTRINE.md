@@ -1,6 +1,6 @@
 # Canonical Architecture Doctrine (CTB + CC)
 
-**Doctrine Version**: 1.1.0
+**Doctrine Version**: 1.4.0
 **Status**: LOCKED
 **Authority**: IMO-Creator
 **Change Protocol**: ADR approval required for any modification
@@ -27,7 +27,32 @@ CTB is the static structural spine. It defines where components are placed.
 - CTB placement is determined at design time, not runtime.
 - CTB restructuring requires explicit ADR approval.
 
-### 1.3 Versioning
+### 1.3 Canonical CTB Branches
+
+CTB branches are the **physical placement categories** for all source code within a hub.
+
+| Branch | Purpose |
+|--------|---------|
+| `sys/` | System infrastructure: env loaders, bootstraps, config readers |
+| `data/` | Data layer: schemas, queries, migrations, repositories |
+| `app/` | Application logic: modules, services, workflows, business logic |
+| `ai/` | AI components: agents, routers, prompts, LLM integrations |
+| `ui/` | User interface: pages, components, layouts, styles |
+
+**Structural rules:**
+- CTB branches exist under `src/` (i.e., `src/sys/`, `src/data/`, etc.)
+- Every source file MUST map to exactly one CTB branch
+- Files that do not fit any branch must be deleted or refactored
+
+**Not CTB branches:**
+- `docs/` — Documentation (top-level support folder)
+- `config/` — Configuration (top-level support folder)
+- `scripts/` — Automation (top-level support folder)
+- `ops/` — Operations (if used, top-level support folder)
+
+These are **support folders**, not CTB branches. They exist at the repository root level, not under `src/`.
+
+### 1.4 Versioning
 
 - CTB structure is version-locked.
 - Version changes require explicit ADR approval and version increment.
@@ -92,6 +117,47 @@ Hub-and-spoke defines authority boundaries and interface contracts.
 - Any hub-and-spoke violation is a CC violation.
 - CC violations are doctrine violations.
 - Doctrine violations halt promotion.
+
+### 3.5 IMO Model (Inside Hubs Only)
+
+IMO layers exist **only inside hubs**. Spokes are external interfaces.
+
+| Layer | Name | Role |
+|-------|------|------|
+| **I** | Ingress | Data entry point. May validate schema. MUST NOT make decisions. MUST NOT mutate business state. |
+| **M** | Middle | All logic, all decisions, all transformations, all state ownership, all tool invocations. |
+| **O** | Egress | Outputs and exports. Read-only views. Downstream signals. MUST NOT contain logic. |
+
+**Golden Rule**: Logic lives only inside hubs. Spokes only carry data.
+
+### 3.6 Required Identifiers
+
+Every hub MUST have:
+
+| Identifier | CC Layer | Description |
+|------------|----------|-------------|
+| **Sovereign ID** | CC-01 | Reference to governing sovereign |
+| **Hub ID** | CC-02 | Unique, immutable hub identifier |
+| **Process ID** | CC-04 | Execution/trace ID (minted per run) |
+
+These identifiers:
+- Are assigned at creation
+- Never change
+- Are referenced in all PRDs, ADRs, and PRs
+- Enable traceability across the system
+
+### 3.7 Hub Creation Protocol
+
+1. Declare sovereign reference (CC-01)
+2. Define the hub identity (CC-02)
+3. Assign Hub ID
+4. Write Hub PRD
+5. Define CTB placement
+6. Define full IMO internally
+7. Define I/O spokes
+8. Create ADRs for decisions (CC-03)
+9. Implement code (CC-04)
+10. Validate with compliance checklist
 
 ---
 
@@ -330,6 +396,73 @@ Every derived system must declare:
 
 ---
 
+## 12. AI-Ready Data Doctrine
+
+All databases governed by this doctrine MUST be AI-ready. AI-ready means every table and column has sufficient metadata for both human and AI agent interpretation without guesswork.
+
+### 12.1 Definition
+
+- AI-ready data is self-describing data.
+- Metadata eliminates ambiguity for any reader (human or machine).
+- Schema metadata lives under CTB `data/` branch: `src/data/schema/` or `src/subhubs/<subhub>/data/schema/`.
+
+### 12.2 Table-Level Requirements
+
+Every table MUST declare:
+
+| Field | Description |
+|-------|-------------|
+| `table_unique_id` | Globally unique identifier within sovereign boundary |
+| `owning_hub_unique_id` | Hub (CC-02) that owns this table |
+| `owning_subhub_unique_id` | Sub-hub (CC-03) that owns this table |
+| `description` | Plain English description of what this table represents |
+| `source_of_truth` | Where authoritative data originates (system, API, manual entry) |
+| `row_identity_strategy` | How rows are uniquely identified (PK strategy) |
+
+### 12.3 Column-Level Requirements
+
+Every column MUST declare:
+
+| Field | Description |
+|-------|-------------|
+| `column_unique_id` | Globally unique identifier within sovereign boundary |
+| `description` | Plain English description (no abbreviations, no jargon) |
+| `data_type` | Database data type (e.g., UUID, VARCHAR(255), INTEGER) |
+| `format` | Semantic format (e.g., ISO-8601, USD_CENTS, ENUM, EMAIL) |
+| `nullable` | true/false |
+| `semantic_role` | One of: `identifier`, `attribute`, `metric`, `foreign_key` |
+
+### 12.4 Relationship Requirements
+
+All relationships MUST be explicitly declared:
+
+| Field | Description |
+|-------|-------------|
+| `relationship_id` | Unique identifier for the relationship |
+| `source_table_id` | Table where FK originates |
+| `target_table_id` | Table being referenced |
+| `cardinality` | One of: `one-to-one`, `one-to-many`, `many-to-many` |
+| `constraint_name` | Database FK constraint name (if any) |
+
+### 12.5 Placement Rules
+
+- Schema metadata files live under `data/schema/` within the owning hub/sub-hub.
+- Metadata is documentation; it MUST NOT contain runtime logic.
+- Metadata is derived from actual database schema; it MUST NOT contradict runtime schema.
+- ERD artifacts are generated into `docs/diagrams/` and are read-only.
+
+### 12.6 Enforcement
+
+| Violation | Category |
+|-----------|----------|
+| Table missing required metadata | DATA_VIOLATION |
+| Column missing required metadata | DATA_VIOLATION |
+| Undeclared relationship | DATA_VIOLATION |
+| Metadata contradicts runtime schema | DATA_VIOLATION |
+| Schema metadata outside `data/` branch | CTB_VIOLATION |
+
+---
+
 ## Global Rules
 
 ### Doctrine Authority
@@ -356,13 +489,58 @@ All derived systems must declare:
 
 ---
 
+## Global Invariants vs Local Policy
+
+This doctrine defines **global invariants** — structural laws that apply universally.
+Individual repositories define **local policy** — execution rules that apply within their boundary.
+
+### Global Invariants (Defined by IMO-Creator)
+
+These are **non-negotiable structural constraints**:
+
+| Invariant | Authority |
+|-----------|-----------|
+| CTB branch structure (sys, data, app, ai, ui) | This doctrine |
+| CC layer hierarchy (CC-01 → CC-02 → CC-03 → CC-04) | This doctrine |
+| CC descent gates (PRD before code, ADR before code) | This doctrine |
+| IMO flow (Ingress → Middle → Egress) | This doctrine |
+| Hub/Spoke geometry (logic in hub, data in spoke) | This doctrine |
+| Forbidden folders (utils, helpers, common, shared, lib, misc) | This doctrine |
+
+**Child repos may NOT override, redefine, or interpret these invariants.**
+
+### Local Policy (Defined by Individual Repos)
+
+These are **repo-specific execution decisions**:
+
+| Policy | Authority |
+|--------|-----------|
+| Which CTB branches are populated | Individual repo |
+| Specific technology choices within branches | Individual repo |
+| Internal folder structure within CTB branches | Individual repo |
+| Naming conventions for files and modules | Individual repo |
+| Test organization and coverage requirements | Individual repo |
+| Deployment and operational procedures | Individual repo |
+| Tool selection (per SNAP_ON_TOOLBOX constraints) | Individual repo |
+
+**IMO-Creator does NOT dictate execution specifics. Repos have autonomy within invariant boundaries.**
+
+### Authority Rule
+
+> Global invariants constrain **what structure must exist**.
+> Local policy determines **how that structure is used**.
+
+If a local policy contradicts a global invariant, the invariant wins. No exceptions.
+
+---
+
 ## Document Control
 
 | Field | Value |
 |-------|-------|
 | Created | 2025-01-05 |
-| Last Modified | 2025-01-05 |
-| Doctrine Version | 1.1.0 |
-| CTB Version | 1.0.0 |
+| Last Modified | 2026-01-25 |
+| Doctrine Version | 1.4.0 |
+| CTB Version | 1.1.0 |
 | Status | LOCKED |
 | Change Protocol | ADR-triggered only |
