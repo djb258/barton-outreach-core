@@ -17,6 +17,14 @@ from .extract_entities import extract_entities, ExtractedEntities, ExtractionRes
 from .classify_event import classify_event, ClassifiedEvent, ClassificationResult, EventType
 from .match_company import match_company, MatchedEvent, MatchResult
 from .validate_signal import validate_signal, ValidatedSignal, ValidationResult
+from .hub_status import (
+    BlogHubStatusResult,
+    compute_blog_hub_status,
+    backfill_blog_hub_status,
+    generate_blog_signal_hash,
+    FRESHNESS_DAYS as BLOG_FRESHNESS_DAYS,
+    MIN_SIGNALS,
+)
 
 __all__ = [
     # Parse
@@ -40,4 +48,11 @@ __all__ = [
     'validate_signal',
     'ValidatedSignal',
     'ValidationResult',
+    # Hub status computation
+    'BlogHubStatusResult',
+    'compute_blog_hub_status',
+    'backfill_blog_hub_status',
+    'generate_blog_signal_hash',
+    'BLOG_FRESHNESS_DAYS',
+    'MIN_SIGNALS',
 ]

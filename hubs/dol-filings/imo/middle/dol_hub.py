@@ -16,9 +16,19 @@ from typing import Any, Dict, List, Optional
 from datetime import datetime
 import logging
 
-from ctb.sys.enrichment.pipeline_engine.wheel.bicycle_wheel import Spoke, Hub
-from ctb.sys.enrichment.pipeline_engine.wheel.wheel_result import SpokeResult, ResultStatus, FailureType
-from hub.company.bit_engine import BITEngine, SignalType
+# PHANTOM IMPORTS - ctb.* module does not exist (commented out per doctrine)
+# from ctb.sys.enrichment.pipeline_engine.wheel.bicycle_wheel import Spoke, Hub
+# from ctb.sys.enrichment.pipeline_engine.wheel.wheel_result import SpokeResult, ResultStatus, FailureType
+
+# PHANTOM IMPORT - hub.company path does not exist
+# from hub.company.bit_engine import BITEngine, SignalType
+
+# Stub placeholders to prevent NameError
+Spoke = Hub = object
+SpokeResult = object
+class ResultStatus: SUCCEEDED = "SUCCEEDED"; FAILED = "FAILED"
+class FailureType: VALIDATION_ERROR = "VALIDATION_ERROR"; NO_MATCH = "NO_MATCH"
+BITEngine = SignalType = None  # Not available
 
 # Doctrine enforcement imports
 from ops.enforcement.correlation_id import validate_correlation_id, CorrelationIDError
@@ -347,7 +357,7 @@ class DOLNodeSpoke(Spoke):
 
         # PRIORITY 2: Direct Company Hub lookup via Neon
         try:
-            from hub.company import CompanyHub
+            from hubs.company_target.imo.middle.company_hub import CompanyHub
             company_hub = CompanyHub()
             company = company_hub.find_company_by_ein(ein_normalized)
 

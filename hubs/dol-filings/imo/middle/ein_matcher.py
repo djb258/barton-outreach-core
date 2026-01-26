@@ -1,9 +1,18 @@
 #!/usr/bin/env python3
 """
-DOL EIN Backfill Script
-========================
+DOL EIN Backfill Script (CL-GATED)
+===================================
 Matches companies in company.company_master to DOL Form 5500 data
 and backfills the EIN (Employer Identification Number).
+
+DOCTRINE COMPLIANCE (2026-01-19):
+    - This script ENRICHES existing CL-minted records
+    - It NEVER creates new company_unique_id (that's CL's job)
+    - Fuzzy matching is allowed because company_unique_id already exists
+    - The match only ADDS ein field to records CL already created
+
+CL-GATE: company_unique_id MUST exist before fuzzy matching runs.
+         If company_unique_id IS NULL: STOP. DO NOT PROCEED.
 
 Matching Strategy (State → City → Name):
 1. State: Exact match on address_state = mail_state
@@ -45,6 +54,12 @@ def backfill_ein(dry_run=False, threshold=0.8, limit=None, state=None):
     """
     Backfill EIN from DOL Form 5500 data to company.company_master.
 
+    CL-GATE COMPLIANCE:
+        This function ONLY updates existing records where company_unique_id
+        is already set by CL. The query filters on cm.company_unique_id IS NOT NULL
+        and cm.ein IS NULL - meaning we're enriching existing CL records, not
+        creating new ones.
+
     Args:
         dry_run: If True, don't make any changes
         threshold: Minimum trigram similarity threshold (0.0-1.0)
@@ -59,25 +74,40 @@ def backfill_ein(dry_run=False, threshold=0.8, limit=None, state=None):
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
     print('=' * 70)
-    print('DOL EIN BACKFILL')
+    print('DOL EIN BACKFILL (CL-GATED)')
     print('=' * 70)
     print(f"Mode: {'DRY RUN' if dry_run else 'LIVE'}")
     print(f"Similarity threshold: {threshold}")
     print(f"Limit: {limit or 'None'}")
     print(f"State filter: {state or 'All states'}")
     print()
+    print("DOCTRINE: Enriching existing CL-minted records only")
+    print("          company_unique_id MUST exist before fuzzy match")
+    print()
+
+    # CL-GATE CHECK: Verify we're only operating on CL-minted records
+    cur.execute('''
+        SELECT COUNT(*) as orphan_count 
+        FROM company.company_master 
+        WHERE company_unique_id IS NULL
+    ''')
+    orphan_count = cur.fetchone()['orphan_count']
+    if orphan_count > 0:
+        print(f"WARNING: {orphan_count} records have NULL company_unique_id")
+        print("         These will be SKIPPED per CL-gate doctrine")
+        print()
 
     # Step 1: Check current EIN status
-    cur.execute('SELECT COUNT(*) as total FROM company.company_master')
+    cur.execute('SELECT COUNT(*) as total FROM company.company_master WHERE company_unique_id IS NOT NULL')
     total = cur.fetchone()['total']
 
-    cur.execute('SELECT COUNT(*) as with_ein FROM company.company_master WHERE ein IS NOT NULL')
+    cur.execute('SELECT COUNT(*) as with_ein FROM company.company_master WHERE ein IS NOT NULL AND company_unique_id IS NOT NULL')
     with_ein = cur.fetchone()['with_ein']
 
-    cur.execute('SELECT COUNT(*) as without_ein FROM company.company_master WHERE ein IS NULL')
+    cur.execute('SELECT COUNT(*) as without_ein FROM company.company_master WHERE ein IS NULL AND company_unique_id IS NOT NULL')
     without_ein = cur.fetchone()['without_ein']
 
-    print(f"BEFORE:")
+    print(f"BEFORE (CL-minted records only):")
     print(f"  Total companies: {total:,}")
     print(f"  With EIN: {with_ein:,}")
     print(f"  Without EIN: {without_ein:,}")
@@ -85,11 +115,14 @@ def backfill_ein(dry_run=False, threshold=0.8, limit=None, state=None):
 
     # Step 2: Find matches
     print("Finding matches (State → City → Name)...")
+    print("CL-GATE: Only matching records where company_unique_id IS NOT NULL")
 
     limit_clause = f"LIMIT {limit}" if limit else ""
     state_clause = "AND cm.address_state = %s" if state else ""
     params = [threshold, state] if state else [threshold]
 
+    # CL-GATE: The WHERE clause includes company_unique_id IS NOT NULL
+    # This ensures we ONLY enrich existing CL-minted records
     cur.execute(f'''
         WITH ranked_matches AS (
             SELECT
@@ -109,6 +142,7 @@ def backfill_ein(dry_run=False, threshold=0.8, limit=None, state=None):
                 ON cm.address_state = d.spons_dfe_mail_us_state
                 AND LOWER(TRIM(cm.address_city)) = LOWER(TRIM(d.spons_dfe_mail_us_city))
             WHERE cm.ein IS NULL
+              AND cm.company_unique_id IS NOT NULL  -- CL-GATE: Must have CL-minted ID
               AND d.sponsor_dfe_ein IS NOT NULL
               AND SIMILARITY(LOWER(cm.company_name), LOWER(d.sponsor_dfe_name)) > %s
               {state_clause}

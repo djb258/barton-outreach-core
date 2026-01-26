@@ -27,8 +27,8 @@ BIT Score Components:
     - Movement Signals: +10 per detected movement
 
 Neon Integration:
-    - Signals are persisted to funnel.bit_signal_log
-    - Scores are persisted to marketing.company_master.bit_score
+    - Signals are persisted to outreach.bit_signal_log
+    - Scores are persisted to outreach.company_target.bit_score
     - Signal deduplication via hash + timestamp constraints
 """
 

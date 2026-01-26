@@ -1,12 +1,12 @@
 """
-Company Hub - Central Axle of the Barton System
-================================================
-The master node that all spokes connect to.
+Company Hub - Company Target Sub-Hub
+====================================
+The internal anchor that validates company identity.
 
 Architecture:
     ╔═════════════════════════════════════════════════╗
-    ║              COMPANY HUB                        ║
-    ║             (Central Axle)                      ║
+    ║           COMPANY TARGET SUB-HUB                ║
+    ║            (Internal Anchor)                    ║
     ║                                                 ║
     ║   ┌───────────────────────────────────────┐     ║
     ║   │           BIT ENGINE                  │     ║
@@ -29,7 +29,11 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime
 import logging
 
-from ctb.sys.enrichment.pipeline_engine.wheel.bicycle_wheel import Hub
+# PHANTOM IMPORT - ctb.* module does not exist (commented out per doctrine)
+# from ctb.sys.enrichment.pipeline_engine.wheel.bicycle_wheel import Hub
+
+# Stub placeholder to prevent NameError
+Hub = object
 
 
 logger = logging.getLogger(__name__)
@@ -145,15 +149,13 @@ class CompanyHubRecord:
 
 class CompanyHub:
     """
-    The Company Hub - Central Axle of the Barton Bicycle Wheel.
+    The Company Hub - Company Target Sub-Hub.
 
-    All spoke nodes connect to this hub:
-    - People Node (Spoke #1)
-    - DOL Node (Spoke #2)
-    - Blog Node (Spoke #3)
-    - Talent Flow (Spoke #4)
-    - BIT Engine (Spoke #5)
-    - Outreach (Spoke #6)
+    All sub-hubs connect to this hub for company identity:
+    - People Intelligence Sub-Hub
+    - DOL Filings Sub-Hub
+    - Blog Content Sub-Hub
+    - Outreach Execution Sub-Hub
     """
 
     def __init__(self):
@@ -175,7 +177,18 @@ class CompanyHub:
         self.logger = logging.getLogger(__name__)
 
     def add_company(self, company: CompanyHubRecord) -> bool:
-        """Add a company to the hub"""
+        """Add a company to the hub.
+
+        HARD_FAIL: company_unique_id is REQUIRED per doctrine.
+        """
+        # HARD_FAIL guard per doctrine (DV-014)
+        if not company.company_unique_id:
+            raise ValueError(
+                "HARD_FAIL: company_unique_id is NULL. "
+                "Per CL Parent-Child Doctrine, company_unique_id must be minted by CL "
+                "before any Outreach operations. This hub does NOT mint identity."
+            )
+
         if company.company_unique_id in self._companies:
             self.logger.warning(f"Company {company.company_unique_id} already exists in hub")
             return False
@@ -275,6 +288,37 @@ class CompanyHub:
         if not company:
             return False, ['company_not_found']
         return company.is_spoke_ready, company.missing_anchors
+
+    def enforce_golden_rule(self, company_id: str) -> None:
+        """
+        HARD_FAIL enforcement of the Golden Rule.
+
+        Per doctrine: IF company_unique_id IS NULL OR domain IS NULL OR email_pattern IS NULL:
+        STOP. DO NOT PROCEED.
+
+        Raises:
+            ValueError: If any required anchor is missing
+        """
+        if not company_id:
+            raise ValueError(
+                "HARD_FAIL: company_id is NULL. "
+                "Per CL Parent-Child Doctrine, company_unique_id must be provided."
+            )
+
+        company = self.get_company(company_id)
+        if not company:
+            raise ValueError(
+                f"HARD_FAIL: Company {company_id} not found in hub. "
+                "Company must exist before spoke operations can proceed."
+            )
+
+        if not company.is_spoke_ready:
+            missing = company.missing_anchors
+            raise ValueError(
+                f"HARD_FAIL: Golden Rule violation for company {company_id}. "
+                f"Missing required anchors: {missing}. "
+                "All anchors must be present before spoke operations."
+            )
 
     # =========================================================================
     # NEON DATABASE INTEGRATION
@@ -473,19 +517,19 @@ class CompanyHub:
     def find_company_by_name(
         self,
         company_name: str,
-        fuzzy_threshold: float = 0.85
     ) -> Optional[CompanyHubRecord]:
         """
-        Find company by name (with fuzzy matching).
+        Find company by name (exact matching only).
 
-        Uses multiple matching strategies:
+        Uses matching strategies:
         1. Exact match (case-insensitive)
         2. Normalized match (remove LLC, Inc, etc.)
-        3. Fuzzy match (rapidfuzz) if threshold met
+        3. Check Neon database
+
+        Note: Fuzzy matching removed per CL Parent-Child Doctrine.
 
         Args:
             company_name: Company name to search for
-            fuzzy_threshold: Minimum similarity ratio (0.0 to 1.0)
 
         Returns:
             CompanyHubRecord if found, None otherwise
@@ -507,33 +551,8 @@ class CompanyHub:
             if normalized_company == normalized_input:
                 return company
 
-        # Strategy 3: Fuzzy match
-        try:
-            from rapidfuzz import fuzz, process
-
-            # Build list of (company_id, normalized_name)
-            candidates = [
-                (cid, self._normalize_company_name(c.company_name))
-                for cid, c in self._companies.items()
-            ]
-
-            if candidates:
-                names = [c[1] for c in candidates]
-                result = process.extractOne(
-                    normalized_input,
-                    names,
-                    scorer=fuzz.ratio
-                )
-
-                if result and result[1] >= fuzzy_threshold * 100:
-                    # Find the matching company
-                    matched_name = result[0]
-                    for cid, normalized in candidates:
-                        if normalized == matched_name:
-                            return self._companies[cid]
-
-        except ImportError:
-            logger.warning("rapidfuzz not installed - fuzzy matching disabled")
+        # Strategy 3: Fuzzy matching REMOVED per doctrine
+        # Per CL Parent-Child Doctrine: No fuzzy matching for identity resolution
 
         # Strategy 4: Check Neon
         from .neon_writer import CompanyNeonWriter

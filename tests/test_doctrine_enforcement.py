@@ -294,9 +294,9 @@ class TestErrorCodeStandardization:
 # Try to import TTL components - skip tests if hub package has issues
 try:
     import importlib.util
-    spec = importlib.util.find_spec("hub.company.phases.phase1b_unmatched_hold_export")
+    spec = importlib.util.find_spec("hubs.company_target.imo.middle.phases.phase1b_unmatched_hold_export")
     if spec is not None:
-        from hub.company.phases.phase1b_unmatched_hold_export import (
+        from hubs.company_target.imo.middle.phases.phase1b_unmatched_hold_export import (
             HoldTTLLevel,
             HOLD_TTL_DAYS,
             Phase1bUnmatchedHoldExport

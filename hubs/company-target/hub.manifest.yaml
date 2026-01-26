@@ -1,19 +1,25 @@
 # Company Target Sub-Hub Manifest
 # Internal anchor for Outreach Execution Hub
 # CHILD of Company Lifecycle (CL) - receives identity, never mints
-# Version: 2.0.0
+# Version: 2.1.0
 
 hub:
   id: HUB-COMPANY-TARGET
   name: Company Target Sub-Hub
   doctrine_id: "04.04.01"
   type: sub-hub
-  version: "2.0.0"
+  version: "2.1.0"
   description: |
     Internal anchor table for Outreach Execution Hub.
     Receives company_unique_id from Company Lifecycle (CL).
     NEVER mints, merges, retires, or overrides company identity.
     Provides local FK join point for Outreach sub-hubs.
+
+# Classification (LOCKED - used by vw_sovereign_completion)
+classification:
+  type: required
+  gates_completion: true
+  waterfall_order: 1
 
 # Parent Hub Declaration (MANDATORY)
 parent:

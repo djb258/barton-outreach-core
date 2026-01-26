@@ -23,9 +23,19 @@ from datetime import datetime
 import logging
 import uuid
 
-from ctb.sys.enrichment.pipeline_engine.wheel.bicycle_wheel import Spoke, Hub, SubWheel, BicycleWheel
-from ctb.sys.enrichment.pipeline_engine.wheel.wheel_result import SpokeResult, FailureResult, ResultStatus, FailureType
-from hub.company.bit_engine import BITEngine, SignalType
+# PHANTOM IMPORTS - ctb.* module does not exist (commented out per doctrine)
+# from ctb.sys.enrichment.pipeline_engine.wheel.bicycle_wheel import Spoke, Hub, SubWheel, BicycleWheel
+# from ctb.sys.enrichment.pipeline_engine.wheel.wheel_result import SpokeResult, FailureResult, ResultStatus, FailureType
+
+# PHANTOM IMPORT - hub.company path does not exist (hubs use hyphens, not valid Python)
+# from hub.company.bit_engine import BITEngine, SignalType
+
+# Stub placeholders to prevent NameError (minimal fix per doctrine)
+Spoke = Hub = SubWheel = BicycleWheel = object
+SpokeResult = FailureResult = object
+class ResultStatus: SUCCEEDED = "SUCCEEDED"; FAILED = "FAILED"
+class FailureType: VALIDATION_ERROR = "VALIDATION_ERROR"; NO_MATCH = "NO_MATCH"
+BITEngine = SignalType = None  # Not available
 
 # Doctrine enforcement
 from ops.enforcement.correlation_id import validate_correlation_id, CorrelationIDError
@@ -157,7 +167,7 @@ class PeopleNodeSpoke(Spoke):
 
         # Fallback: Try to get company from hub
         try:
-            from hub.company import CompanyHub
+            from hubs.company_target.imo.middle.company_hub import CompanyHub
             company_hub = CompanyHub()
             company = company_hub.get_company(company_id)
 

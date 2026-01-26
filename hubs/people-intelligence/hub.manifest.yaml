@@ -1,17 +1,23 @@
 # People Intelligence Hub Manifest
 # Altitude: 40k (System Infrastructure)
-# Version: 1.0.0
+# Version: 1.1.0
 
 hub:
   id: HUB-PEOPLE
   name: People Intelligence Hub
   doctrine_id: "04.04.02"
   type: sub-hub
-  version: "1.0.0"
+  version: "1.1.0"
   description: |
     Owns human identity, employment state, and slot ASSIGNMENTS.
     Tracks the human lifecycle independently of companies.
     People churn - they change jobs - that's a People Hub event.
+
+# Classification (LOCKED - used by vw_sovereign_completion)
+classification:
+  type: required
+  gates_completion: true
+  waterfall_order: 3
 
 core_metric:
   name: SLOT_FILL_RATE

@@ -22,7 +22,7 @@ Architecture:
     ╚═════════════════════════════════════════════════════════════════╝
 
 Usage:
-    from hub.company import CompanyPipeline
+    from hubs.company_target.imo.middle.company_pipeline import CompanyPipeline
 
     # Initialize with Neon persistence
     pipeline = CompanyPipeline(persist_to_neon=True)

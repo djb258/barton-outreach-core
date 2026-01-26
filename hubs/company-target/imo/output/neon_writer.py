@@ -1,17 +1,18 @@
 """
-Company Hub Neon Writer
-=======================
-Reads and writes Company Hub data to Neon PostgreSQL.
+Company Target Sub-Hub Neon Writer
+==================================
+Reads and writes Company Target data to Neon PostgreSQL.
 
 Per Doctrine:
-- Company Hub is the MASTER NODE - all spokes anchor here
+- Company Target is a SUB-HUB (child of CL) - internal anchor for outreach
+- CL mints company_unique_id; this hub consumes it (NEVER mints)
 - All database operations require correlation_id
-- The Golden Rule: company_id + domain + email_pattern required for spoke readiness
+- The Golden Rule: company_unique_id + domain + email_pattern required for spoke readiness
 
 Target Tables:
-- marketing.company_master: Company records (the central axle)
-- funnel.bit_signal_log: BIT Engine signals
-- funnel.suspect_universe: Companies in funnel
+- outreach.company_target: Company records (internal anchor)
+- outreach.bit_signal_log: BIT Engine signals
+- outreach.outreach: Companies in outreach funnel
 
 Barton ID Format: 04.04.01.XX.XXXXX.XXX
 """
@@ -177,7 +178,7 @@ class CompanyNeonWriter:
     """
 
     INSERT_BIT_SIGNAL_SQL = """
-        INSERT INTO funnel.bit_signal_log (
+        INSERT INTO outreach.bit_signal_log (
             signal_id,
             company_unique_id,
             signal_type,
@@ -514,14 +515,14 @@ class CompanyNeonWriter:
         correlation_id: str
     ) -> WriteResult:
         """
-        Log a BIT signal to funnel.bit_signal_log.
+        Log a BIT signal to outreach.bit_signal_log.
 
         Uses signal_hash for deduplication (Tool 10).
         """
         validate_correlation_id(correlation_id)
 
         start_time = time.time()
-        result = WriteResult(success=False, table_name="funnel.bit_signal_log")
+        result = WriteResult(success=False, table_name="outreach.bit_signal_log")
 
         try:
             conn = self._get_connection()

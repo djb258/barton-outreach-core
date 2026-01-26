@@ -248,6 +248,173 @@ EOF
           echo "✅ Spoke Purity Linter passed"
 
       # ========================================================================
+      # CHECK 5: Identity Minting Guard (P0-7)
+      # Outreach hubs cannot mint company_unique_id - CL only
+      # ========================================================================
+      - name: Identity Minting Guard
+        run: |
+          echo "🔐 Checking for forbidden identity minting patterns..."
+
+          python3 << 'EOF'
+import os
+import re
+import sys
+
+# Forbidden identity minting patterns
+# Outreach is a CONSUMER of CL identity, not a creator
+FORBIDDEN_PATTERNS = [
+    # Direct UUID assignment to identity fields
+    r"company_unique_id\s*=\s*.*uuid",
+    r"company_unique_id\s*=\s*str\(uuid",
+    r"company_sov_id\s*=\s*.*uuid",
+    r"company_sov_id\s*=\s*str\(uuid",
+    
+    # Generate/mint identity functions
+    r"def\s+mint_company",
+    r"def\s+generate_company_id",
+    r"def\s+create_company_identity",
+    
+    # INSERT without CL reference check
+    r"INSERT\s+INTO\s+cl\.company_identity",
+]
+
+# Directories to check (Outreach hub code)
+CHECK_DIRS = ["hubs", "spokes", "shared", "ops"]
+
+violations = []
+
+for check_dir in CHECK_DIRS:
+    if not os.path.exists(check_dir):
+        continue
+    
+    for root, dirs, files in os.walk(check_dir):
+        # Skip test directories
+        if "test" in root.lower():
+            continue
+            
+        for fname in files:
+            if not fname.endswith(".py"):
+                continue
+            
+            fpath = os.path.join(root, fname)
+            
+            with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+            
+            for pattern in FORBIDDEN_PATTERNS:
+                matches = re.findall(pattern, content, re.IGNORECASE)
+                if matches:
+                    violations.append(
+                        f"{fpath}: Identity minting pattern detected - '{pattern}'"
+                    )
+
+if violations:
+    print("❌ IDENTITY MINTING VIOLATIONS:")
+    print("")
+    print("DOCTRINE: Outreach is a CONSUMER of CL identity, not a creator.")
+    print("CL (Company Lifecycle) is the ONLY hub that can mint company_unique_id.")
+    print("")
+    for v in violations:
+        print(f"  - {v}")
+    print("")
+    print("Fix: Remove identity minting logic. Request identity from CL instead.")
+    sys.exit(1)
+
+print("✓ No identity minting patterns detected")
+EOF
+
+          echo "✅ Identity Minting Guard passed"
+
+      # ========================================================================
+      # CHECK 6: Fuzzy Matching Guard (P0-8)
+      # Outreach hubs cannot use fuzzy matching for identity resolution
+      # ========================================================================
+      - name: Fuzzy Matching Guard
+        run: |
+          echo "🔍 Checking for forbidden fuzzy matching patterns..."
+
+          python3 << 'EOF'
+import os
+import re
+import sys
+
+# Forbidden fuzzy matching imports and patterns
+FORBIDDEN_IMPORTS = [
+    r"from\s+rapidfuzz",
+    r"import\s+rapidfuzz",
+    r"from\s+fuzzywuzzy",
+    r"import\s+fuzzywuzzy", 
+    r"from\s+thefuzz",
+    r"import\s+thefuzz",
+]
+
+FORBIDDEN_PATTERNS = [
+    r"fuzzy_match",
+    r"fuzzy_score",
+    r"fuzz\.ratio",
+    r"fuzz\.partial_ratio",
+    r"process\.extract",
+    r"process\.extractOne",
+]
+
+# Directories to check
+CHECK_DIRS = ["hubs", "spokes", "shared"]
+
+violations = []
+
+for check_dir in CHECK_DIRS:
+    if not os.path.exists(check_dir):
+        continue
+    
+    for root, dirs, files in os.walk(check_dir):
+        # Skip archive directories
+        if "archive" in root.lower():
+            continue
+            
+        for fname in files:
+            if not fname.endswith(".py"):
+                continue
+            
+            fpath = os.path.join(root, fname)
+            
+            with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+            
+            # Check imports
+            for pattern in FORBIDDEN_IMPORTS:
+                if re.search(pattern, content):
+                    violations.append(f"{fpath}: Fuzzy library import - '{pattern}'")
+            
+            # Check patterns (exclude comments)
+            lines = content.split('\n')
+            for i, line in enumerate(lines):
+                # Skip comments
+                if line.strip().startswith('#'):
+                    continue
+                for pattern in FORBIDDEN_PATTERNS:
+                    if re.search(pattern, line):
+                        violations.append(
+                            f"{fpath}:{i+1}: Fuzzy pattern - '{pattern}'"
+                        )
+
+if violations:
+    print("❌ FUZZY MATCHING VIOLATIONS:")
+    print("")
+    print("DOCTRINE: Outreach cannot use fuzzy matching for identity resolution.")
+    print("Identity matching is CL's responsibility. Outreach consumes verified identity.")
+    print("")
+    for v in violations:
+        print(f"  - {v}")
+    print("")
+    print("Fix: Remove fuzzy matching. Use exact match or request CL verification.")
+    sys.exit(1)
+
+print("✓ No fuzzy matching patterns detected")
+EOF
+
+          echo "✅ Fuzzy Matching Guard passed"
+
+      # ========================================================================
       # CHECK 5: Hub IMO Structure Verification
       # ========================================================================
       - name: Verify Hub IMO Structure
@@ -343,6 +510,87 @@ EOF
           echo "✅ Hub Isolation check passed"
 
       # ========================================================================
+      # CHECK 7: Phantom Import Guard (DV-030)
+      # Blocks hub.company.*, ctb.*, backend.* - paths that don't exist
+      # ========================================================================
+      - name: Phantom Import Guard
+        run: |
+          echo "👻 Checking for phantom import patterns..."
+
+          python3 << 'EOF'
+import os
+import re
+import sys
+
+# Phantom import patterns - paths that DO NOT EXIST in this repo
+# These were copied from non-existent ctb.* architecture
+PHANTOM_PATTERNS = [
+    # hub.company.* (singular 'hub' - wrong path, should be hubs.company_target)
+    r"^from\s+hub\.company",
+    r"^import\s+hub\.company",
+    r"^from\s+hub\.",
+    r"^import\s+hub\.",
+
+    # ctb.* (phantom CTB module - does not exist)
+    r"^from\s+ctb\.",
+    r"^import\s+ctb\.",
+
+    # backend.* (phantom backend module - does not exist)
+    r"^from\s+backend\.",
+    r"^import\s+backend\.",
+]
+
+# Directories to check
+CHECK_DIRS = ["hubs", "spokes", "shared", "ops"]
+
+violations = []
+
+for check_dir in CHECK_DIRS:
+    if not os.path.exists(check_dir):
+        continue
+
+    for root, dirs, files in os.walk(check_dir):
+        for fname in files:
+            if not fname.endswith(".py"):
+                continue
+
+            fpath = os.path.join(root, fname)
+
+            with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
+                lines = f.readlines()
+
+            for line_num, line in enumerate(lines, 1):
+                # Skip comments
+                stripped = line.strip()
+                if stripped.startswith('#'):
+                    continue
+
+                for pattern in PHANTOM_PATTERNS:
+                    if re.search(pattern, stripped):
+                        violations.append(
+                            f"{fpath}:{line_num}: Phantom import '{stripped[:60]}...'"
+                        )
+
+if violations:
+    print("❌ PHANTOM IMPORT VIOLATIONS:")
+    print("")
+    print("These import paths DO NOT EXIST in this repository:")
+    print("  - hub.company.* → Use hubs.company_target.* instead")
+    print("  - ctb.* → CTB module does not exist, use stub placeholders")
+    print("  - backend.* → Backend module does not exist")
+    print("")
+    for v in violations:
+        print(f"  - {v}")
+    print("")
+    print("Fix: Comment out phantom imports and add stub placeholders.")
+    sys.exit(1)
+
+print("✓ No phantom imports detected")
+EOF
+
+          echo "✅ Phantom Import Guard passed"
+
+      # ========================================================================
       # SUMMARY
       # ========================================================================
       - name: Architecture Guard Summary
@@ -356,8 +604,11 @@ EOF
           echo "║  ✓ Hub Manifests Validation                                  ║"
           echo "║  ✓ Spoke Contracts Validation                                ║"
           echo "║  ✓ Spoke Purity Linter                                       ║"
+          echo "║  ✓ Identity Minting Guard (CL-only enforcement)              ║"
+          echo "║  ✓ Fuzzy Matching Guard (no fuzzy in Outreach)               ║"
           echo "║  ✓ Hub IMO Structure Verification                            ║"
           echo "║  ✓ Hub Isolation Check                                       ║"
+          echo "║  ✓ Phantom Import Guard (hub.*, ctb.*, backend.*)            ║"
           echo "╚══════════════════════════════════════════════════════════════╝"
           echo ""
           echo "All architecture enforcement checks completed."

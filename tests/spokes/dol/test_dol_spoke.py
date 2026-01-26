@@ -204,7 +204,7 @@ class TestDOLSignalEmission:
         """
         PRD: Verify signal impact values match PRD specification.
         """
-        from hub.company.bit_engine import SignalType, SIGNAL_IMPACTS
+        from hubs.company_target.imo.middle.bit_engine import SignalType, SIGNAL_IMPACTS
 
         # PRD-specified values
         expected_values = {

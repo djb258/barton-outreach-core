@@ -1,17 +1,23 @@
 # DOL Filings Hub Manifest
 # Altitude: 40k (System Infrastructure)
-# Version: 1.0.0
+# Version: 1.1.0
 
 hub:
   id: HUB-DOL
   name: DOL Filings Hub
   doctrine_id: "04.04.03"
   type: sub-hub
-  version: "1.0.0"
+  version: "1.1.0"
   description: |
     Owns federal Form 5500 filing data, Schedule A insurance data,
     and compliance intelligence. Source of truth for plan renewal
     dates and broker relationships.
+
+# Classification (LOCKED - used by vw_sovereign_completion)
+classification:
+  type: required
+  gates_completion: true
+  waterfall_order: 2
 
 core_metric:
   name: FILING_MATCH_RATE

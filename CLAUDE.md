@@ -23,6 +23,7 @@
 
 | Document | Purpose |
 |----------|---------|
+| `docs/DATA_REGISTRY.md` | **WHERE DATA LIVES** - Check FIRST before searching |
 | `docs/GO-LIVE_STATE_v1.0.md` | What is live vs intentionally incomplete |
 | `doctrine/DO_NOT_MODIFY_REGISTRY.md` | Frozen components requiring change request |
 | `docs/reports/FINAL_CERTIFICATION_REPORT_2026-01-19.md` | Certification audit results |

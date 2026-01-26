@@ -1,8 +1,8 @@
 """
-Company Intelligence Hub (AXLE)
-================================
-The Company Intelligence Hub is the master node (AXLE) of the Hub & Spoke architecture.
-All other hubs are spoke-connected to this central hub.
+Company Target Sub-Hub
+======================
+The Company Target Sub-Hub is the internal anchor of the Hub & Spoke architecture.
+All other sub-hubs connect to Company Target for company identity validation.
 
 Core Entities Owned:
     - company_master

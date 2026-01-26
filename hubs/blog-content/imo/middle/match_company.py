@@ -13,14 +13,13 @@ EXPLICIT SCOPE:
 EXPLICIT NON-GOALS (STRICTLY FORBIDDEN):
   ❌ NEVER create companies
   ❌ NEVER trigger enrichment
-  ❌ NEVER use fuzzy rescue beyond threshold
+  ❌ NEVER use fuzzy matching (removed per doctrine)
   ❌ NEVER return multiple matches
 
 MATCHING PRIORITY (Non-Negotiable):
   1. Exact domain match
   2. Exact normalized company name
   3. PostgreSQL FTS match
-  4. rapidfuzz (threshold >= 0.90)
 
 ═══════════════════════════════════════════════════════════════════════════
 """
@@ -33,9 +32,6 @@ import logging
 from .classify_event import ClassifiedEvent
 
 logger = logging.getLogger(__name__)
-
-# Minimum fuzzy match threshold (locked)
-FUZZY_THRESHOLD = 0.90
 
 
 @dataclass
@@ -190,42 +186,7 @@ async def _lookup_by_fts(search_text: str) -> List[CompanyMatch]:
     return []
 
 
-def _fuzzy_match(name: str, candidates: List[Dict[str, str]]) -> Optional[CompanyMatch]:
-    """
-    Fuzzy match using rapidfuzz.
-    
-    PRIORITY 4: Last resort, bounded threshold.
-    
-    Uses token_set_ratio for better handling of word order variations.
-    """
-    try:
-        from rapidfuzz import fuzz
-    except ImportError:
-        logger.warning("rapidfuzz not available for fuzzy matching")
-        return None
-    
-    best_match = None
-    best_score = 0.0
-    normalized_name = _normalize_company_name(name)
-    
-    for candidate in candidates:
-        candidate_normalized = _normalize_company_name(candidate['company_name'])
-        
-        # Use token_set_ratio for better matching
-        score = fuzz.token_set_ratio(normalized_name, candidate_normalized) / 100.0
-        
-        if score >= FUZZY_THRESHOLD and score > best_score:
-            best_score = score
-            best_match = CompanyMatch(
-                company_sov_id=candidate['company_sov_id'],
-                company_name=candidate['company_name'],
-                domain=candidate.get('domain'),
-                match_method='fuzzy',
-                match_confidence=score,
-                match_source=name
-            )
-    
-    return best_match
+# _fuzzy_match function DELETED per doctrine - no fuzzy matching allowed
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -357,18 +318,9 @@ async def match_company(classified: ClassifiedEvent) -> MatchResult:
                         'domain': r.domain
                     })
             
-            # Fuzzy match against pool
-            for company_entity in classified.entities.companies:
-                fuzzy_match = _fuzzy_match(company_entity.text, candidate_pool)
-                if fuzzy_match:
-                    matches.append(fuzzy_match)
-                    logger.info(
-                        f"Fuzzy match found: {company_entity.text} -> {fuzzy_match.company_sov_id} "
-                        f"(confidence: {fuzzy_match.match_confidence:.2f})",
-                        extra={'correlation_id': classified.correlation_id}
-                    )
-                    break
-        
+            # Fuzzy matching REMOVED per doctrine
+            # If FTS doesn't find a match, no match exists
+
         # ─────────────────────────────────────────────────────────────────────
         # Evaluate results
         # ─────────────────────────────────────────────────────────────────────

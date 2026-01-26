@@ -188,7 +188,12 @@
       "Bash(docs/EXECUTION_REPORT_2026-01-01.md )",
       "Bash(docs/FAN_OUT_AUDIT_REPORT.md )",
       "Bash(neon/create_outreach_ctx_functions.sql )",
-      "Bash(scripts/)"
+      "Bash(scripts/)",
+      "Bash(powershell -Command:*)",
+      "Bash(timeout /t 15 /nobreak)",
+      "Bash(gh auth:*)",
+      "Bash(claude auth status:*)",
+      "Bash(claude --version:*)"
     ],
     "deny": []
   }

@@ -19,9 +19,22 @@ Components:
 from .people_hub import PeopleSpoke as PeopleHub
 from .slot_assignment import SlotAssignment
 from .hub_gate import HubGate
+from .hub_status import (
+    PeopleHubStatusResult,
+    compute_people_hub_status,
+    backfill_people_hub_status,
+    FRESHNESS_DAYS,
+    MIN_VERIFIED_SLOTS,
+)
 
 __all__ = [
     'PeopleHub',
     'SlotAssignment',
     'HubGate',
+    # Hub status computation
+    'PeopleHubStatusResult',
+    'compute_people_hub_status',
+    'backfill_people_hub_status',
+    'FRESHNESS_DAYS',
+    'MIN_VERIFIED_SLOTS',
 ]

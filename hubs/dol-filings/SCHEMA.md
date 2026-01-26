@@ -19,6 +19,7 @@ The DOL Filings hub manages Department of Labor Form 5500 data, Schedule A insur
 | `dol` | `form_5500_sf` | Short Form 5500-SF filings |
 | `dol` | `schedule_a` | Schedule A insurance contracts |
 | `dol` | `renewal_calendar` | Upcoming renewal tracking |
+| `dol` | `ein_urls` | EIN to URL mappings (domain discovery) |
 | `dol` | `column_metadata` | Field documentation |
 | `dol` | `pressure_signals` | **BIT v2.0** STRUCTURAL_PRESSURE signals |
 | `outreach` | `dol` | Outreach-scoped DOL data |
@@ -36,7 +37,19 @@ erDiagram
 
     DOL_FORM_5500 ||--o{ DOL_SCHEDULE_A : "filing_id"
     DOL_FORM_5500 ||--o{ DOL_RENEWAL_CALENDAR : "filing_id"
+    DOL_FORM_5500 ||--o| DOL_EIN_URLS : "sponsor_dfe_ein"
     DOL_RENEWAL_CALENDAR ||--o{ DOL_PRESSURE_SIGNALS : "source_record_id"
+
+    DOL_EIN_URLS {
+        varchar ein PK
+        text company_name
+        text city
+        varchar state
+        text domain
+        text url
+        timestamptz discovered_at
+        text discovery_method
+    }
 
     DOL_PRESSURE_SIGNALS {
         uuid signal_id PK
@@ -253,6 +266,69 @@ Upcoming benefit renewal tracking.
 | `created_at` | timestamptz | NOT NULL | now() | Record creation time |
 | `updated_at` | timestamptz | NOT NULL | now() | Last update time |
 
+### dol.ein_urls
+
+EIN to URL mappings discovered via FREE domain construction.
+
+**AI-Ready Data Metadata (per Canonical Architecture Doctrine §12):**
+
+| Field | Value |
+|-------|-------|
+| `table_unique_id` | `TBL-DOL-EIN-URLS-001` |
+| `owning_hub_unique_id` | `HUB-DOL-001` |
+| `owning_subhub_unique_id` | `SUBHUB-DOL-001` |
+| `description` | EIN to URL mappings for DOL Form 5500 sponsors discovered via domain construction. FREE Tier 0 data source - no API costs. |
+| `source_of_truth` | Domain construction scripts (scripts/domain_construction_by_state.py) |
+| `row_identity_strategy` | VARCHAR primary key (ein) |
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| `ein` | varchar(9) | NOT NULL | - | Primary key - EIN from DOL Form 5500 filing |
+| `company_name` | text | NOT NULL | - | Plan sponsor name from DOL filing |
+| `city` | text | NULL | - | Sponsor city from DOL filing |
+| `state` | varchar(2) | NULL | - | Sponsor state code (2-letter) |
+| `domain` | text | NULL | - | Discovered domain (e.g., company.com) |
+| `url` | text | NULL | - | Full URL with https:// protocol |
+| `discovered_at` | timestamptz | NOT NULL | now() | When URL was discovered |
+| `discovery_method` | text | NOT NULL | 'domain_construction' | Discovery method: domain_construction, clay, manual |
+
+**Column Metadata (per §12.3):**
+
+| Column | column_unique_id | semantic_role | format | description |
+|--------|------------------|---------------|--------|-------------|
+| `ein` | COL-DOL-EU-001 | identifier | VARCHAR(9) | Federal Employer Identification Number (9 digits) |
+| `company_name` | COL-DOL-EU-002 | attribute | TEXT | Legal sponsor name from DOL filing |
+| `city` | COL-DOL-EU-003 | attribute | TEXT | Sponsor city for geographic context |
+| `state` | COL-DOL-EU-004 | attribute | VARCHAR(2) | Two-letter state code (US postal) |
+| `domain` | COL-DOL-EU-005 | attribute | TEXT | Root domain without protocol (e.g., company.com) |
+| `url` | COL-DOL-EU-006 | attribute | TEXT | Complete URL with https:// protocol |
+| `discovered_at` | COL-DOL-EU-007 | attribute | ISO-8601 | Timestamp when mapping was created |
+| `discovery_method` | COL-DOL-EU-008 | attribute | TEXT | Provenance tracking (domain_construction, clay, manual) |
+
+**Data Coverage:**
+
+| State | Records | Notes |
+|-------|---------|-------|
+| OH | 27,568 | Highest coverage |
+| PA | 26,208 | |
+| VA | 16,599 | |
+| NC | 15,863 | |
+| MD | 14,876 | |
+| KY | 8,099 | |
+| OK | 4,991 | |
+| DE | 2,993 | |
+| **TOTAL** | **119,409** | 100% FREE (no API costs) |
+
+**Purpose:**
+- FREE alternative to paid enrichment APIs
+- Enables EIN→URL matching for DOL companies
+- Supports outreach.company_target domain resolution
+- Reduces dependency on Clay/ZoomInfo/Clearbit
+
+**Authority:** Domain construction scripts (Tier 0 - FREE)
+**Created:** 2026-01-25
+**Source:** `scripts/load_dol_urls.py`
+
 ### dol.pressure_signals (BIT v2.0)
 
 **AI-Ready Data Metadata (per Canonical Architecture Doctrine §12):**
@@ -355,6 +431,7 @@ Outreach-scoped DOL summary data.
 |--------------|---------------|--------------|---------------|
 | dol.renewal_calendar | filing_id | dol.form_5500 | filing_id |
 | dol.schedule_a | filing_id | dol.form_5500 | filing_id |
+| dol.ein_urls | ein | dol.form_5500 | sponsor_dfe_ein |
 | outreach.dol | outreach_id | outreach.outreach | outreach_id |
 | outreach.dol_errors | outreach_id | outreach.outreach | outreach_id |
 
@@ -366,6 +443,11 @@ Outreach-scoped DOL summary data.
 - `sponsor_dfe_ein` - Primary EIN for company matching
 - `admin_ein` - Secondary EIN (administrator)
 - `ins_carrier_ein` - Carrier EIN for enrichment
+
+### URL Discovery (FREE)
+- `dol.ein_urls` - 119,409 EIN→URL mappings discovered via domain construction
+- NO API costs - Tier 0 free data source
+- Use before Clay/ZoomInfo/Clearbit to minimize enrichment spend
 
 ### Renewal Intelligence
 - `ins_policy_to_date` - Policy expiration date

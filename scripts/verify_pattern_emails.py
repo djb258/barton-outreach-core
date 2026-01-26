@@ -224,7 +224,7 @@ async def run_verification(
     daily_limit: int = DEFAULT_DAILY_LIMIT,
     dry_run: bool = False
 ):
-    """Main verification runner with throttling."""
+    """Main verification runner with throttling and robust connection handling."""
 
     print("=" * 80)
     print("PATTERN EMAIL VERIFICATION (MillionVerifier)")
@@ -269,13 +269,15 @@ async def run_verification(
     estimated_cost = len(emails) * COST_PER_EMAIL
     print(f"  Estimated cost: ${estimated_cost:.2f}")
 
+    # Close connection - we'll reconnect per batch to avoid timeouts
+    conn.close()
+
     if dry_run:
         print("\n  [DRY RUN] Sample emails:")
         for e in emails[:10]:
             print(f"    {e['email']}")
         if len(emails) > 10:
             print(f"    ... and {len(emails) - 10} more")
-        conn.close()
         return
 
     # Verify emails
@@ -287,28 +289,29 @@ async def run_verification(
     invalid = 0
     catch_all = 0
     errors = 0
+    used_this_run = 0
 
     async with aiohttp.ClientSession() as session:
         for i in range(0, len(emails), DEFAULT_BATCH_SIZE):
-            # Check if we can continue
-            if not tracker.can_use(1):
-                print(f"\n  [THROTTLED] Credit limit reached. Stopping.")
+            # Check throttle limits
+            if used_this_run >= max_credits:
+                print(f"\n  [THROTTLED] Run limit reached. Stopping.")
                 break
 
             batch = emails[i:i + DEFAULT_BATCH_SIZE]
-            batch_verified = 0
+            batch_results = []
 
+            # Process batch - API calls only, no DB
             for email_data in batch:
-                if not tracker.can_use(1):
+                if used_this_run >= max_credits:
                     break
 
                 result = await verify_email(session, email_data['email'], api_key)
 
                 if result['success']:
-                    tracker.use(1)
-                    update_verification_result(conn, email_data['unique_id'], result)
+                    batch_results.append((email_data['unique_id'], result))
+                    used_this_run += 1
                     verified += 1
-                    batch_verified += 1
 
                     if result['is_valid']:
                         valid += 1
@@ -319,12 +322,58 @@ async def run_verification(
                 else:
                     errors += 1
 
-                # Small delay between requests
+                # Small delay between API requests
                 await asyncio.sleep(0.1)
+
+            # Batch commit - fresh connection per batch
+            if batch_results:
+                for attempt in range(3):  # Retry up to 3 times
+                    try:
+                        batch_conn = connect_db()
+                        cur = batch_conn.cursor()
+
+                        for unique_id, result in batch_results:
+                            is_valid = result.get('is_valid', False)
+                            result_code = result.get('result', 'error')
+                            source = 'mv_verified' if is_valid else ('mv_catch_all' if result_code == 'catch_all' else 'mv_invalid')
+
+                            cur.execute("""
+                                UPDATE people.people_master
+                                SET email_verified = %s,
+                                    email_verified_at = %s,
+                                    email_verification_source = %s,
+                                    updated_at = NOW()
+                                WHERE unique_id = %s
+                            """, (is_valid, datetime.now(timezone.utc), source, unique_id))
+
+                        # Update credit tracking
+                        cur.execute("""
+                            INSERT INTO outreach.mv_credit_usage (usage_date, credits_used, cost_estimate)
+                            VALUES (CURRENT_DATE, %s, %s)
+                            ON CONFLICT (usage_date)
+                            DO UPDATE SET
+                                credits_used = outreach.mv_credit_usage.credits_used + EXCLUDED.credits_used,
+                                cost_estimate = outreach.mv_credit_usage.cost_estimate + EXCLUDED.cost_estimate,
+                                updated_at = NOW()
+                        """, (len(batch_results), len(batch_results) * COST_PER_EMAIL))
+
+                        batch_conn.commit()
+                        batch_conn.close()
+                        break  # Success, exit retry loop
+
+                    except Exception as e:
+                        print(f"\n  [WARN] Commit attempt {attempt + 1} failed: {e}")
+                        try:
+                            batch_conn.close()
+                        except:
+                            pass
+                        if attempt == 2:
+                            print(f"  [ERROR] Failed to commit batch after 3 attempts, continuing...")
+                        await asyncio.sleep(1)  # Wait before retry
 
             # Progress update
             progress = min(i + DEFAULT_BATCH_SIZE, len(emails))
-            print(f"  Progress: {progress:,} / {len(emails):,} ({batch_verified} verified this batch)")
+            print(f"  Progress: {progress:,} / {len(emails):,} | Verified: {verified:,} | Valid: {valid:,} | Invalid: {invalid + catch_all:,}")
 
             # Batch delay
             if i + DEFAULT_BATCH_SIZE < len(emails):
@@ -346,16 +395,13 @@ async def run_verification(
     # Credit summary
     print(f"\n[5] CREDIT USAGE")
     print("-" * 50)
-    final_stats = tracker.get_stats()
-    print(f"  Credits used this run: {final_stats['used_this_run']:,}")
-    print(f"  Cost this run: ${final_stats['cost_this_run']:.2f}")
-    print(f"  Daily total: {final_stats['daily_used']:,}")
-    print(f"  Daily remaining: {final_stats['remaining_daily']:,}")
+    print(f"  Credits used this run: {used_this_run:,}")
+    print(f"  Cost this run: ${used_this_run * COST_PER_EMAIL:.2f}")
 
     # Check remaining unverified
-    remaining = get_unverified_pattern_emails(conn, 1)
-    if remaining:
-        cur = conn.cursor()
+    try:
+        final_conn = connect_db()
+        cur = final_conn.cursor()
         cur.execute("""
             SELECT COUNT(*) FROM people.people_master
             WHERE email_verification_source = 'pattern_generated'
@@ -363,11 +409,21 @@ async def run_verification(
         """)
         remaining_count = cur.fetchone()[0]
         print(f"\n  Remaining unverified: {remaining_count:,}")
-        print(f"  Run again to continue verification.")
-    else:
-        print(f"\n  All pattern-generated emails verified!")
+        if remaining_count > 0:
+            print(f"  Run again to continue verification.")
+        else:
+            print(f"  All pattern-generated emails verified!")
 
-    conn.close()
+        cur.execute("""
+            SELECT credits_used, cost_estimate
+            FROM outreach.mv_credit_usage WHERE usage_date = CURRENT_DATE
+        """)
+        daily = cur.fetchone()
+        if daily:
+            print(f"  Daily total: {daily[0]:,} credits (${daily[1]:.2f})")
+        final_conn.close()
+    except Exception as e:
+        print(f"  [WARN] Could not fetch final stats: {e}")
 
 
 def main():

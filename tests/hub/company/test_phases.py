@@ -38,7 +38,7 @@ class TestPhase1CompanyMatching:
     @pytest.fixture
     def phase1_instance(self):
         """Create Phase 1 instance for testing."""
-        from hub.company.phases.phase1_company_matching import Phase1CompanyMatching
+        from hubs.company_target.imo.middle.phases.phase1_company_matching import Phase1CompanyMatching
         return Phase1CompanyMatching(config={
             'collision_threshold': 0.03,
             'min_confidence': 0.50
@@ -145,7 +145,7 @@ class TestPhase1bUnmatchedHold:
 
     @pytest.fixture
     def phase1b_instance(self):
-        from hub.company.phases.phase1b_unmatched_hold_export import Phase1bUnmatchedHold
+        from hubs.company_target.imo.middle.phases.phase1b_unmatched_hold_export import Phase1bUnmatchedHold
         return Phase1bUnmatchedHold()
 
     def test_hold_reason_no_match(self, phase1b_instance):
@@ -190,7 +190,7 @@ class TestPhase2DomainResolution:
 
     @pytest.fixture
     def phase2_instance(self):
-        from hub.company.phases.phase2_domain_resolution import Phase2DomainResolution
+        from hubs.company_target.imo.middle.phases.phase2_domain_resolution import Phase2DomainResolution
         return Phase2DomainResolution(config={
             'enable_dns_lookup': False,  # Disable for unit tests
             'enable_mx_lookup': False
@@ -240,7 +240,7 @@ class TestPhase3EmailPatternWaterfall:
 
     @pytest.fixture
     def phase3_instance(self):
-        from hub.company.phases.phase3_email_pattern_waterfall import Phase3EmailPatternWaterfall
+        from hubs.company_target.imo.middle.phases.phase3_email_pattern_waterfall import Phase3EmailPatternWaterfall
         return Phase3EmailPatternWaterfall(config={
             'waterfall_mode': 0,  # Tier 0 only for testing
             'enable_tier1': False,
@@ -283,7 +283,7 @@ class TestPhase4PatternVerification:
 
     @pytest.fixture
     def phase4_instance(self):
-        from hub.company.phases.phase4_pattern_verification import Phase4PatternVerification
+        from hubs.company_target.imo.middle.phases.phase4_pattern_verification import Phase4PatternVerification
         return Phase4PatternVerification(config={
             'enable_smtp_check': False,
             'min_confidence': 0.7
@@ -347,14 +347,14 @@ class TestBITEngine:
 
     @pytest.fixture
     def bit_engine(self):
-        from hub.company.bit_engine import BITEngine
+        from hubs.company_target.imo.middle.bit_engine import BITEngine
         return BITEngine()
 
     def test_signal_processing(self, bit_engine):
         """
         PRD: Process signals and update company scores.
         """
-        from hub.company.bit_engine import SignalType
+        from hubs.company_target.imo.middle.bit_engine import SignalType
 
         bit_engine.create_signal(
             signal_type=SignalType.SLOT_FILLED,
@@ -369,7 +369,7 @@ class TestBITEngine:
         """
         PRD: Aggregate multiple signals for same company.
         """
-        from hub.company.bit_engine import SignalType
+        from hubs.company_target.imo.middle.bit_engine import SignalType
 
         bit_engine.create_signal(SignalType.SLOT_FILLED, 'C001', 'people_node')
         bit_engine.create_signal(SignalType.FORM_5500_FILED, 'C001', 'dol_node')
@@ -382,7 +382,7 @@ class TestBITEngine:
         """
         PRD: Track score breakdown by source spoke.
         """
-        from hub.company.bit_engine import SignalType
+        from hubs.company_target.imo.middle.bit_engine import SignalType
 
         bit_engine.create_signal(SignalType.SLOT_FILLED, 'C001', 'people_node')
         bit_engine.create_signal(SignalType.FORM_5500_FILED, 'C001', 'dol_node')

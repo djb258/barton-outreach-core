@@ -15,6 +15,18 @@ from .error_codes import (
     ErrorSeverity,
     ErrorDefinition,
 )
+from .error_enforcement import (
+    DoctrineError,
+    CLGateError,
+    HubGateError as EnforcedHubGateError,
+    wrap_error,
+    doctrine_error_handler,
+    record_error,
+    require_company_id,
+    require_hub_gate,
+    error_metrics,
+    ErrorMetrics,
+)
 
 __all__ = [
     # Correlation ID
@@ -36,4 +48,15 @@ __all__ = [
     "is_critical",
     "ErrorSeverity",
     "ErrorDefinition",
+    # Error Enforcement (Zero-Tolerance)
+    "DoctrineError",
+    "CLGateError",
+    "EnforcedHubGateError",
+    "wrap_error",
+    "doctrine_error_handler",
+    "record_error",
+    "require_company_id",
+    "require_hub_gate",
+    "error_metrics",
+    "ErrorMetrics",
 ]

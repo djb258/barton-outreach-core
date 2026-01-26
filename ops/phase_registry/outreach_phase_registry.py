@@ -15,7 +15,7 @@ NEW PHASES ADDED:
 - Phase 2.5: 3/3 Slot Completion Gate (blocks outreach until CEO+CFO+HR filled)
 
 Usage:
-    from backend.outreach_phase_registry import get_phase_entry, OUTREACH_PHASES
+    from ops.phase_registry.outreach_phase_registry import get_phase_entry, OUTREACH_PHASES
 
     # Get phase details
     phase = get_phase_entry(2)
@@ -41,13 +41,22 @@ from typing import Dict, List, Optional
 # ============================================================================
 # OUTREACH PHASE REGISTRY
 # ============================================================================
+# WARNING: PHANTOM PATHS
+# The "file" paths below reference backend/* which DOES NOT EXIST.
+# These are legacy references from pre-hub architecture.
+# Real implementations are in:
+#   - hubs/company-target/imo/middle/ (Company validation, BIT engine)
+#   - hubs/people-intelligence/imo/middle/ (People validation, slot assignment)
+#   - hubs/dol-filings/imo/middle/ (DOL processing)
+#   - hubs/outreach-execution/imo/middle/ (Outreach execution)
+# ============================================================================
 
 OUTREACH_PHASES = [
     {
         "phase_id": 0,
         "phase_name": "Intake Load",
         "description": "Initial data insert from Apollo/CSV",
-        "file": "backend/intake/load_intake_data.py",
+        "file": "backend/intake/load_intake_data.py",  # PHANTOM - does not exist
         "function": "load_raw_records",
         "status": "planned",
         "input_table": "intake.company_raw_intake",
@@ -60,7 +69,7 @@ OUTREACH_PHASES = [
         "phase_id": 1,
         "phase_name": "Company Validation",
         "description": "Checks structure, size, LinkedIn, and slot presence",
-        "file": "backend/validator/validation_rules.py",
+        "file": "backend/validator/validation_rules.py",  # PHANTOM - use hubs/company-target/imo/middle/
         "function": "validate_company",
         "status": "implemented",
         "input_table": "marketing.company_master",
@@ -75,7 +84,7 @@ OUTREACH_PHASES = [
         "phase_id": 1.1,
         "phase_name": "Phase 1b: People Validation Trigger",
         "description": "Claude-callable orchestrator for people validation. Validates people data for outreach readiness.",
-        "file": "backend/validator/phase1b_people_trigger.py",
+        "file": "backend/validator/phase1b_people_trigger.py",  # PHANTOM - use hubs/people-intelligence/imo/middle/
         "function": "run_phase1b_people_validation",
         "status": "implemented",
         "input_table": "marketing.people_master",
@@ -95,7 +104,7 @@ OUTREACH_PHASES = [
         "phase_id": 1.5,
         "phase_name": "Three-Tier Enrichment Waterfall",
         "description": "Cost-optimized enrichment through three tiers: Tier 1 ($0.20), Tier 2 ($1.50), Tier 3 ($3.00)",
-        "file": "backend/enrichment/three_tier_waterfall.py",
+        "file": "backend/enrichment/three_tier_waterfall.py",  # PHANTOM - use hubs/people-intelligence/imo/middle/
         "function": "enrich_entity",
         "status": "implemented",
         "input_table": "marketing.company_master / marketing.people_master",
@@ -129,7 +138,7 @@ OUTREACH_PHASES = [
         "phase_id": 2,
         "phase_name": "Person Validation (Low-Level)",
         "description": "Low-level function: Checks LinkedIn, email, title, and company link (single person record)",
-        "file": "backend/validator/validation_rules.py",
+        "file": "backend/validator/validation_rules.py",  # PHANTOM - use hubs/people-intelligence/imo/middle/
         "function": "validate_person",
         "status": "implemented",
         "input_table": "marketing.people_master (single record)",
@@ -145,7 +154,7 @@ OUTREACH_PHASES = [
         "phase_id": 2.5,
         "phase_name": "3/3 Slot Completion Gate",
         "description": "BLOCKING GATE: Requires all 3 executive slots (CEO, CFO, HR) filled before outreach",
-        "file": "backend/gates/slot_completion_gate.py",
+        "file": "backend/gates/slot_completion_gate.py",  # PHANTOM - use hubs/people-intelligence/imo/middle/slot_assignment.py
         "function": "check_slot_completion",
         "status": "implemented",
         "input_table": "marketing.company_slot",
@@ -167,7 +176,7 @@ OUTREACH_PHASES = [
         "phase_id": 3,
         "phase_name": "Outreach Readiness Evaluation",
         "description": "Checks slot fills, enrichment, verified emails, and title matches",
-        "file": "backend/enrichment/evaluate_outreach_readiness.py",
+        "file": "backend/enrichment/evaluate_outreach_readiness.py",  # PHANTOM - does not exist
         "function": "evaluate_company_readiness",
         "status": "implemented",
         "input_table": "marketing.company_master (validation_status = 'valid')",
@@ -182,7 +191,7 @@ OUTREACH_PHASES = [
         "phase_id": 4,
         "phase_name": "BIT Trigger Check",
         "description": "Evaluates if outreach-ready contacts meet BIT signal thresholds",
-        "file": "backend/bit_engine/bit_trigger.py",
+        "file": "backend/bit_engine/bit_trigger.py",  # PHANTOM - use hubs/company-target/imo/middle/bit_engine.py
         "function": "check_bit_trigger_conditions",
         "status": "implemented",
         "input_table": "marketing.company_master (outreach_ready = true)",
@@ -197,7 +206,7 @@ OUTREACH_PHASES = [
         "phase_id": 5,
         "phase_name": "BIT Score Calculation",
         "description": "Assigns score based on context, timing, and movement patterns",
-        "file": "backend/bit_engine/bit_score.py",
+        "file": "backend/bit_engine/bit_score.py",  # PHANTOM - use hubs/company-target/imo/middle/bit_engine.py
         "function": "calculate_bit_score",
         "status": "implemented",
         "input_table": "bit.events",
@@ -217,7 +226,7 @@ OUTREACH_PHASES = [
         "phase_id": 6,
         "phase_name": "Promotion to Outreach Log",
         "description": "Moves ready contacts into outreach queue with campaign metadata",
-        "file": "backend/outreach/promote_to_log.py",
+        "file": "backend/outreach/promote_to_log.py",  # PHANTOM - use hubs/outreach-execution/imo/middle/outreach_hub.py
         "function": "promote_contact_to_outreach",
         "status": "implemented",
         "input_table": "bit.company_scores (score >= 50)",

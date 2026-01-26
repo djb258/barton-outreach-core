@@ -1,6 +1,6 @@
 # Outreach Execution Hub Manifest
 # Altitude: 40k (System Infrastructure)
-# Version: 1.1.0
+# Version: 1.2.0
 #
 # DOCTRINE: CL Parent-Child Model
 # This is a CHILD SUB-HUB of Company Lifecycle (CL)
@@ -10,11 +10,17 @@ hub:
   name: Outreach Execution Hub
   doctrine_id: "04.04.04"
   type: sub-hub
-  version: "1.1.0"
+  version: "1.2.0"
   description: |
     Owns campaign state, sequence execution, send logs, and engagement
     tracking. Manages the state machine of outreach:
     draft -> scheduled -> sent -> opened -> replied
+
+# Classification (LOCKED - used by vw_sovereign_completion)
+classification:
+  type: optional
+  gates_completion: false
+  waterfall_order: 6
 
 # =============================================================================
 # PARENT-CHILD RELATIONSHIP

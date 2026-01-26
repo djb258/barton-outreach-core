@@ -1,12 +1,20 @@
 # Blog Content Sub-Hub Manifest
 # Doctrine ID: 04.04.05
 # Status: Doctrine-Compliant
+# Version: 1.1.0
 
 hub:
   name: blog-content
   doctrine_id: "04.04.05"
   type: sub-hub
+  version: "1.1.0"
   parent: company-lifecycle-cl
+
+# Classification (LOCKED - used by vw_sovereign_completion)
+classification:
+  type: optional
+  gates_completion: false
+  waterfall_order: 5
 
 identity:
   hub_id: "HUB-BLOG-001"

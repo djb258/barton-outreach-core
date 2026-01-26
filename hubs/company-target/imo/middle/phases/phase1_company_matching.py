@@ -4,10 +4,9 @@ Phase 1: Company Matching
 Matches input people to companies using doctrine-compliant matching hierarchy:
 - GOLD: Domain match (score=1.0)
 - SILVER: Exact name match (score=0.95)
-- BRONZE: Fuzzy match with city guardrail (score>=0.85)
 
-Per doctrine: collision threshold = 0.03
-City guardrail: Required for scores 0.85-0.92, not required for >=0.92
+Note: BRONZE tier (fuzzy matching) REMOVED per CL Parent-Child Doctrine.
+No fuzzy matching, heuristics, or AI arbitration allowed.
 
 DOCTRINE ENFORCEMENT:
 - correlation_id is MANDATORY (FAIL HARD if missing)
@@ -23,30 +22,24 @@ import pandas as pd
 # Doctrine enforcement imports
 from ops.enforcement.correlation_id import validate_correlation_id, CorrelationIDError
 
-from ..matching import (
+from ..utils.normalization import (
     normalize_company_name,
     normalize_domain,
     normalize_city,
-    normalize_state,
-    MatchTier,
-    MatchCandidate,
-    MatchResult as FuzzyMatchResult,
-    jaro_winkler_similarity,
-    apply_city_guardrail,
-    resolve_multi_candidate,
-    check_ambiguous_collision,
-    AbacusFuzzyArbitrator,
-    CollisionCandidate,
-    ArbitrationResult,
-    create_arbitrator,
+    normalize_state
 )
-from ..logging_config import (
+# Fuzzy imports REMOVED per doctrine - fuzzy.py and fuzzy_arbitration.py deleted
+# MatchTier, MatchCandidate, FuzzyMatchResult - no longer available
+# jaro_winkler_similarity, apply_city_guardrail, resolve_multi_candidate - no longer available
+# AbacusFuzzyArbitrator, CollisionCandidate, ArbitrationResult - no longer available
+
+from ..utils.logging import (
     PipelineLogger,
     EventType,
     log_phase_start,
     log_phase_complete
 )
-from ..config import get_config
+from ..utils.config import MatchingConfig
 
 
 class MatchType(Enum):

@@ -9,30 +9,32 @@ First spoke in the People Node - validates company anchor.
 Match Tiers:
     GOLD (1.0): Domain exact match
     SILVER (0.95): Exact name match
-    BRONZE (0.85-0.92): Fuzzy match with city guardrail
+
+Note: Fuzzy matching (BRONZE tier) removed per doctrine.
 """
 
 from typing import Any, Dict, List, Optional, Tuple
-from rapidfuzz import fuzz
 import logging
 
-from ctb.sys.enrichment.pipeline_engine.wheel.bicycle_wheel import Spoke, Hub
-from ctb.sys.enrichment.pipeline_engine.wheel.wheel_result import SpokeResult, ResultStatus, FailureType
+# PHANTOM IMPORTS - ctb.* module does not exist (commented out per doctrine)
+# from ctb.sys.enrichment.pipeline_engine.wheel.bicycle_wheel import Spoke, Hub
+# from ctb.sys.enrichment.pipeline_engine.wheel.wheel_result import SpokeResult, ResultStatus, FailureType
+
+# Stub placeholders to prevent NameError
+Spoke = Hub = object
+SpokeResult = object
+class ResultStatus: SUCCEEDED = "SUCCEEDED"; FAILED = "FAILED"
+class FailureType: VALIDATION_ERROR = "VALIDATION_ERROR"; NO_MATCH = "NO_MATCH"; LOW_CONFIDENCE = "LOW_CONFIDENCE"
 
 
 logger = logging.getLogger(__name__)
 
 
-# Match tier thresholds
+# Match tier thresholds (fuzzy matching removed per doctrine)
 MATCH_TIERS = {
     'GOLD': 1.0,      # Domain exact match
     'SILVER': 0.95,   # Exact name match
-    'BRONZE': 0.85,   # Fuzzy match minimum
 }
-
-FUZZY_THRESHOLD_HIGH = 80  # Green - auto-accept
-FUZZY_THRESHOLD_REVIEW = 70  # Yellow - manual review
-COLLISION_THRESHOLD = 0.03  # Difference to trigger collision check
 
 
 class HubGateSpoke(Spoke):
@@ -90,33 +92,16 @@ class HubGateSpoke(Spoke):
             return SpokeResult(
                 status=ResultStatus.FAILED,
                 failure_type=FailureType.NO_MATCH,
-                failure_reason=f"No company match found for: {company_name_raw}",
+                failure_reason=f"No exact company match found for: {company_name_raw}",
                 data=data
             )
 
-        if match_result['score'] < FUZZY_THRESHOLD_HIGH:
-            if match_result['score'] >= FUZZY_THRESHOLD_REVIEW:
-                return SpokeResult(
-                    status=ResultStatus.FAILED,
-                    failure_type=FailureType.LOW_CONFIDENCE,
-                    failure_reason=f"Low confidence match ({match_result['score']}%)",
-                    data=data,
-                    metrics=match_result
-                )
-            else:
-                return SpokeResult(
-                    status=ResultStatus.FAILED,
-                    failure_type=FailureType.NO_MATCH,
-                    failure_reason=f"Score below threshold ({match_result['score']}%)",
-                    data=data
-                )
-
-        # SUCCESS - Update data with match info
+        # SUCCESS - Exact match found (fuzzy matching removed per doctrine)
         matched_company = self.companies[match_result['company_id']]
         data.matched_company_id = match_result['company_id']
         data.matched_company_name = matched_company.get('company_name')
         data.matched_domain = matched_company.get('domain')
-        data.fuzzy_score = match_result['score']
+        data.match_score = match_result['score']
 
         return SpokeResult(
             status=ResultStatus.SUCCESS,
@@ -158,55 +143,9 @@ class HubGateSpoke(Spoke):
                     'collision': False
                 }
 
-        # TIER 3: Fuzzy matching
-        best_match = None
-        second_best = None
-
-        for company_id, company in self.companies.items():
-            company_name_db = company.get('company_name', '')
-            if not company_name_db:
-                continue
-
-            # Use token_set_ratio for better matching with word order variations
-            score = fuzz.token_set_ratio(normalized, company_name_db.lower())
-
-            if best_match is None or score > best_match['score']:
-                second_best = best_match
-                best_match = {
-                    'company_id': company_id,
-                    'company_name': company_name_db,
-                    'score': score
-                }
-            elif second_best is None or score > second_best['score']:
-                second_best = {
-                    'company_id': company_id,
-                    'company_name': company_name_db,
-                    'score': score
-                }
-
-        if best_match is None:
-            return {'tier': None, 'score': 0, 'company_id': None, 'collision': False}
-
-        # Check for collision (two matches too close)
-        collision = False
-        if second_best and best_match['score'] > 0:
-            score_diff = (best_match['score'] - second_best['score']) / 100
-            if score_diff < COLLISION_THRESHOLD and best_match['score'] >= FUZZY_THRESHOLD_REVIEW:
-                collision = True
-                logger.warning(
-                    f"Collision detected: '{company_name}' matches both "
-                    f"'{best_match['company_name']}' ({best_match['score']}) and "
-                    f"'{second_best['company_name']}' ({second_best['score']})"
-                )
-
-        tier = 'BRONZE' if best_match['score'] >= MATCH_TIERS['BRONZE'] * 100 else None
-
-        return {
-            'tier': tier,
-            'score': best_match['score'],
-            'company_id': best_match['company_id'],
-            'collision': collision
-        }
+        # TIER 3: No fuzzy matching - per doctrine, fuzzy matching removed
+        # If exact match fails, return no match
+        return {'tier': None, 'score': 0, 'company_id': None, 'collision': False}
 
     def get_match_stats(self) -> Dict[str, int]:
         """Get statistics on match tiers"""
