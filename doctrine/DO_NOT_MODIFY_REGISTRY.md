@@ -1,10 +1,10 @@
 # DO NOT MODIFY REGISTRY
-## v1.0 Operational Baseline - Frozen Components
+## v1.0 Operational Baseline + BIT v2.0 Distributed Signals - Frozen Components
 
-**Version**: 1.0.0
-**Freeze Date**: 2026-01-20
+**Version**: 1.2.0
+**Freeze Date**: 2026-01-26
 **Status**: FROZEN
-**Reference**: docs/GO-LIVE_STATE_v1.0.md
+**Reference**: docs/GO-LIVE_STATE_v1.0.md, docs/adr/ADR-017_BIT_Authorization_System_Migration.md
 
 ---
 
@@ -108,6 +108,111 @@ The following files contain DO NOT MODIFY banners at the top:
 2. `infra/migrations/2026-01-20-tier-telemetry-views.sql`
 3. `infra/migrations/2026-01-20-send-attempt-audit.sql`
 4. `hubs/outreach-execution/imo/middle/marketing_safety_gate.py`
+5. `neon/migrations/2026-01-25-bit-v2-phase1-schema.sql`
+
+---
+
+## BIT AUTHORIZATION SYSTEM v2.0 - DISTRIBUTED SIGNALS (FROZEN)
+
+**Authority**: ADR-017
+**Freeze Date**: 2026-01-26
+**Migration**: neon/migrations/2026-01-26-bit-v2-phase1-distributed-signals.sql
+
+### Architecture Principle (FROZEN)
+
+```
+Each sub-hub OWNS its own signal table.
+Company Target OWNS a read-only view that unions all signal tables.
+BIT is a COMPUTATION inside Company Target that reads the view.
+```
+
+### Distributed Signal Tables (Structure Frozen)
+
+| Component | Schema | Freeze Type | Rationale |
+|-----------|--------|-------------|-----------|
+| `dol.pressure_signals` | dol | Structure | DOL owns STRUCTURAL_PRESSURE signals |
+| `people.pressure_signals` | people | Structure | People owns DECISION_SURFACE signals |
+| `blog.pressure_signals` | blog | Structure | Blog owns NARRATIVE_VOLATILITY signals |
+
+### Signal Table Contract (FROZEN)
+
+All signal tables MUST implement this structure:
+
+| Column | Type | Required | Purpose |
+|--------|------|----------|---------|
+| `signal_id` | UUID | Yes | Primary key |
+| `company_unique_id` | TEXT | Yes | Company reference |
+| `signal_type` | VARCHAR(50) | Yes | Signal classification |
+| `pressure_domain` | ENUM | Yes | STRUCTURAL_PRESSURE, DECISION_SURFACE, NARRATIVE_VOLATILITY |
+| `pressure_class` | ENUM | No | Pressure classification |
+| `signal_value` | JSONB | Yes | Domain-specific payload |
+| `magnitude` | INTEGER | Yes | Impact score (0-100) |
+| `detected_at` | TIMESTAMPTZ | Yes | When signal was detected |
+| `expires_at` | TIMESTAMPTZ | Yes | Validity window end |
+| `correlation_id` | UUID | No | Trace ID |
+| `source_record_id` | TEXT | No | Traceability |
+
+### Company Target Components (FROZEN)
+
+| Component | Freeze Type | Rationale |
+|-----------|-------------|-----------|
+| `company_target.vw_all_pressure_signals` | View | Union of all signal tables — BIT reads from here |
+| `company_target.compute_authorization_band(TEXT)` | Signature | BIT computation contract — callers depend on this |
+
+**Function internals NOT frozen**: Logic can evolve as long as signature and return type unchanged
+
+### Band Definitions (Logic Frozen)
+
+| Band | Range | Name | Meaning |
+|------|-------|------|---------|
+| 0 | 0-9 | SILENT | No action permitted |
+| 1 | 10-24 | WATCH | Internal flag only |
+| 2 | 25-39 | EXPLORATORY | Educational content only |
+| 3 | 40-59 | TARGETED | Persona email, proof required |
+| 4 | 60-79 | ENGAGED | Phone allowed, multi-source proof |
+| 5 | 80+ | DIRECT | Full contact, full-chain proof |
+
+### Domain Trust Rules (Logic Frozen)
+
+| Rule | Behavior |
+|------|----------|
+| Blog alone | Max Band 1 (WATCH) |
+| No DOL present | Max Band 2 (EXPLORATORY) |
+| Band 3+ without proof | HARD_FAIL (no send) |
+| Expired proof | HARD_FAIL (no send) |
+| Insufficient proof band | HARD_FAIL (no send) |
+
+### Bridge Adapters (NOT Frozen)
+
+| Component | Purpose |
+|-----------|---------|
+| `people.bridge_talent_flow_movement()` | Converts talent_flow.movements → people.pressure_signals |
+| `dol.bridge_renewal_calendar()` | Converts dol.renewal_calendar → dol.pressure_signals |
+
+**Bridge adapters can evolve** — they adapt legacy data to new signal format
+
+### NOT Frozen (Explicitly)
+
+| Component | Reason |
+|-----------|--------|
+| `company_target.vw_company_authorization` | Convenience view, can change |
+| Bridge adapter functions | Adaptation layer, can evolve |
+| All indexes | Optimization allowed |
+| Enum types | Additive changes allowed (new values) |
+
+### DEPRECATED (from v1.1.0)
+
+The following centralized components from the initial Phase 1 design are **DEPRECATED**:
+
+| Component | Status | Reason |
+|-----------|--------|--------|
+| `bit.movement_events` | DEPRECATED | Replaced by distributed signal tables |
+| `bit.proof_lines` | DEPRECATED | Phase 2 concern |
+| `bit.phase_state` | DEPRECATED | Replaced by compute_authorization_band() |
+| `bit.authorization_log` | DEPRECATED | Phase 2 concern |
+| `bit.get_current_band()` | DEPRECATED | Replaced by company_target.compute_authorization_band() |
+| `bit.authorize_action()` | DEPRECATED | Phase 2 concern |
+| `bit.validate_proof_for_send()` | DEPRECATED | Phase 2 concern |
 
 ---
 
@@ -116,6 +221,37 @@ The following files contain DO NOT MODIFY banners at the top:
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0.0 | 2026-01-20 | Doctrine Freeze Agent | Initial v1.0 baseline freeze |
+| 1.1.0 | 2026-01-25 | ADR-017 | BIT Authorization System v2.0 centralized design (DEPRECATED) |
+| 1.2.0 | 2026-01-26 | ADR-017 | BIT v2.0 distributed signals architecture (CURRENT) |
+
+---
+
+## Change Log: v1.2.0
+
+**Architecture Correction:**
+- Replaced centralized `bit.*` design with distributed signal tables
+- Each hub now owns its own `pressure_signals` table
+- Company Target owns union view and BIT computation
+
+**Added:**
+- `dol.pressure_signals` table (structure frozen)
+- `people.pressure_signals` table (structure frozen)
+- `blog.pressure_signals` table (structure frozen)
+- `company_target.vw_all_pressure_signals` view (structure frozen)
+- `company_target.compute_authorization_band()` function (signature frozen)
+- Bridge adapters for Talent Flow and DOL Renewal Calendar
+
+**Deprecated:**
+- All `bit.*` tables from v1.1.0 (centralized design was incorrect)
+- `bit.get_current_band()` → use `company_target.compute_authorization_band()`
+
+**Unchanged:**
+- All v1.0 frozen components remain frozen
+- Band definitions (0-5) unchanged
+- Domain trust rules unchanged
+- Marketing Safety Gate unchanged
+- Kill switch system unchanged
+- Tier logic unchanged (coexists with band system during transition)
 
 ---
 

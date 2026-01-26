@@ -16,6 +16,7 @@ The Talent Flow hub tracks executive transitions, departures, and job market sig
 | Schema | Table | Purpose |
 |--------|-------|---------|
 | `talent_flow` | `movement_history` | Core movement tracking |
+| `talent_flow` | `movements` | **BIT v2.0** Executive movements for pressure signals |
 | `people` | `person_movement_history` | Person-level movement records |
 | `outreach` | `bit_signals` | Movement signals for BIT scoring |
 
@@ -29,6 +30,28 @@ erDiagram
     OUTREACH_OUTREACH ||--o{ TALENT_FLOW_MOVEMENT_HISTORY : "from/to outreach_id"
     OUTREACH_OUTREACH ||--o{ OUTREACH_BIT_SIGNALS : "outreach_id"
     TALENT_FLOW_MOVEMENT_HISTORY ||--o{ OUTREACH_BIT_SIGNALS : "triggers"
+    TALENT_FLOW_MOVEMENTS ||--o{ PEOPLE_PRESSURE_SIGNALS : "bridge_trigger"
+
+    TALENT_FLOW_MOVEMENTS {
+        uuid movement_id PK
+        uuid contact_id FK
+        varchar movement_type
+        text old_company_id
+        text new_company_id
+        text old_title
+        text new_title
+        int confidence_score
+        timestamptz detected_at
+        varchar detected_source
+    }
+
+    PEOPLE_PRESSURE_SIGNALS {
+        uuid signal_id PK
+        text company_unique_id FK
+        varchar signal_type
+        enum pressure_domain
+        int magnitude
+    }
 
     PEOPLE_PEOPLE_MASTER {
         text unique_id PK
@@ -215,5 +238,64 @@ movement_event → talent_flow.movement_history → outreach.bit_signals
 
 ---
 
+## BIT v2.0 Movements Table (Phase 1.5)
+
+### talent_flow.movements
+
+**AI-Ready Data Metadata (per Canonical Architecture Doctrine §12):**
+
+| Field | Value |
+|-------|-------|
+| `table_unique_id` | `TBL-TF-MOVEMENTS-001` |
+| `owning_hub_unique_id` | `HUB-TF-001` |
+| `owning_subhub_unique_id` | `SUBHUB-TF-001` |
+| `description` | Executive movement tracking for BIT pressure signal generation. Captures hires, departures, promotions, and lateral moves. |
+| `source_of_truth` | Talent Flow detection processes |
+| `row_identity_strategy` | UUID primary key (movement_id) |
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| `movement_id` | uuid | NOT NULL | gen_random_uuid() | Primary key |
+| `contact_id` | uuid | NOT NULL | - | Person who moved |
+| `movement_type` | varchar(20) | NOT NULL | - | hire, departure, promotion, lateral |
+| `old_company_id` | text | NULL | - | Company they left (nullable for hires) |
+| `new_company_id` | text | NULL | - | Company they joined (nullable for departures) |
+| `old_title` | text | NULL | - | Previous title |
+| `new_title` | text | NULL | - | New title |
+| `confidence_score` | integer | NOT NULL | 0 | 0-100 detection confidence |
+| `detected_at` | timestamptz | NOT NULL | now() | When movement was detected |
+| `detected_source` | varchar(50) | NOT NULL | 'manual' | Source of detection |
+| `created_at` | timestamptz | NOT NULL | now() | Record creation |
+| `updated_at` | timestamptz | NOT NULL | now() | Last update |
+
+**Column Metadata (per §12.3):**
+
+| Column | column_unique_id | semantic_role | format |
+|--------|------------------|---------------|--------|
+| `movement_id` | COL-TF-MV-001 | identifier | UUID |
+| `contact_id` | COL-TF-MV-002 | foreign_key | UUID |
+| `movement_type` | COL-TF-MV-003 | attribute | ENUM |
+| `old_company_id` | COL-TF-MV-004 | foreign_key | TEXT |
+| `new_company_id` | COL-TF-MV-005 | foreign_key | TEXT |
+| `old_title` | COL-TF-MV-006 | attribute | TEXT |
+| `new_title` | COL-TF-MV-007 | attribute | TEXT |
+| `confidence_score` | COL-TF-MV-008 | metric | INTEGER |
+| `detected_at` | COL-TF-MV-009 | attribute | ISO-8601 |
+| `detected_source` | COL-TF-MV-010 | attribute | ENUM |
+| `created_at` | COL-TF-MV-011 | attribute | ISO-8601 |
+| `updated_at` | COL-TF-MV-012 | attribute | ISO-8601 |
+
+**Constraints:**
+- At least one of `old_company_id` or `new_company_id` must be non-null
+- `confidence_score` must be 0-100
+- `movement_type` must be one of: hire, departure, promotion, lateral
+
+**Bridge Trigger:** `trg_bridge_to_pressure_signals` fires on INSERT, calling `people.bridge_talent_flow_movement()` to emit DECISION_SURFACE signals to `people.pressure_signals`.
+
+**Authority:** ADR-017
+**Migration:** `neon/migrations/2026-01-26-bit-v2-phase1.5-backfill-and-movements.sql`
+
+---
+
 *Generated from Neon PostgreSQL via READ-ONLY connection*
-*Last verified: 2026-01-25*
+*Last verified: 2026-01-26*

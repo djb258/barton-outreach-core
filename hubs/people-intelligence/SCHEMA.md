@@ -25,6 +25,7 @@ The People Intelligence hub manages executive/contact data, slot assignments, em
 | `people` | `slot_assignment_history` | Slot change audit trail |
 | `people` | `slot_ingress_control` | Pipeline gate switches |
 | `people` | `person_movement_history` | Job movement tracking |
+| `people` | `pressure_signals` | **BIT v2.0** DECISION_SURFACE signals |
 | `marketing` | `people_master` | Marketing-layer person data |
 | `outreach` | `people` | Outreach-scoped person records |
 | `outreach` | `people_archive` | Archived outreach persons |
@@ -45,8 +46,23 @@ erDiagram
     PEOPLE_PEOPLE_MASTER ||--o{ PEOPLE_PEOPLE_SIDECAR : "unique_id"
     PEOPLE_PEOPLE_MASTER ||--o{ PEOPLE_PERSON_MOVEMENT_HISTORY : "unique_id"
     PEOPLE_PEOPLE_MASTER ||--o{ PEOPLE_PERSON_SCORES : "unique_id"
+    PEOPLE_PERSON_MOVEMENT_HISTORY ||--o{ PEOPLE_PRESSURE_SIGNALS : "source_record_id"
 
     MARKETING_COMPANY_MASTER ||--o{ MARKETING_PEOPLE_MASTER : "company_unique_id"
+
+    PEOPLE_PRESSURE_SIGNALS {
+        uuid signal_id PK
+        text company_unique_id FK
+        varchar signal_type
+        enum pressure_domain
+        enum pressure_class
+        jsonb signal_value
+        int magnitude
+        timestamptz detected_at
+        timestamptz expires_at
+        uuid correlation_id
+        text source_record_id
+    }
 
     OUTREACH_OUTREACH {
         uuid outreach_id PK
@@ -382,5 +398,59 @@ Outreach-scoped person records with engagement tracking.
 
 ---
 
+## BIT v2.0 Pressure Signals
+
+### people.pressure_signals
+
+**AI-Ready Data Metadata (per Canonical Architecture Doctrine §12):**
+
+| Field | Value |
+|-------|-------|
+| `table_unique_id` | `TBL-PPL-PRESSURE-001` |
+| `owning_hub_unique_id` | `HUB-PPL-001` |
+| `owning_subhub_unique_id` | `SUBHUB-PPL-001` |
+| `description` | DECISION_SURFACE domain signals for BIT authorization. Medium trust level - provides direction for outreach. |
+| `source_of_truth` | People Hub processing (slot assignments, executive movements, authority gaps) |
+| `row_identity_strategy` | UUID primary key (signal_id) |
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| `signal_id` | uuid | NOT NULL | gen_random_uuid() | Primary key - unique signal identifier |
+| `company_unique_id` | text | NOT NULL | - | Company reference |
+| `signal_type` | varchar(50) | NOT NULL | - | Signal classification (slot_vacancy, executive_movement, authority_gap) |
+| `pressure_domain` | enum | NOT NULL | 'DECISION_SURFACE' | Domain constraint (always DECISION_SURFACE for People) |
+| `pressure_class` | enum | NULL | - | Pressure classification (ORGANIZATIONAL_RECONFIGURATION, etc) |
+| `signal_value` | jsonb | NOT NULL | '{}' | Domain-specific payload with evidence |
+| `magnitude` | integer | NOT NULL | 0 | Impact score (0-100) |
+| `detected_at` | timestamptz | NOT NULL | now() | When signal was detected |
+| `expires_at` | timestamptz | NOT NULL | - | Validity window end |
+| `correlation_id` | uuid | NULL | - | PID binding / trace ID |
+| `source_record_id` | text | NULL | - | Traceability (e.g., movement_id, slot_id) |
+| `created_at` | timestamptz | NOT NULL | now() | Record creation time |
+
+**Column Metadata (per §12.3):**
+
+| Column | column_unique_id | semantic_role | format |
+|--------|------------------|---------------|--------|
+| `signal_id` | COL-PPL-PS-001 | identifier | UUID |
+| `company_unique_id` | COL-PPL-PS-002 | foreign_key | TEXT |
+| `signal_type` | COL-PPL-PS-003 | attribute | ENUM |
+| `pressure_domain` | COL-PPL-PS-004 | attribute | ENUM |
+| `pressure_class` | COL-PPL-PS-005 | attribute | ENUM |
+| `signal_value` | COL-PPL-PS-006 | attribute | JSON |
+| `magnitude` | COL-PPL-PS-007 | metric | INTEGER |
+| `detected_at` | COL-PPL-PS-008 | attribute | ISO-8601 |
+| `expires_at` | COL-PPL-PS-009 | attribute | ISO-8601 |
+| `correlation_id` | COL-PPL-PS-010 | identifier | UUID |
+| `source_record_id` | COL-PPL-PS-011 | foreign_key | TEXT |
+| `created_at` | COL-PPL-PS-012 | attribute | ISO-8601 |
+
+**Bridge Function:** `people.bridge_talent_flow_movement()` — Converts `talent_flow.movements` to `people.pressure_signals`
+
+**Authority:** ADR-017
+**Migration:** `neon/migrations/2026-01-26-bit-v2-phase1-distributed-signals.sql`
+
+---
+
 *Generated from Neon PostgreSQL via READ-ONLY connection*
-*Last verified: 2026-01-25*
+*Last verified: 2026-01-26*

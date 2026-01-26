@@ -24,6 +24,14 @@ The Company Target hub manages company identity resolution, domain verification,
 | `company` | `company_sidecar` | Enrichment metadata |
 | `company` | `email_verification` | Email verification results |
 | `marketing` | `company_master` | Marketing-layer company data |
+| `company_target` | `vw_all_pressure_signals` | **BIT v2.0** Union view of all pressure signals |
+| `company_target` | `vw_company_authorization` | **BIT v2.0** Company authorization status view |
+
+## BIT v2.0 Functions
+
+| Schema | Function | Purpose |
+|--------|----------|---------|
+| `company_target` | `compute_authorization_band(TEXT)` | **BIT v2.0** Computes authorization band for a company |
 
 ---
 
@@ -45,6 +53,41 @@ erDiagram
     COMPANY_CONTACT_ENRICHMENT ||--o{ COMPANY_EMAIL_VERIFICATION : "enrichment_id"
 
     OUTREACH_HUB_REGISTRY ||--o{ OUTREACH_COMPANY_HUB_STATUS : "hub_id"
+
+    DOL_PRESSURE_SIGNALS }|--|| COMPANY_TARGET_VW_ALL_PRESSURE_SIGNALS : "union"
+    PEOPLE_PRESSURE_SIGNALS }|--|| COMPANY_TARGET_VW_ALL_PRESSURE_SIGNALS : "union"
+    BLOG_PRESSURE_SIGNALS }|--|| COMPANY_TARGET_VW_ALL_PRESSURE_SIGNALS : "union"
+
+    COMPANY_TARGET_VW_ALL_PRESSURE_SIGNALS {
+        uuid signal_id PK
+        text company_unique_id FK
+        varchar signal_type
+        enum pressure_domain
+        int magnitude
+        timestamptz expires_at
+        text source_hub
+    }
+
+    DOL_PRESSURE_SIGNALS {
+        uuid signal_id PK
+        text company_unique_id FK
+        enum pressure_domain
+        int magnitude
+    }
+
+    PEOPLE_PRESSURE_SIGNALS {
+        uuid signal_id PK
+        text company_unique_id FK
+        enum pressure_domain
+        int magnitude
+    }
+
+    BLOG_PRESSURE_SIGNALS {
+        uuid signal_id PK
+        text company_unique_id FK
+        enum pressure_domain
+        int magnitude
+    }
 
     CL_COMPANY_IDENTITY {
         uuid company_unique_id PK
@@ -268,5 +311,120 @@ Master company records with full business details.
 
 ---
 
+## BIT v2.0 Distributed Signals Architecture
+
+**Authority:** ADR-017
+**Migration:** `neon/migrations/2026-01-26-bit-v2-phase1-distributed-signals.sql`
+
+### Architecture Principle
+
+```
+Each sub-hub OWNS its own signal table.
+Company Target OWNS a read-only view that unions all signal tables.
+BIT is a COMPUTATION inside Company Target that reads the view.
+```
+
+### company_target.vw_all_pressure_signals (Union View)
+
+**AI-Ready Data Metadata (per Canonical Architecture Doctrine §12):**
+
+| Field | Value |
+|-------|-------|
+| `table_unique_id` | `VIEW-CT-SIGNALS-001` |
+| `owning_hub_unique_id` | `HUB-CT-001` |
+| `owning_subhub_unique_id` | `SUBHUB-CT-001` |
+| `description` | Union view of all active pressure signals from DOL, People, and Blog hubs. BIT computation reads from this view. |
+| `source_of_truth` | Union of dol.pressure_signals, people.pressure_signals, blog.pressure_signals |
+| `row_identity_strategy` | signal_id from source tables |
+
+| Column | Type | Source | Description |
+|--------|------|--------|-------------|
+| `signal_id` | uuid | All | Primary key from source table |
+| `company_unique_id` | text | All | Company reference |
+| `signal_type` | varchar(50) | All | Signal classification |
+| `pressure_domain` | enum | All | STRUCTURAL_PRESSURE, DECISION_SURFACE, NARRATIVE_VOLATILITY |
+| `pressure_class` | enum | All | Pressure classification |
+| `signal_value` | jsonb | All | Domain-specific payload |
+| `magnitude` | integer | All | Impact score (0-100) |
+| `detected_at` | timestamptz | All | When signal was detected |
+| `expires_at` | timestamptz | All | Validity window end |
+| `correlation_id` | uuid | All | PID binding / trace ID |
+| `source_record_id` | text | All | Traceability reference |
+| `created_at` | timestamptz | All | Record creation time |
+| `source_hub` | text | Computed | Hub that emitted signal ('dol', 'people', 'blog') |
+
+**Filter:** Only non-expired signals (`expires_at > NOW()`)
+
+### company_target.compute_authorization_band(TEXT)
+
+**AI-Ready Function Metadata:**
+
+| Field | Value |
+|-------|-------|
+| `function_unique_id` | `FUNC-CT-BAND-001` |
+| `owning_hub_unique_id` | `HUB-CT-001` |
+| `description` | Computes BIT authorization band for a company based on active pressure signals |
+| `signature` | `compute_authorization_band(p_company_id TEXT) RETURNS TABLE` |
+| `signature_status` | FROZEN (logic can evolve, signature cannot change) |
+
+**Input:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `p_company_id` | TEXT | Company unique ID |
+
+**Output:**
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `company_unique_id` | TEXT | Company ID |
+| `authorization_band` | INTEGER | Band 0-5 |
+| `band_name` | TEXT | SILENT, WATCH, EXPLORATORY, TARGETED, ENGAGED, DIRECT |
+| `dol_active` | BOOLEAN | DOL domain has active signals |
+| `people_active` | BOOLEAN | People domain has active signals |
+| `blog_active` | BOOLEAN | Blog domain has active signals |
+| `aligned_domains` | INTEGER | Count of aligned domains (0-3) |
+| `primary_pressure` | TEXT | Primary pressure class |
+| `total_magnitude` | INTEGER | Weighted total magnitude |
+| `band_capped_by` | TEXT | Reason if band was capped (BLOG_ALONE_CAP, NO_DOL_CAP) |
+
+**Domain Trust Rules (FROZEN):**
+
+| Rule | Behavior |
+|------|----------|
+| Blog alone | Max Band 1 (WATCH) |
+| No DOL present | Max Band 2 (EXPLORATORY) |
+
+**Band Definitions (FROZEN):**
+
+| Band | Range | Name | Meaning |
+|------|-------|------|---------|
+| 0 | 0-9 | SILENT | No action permitted |
+| 1 | 10-24 | WATCH | Internal flag only |
+| 2 | 25-39 | EXPLORATORY | Educational content only |
+| 3 | 40-59 | TARGETED | Persona email, proof required |
+| 4 | 60-79 | ENGAGED | Phone allowed, multi-source proof |
+| 5 | 80+ | DIRECT | Full contact, full-chain proof |
+
+### company_target.vw_company_authorization (Convenience View)
+
+Convenience view that calls `compute_authorization_band()` for all companies.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `company_unique_id` | TEXT | Company ID |
+| `company_name` | TEXT | Company name from company_master |
+| `authorization_band` | INTEGER | Band 0-5 |
+| `band_name` | TEXT | Band name |
+| `dol_active` | BOOLEAN | DOL domain active |
+| `people_active` | BOOLEAN | People domain active |
+| `blog_active` | BOOLEAN | Blog domain active |
+| `aligned_domains` | INTEGER | Aligned domain count |
+| `primary_pressure` | TEXT | Primary pressure class |
+| `total_magnitude` | INTEGER | Weighted magnitude |
+| `band_capped_by` | TEXT | Cap reason if applicable |
+
+---
+
 *Generated from Neon PostgreSQL via READ-ONLY connection*
-*Last verified: 2026-01-25*
+*Last verified: 2026-01-26*

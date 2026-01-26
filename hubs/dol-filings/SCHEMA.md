@@ -20,6 +20,7 @@ The DOL Filings hub manages Department of Labor Form 5500 data, Schedule A insur
 | `dol` | `schedule_a` | Schedule A insurance contracts |
 | `dol` | `renewal_calendar` | Upcoming renewal tracking |
 | `dol` | `column_metadata` | Field documentation |
+| `dol` | `pressure_signals` | **BIT v2.0** STRUCTURAL_PRESSURE signals |
 | `outreach` | `dol` | Outreach-scoped DOL data |
 | `outreach` | `dol_audit_log` | DOL processing audit trail |
 | `outreach` | `dol_errors` | DOL pipeline errors |
@@ -35,6 +36,21 @@ erDiagram
 
     DOL_FORM_5500 ||--o{ DOL_SCHEDULE_A : "filing_id"
     DOL_FORM_5500 ||--o{ DOL_RENEWAL_CALENDAR : "filing_id"
+    DOL_RENEWAL_CALENDAR ||--o{ DOL_PRESSURE_SIGNALS : "source_record_id"
+
+    DOL_PRESSURE_SIGNALS {
+        uuid signal_id PK
+        text company_unique_id FK
+        varchar signal_type
+        enum pressure_domain
+        enum pressure_class
+        jsonb signal_value
+        int magnitude
+        timestamptz detected_at
+        timestamptz expires_at
+        uuid correlation_id
+        text source_record_id
+    }
 
     OUTREACH_OUTREACH {
         uuid outreach_id PK
@@ -236,6 +252,84 @@ Upcoming benefit renewal tracking.
 | `days_until_renewal` | integer | NULL | - | Days until renewal |
 | `created_at` | timestamptz | NOT NULL | now() | Record creation time |
 | `updated_at` | timestamptz | NOT NULL | now() | Last update time |
+
+### dol.pressure_signals (BIT v2.0)
+
+**AI-Ready Data Metadata (per Canonical Architecture Doctrine §12):**
+
+| Field | Value |
+|-------|-------|
+| `table_unique_id` | `TBL-DOL-PRESSURE-001` |
+| `owning_hub_unique_id` | `HUB-DOL-001` |
+| `owning_subhub_unique_id` | `SUBHUB-DOL-001` |
+| `description` | STRUCTURAL_PRESSURE domain signals for BIT authorization. Highest trust level - required for Band 3+ authorization. |
+| `source_of_truth` | DOL Hub processing (renewal calendar, cost analysis, broker changes) |
+| `row_identity_strategy` | UUID primary key (signal_id) |
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| `signal_id` | uuid | NOT NULL | gen_random_uuid() | Primary key - unique signal identifier |
+| `company_unique_id` | text | NOT NULL | - | Company reference |
+| `signal_type` | varchar(50) | NOT NULL | - | Signal classification (renewal_proximity, cost_increase, broker_change) |
+| `pressure_domain` | enum | NOT NULL | 'STRUCTURAL_PRESSURE' | Domain constraint (always STRUCTURAL_PRESSURE for DOL) |
+| `pressure_class` | enum | NULL | - | Pressure classification (COST_PRESSURE, DEADLINE_PROXIMITY, etc) |
+| `signal_value` | jsonb | NOT NULL | '{}' | Domain-specific payload with evidence |
+| `magnitude` | integer | NOT NULL | 0 | Impact score (0-100) |
+| `detected_at` | timestamptz | NOT NULL | now() | When signal was detected |
+| `expires_at` | timestamptz | NOT NULL | - | Validity window end |
+| `correlation_id` | uuid | NULL | - | PID binding / trace ID |
+| `source_record_id` | text | NULL | - | Traceability (e.g., ack_id, renewal_id) |
+| `created_at` | timestamptz | NOT NULL | now() | Record creation time |
+
+**Column Metadata (per §12.3):**
+
+| Column | column_unique_id | semantic_role | format |
+|--------|------------------|---------------|--------|
+| `signal_id` | COL-DOL-PS-001 | identifier | UUID |
+| `company_unique_id` | COL-DOL-PS-002 | foreign_key | TEXT |
+| `signal_type` | COL-DOL-PS-003 | attribute | ENUM |
+| `pressure_domain` | COL-DOL-PS-004 | attribute | ENUM |
+| `pressure_class` | COL-DOL-PS-005 | attribute | ENUM |
+| `signal_value` | COL-DOL-PS-006 | attribute | JSON |
+| `magnitude` | COL-DOL-PS-007 | metric | INTEGER |
+| `detected_at` | COL-DOL-PS-008 | attribute | ISO-8601 |
+| `expires_at` | COL-DOL-PS-009 | attribute | ISO-8601 |
+| `correlation_id` | COL-DOL-PS-010 | identifier | UUID |
+| `source_record_id` | COL-DOL-PS-011 | foreign_key | TEXT |
+| `created_at` | COL-DOL-PS-012 | attribute | ISO-8601 |
+
+**Authority:** ADR-017
+**Migration:** `neon/migrations/2026-01-26-bit-v2-phase1-distributed-signals.sql`
+
+### dol.backfill_renewal_signals() (BIT v2.0 Phase 1.5)
+
+Idempotent backfill function for DOL renewal signals.
+
+**Function Metadata:**
+
+| Field | Value |
+|-------|-------|
+| `function_unique_id` | `FUNC-DOL-BACKFILL-001` |
+| `owning_hub_unique_id` | `HUB-DOL-001` |
+| `description` | Processes dol.renewal_calendar rows into dol.pressure_signals |
+| `signature` | `backfill_renewal_signals() RETURNS TABLE (processed INT, skipped INT, errors INT)` |
+
+**Magnitude Calculation:**
+
+| days_until_renewal | magnitude |
+|--------------------|-----------|
+| <= 30 | 70 |
+| <= 60 | 55 |
+| <= 90 | 45 |
+| <= 120 | 35 |
+| > 120 | 25 |
+
+**Idempotent:** Safe to run multiple times - skips already processed records via `source_record_id`.
+
+**Authority:** ADR-017
+**Migration:** `neon/migrations/2026-01-26-bit-v2-phase1.5-backfill-and-movements.sql`
+
+---
 
 ### outreach.dol
 

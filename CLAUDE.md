@@ -659,3 +659,167 @@ See `infra/MIGRATION_ORDER.md` for execution order.
 | People | people.company_slot | 153,444 | CEO: 27.1%, CFO: 8.6%, HR: 13.7% |
 | Blog | outreach.blog | 51,148 | 100% coverage |
 | BIT | outreach.bit_scores | 17,227 | |
+
+---
+
+## BIT AUTHORIZATION SYSTEM (v2.0)
+
+**Authority:** ADR-017
+**Status:** ACTIVE (Phase 1)
+**Effective:** 2026-01-25
+
+### Core Doctrine
+
+```
+All intelligence hubs emit movement events, not facts.
+BIT is a movement-derived authorization index.
+Its value determines which response classes are PERMITTED.
+It does not rank companies or predict intent.
+Outreach is interception of detected phases, not persuasion of static targets.
+```
+
+### The Three Domains
+
+| Domain | Hub | Velocity | Trust | Role |
+|--------|-----|----------|-------|------|
+| STRUCTURAL_PRESSURE | DOL | Slow (annual) | Highest | Gravity — required for authority |
+| DECISION_SURFACE | People | Medium (quarterly) | High | Direction — who can act |
+| NARRATIVE_VOLATILITY | Blog | Fast (weekly) | Lowest | Timing — amplifier only |
+
+**Convergence Rule:**
+- One domain moving = noise
+- Two domains moving = watch
+- Three domains aligned = act
+- **Blog alone NEVER justifies outreach (max Band 1)**
+- **DOL absence caps authority at Band 2**
+
+### Authorization Bands
+
+| Band | Range | Name | Permitted Actions | Proof Required |
+|------|-------|------|-------------------|----------------|
+| 0 | 0–9 | SILENT | None. No outreach. No queue. | No |
+| 1 | 10–24 | WATCH | Internal flag only. No external contact. | No |
+| 2 | 25–39 | EXPLORATORY | 1 educational message per 60 days. No personalization. | No |
+| 3 | 40–59 | TARGETED | Persona-specific email. 3-touch max. | Single-source |
+| 4 | 60–79 | ENGAGED | Phone (warm). 5-touch max. | Multi-source |
+| 5 | 80+ | DIRECT | Direct contact. Meeting request. | Full-chain |
+
+### Proof Line Rule
+
+**Definition:** A proof line is a mandatory citation of detected pressure that authorizes a message. It is NOT a talking point. It is the legal basis for contact.
+
+**When Required:**
+- Band 0–2: Not required
+- Band 3+: **MANDATORY**
+
+**Proof Line Formats:**
+
+```
+Band 3: [PRESSURE_CLASS] detected via [SOURCE]: [SPECIFIC_EVIDENCE]
+Example: COST_PRESSURE detected via DOL: employer contribution +18% YoY, renewal in 75 days
+
+Band 4: [PRESSURE_CLASS] convergence: [DOL_EVIDENCE] + [PEOPLE_EVIDENCE] + [BLOG_EVIDENCE if present]
+
+Band 5: PHASE TRANSITION: [PRESSURE_CLASS] — [DOL] + [PEOPLE] + [BLOG] — Decision window: [X] days
+```
+
+### Pressure Classes
+
+| Class | Primary Source | What's Broken |
+|-------|----------------|---------------|
+| COST_PRESSURE | DOL | No cost visibility, silent drift, blind decisions |
+| VENDOR_DISSATISFACTION | DOL + People | Broker churn, manual processes, reset knowledge |
+| DEADLINE_PROXIMITY | DOL | Renewal as event not process, compressed decisions |
+| ORGANIZATIONAL_RECONFIGURATION | People | Knowledge loss, no continuity layer |
+| OPERATIONAL_CHAOS | DOL | Filing irregularities, compliance gaps |
+
+### Code Enforcement Pattern
+
+```python
+# REQUIRED: Check band before any outreach action
+band = bit.get_current_band(company_id)
+
+if band < required_band:
+    raise UnauthorizedOutreachError(f"Band {band} insufficient for action")
+
+# REQUIRED: Proof line at Band 3+
+if band >= 3:
+    proof = bit.get_valid_proof(company_id, band)
+    if not proof:
+        raise MissingProofLineError("Band 3+ requires proof line")
+    if not bit.validate_proof_for_send(proof.proof_id, band):
+        raise InvalidProofError("Proof invalid or expired")
+
+# ONLY THEN: Proceed with outreach
+message = generate_message(company_id, proof)
+```
+
+### Message Framing Rule
+
+Lead with **system failure**, not product.
+
+**WRONG:**
+```
+"We offer better benefits plans..."
+"Our advisory services can help..."
+"I'd love to show you our platform..."
+```
+
+**RIGHT:**
+```
+"Your employer contribution rose 18% last year while headcount stayed flat —
+that's a cost visibility gap we can close."
+
+"You've changed brokers twice in three years. That pattern usually means
+the underlying data infrastructure isn't transferring. We fix that layer."
+
+"Your new CHRO inherited a renewal in 75 days with no decision history.
+We build the continuity system that prevents this."
+```
+
+### NEVER DO (BIT Authorization)
+
+1. **NEVER** create outreach without checking BIT band first
+2. **NEVER** fabricate or backfill proof lines
+3. **NEVER** use Blog signals alone to justify contact
+4. **NEVER** escalate band without new movement evidence
+5. **NEVER** send messages with expired proof lines
+6. **NEVER** copy proof lines between companies
+7. **NEVER** use urgency language below Band 5
+8. **NEVER** mention pricing without discovery (any band)
+9. **NEVER** frame insurance as the product — frame system failure as the problem
+
+### Schema References
+
+```sql
+-- Authorization check
+SELECT bit.authorize_action(company_id, 'send_email');
+
+-- Proof validation
+SELECT bit.validate_proof_for_send(proof_id, requested_band);
+
+-- Current band
+SELECT bit.get_current_band(company_id);
+
+-- Movement events
+SELECT * FROM bit.movement_events WHERE company_unique_id = ?;
+
+-- Proof lines
+SELECT * FROM bit.proof_lines WHERE company_unique_id = ? AND valid_until > NOW();
+```
+
+### Related Documentation
+
+| Document | Location |
+|----------|----------|
+| ADR-017 | `docs/adr/ADR-017_BIT_Authorization_System_Migration.md` |
+| Implementation Plan | `docs/implementation/BIT_V2_IMPLEMENTATION_PLAN.md` |
+| Band Definitions | `doctrine/ple/BIT_AUTHORIZATION_BANDS.md` |
+| Proof Line Rule | `doctrine/ple/PROOF_LINE_RULE.md` |
+| Inline Context | `doctrine/BIT_AUTHORIZATION_INLINE.md` |
+
+---
+
+**Last Updated**: 2026-01-25
+**Architecture**: CL Parent-Child Doctrine v1.1 + BIT Authorization v2.0
+**Status**: v1.0 OPERATIONAL BASELINE + BIT v2.0 Phase 1

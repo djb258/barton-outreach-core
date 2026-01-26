@@ -2,6 +2,58 @@
 
 ## Tables
 
+### blog.pressure_signals (BIT v2.0)
+
+**AI-Ready Data Metadata (per Canonical Architecture Doctrine §12):**
+
+| Field | Value |
+|-------|-------|
+| `table_unique_id` | `TBL-BLOG-PRESSURE-001` |
+| `owning_hub_unique_id` | `HUB-BLOG-001` |
+| `owning_subhub_unique_id` | `SUBHUB-BLOG-001` |
+| `description` | NARRATIVE_VOLATILITY domain signals for BIT authorization. Lowest trust level - amplifier only, Blog alone = max Band 1. |
+| `source_of_truth` | Blog Hub processing (news mentions, funding announcements, content signals) |
+| `row_identity_strategy` | UUID primary key (signal_id) |
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| `signal_id` | uuid | NOT NULL | gen_random_uuid() | Primary key - unique signal identifier |
+| `company_unique_id` | text | NOT NULL | - | Company reference |
+| `signal_type` | varchar(50) | NOT NULL | - | Signal classification (funding_announcement, news_mention, growth_indicator) |
+| `pressure_domain` | enum | NOT NULL | 'NARRATIVE_VOLATILITY' | Domain constraint (always NARRATIVE_VOLATILITY for Blog) |
+| `pressure_class` | enum | NULL | - | Pressure classification |
+| `signal_value` | jsonb | NOT NULL | '{}' | Domain-specific payload with evidence |
+| `magnitude` | integer | NOT NULL | 0 | Impact score (0-100) |
+| `detected_at` | timestamptz | NOT NULL | now() | When signal was detected |
+| `expires_at` | timestamptz | NOT NULL | - | Validity window end |
+| `correlation_id` | uuid | NULL | - | PID binding / trace ID |
+| `source_record_id` | text | NULL | - | Traceability (e.g., news_id) |
+| `created_at` | timestamptz | NOT NULL | now() | Record creation time |
+
+**Column Metadata (per §12.3):**
+
+| Column | column_unique_id | semantic_role | format |
+|--------|------------------|---------------|--------|
+| `signal_id` | COL-BLOG-PS-001 | identifier | UUID |
+| `company_unique_id` | COL-BLOG-PS-002 | foreign_key | TEXT |
+| `signal_type` | COL-BLOG-PS-003 | attribute | ENUM |
+| `pressure_domain` | COL-BLOG-PS-004 | attribute | ENUM |
+| `pressure_class` | COL-BLOG-PS-005 | attribute | ENUM |
+| `signal_value` | COL-BLOG-PS-006 | attribute | JSON |
+| `magnitude` | COL-BLOG-PS-007 | metric | INTEGER |
+| `detected_at` | COL-BLOG-PS-008 | attribute | ISO-8601 |
+| `expires_at` | COL-BLOG-PS-009 | attribute | ISO-8601 |
+| `correlation_id` | COL-BLOG-PS-010 | identifier | UUID |
+| `source_record_id` | COL-BLOG-PS-011 | foreign_key | TEXT |
+| `created_at` | COL-BLOG-PS-012 | attribute | ISO-8601 |
+
+**Trust Cap:** Blog alone = max Band 1 (WATCH). Never sufficient for contact authorization.
+
+**Authority:** ADR-017
+**Migration:** `neon/migrations/2026-01-26-bit-v2-phase1-distributed-signals.sql`
+
+---
+
 ### company.company_source_urls
 
 Stores discovered URLs linked to companies for future extraction.
@@ -103,41 +155,49 @@ Tracks companies where URL discovery failed for retry.
 
 ## ERD
 
-```
-┌─────────────────────────────────┐
-│     company.company_master      │
-├─────────────────────────────────┤
-│ company_unique_id (PK)          │
-│ company_name                    │
-│ website_url                     │
-│ ...                             │
-└───────────────┬─────────────────┘
-                │
-                │ 1:N
-                ▼
-┌─────────────────────────────────┐
-│   company.company_source_urls   │
-├─────────────────────────────────┤
-│ source_id (PK)                  │
-│ company_unique_id (FK)          │◄──┐
-│ source_type                     │   │
-│ source_url                      │   │
-│ page_title                      │   │
-│ discovered_at                   │   │
-│ extraction_status               │   │
-│ ...                             │   │
-└─────────────────────────────────┘   │
-                                      │
-┌─────────────────────────────────┐   │
-│ company.url_discovery_failures  │   │
-├─────────────────────────────────┤   │
-│ failure_id (PK)                 │   │
-│ company_unique_id (FK) ─────────┼───┘
-│ website_url                     │
-│ failure_reason                  │
-│ retry_count                     │
-│ ...                             │
-└─────────────────────────────────┘
+```mermaid
+erDiagram
+    COMPANY_COMPANY_MASTER ||--o{ COMPANY_COMPANY_SOURCE_URLS : "company_unique_id"
+    COMPANY_COMPANY_MASTER ||--o| COMPANY_URL_DISCOVERY_FAILURES : "company_unique_id"
+    COMPANY_COMPANY_MASTER ||--o{ BLOG_PRESSURE_SIGNALS : "company_unique_id"
+
+    COMPANY_COMPANY_MASTER {
+        text company_unique_id PK
+        text company_name
+        text website_url
+    }
+
+    COMPANY_COMPANY_SOURCE_URLS {
+        uuid source_id PK
+        text company_unique_id FK
+        varchar source_type
+        text source_url
+        text page_title
+        timestamptz discovered_at
+        varchar extraction_status
+    }
+
+    COMPANY_URL_DISCOVERY_FAILURES {
+        uuid failure_id PK
+        text company_unique_id FK
+        text website_url
+        varchar failure_reason
+        int retry_count
+    }
+
+    BLOG_PRESSURE_SIGNALS {
+        uuid signal_id PK
+        text company_unique_id FK
+        varchar signal_type
+        enum pressure_domain
+        enum pressure_class
+        jsonb signal_value
+        int magnitude
+        timestamptz detected_at
+        timestamptz expires_at
+        uuid correlation_id
+        text source_record_id
+    }
 ```
 
 ---
