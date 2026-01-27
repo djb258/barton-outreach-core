@@ -1,0 +1,59 @@
+name: BIT Batch Scoring
+
+# Run daily at 3:00 AM UTC and on manual trigger
+on:
+  schedule:
+    - cron: '0 3 * * *'  # Daily at 3:00 AM UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run in dry-run mode (no database changes)'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  bit-batch-score:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install psycopg2-binary
+
+      - name: Run BIT Batch Scoring
+        env:
+          # Database connection (from Doppler/secrets)
+          NEON_HOST: ${{ secrets.NEON_HOST }}
+          NEON_DATABASE: ${{ secrets.NEON_DATABASE }}
+          NEON_USER: ${{ secrets.NEON_USER }}
+          NEON_PASSWORD: ${{ secrets.NEON_PASSWORD }}
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" == "true" ]; then
+            echo "🔍 Running in DRY-RUN mode"
+            python ops/schedulers/bit_batch_score.py --dry-run
+          else
+            echo "🚀 Running BIT batch scoring"
+            python ops/schedulers/bit_batch_score.py
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## BIT Batch Scoring Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run Type:** ${{ github.event.inputs.dry_run == 'true' && 'Dry Run' || 'Production' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Triggered:** ${{ github.event_name == 'schedule' && 'Scheduled (3 AM UTC)' || 'Manual' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Workflow:** ${{ github.workflow }}" >> $GITHUB_STEP_SUMMARY
