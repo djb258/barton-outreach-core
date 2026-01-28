@@ -54,7 +54,28 @@
 | `dol` | DOL Form 5500 filings | form_5500, form_5500_sf | `ein` | 1.3M |
 | `people` | People/contacts master | people_master, company_slot | `person_unique_id` | 259K |
 | `intake` | Data intake staging | company_raw_intake, people_raw_intake | varies | 183K |
-| `shq` | Error/signal tracking | error_log | `error_id` | 116K |
+| `shq` | Error/signal tracking | error_log, audit_log | `error_id` | 116K |
+| `sales` | **LANE A** - Appointment Reactivation | appointment_history | `appointment_uid` | 0 |
+| `partners` | **LANE B** - Fractional CFO Partners | fractional_cfo_master, partner_appointments | `fractional_cfo_id` | 0 |
+| `bit` | BIT scoring/intent | movement_events, proof_lines, reactivation_intent, partner_intent | varies | ~17K |
+
+---
+
+## ISOLATED LANES (NOT Connected to Outreach Spine)
+
+⚠️ **WARNING: The following schemas are INTENTIONALLY ISOLATED from the outreach pipeline.**
+
+| Lane | Schema | Purpose | Connection |
+|------|--------|---------|------------|
+| **A** | `sales.*` | Appointment Reactivation | ISOLATED - optional FK to company/people |
+| **B** | `partners.*` | Fractional CFO Partners | ISOLATED - no connection to outreach |
+
+**DO NOT**:
+- Create cross-lane FKs (sales.* → partners.*)
+- Join sales/partners to outreach.outreach
+- Combine scoring from different lanes
+
+**See**: `docs/architecture/DUAL_LANE_ARCHITECTURE.md` for full ERD and isolation rules.
 
 ---
 
