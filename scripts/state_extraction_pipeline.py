@@ -428,9 +428,17 @@ class StatePipeline:
     # =========================================================================
     
     def _generate_person_doctrine_id(self, sequence: int) -> str:
-        """Generate a person DOCTRINE ID from sequence number."""
+        """Generate a person DOCTRINE ID from sequence number.
+        
+        Format: 04.04.02.XX.XXXXXX.XXX
+        - seg4: sequence % 100 (2 digits, 00-99)
+        - seg5: sequence (up to 6 digits, supports 999999 max)
+        - seg6: sequence % 1000 (3 digits, 000-999)
+        
+        Constraint allows: ^04\.04\.02\.[0-9]{2}\.[0-9]{1,6}\.[0-9]{3}$
+        """
         seg4 = str(sequence % 100).zfill(2)
-        seg5 = str(sequence).zfill(5)
+        seg5 = str(sequence)  # No zfill - constraint allows 1-6 digits
         seg6 = str(sequence % 1000).zfill(3)
         return f"04.04.02.{seg4}.{seg5}.{seg6}"
     

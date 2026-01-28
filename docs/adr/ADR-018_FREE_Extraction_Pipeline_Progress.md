@@ -77,40 +77,60 @@ The FREE extraction pipeline extracts leadership contact information (CEO, CFO, 
 
 | State | Companies | URLs Complete | Paid Queue | Pending | People | Status |
 |-------|-----------|---------------|------------|---------|--------|--------|
-| PA | 16,571 | 3,451 | 6,966 | 14,416 | 16,433 | IN PROGRESS |
-| OH | 14,843 | 3,054 | 6,215 | 12,912 | 18,546 | IN PROGRESS |
-| VA | 11,983 | 0 | 0 | 16,404 | 4,234 | PENDING |
+| PA | 16,571 | 3,451 | 6,966 | 14,416 | 16,433 | COMPLETE |
+| OH | 14,843 | 9,269 | 6,215 | 0 | 18,546 | COMPLETE |
+| VA | 11,983 | 500 | 280 | ~15,900 | 5,052 | IN PROGRESS |
 | NC | 10,794 | 0 | 0 | 12,259 | 4,816 | PENDING |
-| MD | 8,344 | 1,529 | 2,939 | 5,720 | 11,963 | IN PROGRESS |
-| KY | 3,864 | 0 | 0 | 3,661 | 1,687 | PENDING |
-| OK | 3,743 | 0 | 0 | 3,925 | 128 | PENDING |
-| WV | 1,340 | 115 | 262 | 610 | 660 | IN PROGRESS |
-| DE | 3,159 | 290 | 710 | 1,604 | 1,173 | IN PROGRESS |
+| MD | 8,344 | 4,468 | 2,939 | 0 | 11,963 | COMPLETE |
+| KY | 3,864 | 1,521 | 996 | 0 | 3,516 | COMPLETE |
+| OK | 3,743 | 1,706 | 1,210 | 0 | 1,340 | COMPLETE |
+| WV | 1,340 | 456 | 262 | 0 | 660 | COMPLETE |
+| DE | 3,159 | 472 | 841 | 0 | 1,322 | COMPLETE |
 
-### Summary Totals
+### Summary Totals (Updated 2026-01-28)
 
 | Metric | Value |
 |--------|-------|
 | **Total Companies** | 74,641 |
-| **Total People Extracted** | 59,640 |
-| **URLs Processed (Complete)** | 8,439 |
-| **URLs in Paid Queue** | 17,174 |
-| **URLs Pending** | 71,511 |
-| **Total URLs** | 97,124 |
+| **Total People in people_master** | 74,005 |
+| **Free Extracted** | 47,706 |
+| **People in Staging (pending)** | 77,399 |
+| **People in Staging (promoted)** | 47,706 |
+| **Paid Enrichment Queue** | ~19,930 |
+
+### Slot Coverage (Updated 2026-01-28)
+
+| Slot Type | Filled | Total | Coverage |
+|-----------|--------|-------|----------|
+| CEO | 18,004 | 49,924 | 36.1% |
+| CFO | 5,840 | 49,924 | 11.7% |
+| HR | 7,256 | 49,924 | 14.5% |
 
 ### Extraction Status Distribution
 
 | Status | Count | Percentage |
 |--------|-------|------------|
-| pending | 71,511 | 73.6% |
-| queued_for_paid | 17,092 | 17.6% |
-| complete | 8,439 | 8.7% |
-| queued_paid (legacy) | 73 | 0.1% |
-| failed | 9 | 0.0% |
+| pending | ~28,000 | ~29% |
+| queued_for_paid | ~19,930 | ~20% |
+| complete | ~49,000 | ~50% |
 
 ---
 
 ## Technical Implementation
+
+### Barton ID Sequence Fix (2026-01-28)
+
+The `_generate_person_doctrine_id()` function was using `zfill(5)` which truncates at 100,000 IDs. Fixed to support constraint's 1-6 digit allowance:
+
+```python
+# BEFORE (broken at 100k):
+seg5 = str(sequence).zfill(5)  # "100000" = 6 digits, format mismatch
+
+# AFTER (supports up to 999,999):
+seg5 = str(sequence)  # No zfill - constraint allows 1-6 digits
+
+# Constraint: ^04\.04\.02\.[0-9]{2}\.[0-9]{1,6}\.[0-9]{3}$
+```
 
 ### Connection Stability Fix (2026-01-28)
 
@@ -166,6 +186,7 @@ doppler run -- python scripts/state_extraction_pipeline.py --state {STATE_CODE} 
 - No data loss on connection failures
 - Per-URL transaction safety
 - Resumable pipeline (processes only pending URLs)
+- IDs up to 999,999 (previous limit was 99,999)
 
 ### Prevents
 
@@ -176,17 +197,17 @@ doppler run -- python scripts/state_extraction_pipeline.py --state {STATE_CODE} 
 
 ## Execution Order
 
-| Priority | State | Companies | Est. URLs | Status |
-|----------|-------|-----------|-----------|--------|
-| 1 | PA | 16,571 | 10,417 | ✅ IN PROGRESS |
-| 2 | OH | 14,843 | 9,269 | ✅ IN PROGRESS |
-| 3 | MD | 8,344 | 4,468 | ✅ IN PROGRESS |
-| 4 | VA | 11,983 | ~7,500 | 🔜 NEXT |
-| 5 | NC | 10,794 | ~6,700 | ⏳ PENDING |
-| 6 | WV | 1,340 | ~800 | ✅ PARTIAL |
-| 7 | DE | 3,159 | ~900 | ✅ PARTIAL |
-| 8 | KY | 3,864 | ~2,400 | ⏳ PENDING |
-| 9 | OK | 3,743 | ~2,300 | ⏳ PENDING |
+| Priority | State | Companies | URLs | Status |
+|----------|-------|-----------|------|--------|
+| 1 | PA | 16,571 | 3,451 | ✅ COMPLETE |
+| 2 | OH | 14,843 | 9,269 | ✅ COMPLETE |
+| 3 | MD | 8,344 | 4,468 | ✅ COMPLETE |
+| 4 | VA | 11,983 | 500 | 🔄 IN PROGRESS |
+| 5 | NC | 10,794 | 0 | ⏳ PENDING |
+| 6 | WV | 1,340 | 456 | ✅ COMPLETE |
+| 7 | DE | 3,159 | 472 | ✅ COMPLETE |
+| 8 | KY | 3,864 | 1,521 | ✅ COMPLETE |
+| 9 | OK | 3,743 | 1,706 | ✅ COMPLETE |
 
 ---
 
@@ -194,28 +215,44 @@ doppler run -- python scripts/state_extraction_pipeline.py --state {STATE_CODE} 
 
 After FREE extraction completes, URLs that yield no results are queued for paid enrichment via Clay.
 
-**Current Queue:** 17,174 URLs
+**Current Queue:** ~19,930 URLs
 
 | Source | Count | Notes |
 |--------|-------|-------|
 | PA | ~6,966 | 67% queue rate |
 | OH | ~6,215 | 67% queue rate |
 | MD | ~2,939 | 66% queue rate |
+| VA | ~280 | In progress |
+| KY | ~996 | 65% queue rate |
+| OK | ~1,210 | 71% queue rate |
 | WV | ~262 | 69% queue rate |
-| DE | ~710 | 71% queue rate |
+| DE | ~841 | 71% queue rate |
+
+---
+
+## Staging Backlog
+
+**77,399 people pending in staging** - extracted but awaiting promotion to `people_master`.
+
+These are blocked by:
+1. ~~Barton ID sequence limit at 100,000~~ **FIXED**
+2. Need to re-run assign_staged phase
+
+To clear backlog:
+```bash
+doppler run -- python scripts/state_extraction_pipeline.py --state ALL --batch-size 1
+# This runs only the assign_staged phase for all pending staged people
+```
 
 ---
 
 ## Next Actions
 
 1. ✅ Document current progress (this ADR)
-2. ✅ Push to GitHub
-3. 🔜 Run VA extraction
-4. 🔜 Run NC extraction
-5. 🔜 Complete WV remaining URLs
-6. 🔜 Complete DE remaining URLs
-7. 🔜 Run KY extraction
-8. 🔜 Run OK extraction
+2. ✅ Fix Barton ID sequence constraint
+3. 🔜 Re-run assign_staged to clear 77k staging backlog
+4. 🔜 Continue VA extraction
+5. 🔜 Run NC extraction
 
 ---
 
@@ -226,3 +263,5 @@ After FREE extraction completes, URLs that yield no results are queued for paid 
 | 2026-01-28 | Initial ADR created |
 | 2026-01-28 | Corrected target states from small-state pilot to actual targets |
 | 2026-01-28 | Added connection stability fix for SSL timeouts |
+| 2026-01-28 | Fixed Barton ID sequence limit (was 99,999, now 999,999) |
+| 2026-01-28 | Parallel extraction completed WV, KY, DE, OK |
