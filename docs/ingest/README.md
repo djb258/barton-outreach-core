@@ -2,11 +2,23 @@
 
 This folder contains ingest specifications for importing data into the Barton Outreach system.
 
+**MASTER REFERENCE**: See `docs/MASTER_ERD.md` for complete database architecture and join paths.
+
 ---
 
 ## Dual Lane System
 
-**IMPORTANT**: The system operates TWO ISOLATED LANES. Do not mix data between lanes.
+**CRITICAL**: The system operates TWO ISOLATED LANES. These lanes have **NO CONNECTION** to the main outreach pipeline.
+
+| Lane | Schema | Connection to Outreach | Connection to Each Other |
+|------|--------|------------------------|--------------------------|
+| **A** | `sales.*` | **NONE** (optional FKs for analytics) | **NONE** |
+| **B** | `partners.*` | **NONE** | **NONE** |
+
+**DO NOT**:
+- Create FKs from Lane A/B to outreach.outreach
+- Join sales.* to partners.*
+- Mix Lane A and Lane B data
 
 | Lane | Purpose | Ingest Doc | Script |
 |------|---------|------------|--------|
