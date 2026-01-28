@@ -3,11 +3,12 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 # Authority: imo-creator (Constitutional)
 # Status: LOCKED - Claude Code MUST read before suggesting any tool
-# Location: imo-creator/templates/SNAP_ON_TOOLBOX.yaml
+# Location: barton-outreach-core/templates/SNAP_ON_TOOLBOX.yaml
+# Merged: Parent evaluation_order + Child tool registry
 # ═══════════════════════════════════════════════════════════════════════════════
 
-version: "1.0.0"
-last_updated: "2026-01-07"
+version: "2.0.0"
+last_updated: "2026-01-28"
 doctrine: "Snap-on - One tool, many jobs, config is the variable"
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -28,6 +29,30 @@ criteria:
     definition: "Per-call cost, gated by business rules"
     cost: "Pay-per-use"
     priority: "Fire only when criteria met"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# EVALUATION ORDER (MANDATORY) — FROM PARENT
+# ═══════════════════════════════════════════════════════════════════════════════
+evaluation_order:
+  - step: 1
+    action: "CHECK BANNED LIST FIRST"
+    on_match: "STOP — suggest approved alternative"
+
+  - step: 2
+    action: "CHECK TIER 0 (FREE)"
+    question: "Can this be done with existing free tools?"
+
+  - step: 3
+    action: "CHECK TIER 1 (CHEAP)"
+    question: "Is there an existing subscription that covers this?"
+
+  - step: 4
+    action: "CHECK TIER 2 (SURGICAL)"
+    question: "Does this meet gate conditions for paid per-call tools?"
+
+  - step: 5
+    action: "IF NOT LISTED"
+    on_match: "ASK — may need ADR for new tool"
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # TIER 0: FREE TOOLS (12 tools)
