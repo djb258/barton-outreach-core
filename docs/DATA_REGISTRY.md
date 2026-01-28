@@ -11,8 +11,8 @@
 ### URLs / Domains
 | Location | Column | Records | Coverage | Notes |
 |----------|--------|---------|----------|-------|
-| `outreach.outreach` | `domain` | 51,148 | **100%** | Master domain list |
-| `outreach.blog` | `source_url` | 51,148 | **0%** ❌ | NEEDS POPULATION |
+| `outreach.outreach` | `domain` | **46,494** | **100%** | Master domain list (commercial only) |
+| `outreach.blog` | `source_url` | ~46K | **0%** ❌ | NEEDS POPULATION |
 | `company.company_master` | `website_url` | 74,641 | ~98% | Full URLs |
 | `company.company_source_urls` | `source_url` | 97,124 | 100% | Crawl source URLs |
 | `cl.company_domains` | `domain` | 51,910 | 100% | CL domain registry |
@@ -38,7 +38,8 @@
 ### Company Identifiers
 | Location | Column | Records | Notes |
 |----------|--------|---------|-------|
-| `outreach.outreach` | `outreach_id` | 51,148 | **MASTER LIST** |
+| `outreach.outreach` | `outreach_id` | **46,494** | **MASTER LIST** (commercial companies) |
+| `outreach.outreach_excluded` | `outreach_id` | 1,210 | Non-commercial exclusions |
 | `cl.company_identity` | `sovereign_company_id` | 51,910 | Authority registry |
 | `company.company_master` | `company_unique_id` | 74,641 | Company master ID |
 
@@ -82,7 +83,7 @@
 ## ID Relationships (How Tables Connect)
 
 ```
-outreach.outreach.outreach_id (MASTER - 51,148)
+outreach.outreach.outreach_id (MASTER - 46,494 commercial)
     │
     ├── outreach.blog.outreach_id
     ├── outreach.dol.outreach_id  
@@ -109,15 +110,18 @@ dol.form_5500.sponsor_dfe_ein (DOL SOURCE - 1M+)
 
 ## Sub-Hub Details
 
-### 1. OUTREACH Schema (344,619 rows)
+### 1. OUTREACH Schema (~300K rows)
 
 **Purpose**: Operational spine for all outreach activities.
 
+**Cleanup (2026-01-27)**: Removed 5,067 duplicate domains + 1,210 non-commercial entities.
+
 | Table | Rows | Key Columns | Enrichment Status |
 |-------|------|-------------|-------------------|
-| `outreach` | 51,148 | outreach_id, sovereign_id, domain | ✅ domain 100% |
-| `blog` | 51,148 | outreach_id, source_url, context_summary | ❌ source_url 0% |
-| `company_target` | 51,148 | outreach_id, outreach_status, email_method | ✅ email_method 91% |
+| `outreach` | **46,494** | outreach_id, sovereign_id, domain | ✅ domain 100% (commercial only) |
+| `outreach_excluded` | 1,210 | outreach_id, domain, exclusion_reason | Non-commercial (gov/edu/church/etc) |
+| `blog` | ~46K | outreach_id, source_url, context_summary | ❌ source_url 0% |
+| `company_target` | **45,816** | outreach_id, outreach_status, email_method | ✅ email_method 91% |
 | `dol` | 13,829 | outreach_id, ein, filing_present | ✅ ein 100% |
 | `people` | 426 | person_id, email, email_verified | ✅ email 100% |
 | `bit_scores` | 17,227 | outreach_id, score, score_tier | Active scoring |
@@ -347,4 +351,16 @@ FROM schema.table;
 
 ---
 
-*Last updated: 2026-01-23*
+*Last updated: 2026-01-28*
+
+---
+
+## Changelog
+
+### 2026-01-27: Outreach Table Cleanup
+- **Removed 5,067 duplicate domains** (kept oldest per normalized domain)
+- **Moved 1,210 non-commercial entities** to `outreach.outreach_excluded`:
+  - TLD exclusions: .gov (14), .edu (84), .org (675), .church (17), .coop (40)
+  - Keyword exclusions: government, school, church, insurance, etc. (380)
+- **Net result**: 46,494 clean, commercial companies in outreach spine
+- Sub-hub cascades: dol (18,575), company_target (45,816)

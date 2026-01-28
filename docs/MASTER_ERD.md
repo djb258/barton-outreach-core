@@ -51,21 +51,30 @@ erDiagram
     }
 
     %% ═══════════════════════════════════════════════════════════════
-    %% OUTREACH SPINE (Primary Pipeline)
+    %% OUTREACH SPINE (Primary Pipeline) - 46,494 commercial companies
+    %% Cleaned 2026-01-27: Removed 5,067 duplicates + 1,210 non-commercial
     %% ═══════════════════════════════════════════════════════════════
 
     OUTREACH_OUTREACH {
         uuid outreach_id PK
         uuid sovereign_company_id FK
-        text domain
-        text company_name
-        text status
+        text domain "Normalized, unique"
         timestamptz created_at
+        timestamptz updated_at
+    }
+
+    OUTREACH_EXCLUDED {
+        uuid outreach_id PK
+        text company_name
+        text domain
+        text exclusion_reason "TLD or Keyword match"
+        timestamptz excluded_at
     }
 
     OUTREACH_COMPANY_TARGET {
-        uuid company_unique_id PK
+        uuid target_id PK
         uuid outreach_id FK
+        uuid company_unique_id FK
         text outreach_status
         numeric bit_score_snapshot
         text email_method
