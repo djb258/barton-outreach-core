@@ -1,0 +1,80 @@
+%% IMO_FLOW.mmd
+%% Ingress / Middle / Egress Data Flow
+%% Source: barton-outreach-core (queried 2026-01-28)
+%% Doctrine: CANONICAL_ARCHITECTURE_DOCTRINE.md v1.5.0 §3.5
+
+graph LR
+    subgraph EXTERNAL["External Sources"]
+        EXT_CL[CL Authority<br/>Registry]
+        EXT_DOL[DOL.gov<br/>Filings]
+        EXT_ENRICH[Enrichment<br/>Providers]
+        EXT_SIGNALS[Signal<br/>Sources]
+    end
+
+    subgraph INGRESS["I - INGRESS LAYER"]
+        direction TB
+        I_VALIDATE[Schema<br/>Validation]
+        I_NORMALIZE[Data<br/>Normalization]
+        I_ROUTE[Spoke<br/>Router]
+
+        I_NOTE["NO DECISIONS<br/>NO STATE MUTATION<br/>Validation Only"]
+    end
+
+    subgraph MIDDLE["M - MIDDLE LAYER"]
+        direction TB
+        M_LOGIC[Business<br/>Logic]
+        M_DECIDE[Decision<br/>Engine]
+        M_STATE[State<br/>Management]
+        M_TOOLS[Tool<br/>Registry]
+        M_TRANSFORM[Data<br/>Transform]
+
+        M_NOTE["ALL LOGIC HERE<br/>ALL DECISIONS<br/>ALL TOOLS"]
+    end
+
+    subgraph EGRESS["O - EGRESS LAYER"]
+        direction TB
+        O_FORMAT[Output<br/>Formatting]
+        O_VIEWS[Read-Only<br/>Views]
+        O_EXPORT[Export<br/>Handler]
+
+        O_NOTE["NO LOGIC<br/>NO DECISIONS<br/>Read-Only Output"]
+    end
+
+    subgraph OUTPUT["Outputs"]
+        OUT_NEON[Neon<br/>PostgreSQL]
+        OUT_API[API<br/>Response]
+        OUT_WEBHOOK[Webhook<br/>Handoff]
+        OUT_REPORTS[Reports<br/>& Views]
+    end
+
+    %% Flow
+    EXT_CL --> I_VALIDATE
+    EXT_DOL --> I_VALIDATE
+    EXT_ENRICH --> I_VALIDATE
+    EXT_SIGNALS --> I_VALIDATE
+
+    I_VALIDATE --> I_NORMALIZE
+    I_NORMALIZE --> I_ROUTE
+    I_ROUTE --> M_LOGIC
+
+    M_LOGIC --> M_DECIDE
+    M_DECIDE --> M_STATE
+    M_STATE --> M_TOOLS
+    M_TOOLS --> M_TRANSFORM
+    M_TRANSFORM --> O_FORMAT
+
+    O_FORMAT --> O_VIEWS
+    O_VIEWS --> O_EXPORT
+
+    O_EXPORT --> OUT_NEON
+    O_EXPORT --> OUT_API
+    O_EXPORT --> OUT_WEBHOOK
+    O_EXPORT --> OUT_REPORTS
+
+    %% Styling
+    style INGRESS fill:#e3f2fd
+    style MIDDLE fill:#fff3e0
+    style EGRESS fill:#e8f5e9
+    style I_NOTE fill:#bbdefb,stroke:#1976d2
+    style M_NOTE fill:#ffe0b2,stroke:#f57c00
+    style O_NOTE fill:#c8e6c9,stroke:#388e3c

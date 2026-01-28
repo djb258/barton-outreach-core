@@ -1,0 +1,121 @@
+%% BIT_ENGINE.mmd
+%% Buyer Intent Tracking (BIT) Engine
+%% Source: Neon PostgreSQL outreach.bit_* + bit schema (queried 2026-01-28)
+%% Tables: 4 (bit schema) + 4 (outreach.bit_*) | Rows: 15,032 (bit_scores)
+%% Purpose: Signal aggregation, tier assignment, intent scoring
+%% Waterfall Position: After all sub-hubs complete
+
+erDiagram
+    OUTREACH_OUTREACH ||--o| OUTREACH_BIT_SCORES : "has BIT score"
+    OUTREACH_OUTREACH ||--o{ OUTREACH_BIT_SIGNALS : "has BIT signals"
+    OUTREACH_BIT_SCORES ||--o{ OUTREACH_BIT_SIGNALS : "aggregates from"
+    OUTREACH_BIT_SIGNALS ||--o{ BIT_MOVEMENT_EVENTS : "includes movement"
+    OUTREACH_BIT_SIGNALS ||--o{ BIT_PROOF_LINES : "has proof"
+    OUTREACH_BIT_SCORES ||--o{ OUTREACH_BIT_INPUT_HISTORY : "tracks inputs"
+    OUTREACH_BIT_SCORES ||--o{ OUTREACH_BIT_ERRORS : "has errors"
+
+    OUTREACH_OUTREACH {
+        uuid outreach_id PK "Spine PK"
+        uuid sovereign_id FK "CL reference"
+        varchar domain "Company domain"
+    }
+
+    OUTREACH_BIT_SCORES {
+        uuid outreach_id PK_FK "Spine FK (also PK)"
+        integer bit_score "BIT score 0-100"
+        text bit_tier "PLATINUM|GOLD|SILVER|BRONZE|NONE"
+        integer tier_threshold "Threshold used for tier"
+        timestamptz score_updated_at "Last score update"
+        timestamptz tier_assigned_at "Tier assignment time"
+        integer signal_count "Number of contributing signals"
+        integer dol_signal_count "DOL signals count"
+        integer blog_signal_count "Blog signals count"
+        integer movement_signal_count "Movement signals count"
+        integer custom_signal_count "Custom signals count"
+        numeric score_velocity "Score change rate"
+        timestamptz created_at "Record creation time"
+        timestamptz updated_at "Last update time"
+    }
+
+    OUTREACH_BIT_SIGNALS {
+        uuid signal_id PK "Signal unique ID"
+        uuid outreach_id FK "Spine FK"
+        text signal_type "DOL_FILING|DOL_RENEWAL|BLOG_PRESSURE|MOVEMENT|CUSTOM"
+        text signal_subtype "Specific signal subtype"
+        integer signal_impact "Impact points (positive or negative)"
+        integer signal_weight "Weight multiplier"
+        text signal_source "Source system"
+        text signal_hash "24h dedup hash"
+        jsonb signal_payload "Signal details"
+        timestamptz signal_timestamp "When signal occurred"
+        timestamptz expires_at "Signal expiration"
+        boolean is_expired "Is signal expired"
+        timestamptz created_at "Record creation time"
+    }
+
+    OUTREACH_BIT_INPUT_HISTORY {
+        uuid history_id PK
+        uuid outreach_id FK "Spine FK"
+        integer previous_score "Previous BIT score"
+        integer new_score "New BIT score"
+        text previous_tier "Previous tier"
+        text new_tier "New tier"
+        text change_reason "Reason for change"
+        uuid triggering_signal_id "Signal that triggered change"
+        timestamptz changed_at "Change timestamp"
+    }
+
+    OUTREACH_BIT_ERRORS {
+        uuid error_id PK
+        uuid outreach_id FK "Spine FK"
+        text error_type "Error classification"
+        text error_message "Error details"
+        text signal_type "Signal type that failed"
+        jsonb error_context "Additional context"
+        timestamptz created_at "Error timestamp"
+    }
+
+    BIT_MOVEMENT_EVENTS {
+        uuid event_id PK "Movement event ID"
+        uuid outreach_id FK "Reference to outreach"
+        uuid person_unique_id FK "Person who moved"
+        text movement_type "HIRE|DEPARTURE|PROMOTION"
+        text from_company "Previous company"
+        text to_company "New company"
+        text from_title "Previous title"
+        text to_title "New title"
+        integer signal_impact "Impact on BIT score"
+        date movement_date "Movement date"
+        text detection_source "How detected"
+        timestamptz created_at "Record creation time"
+    }
+
+    BIT_PROOF_LINES {
+        uuid proof_id PK
+        uuid signal_id FK "FK to bit_signals"
+        text proof_type "Evidence type"
+        text proof_url "Evidence URL"
+        text proof_text "Evidence text"
+        timestamptz captured_at "Capture timestamp"
+    }
+
+    BIT_AUTHORIZATION_LOG {
+        uuid log_id PK
+        uuid outreach_id FK "Reference to outreach"
+        text action_type "TIER_OVERRIDE|MANUAL_ADJUST|SIGNAL_ADD"
+        text authorized_by "Who authorized"
+        jsonb old_value "Previous value"
+        jsonb new_value "New value"
+        text reason "Authorization reason"
+        timestamptz authorized_at "Authorization timestamp"
+    }
+
+    BIT_PHASE_STATE {
+        uuid state_id PK
+        uuid outreach_id FK "Reference to outreach"
+        text phase_name "Phase identifier"
+        text phase_status "pending|running|completed|failed"
+        jsonb phase_data "Phase-specific data"
+        timestamptz started_at "Phase start"
+        timestamptz completed_at "Phase completion"
+    }

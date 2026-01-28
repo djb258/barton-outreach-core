@@ -1,0 +1,153 @@
+%% PEOPLE_INTELLIGENCE_SUBHUB.mmd
+%% People Intelligence Sub-Hub (04.04.02)
+%% Source: Neon PostgreSQL people + outreach.people (queried 2026-01-28)
+%% Tables: 20+ (people schema) | Rows: 71,237 (people_master), 149,172 (company_slot)
+%% Purpose: Slot assignment, email generation, movement detection
+%% Waterfall Position: #3 (PASS REQUIRED, executes after DOL)
+
+erDiagram
+    OUTREACH_OUTREACH ||--o{ OUTREACH_PEOPLE : "has people"
+    OUTREACH_PEOPLE ||--o{ OUTREACH_PEOPLE_ERRORS : "has errors"
+    OUTREACH_PEOPLE }o--|| PEOPLE_PEOPLE_MASTER : "references person"
+    PEOPLE_PEOPLE_MASTER }o--|| MARKETING_COMPANY_MASTER : "employed by"
+    PEOPLE_PEOPLE_MASTER ||--o{ PEOPLE_COMPANY_SLOT : "fills slots"
+    MARKETING_COMPANY_MASTER ||--o{ PEOPLE_COMPANY_SLOT : "has slots"
+    PEOPLE_PEOPLE_MASTER ||--o| PEOPLE_PEOPLE_SIDECAR : "has metadata"
+    PEOPLE_PEOPLE_MASTER ||--o{ PEOPLE_PERSON_MOVEMENT_HISTORY : "has movement"
+    PEOPLE_PEOPLE_MASTER ||--o| PEOPLE_PERSON_SCORES : "has scores"
+    PEOPLE_COMPANY_SLOT ||--o{ PEOPLE_SLOT_ASSIGNMENT_HISTORY : "has history"
+
+    OUTREACH_OUTREACH {
+        uuid outreach_id PK "Spine PK"
+        uuid sovereign_id FK "CL reference"
+        varchar domain "Company domain"
+    }
+
+    OUTREACH_PEOPLE {
+        uuid person_id PK "Outreach people record ID"
+        uuid outreach_id FK "Spine FK (REQUIRED)"
+        text person_unique_id FK "FK to people.people_master"
+        text slot_type "CEO|CFO|HR|CTO|CMO|COO"
+        text email "Generated email address"
+        boolean email_verified "Email verification status"
+        text verification_method "Verification method used"
+        text linkedin_url "LinkedIn profile URL"
+        text title "Job title"
+        text seniority "Seniority level"
+        integer seniority_rank "Seniority rank 1-10"
+        timestamptz created_at "Record creation time"
+        timestamptz updated_at "Last update time"
+    }
+
+    OUTREACH_PEOPLE_ERRORS {
+        uuid error_id PK
+        uuid outreach_id FK "Spine FK"
+        text error_type "Error classification"
+        text error_message "Error details"
+        text slot_type "Slot type that failed"
+        jsonb error_context "Additional context"
+        timestamptz created_at "Error timestamp"
+    }
+
+    PEOPLE_PEOPLE_MASTER {
+        uuid unique_id PK "Person unique ID"
+        uuid company_unique_id FK "FK to company_master"
+        text full_name "Full name"
+        text first_name "First name"
+        text last_name "Last name"
+        text email "Email address"
+        boolean email_verified "Email verified flag"
+        text title "Job title"
+        text seniority "Seniority level"
+        integer seniority_rank "Seniority rank 1-10"
+        text linkedin_url "LinkedIn profile URL"
+        text slot_type "Assigned slot type"
+        numeric data_quality_score "Data quality 0-100"
+        text source "Data source"
+        timestamptz created_at "Record creation time"
+        timestamptz updated_at "Last update time"
+    }
+
+    PEOPLE_PEOPLE_SIDECAR {
+        uuid person_unique_id PK_FK "FK to people_master"
+        text phone_number "Phone number"
+        text location "Location"
+        text timezone "Timezone"
+        jsonb social_profiles "Social media profiles"
+        jsonb enrichment_data "Enrichment provider data"
+        timestamptz last_enriched_at "Last enrichment time"
+    }
+
+    PEOPLE_COMPANY_SLOT {
+        uuid slot_id PK "Slot assignment ID"
+        uuid company_unique_id FK "FK to company_master"
+        uuid outreach_id FK "FK to outreach spine"
+        text slot_type "CEO|CFO|HR|CTO|CMO|COO"
+        uuid person_unique_id FK "FK to people_master"
+        boolean is_filled "Slot filled flag"
+        text fill_source "How slot was filled"
+        numeric confidence_score "Assignment confidence"
+        timestamptz filled_at "Fill timestamp"
+        timestamptz last_refreshed_at "Last refresh time"
+        timestamptz created_at "Record creation time"
+        timestamptz updated_at "Last update time"
+    }
+
+    PEOPLE_SLOT_ASSIGNMENT_HISTORY {
+        uuid history_id PK
+        uuid slot_id FK "FK to company_slot"
+        uuid previous_person_id "Previous person"
+        uuid new_person_id "New person"
+        text change_reason "Reason for change"
+        timestamptz changed_at "Change timestamp"
+    }
+
+    PEOPLE_PERSON_MOVEMENT_HISTORY {
+        uuid id PK
+        uuid person_unique_id FK "FK to people_master"
+        uuid from_company_id "Previous company"
+        uuid to_company_id "New company"
+        text from_title "Previous title"
+        text to_title "New title"
+        text movement_type "HIRE|PROMOTION|DEPARTURE|LATERAL"
+        date movement_date "Movement date"
+        text source "Detection source"
+        timestamptz created_at "Record creation time"
+    }
+
+    PEOPLE_PERSON_SCORES {
+        uuid id PK
+        uuid person_unique_id FK "FK to people_master"
+        numeric email_confidence "Email confidence 0-1"
+        numeric title_confidence "Title confidence 0-1"
+        numeric data_freshness "Data freshness 0-1"
+        numeric overall_score "Overall score 0-100"
+        timestamptz scored_at "Score timestamp"
+    }
+
+    MARKETING_COMPANY_MASTER {
+        uuid company_unique_id PK "Company ID"
+        text company_name "Company name"
+        text domain "Company domain"
+        text industry "Industry"
+        integer employee_count "Employee count"
+        text address_state "State"
+    }
+
+    PEOPLE_TITLE_SLOT_MAPPING {
+        uuid id PK
+        text title_pattern "Title pattern regex"
+        text slot_type "Mapped slot type"
+        integer priority "Mapping priority"
+        boolean is_active "Is active"
+    }
+
+    PEOPLE_PAID_ENRICHMENT_QUEUE {
+        uuid id PK
+        uuid person_unique_id FK "FK to people_master"
+        text enrichment_type "Enrichment type"
+        text provider "Provider to use"
+        text queue_status "pending|processing|completed|failed"
+        timestamptz queued_at "Queue timestamp"
+        timestamptz completed_at "Completion time"
+    }

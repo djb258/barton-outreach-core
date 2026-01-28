@@ -1,0 +1,85 @@
+%% COMPLETENESS_FLOW.mmd
+%% Completeness Evaluation Flow
+%% Purpose: How entities are evaluated for completeness
+
+graph TD
+    subgraph INPUT["Entity Input"]
+        ENTITY[Entity arrives<br/>outreach_id]
+    end
+
+    ENTITY --> WATERFALL
+
+    subgraph WATERFALL["Waterfall Evaluation"]
+        HUB1[1. Company Target<br/>REQUIRED]
+        HUB2[2. DOL Filings<br/>REQUIRED]
+        HUB3[3. People Intelligence<br/>REQUIRED]
+        HUB4[4. Talent Flow<br/>REQUIRED]
+        HUB5[5. Blog Content<br/>OPTIONAL]
+        HUB6[6. Outreach Execution<br/>OPTIONAL]
+
+        HUB1 --> GATE1{PASS?}
+        GATE1 -->|YES| HUB2
+        GATE1 -->|NO| BLOCK1[BLOCKED<br/>blocker_type]
+
+        HUB2 --> GATE2{PASS?}
+        GATE2 -->|YES| HUB3
+        GATE2 -->|NO| BLOCK2[BLOCKED<br/>blocker_type]
+
+        HUB3 --> GATE3{PASS?}
+        GATE3 -->|YES| HUB4
+        GATE3 -->|NO| BLOCK3[BLOCKED<br/>blocker_type]
+
+        HUB4 --> GATE4{PASS?}
+        GATE4 -->|YES| OPTIONAL
+        GATE4 -->|NO| BLOCK4[BLOCKED<br/>blocker_type]
+
+        subgraph OPTIONAL["Optional Hubs (Non-Blocking)"]
+            HUB5
+            HUB6
+        end
+    end
+
+    OPTIONAL --> COMPLETE[COMPLETE<br/>All required PASS]
+    BLOCK1 --> INCOMPLETE
+    BLOCK2 --> INCOMPLETE
+    BLOCK3 --> INCOMPLETE
+    BLOCK4 --> INCOMPLETE[INCOMPLETE<br/>blocking_hubs[]<br/>blocker_types[]]
+
+    subgraph BLOCKER_CLASSIFICATION["Blocker Classification"]
+        BT1[DATA_MISSING]
+        BT2[DATA_UNDISCOVERABLE]
+        BT3[DATA_CONFLICT]
+        BT4[SOURCE_UNAVAILABLE]
+        BT5[NOT_APPLICABLE]
+        BT6[HUMAN_DECISION_REQUIRED]
+        BT7[UPSTREAM_BLOCKED]
+        BT8[THRESHOLD_NOT_MET]
+        BT9[EXPIRED]
+    end
+
+    INCOMPLETE -.-> BLOCKER_CLASSIFICATION
+
+    subgraph OUTPUT["Output Views"]
+        VIEW1[vw_entity_completeness<br/>Per-entity, per-hub]
+        VIEW2[vw_entity_overall_status<br/>Aggregated status]
+        VIEW3[vw_blocker_analysis<br/>Blocker distribution]
+    end
+
+    COMPLETE --> VIEW1
+    INCOMPLETE --> VIEW1
+    VIEW1 --> VIEW2
+    VIEW1 --> VIEW3
+
+    %% Styling
+    style COMPLETE fill:#c8e6c9
+    style INCOMPLETE fill:#ffcdd2
+    style HUB1 fill:#e3f2fd
+    style HUB2 fill:#e3f2fd
+    style HUB3 fill:#e3f2fd
+    style HUB4 fill:#e3f2fd
+    style HUB5 fill:#fff9c4
+    style HUB6 fill:#fff9c4
+    style BLOCK1 fill:#ffcdd2
+    style BLOCK2 fill:#ffcdd2
+    style BLOCK3 fill:#ffcdd2
+    style BLOCK4 fill:#ffcdd2

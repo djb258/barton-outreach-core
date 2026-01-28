@@ -1,0 +1,111 @@
+%% CL_AUTHORITY_REGISTRY.mmd
+%% Company Lifecycle Authority Registry (Parent Hub)
+%% Source: Neon PostgreSQL cl schema (queried 2026-01-28)
+%% Tables: 13 | Rows: 52,675 (company_identity)
+%% Doctrine: CL is AUTHORITY REGISTRY - Identity pointers only
+
+erDiagram
+    CL_COMPANY_IDENTITY ||--o{ CL_COMPANY_DOMAINS : "has domains"
+    CL_COMPANY_IDENTITY ||--o{ CL_COMPANY_NAMES : "has name variants"
+    CL_COMPANY_IDENTITY ||--o| CL_IDENTITY_CONFIDENCE : "has confidence scores"
+    CL_COMPANY_IDENTITY ||--o| CL_DOMAIN_HIERARCHY : "has domain hierarchy"
+    CL_COMPANY_IDENTITY ||--o{ CL_COMPANY_CANDIDATE : "resolves from"
+    CL_COMPANY_IDENTITY ||--o| CL_COMPANY_IDENTITY_BRIDGE : "merges via"
+
+    CL_COMPANY_IDENTITY {
+        uuid company_unique_id PK "Minted by CL"
+        uuid sovereign_company_id "Sovereign ID"
+        text company_name "Primary name"
+        text company_domain "Primary domain"
+        text normalized_domain "Normalized domain"
+        text linkedin_company_url "LinkedIn URL"
+        text source_system "Source system"
+        text company_fingerprint "Dedup fingerprint"
+        text lifecycle_run_id "Processing run ID"
+        boolean existence_verified "Existence check passed"
+        text verification_run_id "Verification run ID"
+        timestamptz verified_at "Verification timestamp"
+        integer domain_status_code "HTTP status code"
+        integer name_match_score "Name match score"
+        text state_match_result "State match result"
+        text canonical_name "Canonical name"
+        text state_verified "Verified state"
+        text employee_count_band "Employee band"
+        integer identity_pass "Identity pass number"
+        text identity_status "PENDING|RESOLVED|FAILED"
+        timestamptz last_pass_at "Last pass timestamp"
+        text eligibility_status "ELIGIBLE|EXCLUDE"
+        text exclusion_reason "Exclusion reason"
+        text entity_role "Entity role"
+        text final_outcome "Final outcome"
+        text final_reason "Final reason"
+        uuid outreach_id FK "WRITE-ONCE pointer to Outreach"
+        uuid sales_process_id FK "WRITE-ONCE pointer to Sales"
+        uuid client_id FK "WRITE-ONCE pointer to Client"
+        timestamptz outreach_attached_at "Outreach registration time"
+        timestamptz sales_opened_at "Sales registration time"
+        timestamptz client_promoted_at "Client registration time"
+        timestamptz created_at "Record creation time"
+    }
+
+    CL_COMPANY_DOMAINS {
+        uuid domain_id PK
+        uuid company_unique_id FK
+        text domain "Domain name"
+        text domain_type "PRIMARY|ALIAS|REDIRECT"
+        boolean is_primary "Is primary domain"
+        timestamptz created_at "Record creation time"
+    }
+
+    CL_COMPANY_NAMES {
+        uuid name_id PK
+        uuid company_unique_id FK
+        text name_variant "Name variant"
+        text name_type "LEGAL|DBA|TRADE"
+        boolean is_canonical "Is canonical name"
+        timestamptz created_at "Record creation time"
+    }
+
+    CL_IDENTITY_CONFIDENCE {
+        uuid company_unique_id PK_FK
+        numeric domain_confidence "Domain confidence 0-1"
+        numeric name_confidence "Name confidence 0-1"
+        numeric linkedin_confidence "LinkedIn confidence 0-1"
+        numeric overall_confidence "Overall confidence 0-1"
+        timestamptz updated_at "Last update time"
+    }
+
+    CL_DOMAIN_HIERARCHY {
+        uuid hierarchy_id PK
+        uuid company_unique_id FK
+        text parent_domain "Parent domain"
+        text child_domain "Child domain"
+        text relationship_type "SUBDOMAIN|REDIRECT|ALIAS"
+        timestamptz created_at "Record creation time"
+    }
+
+    CL_COMPANY_CANDIDATE {
+        uuid candidate_id PK
+        uuid company_unique_id FK "Resolved to"
+        text raw_name "Raw input name"
+        text raw_domain "Raw input domain"
+        text source "Source system"
+        text resolution_status "RESOLVED|PENDING|FAILED"
+        timestamptz created_at "Record creation time"
+    }
+
+    CL_COMPANY_IDENTITY_BRIDGE {
+        uuid bridge_id PK
+        uuid primary_id FK "Primary identity"
+        uuid secondary_id FK "Merged identity"
+        text merge_reason "Reason for merge"
+        timestamptz merged_at "Merge timestamp"
+    }
+
+    CL_ERR_EXISTENCE {
+        uuid error_id PK
+        uuid company_unique_id FK
+        text error_type "Error type"
+        text error_message "Error details"
+        timestamptz created_at "Error timestamp"
+    }

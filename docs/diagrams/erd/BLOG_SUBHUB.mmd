@@ -1,0 +1,95 @@
+%% BLOG_SUBHUB.mmd
+%% Blog Content Sub-Hub (04.04.05)
+%% Source: Neon PostgreSQL outreach.blog + blog schema (queried 2026-01-28)
+%% Tables: 4 (outreach.blog*) | Rows: 46,468 (100% coverage)
+%% Purpose: Content signals, news monitoring, pressure detection
+%% Waterfall Position: #4 (PASS, executes after People Intelligence)
+
+erDiagram
+    OUTREACH_OUTREACH ||--o| OUTREACH_BLOG : "has blog"
+    OUTREACH_BLOG ||--o{ OUTREACH_BLOG_ERRORS : "has errors"
+    OUTREACH_BLOG ||--o{ BLOG_INGRESS_CONTROL : "controlled by"
+    OUTREACH_BLOG ||--o{ BLOG_SOURCE_HISTORY : "has history"
+    OUTREACH_BLOG ||--o{ PEOPLE_PRESSURE_SIGNALS : "generates signals"
+
+    OUTREACH_OUTREACH {
+        uuid outreach_id PK "Spine PK"
+        uuid sovereign_id FK "CL reference"
+        varchar domain "Company domain"
+    }
+
+    OUTREACH_BLOG {
+        uuid blog_id PK "Blog sub-hub record ID"
+        uuid outreach_id FK "Spine FK (REQUIRED)"
+        text blog_url "Primary blog URL"
+        text rss_feed_url "RSS feed URL"
+        text blog_platform "WordPress|Medium|Custom|None"
+        boolean has_rss "Has RSS feed"
+        boolean has_blog "Has blog detected"
+        integer post_count "Number of posts found"
+        integer signal_count "Pressure signals generated"
+        date last_post_date "Date of last post"
+        timestamptz last_checked_at "Last check timestamp"
+        timestamptz next_check_at "Next scheduled check"
+        text check_status "pending|active|inactive|error"
+        timestamptz created_at "Record creation time"
+        timestamptz updated_at "Last update time"
+    }
+
+    OUTREACH_BLOG_ERRORS {
+        uuid error_id PK
+        uuid outreach_id FK "Spine FK"
+        text error_type "Error classification"
+        text error_message "Error details"
+        text blog_url "URL that failed"
+        integer http_status "HTTP status code"
+        jsonb error_context "Additional context"
+        timestamptz created_at "Error timestamp"
+    }
+
+    BLOG_INGRESS_CONTROL {
+        uuid switch_id PK
+        uuid outreach_id FK "Spine FK"
+        text control_type "PAUSE|SKIP|PRIORITY"
+        text reason "Control reason"
+        boolean is_active "Is control active"
+        timestamptz activated_at "Activation time"
+        timestamptz expires_at "Expiration time"
+    }
+
+    BLOG_SOURCE_HISTORY {
+        uuid history_id PK
+        uuid blog_id FK "FK to outreach_blog"
+        text previous_url "Previous blog URL"
+        text new_url "New blog URL"
+        text change_reason "Reason for change"
+        timestamptz changed_at "Change timestamp"
+    }
+
+    PEOPLE_PRESSURE_SIGNALS {
+        uuid signal_id PK "Pressure signal ID"
+        uuid outreach_id FK "Reference to outreach"
+        text signal_type "BLOG_POST|NEWS_MENTION|PR_RELEASE"
+        text signal_source "Source of signal"
+        text signal_url "URL of signal source"
+        text signal_title "Title of content"
+        text signal_summary "Summary of content"
+        integer relevance_score "Relevance 0-100"
+        date signal_date "Date of signal"
+        boolean processed "Processed for BIT"
+        timestamptz created_at "Record creation time"
+    }
+
+    BLOG_POSTS {
+        uuid post_id PK
+        uuid blog_id FK "FK to outreach_blog"
+        text post_url "Post URL"
+        text post_title "Post title"
+        text post_excerpt "Post excerpt"
+        date post_date "Post date"
+        text author "Post author"
+        jsonb categories "Post categories"
+        jsonb keywords "Extracted keywords"
+        boolean is_relevant "Relevance flag"
+        timestamptz fetched_at "Fetch timestamp"
+    }

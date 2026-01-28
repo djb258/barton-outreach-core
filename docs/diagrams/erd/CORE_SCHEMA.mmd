@@ -1,0 +1,188 @@
+%% CORE_SCHEMA.mmd
+%% Complete System Entity Relationship Diagram
+%% Source: Neon PostgreSQL (queried 2026-01-28)
+%% Doctrine: DOCUMENTATION_ERD_DOCTRINE.md v1.0.0
+
+erDiagram
+    CL_COMPANY_IDENTITY ||--o| OUTREACH_OUTREACH : "registers outreach_id (WRITE-ONCE)"
+    CL_COMPANY_IDENTITY ||--o{ CL_COMPANY_DOMAINS : "has"
+    CL_COMPANY_IDENTITY ||--o{ CL_COMPANY_NAMES : "has"
+    CL_COMPANY_IDENTITY ||--o| CL_IDENTITY_CONFIDENCE : "has"
+
+    OUTREACH_OUTREACH ||--o| OUTREACH_COMPANY_TARGET : "has target"
+    OUTREACH_OUTREACH ||--o| OUTREACH_DOL : "has DOL data"
+    OUTREACH_OUTREACH ||--o{ OUTREACH_PEOPLE : "has people"
+    OUTREACH_OUTREACH ||--o| OUTREACH_BLOG : "has blog"
+    OUTREACH_OUTREACH ||--o| OUTREACH_BIT_SCORES : "has BIT score"
+    OUTREACH_OUTREACH ||--o{ OUTREACH_BIT_SIGNALS : "has signals"
+    OUTREACH_OUTREACH ||--o{ OUTREACH_MANUAL_OVERRIDES : "has overrides"
+
+    MARKETING_COMPANY_MASTER ||--o{ PEOPLE_PEOPLE_MASTER : "employs"
+    MARKETING_COMPANY_MASTER ||--o{ PEOPLE_COMPANY_SLOT : "has slots"
+    PEOPLE_PEOPLE_MASTER ||--o{ PEOPLE_COMPANY_SLOT : "fills slot"
+
+    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_A : "has schedule"
+    DOL_FORM_5500 ||--o{ DOL_RENEWAL_CALENDAR : "has renewal"
+    DOL_EIN_URLS ||--o{ DOL_FORM_5500 : "files"
+
+    OUTREACH_DOL }o--|| DOL_FORM_5500 : "references filing"
+    OUTREACH_PEOPLE }o--|| PEOPLE_PEOPLE_MASTER : "references person"
+
+    CL_COMPANY_IDENTITY {
+        uuid company_unique_id PK
+        uuid sovereign_company_id
+        text company_name
+        text company_domain
+        text normalized_domain
+        uuid outreach_id FK "WRITE-ONCE"
+        uuid sales_process_id FK "WRITE-ONCE"
+        uuid client_id FK "WRITE-ONCE"
+        text identity_status
+        text eligibility_status
+        text exclusion_reason
+        text final_outcome
+        timestamptz created_at
+    }
+
+    OUTREACH_OUTREACH {
+        uuid outreach_id PK
+        uuid sovereign_id FK
+        varchar domain
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    OUTREACH_COMPANY_TARGET {
+        uuid target_id PK
+        uuid outreach_id FK
+        varchar email_method
+        varchar method_type
+        numeric confidence_score
+        boolean is_catchall
+        text outreach_status
+        varchar execution_status
+        timestamptz created_at
+    }
+
+    OUTREACH_DOL {
+        uuid dol_id PK
+        uuid outreach_id FK
+        text ein
+        text filing_id FK
+        boolean form_5500_matched
+        boolean schedule_a_matched
+        numeric match_confidence
+    }
+
+    OUTREACH_PEOPLE {
+        uuid person_id PK
+        uuid outreach_id FK
+        text person_unique_id FK
+        text slot_type
+        text email
+        boolean email_verified
+    }
+
+    OUTREACH_BLOG {
+        uuid blog_id PK
+        uuid outreach_id FK
+        text blog_url
+        text rss_feed_url
+        integer signal_count
+    }
+
+    OUTREACH_BIT_SCORES {
+        uuid outreach_id PK_FK
+        integer bit_score
+        text bit_tier
+        integer signal_count
+    }
+
+    OUTREACH_BIT_SIGNALS {
+        uuid signal_id PK
+        uuid outreach_id FK
+        text signal_type
+        integer signal_impact
+        text signal_hash
+    }
+
+    OUTREACH_MANUAL_OVERRIDES {
+        uuid override_id PK
+        uuid outreach_id FK
+        text override_type
+        text reason
+        boolean is_active
+    }
+
+    MARKETING_COMPANY_MASTER {
+        uuid company_unique_id PK
+        text company_name
+        text domain
+        text industry
+        integer employee_count
+    }
+
+    PEOPLE_PEOPLE_MASTER {
+        uuid unique_id PK
+        uuid company_unique_id FK
+        text full_name
+        text email
+        text title
+        text slot_type
+    }
+
+    PEOPLE_COMPANY_SLOT {
+        uuid slot_id PK
+        uuid company_unique_id FK
+        uuid person_unique_id FK
+        text slot_type
+        boolean is_filled
+    }
+
+    DOL_FORM_5500 {
+        text filing_id PK
+        text ein
+        text sponsor_name
+        integer plan_year
+        numeric total_assets
+    }
+
+    DOL_SCHEDULE_A {
+        uuid schedule_id PK
+        text filing_id FK
+        text ein
+        text insurance_carrier_name
+    }
+
+    DOL_RENEWAL_CALENDAR {
+        uuid renewal_id PK
+        text filing_id FK
+        date renewal_date
+    }
+
+    DOL_EIN_URLS {
+        text ein PK
+        text company_name
+        text url
+    }
+
+    CL_COMPANY_DOMAINS {
+        uuid domain_id PK
+        uuid company_unique_id FK
+        text domain
+        boolean is_primary
+    }
+
+    CL_COMPANY_NAMES {
+        uuid name_id PK
+        uuid company_unique_id FK
+        text name_variant
+        boolean is_canonical
+    }
+
+    CL_IDENTITY_CONFIDENCE {
+        uuid company_unique_id PK_FK
+        numeric domain_confidence
+        numeric name_confidence
+        numeric overall_confidence
+    }

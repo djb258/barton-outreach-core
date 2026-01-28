@@ -1,0 +1,176 @@
+%% OUTREACH_SPINE.mmd
+%% Outreach Operational Spine (Child Hub)
+%% Source: Neon PostgreSQL outreach schema (queried 2026-01-28)
+%% Tables: 45+ | Rows: 49,737 (outreach.outreach)
+%% Doctrine: outreach.outreach is OPERATIONAL SPINE - workflow state lives here
+
+erDiagram
+    OUTREACH_OUTREACH ||--o| OUTREACH_COMPANY_TARGET : "has target (04.04.01)"
+    OUTREACH_OUTREACH ||--o| OUTREACH_DOL : "has DOL (04.04.03)"
+    OUTREACH_OUTREACH ||--o{ OUTREACH_PEOPLE : "has people (04.04.02)"
+    OUTREACH_OUTREACH ||--o| OUTREACH_BLOG : "has blog (04.04.05)"
+    OUTREACH_OUTREACH ||--o| OUTREACH_BIT_SCORES : "has BIT score"
+    OUTREACH_OUTREACH ||--o{ OUTREACH_BIT_SIGNALS : "has BIT signals"
+    OUTREACH_OUTREACH ||--o{ OUTREACH_MANUAL_OVERRIDES : "has kill switches"
+    OUTREACH_OUTREACH ||--o{ OUTREACH_CAMPAIGNS : "has campaigns"
+    OUTREACH_OUTREACH ||--o{ OUTREACH_SEQUENCES : "has sequences"
+    OUTREACH_OUTREACH ||--o{ OUTREACH_SEND_LOG : "has send log"
+    OUTREACH_OUTREACH ||--o{ OUTREACH_ENGAGEMENT_EVENTS : "has engagement"
+
+    OUTREACH_OUTREACH {
+        uuid outreach_id PK "Minted by Outreach, registered in CL"
+        uuid sovereign_id FK "Points to cl.company_identity"
+        varchar domain "Company domain"
+        timestamptz created_at "Record creation time"
+        timestamptz updated_at "Last update time"
+    }
+
+    OUTREACH_COMPANY_TARGET {
+        uuid target_id PK
+        uuid outreach_id FK "Spine FK"
+        text company_unique_id "Legacy reference"
+        varchar email_method "Discovered email pattern"
+        varchar method_type "Pattern type"
+        numeric confidence_score "0.00-1.00"
+        boolean is_catchall "Is catch-all domain"
+        text outreach_status "queued|active|paused|completed"
+        varchar execution_status "pending|running|done"
+        integer bit_score_snapshot "BIT score at targeting"
+        integer sequence_count "Sequences executed"
+        text active_sequence_id "Current sequence"
+        text source "Lead source"
+        timestamptz first_targeted_at "First targeting time"
+        timestamptz last_targeted_at "Last targeting time"
+        timestamptz imo_completed_at "IMO completion time"
+        timestamptz created_at "Record creation time"
+        timestamptz updated_at "Last update time"
+    }
+
+    OUTREACH_DOL {
+        uuid dol_id PK
+        uuid outreach_id FK "Spine FK"
+        text ein "Employer ID Number"
+        text filing_id FK "FK to dol.form_5500"
+        boolean form_5500_matched "Form 5500 match found"
+        boolean schedule_a_matched "Schedule A match found"
+        numeric match_confidence "Match confidence 0-1"
+        text match_method "Matching algorithm used"
+        timestamptz created_at "Record creation time"
+        timestamptz updated_at "Last update time"
+    }
+
+    OUTREACH_PEOPLE {
+        uuid person_id PK
+        uuid outreach_id FK "Spine FK"
+        text person_unique_id FK "FK to people.people_master"
+        text slot_type "CEO|CFO|HR|CTO|CMO|COO"
+        text email "Generated email address"
+        boolean email_verified "Email verified"
+        text linkedin_url "LinkedIn profile URL"
+        text title "Job title"
+        text seniority "Seniority level"
+        timestamptz created_at "Record creation time"
+        timestamptz updated_at "Last update time"
+    }
+
+    OUTREACH_BLOG {
+        uuid blog_id PK
+        uuid outreach_id FK "Spine FK"
+        text blog_url "Blog URL"
+        text rss_feed_url "RSS feed URL"
+        timestamptz last_checked_at "Last check time"
+        integer signal_count "Signal count"
+        timestamptz created_at "Record creation time"
+        timestamptz updated_at "Last update time"
+    }
+
+    OUTREACH_BIT_SCORES {
+        uuid outreach_id PK_FK "Spine FK (also PK)"
+        integer bit_score "BIT score 0-100"
+        text bit_tier "PLATINUM|GOLD|SILVER|BRONZE"
+        timestamptz score_updated_at "Score update time"
+        timestamptz tier_assigned_at "Tier assignment time"
+        integer signal_count "Contributing signals"
+        timestamptz created_at "Record creation time"
+        timestamptz updated_at "Last update time"
+    }
+
+    OUTREACH_BIT_SIGNALS {
+        uuid signal_id PK
+        uuid outreach_id FK "Spine FK"
+        text signal_type "DOL_FILING|BLOG_PRESSURE|MOVEMENT"
+        integer signal_impact "Impact points"
+        timestamptz signal_timestamp "Signal time"
+        text signal_hash "24h dedup hash"
+        timestamptz created_at "Record creation time"
+    }
+
+    OUTREACH_MANUAL_OVERRIDES {
+        uuid override_id PK
+        uuid outreach_id FK "Spine FK"
+        text override_type "EXCLUDE|INCLUDE|TIER_FORCE"
+        text reason "Override reason"
+        text applied_by "Who applied"
+        timestamptz applied_at "When applied"
+        timestamptz expires_at "Expiration time"
+        boolean is_active "Is currently active"
+    }
+
+    OUTREACH_CAMPAIGNS {
+        uuid campaign_id PK
+        uuid outreach_id FK "Spine FK"
+        text campaign_name "Campaign name"
+        text campaign_type "Campaign type"
+        text campaign_status "draft|active|paused|completed"
+        timestamptz started_at "Start time"
+        timestamptz completed_at "Completion time"
+        timestamptz created_at "Record creation time"
+        timestamptz updated_at "Last update time"
+    }
+
+    OUTREACH_SEQUENCES {
+        uuid sequence_id PK
+        uuid outreach_id FK "Spine FK"
+        uuid campaign_id FK "Campaign FK"
+        integer sequence_step "Step number"
+        text sequence_type "Sequence type"
+        text sequence_status "scheduled|sent|delivered|failed"
+        timestamptz scheduled_at "Scheduled time"
+        timestamptz sent_at "Send time"
+        timestamptz created_at "Record creation time"
+        timestamptz updated_at "Last update time"
+    }
+
+    OUTREACH_SEND_LOG {
+        uuid send_id PK
+        uuid outreach_id FK "Spine FK"
+        uuid sequence_id FK "Sequence FK"
+        text recipient_email "Recipient email"
+        text send_status "scheduled|sent|delivered|bounced|failed"
+        text send_provider "Email provider"
+        timestamptz scheduled_at "Scheduled time"
+        timestamptz sent_at "Send time"
+        timestamptz opened_at "Open time"
+        timestamptz clicked_at "Click time"
+        timestamptz replied_at "Reply time"
+        timestamptz created_at "Record creation time"
+    }
+
+    OUTREACH_ENGAGEMENT_EVENTS {
+        uuid event_id PK
+        uuid outreach_id FK "Spine FK"
+        text event_type "open|click|reply|unsubscribe"
+        text event_source "Event source"
+        timestamptz event_time "Event time"
+        timestamptz created_at "Record creation time"
+    }
+
+    OUTREACH_OVERRIDE_AUDIT_LOG {
+        uuid audit_id PK
+        uuid override_id FK "Override FK"
+        text action "CREATE|UPDATE|DELETE"
+        text changed_by "Who changed"
+        jsonb old_value "Previous value"
+        jsonb new_value "New value"
+        timestamptz changed_at "Change time"
+    }

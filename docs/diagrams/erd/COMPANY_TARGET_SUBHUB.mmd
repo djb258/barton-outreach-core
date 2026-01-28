@@ -1,0 +1,55 @@
+%% COMPANY_TARGET_SUBHUB.mmd
+%% Company Target Sub-Hub (04.04.01)
+%% Source: Neon PostgreSQL outreach.company_target (queried 2026-01-28)
+%% Tables: 3 | Rows: 45,816 (91.4% have email_method)
+%% Purpose: Domain resolution, email pattern discovery
+%% Waterfall Position: #1 (PASS REQUIRED before DOL)
+
+erDiagram
+    OUTREACH_OUTREACH ||--o| OUTREACH_COMPANY_TARGET : "has target"
+    OUTREACH_COMPANY_TARGET ||--o{ OUTREACH_COMPANY_TARGET_ERRORS : "has errors"
+    OUTREACH_COMPANY_TARGET }o--|| CL_COMPANY_IDENTITY : "references (legacy)"
+
+    OUTREACH_OUTREACH {
+        uuid outreach_id PK "Spine PK"
+        uuid sovereign_id FK "CL reference"
+        varchar domain "Company domain"
+    }
+
+    OUTREACH_COMPANY_TARGET {
+        uuid target_id PK "Target record ID"
+        uuid outreach_id FK "Spine FK (REQUIRED)"
+        text company_unique_id "Legacy CL reference"
+        varchar email_method "Discovered email pattern"
+        varchar method_type "PATTERN|CATCHALL|VERIFIED|NONE"
+        numeric confidence_score "Confidence 0.00-1.00"
+        boolean is_catchall "Is catch-all domain"
+        text outreach_status "queued|active|paused|completed"
+        varchar execution_status "pending|running|done|failed"
+        integer bit_score_snapshot "BIT score at time of targeting"
+        integer sequence_count "Number of sequences executed"
+        text active_sequence_id "Current active sequence"
+        text source "Lead source identifier"
+        timestamptz first_targeted_at "First targeting timestamp"
+        timestamptz last_targeted_at "Last targeting timestamp"
+        timestamptz imo_completed_at "IMO flow completion time"
+        timestamptz created_at "Record creation time"
+        timestamptz updated_at "Last update time"
+    }
+
+    OUTREACH_COMPANY_TARGET_ERRORS {
+        uuid error_id PK
+        uuid outreach_id FK "Spine FK"
+        text error_type "Error classification"
+        text error_message "Error details"
+        text phase "Phase where error occurred"
+        jsonb error_context "Additional context"
+        timestamptz created_at "Error timestamp"
+    }
+
+    CL_COMPANY_IDENTITY {
+        uuid company_unique_id PK "Authority registry PK"
+        text company_name "Company name"
+        text company_domain "Primary domain"
+        text normalized_domain "Normalized domain"
+    }

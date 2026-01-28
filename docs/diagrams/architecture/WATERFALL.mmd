@@ -1,0 +1,72 @@
+%% WATERFALL.mmd
+%% Waterfall Architecture - Sub-Hub Execution Order
+%% Source: barton-outreach-core (queried 2026-01-28)
+%% Doctrine: CLAUDE.md Waterfall Doctrine Rules
+
+graph TD
+    subgraph CL_PARENT["PARENT HUB (CL)"]
+        CL[CL: Company Lifecycle<br/>Mints: sovereign_company_id<br/>Authority Registry]
+    end
+
+    CL -->|"sovereign_id"| INIT
+
+    subgraph OUTREACH_CHILD["CHILD HUB (OUTREACH)"]
+        INIT[OUTREACH INIT<br/>Mint outreach_id<br/>Register in CL ONCE]
+
+        INIT --> GATE1{CL Write<br/>Success?}
+        GATE1 -->|NO| HARD_FAIL[HARD FAIL<br/>Already Claimed]
+        GATE1 -->|YES| CT
+
+        subgraph WATERFALL["Waterfall Execution"]
+            CT[1. Company Target<br/>04.04.01<br/>Domain + Email Pattern]
+            CT --> GATE2{PASS?}
+            GATE2 -->|NO| CT_FAIL[CT FAIL<br/>Log Error]
+            GATE2 -->|YES| DOL
+
+            DOL[2. DOL Filings<br/>04.04.03<br/>EIN Resolution]
+            DOL --> GATE3{PASS?}
+            GATE3 -->|NO| DOL_FAIL[DOL FAIL<br/>Log Error]
+            GATE3 -->|YES| PI
+
+            PI[3. People Intelligence<br/>04.04.02<br/>Slot Assignment]
+            PI --> GATE4{PASS?}
+            GATE4 -->|NO| PI_FAIL[PI FAIL<br/>Log Error]
+            GATE4 -->|YES| BLOG
+
+            BLOG[4. Blog Content<br/>04.04.05<br/>Content Signals]
+            BLOG --> BIT
+
+            BIT[5. BIT Engine<br/>Score Calculation<br/>Tier Assignment]
+        end
+
+        BIT --> EXEC
+
+        EXEC[6. Outreach Execution<br/>Campaign Management<br/>Sequence Delivery]
+
+        EXEC --> HANDOFF
+
+        HANDOFF[7. Calendar Handoff<br/>Meeting Booked Webhook<br/>→ SALES HUB]
+    end
+
+    %% Rules annotations
+    CT_FAIL -.->|"No downstream"| STOP1[STOP]
+    DOL_FAIL -.->|"No downstream"| STOP2[STOP]
+    PI_FAIL -.->|"No downstream"| STOP3[STOP]
+
+    %% Styling
+    style CL fill:#e1f5ff
+    style INIT fill:#fff4e6
+    style CT fill:#e8f5e9
+    style DOL fill:#f3e5f5
+    style PI fill:#fce4ec
+    style BLOG fill:#e0f2f1
+    style BIT fill:#fff9c4
+    style EXEC fill:#ffebee
+    style HANDOFF fill:#f1f8e9
+    style HARD_FAIL fill:#ffcdd2
+    style CT_FAIL fill:#ffcdd2
+    style DOL_FAIL fill:#ffcdd2
+    style PI_FAIL fill:#ffcdd2
+    style STOP1 fill:#ef9a9a
+    style STOP2 fill:#ef9a9a
+    style STOP3 fill:#ef9a9a

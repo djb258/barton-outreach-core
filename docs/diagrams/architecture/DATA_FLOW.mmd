@@ -1,0 +1,82 @@
+%% DATA_FLOW.mmd
+%% Data Flow: Intake → CL → Outreach
+%% Source: barton-outreach-core (queried 2026-01-28)
+%% Doctrine: CLAUDE.md CL Authority Registry + Outreach Spine
+
+sequenceDiagram
+    participant Intake as Intake CSV
+    participant CL as CL Authority Registry
+    participant Outreach as Outreach Spine
+    participant CT as Company Target
+    participant DOL as DOL Hub
+    participant People as People Hub
+    participant Blog as Blog Hub
+    participant BIT as BIT Engine
+    participant Neon as Neon PostgreSQL
+
+    Note over Intake,CL: Phase 1: Identity Resolution
+    Intake->>CL: 1. Company data arrives
+    CL->>CL: 2. Mint sovereign_company_id
+    CL->>CL: 3. Existence verification
+    CL->>CL: 4. Domain resolution
+    CL->>CL: 5. Identity resolution
+    CL->>CL: 6. Eligibility check
+    CL->>Neon: Write to cl.company_identity
+
+    alt Eligible for Outreach
+        Note over CL,Outreach: Phase 2: Outreach Init
+        CL->>Outreach: 7. Trigger outreach init
+        Outreach->>Outreach: 8. Mint outreach_id
+        Outreach->>CL: 9. Register outreach_id (WRITE-ONCE)
+        Outreach->>Neon: Write to outreach.outreach
+
+        Note over Outreach,CT: Phase 3-4: Company Target
+        Outreach->>CT: 10. Execute Company Target
+        CT->>CT: Domain resolution
+        CT->>CT: Email pattern discovery
+        CT->>CT: Catchall detection
+        CT->>Neon: Write to outreach.company_target
+        CT-->>Outreach: PASS
+
+        Note over Outreach,DOL: DOL Filings
+        Outreach->>DOL: 11. Execute DOL Filings
+        DOL->>DOL: EIN matching
+        DOL->>DOL: Form 5500 lookup
+        DOL->>DOL: Schedule A lookup
+        DOL->>DOL: Renewal calendar
+        DOL->>Neon: Write to outreach.dol
+        DOL-->>Outreach: PASS
+
+        Note over Outreach,People: Phase 5-8: People Intelligence
+        Outreach->>People: 12. Execute People Intelligence
+        People->>People: Slot assignment
+        People->>People: Email generation
+        People->>People: Email verification
+        People->>Neon: Write to outreach.people
+        People->>Neon: Write to people.company_slot
+        People-->>Outreach: PASS
+
+        Note over Outreach,Blog: Blog Content
+        Outreach->>Blog: 13. Execute Blog Content
+        Blog->>Blog: Blog detection
+        Blog->>Blog: RSS discovery
+        Blog->>Blog: Content signals
+        Blog->>Neon: Write to outreach.blog
+        Blog-->>Outreach: PASS
+
+        Note over Outreach,BIT: BIT Scoring
+        Outreach->>BIT: 14. Calculate BIT score
+        BIT->>BIT: Aggregate signals
+        BIT->>BIT: Calculate score
+        BIT->>BIT: Assign tier
+        BIT->>Neon: Write to outreach.bit_scores
+        BIT-->>Outreach: Score assigned
+
+        Note over Outreach: Ready for Campaign
+        Outreach->>Neon: Update outreach status
+
+    else Not Eligible
+        CL->>CL: Mark as EXCLUDED
+        CL->>Neon: Write exclusion_reason
+        Note over CL: No outreach initiated
+    end

@@ -1,0 +1,129 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# REGISTRY — Hub Identity Declaration
+# ═══════════════════════════════════════════════════════════════════════════════
+# Authority: imo-creator (Inherited)
+# Status: REQUIRED — Every hub MUST have a REGISTRY.yaml
+# ═══════════════════════════════════════════════════════════════════════════════
+
+version: "1.0.0"
+last_updated: "2026-01-28"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# HUB IDENTITY (CC-02)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+hub:
+  hub_id: "HUB-OUTREACH-001"
+  hub_name: "barton-outreach-core"
+  description: "Marketing intelligence & executive enrichment platform"
+  owner: "Barton"
+  sovereign_reference: "CL-01"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CONFORMANCE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+conformance:
+  parent: "imo-creator"
+  doctrine_version: "1.5.0"
+  ctb_version: "1.0.0"
+  domain_spec: "doctrine/REPO_DOMAIN_SPEC.md"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CTB PLACEMENT
+# ═══════════════════════════════════════════════════════════════════════════════
+
+ctb:
+  branches_used:
+    - sys: true
+    - data: true
+    - app: true
+    - ai: true
+    - ui: false
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SUB-HUBS (CC-03)
+# ═══════════════════════════════════════════════════════════════════════════════
+# List major functional boundaries within this hub.
+# Each sub-hub operates at CC-03 relative to the hub.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+subhubs:
+  - subhub_id: "04.04.01"
+    name: "Company Target"
+    description: "Internal anchor, domain resolution, email pattern discovery"
+    path: "hubs/company-target/"
+
+  - subhub_id: "04.04.02"
+    name: "People Intelligence"
+    description: "Slot assignment, email generation, enrichment"
+    path: "hubs/people-intelligence/"
+
+  - subhub_id: "04.04.03"
+    name: "DOL Filings"
+    description: "EIN resolution, Form 5500, Schedule A"
+    path: "hubs/dol-filings/"
+
+  - subhub_id: "04.04.04"
+    name: "Outreach Execution"
+    description: "Campaign execution, sequence management"
+    path: "hubs/outreach-execution/"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SPOKES (CC-03 Interfaces)
+# ═══════════════════════════════════════════════════════════════════════════════
+# Spokes are interfaces ONLY. They carry no logic.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+spokes:
+  ingress:
+    - spoke_id: "cl-identity-ingress"
+      name: "CL Identity Ingress"
+      contract: "contracts/cl-identity.contract.yaml"
+
+    - spoke_id: "signal-company-ingress"
+      name: "Signal Company Ingress"
+      contract: "contracts/signal-company.contract.yaml"
+
+  egress:
+    - spoke_id: "target-people-egress"
+      name: "Target People Egress"
+      contract: "contracts/company-people.contract.yaml"
+
+    - spoke_id: "target-dol-egress"
+      name: "Target DOL Egress"
+      contract: "contracts/company-dol.contract.yaml"
+
+    - spoke_id: "target-outreach-egress"
+      name: "Target Outreach Egress"
+      contract: "contracts/company-outreach.contract.yaml"
+
+    - spoke_id: "people-outreach-egress"
+      name: "People Outreach Egress"
+      contract: "contracts/people-outreach.contract.yaml"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ISOLATED LANES (Not Part of Main Spine)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+isolated_lanes:
+  - lane_id: "LANE-A"
+    name: "Appointment Reactivation"
+    schema: "sales"
+    description: "Re-engage stalled/ghosted prospects from past meetings"
+    connection_to_spine: "NONE"
+
+  - lane_id: "LANE-B"
+    name: "Fractional CFO Partners"
+    schema: "partners"
+    description: "Build partner referral network"
+    connection_to_spine: "NONE"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DOCUMENT CONTROL
+# ═══════════════════════════════════════════════════════════════════════════════
+
+document_control:
+  created: "2026-01-28"
+  last_modified: "2026-01-28"
+  status: "ACTIVE"

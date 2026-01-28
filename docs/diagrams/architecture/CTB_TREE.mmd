@@ -1,0 +1,89 @@
+%% CTB_TREE.mmd
+%% Christmas Tree Backbone - Repository Structure Map
+%% Source: barton-outreach-core (queried 2026-01-28)
+%% Doctrine: CANONICAL_ARCHITECTURE_DOCTRINE.md v1.5.0 §1.3
+
+graph TD
+    ROOT[barton-outreach-core<br/>CHILD REPO]
+
+    %% Top-level directories
+    ROOT --> HUBS[hubs/]
+    ROOT --> SPOKES[spokes/]
+    ROOT --> CONTRACTS[contracts/]
+    ROOT --> DOCTRINE[doctrine/]
+    ROOT --> DOCS[docs/]
+    ROOT --> OPS[ops/]
+    ROOT --> TEMPLATES[templates/]
+    ROOT --> TESTS[tests/]
+    ROOT --> INFRA[infra/]
+    ROOT --> NEON[neon/]
+
+    %% Hub structure (CTB branches would be under src/ if present)
+    HUBS --> CT[company-target/<br/>04.04.01]
+    HUBS --> PI[people-intelligence/<br/>04.04.02]
+    HUBS --> DOL[dol-filings/<br/>04.04.03]
+    HUBS --> OE[outreach-execution/<br/>04.04.04]
+
+    %% IMO structure per hub
+    CT --> CT_IMO[imo/]
+    CT_IMO --> CT_I[input/]
+    CT_IMO --> CT_M[middle/]
+    CT_IMO --> CT_O[output/]
+
+    PI --> PI_IMO[imo/]
+    PI_IMO --> PI_I[input/]
+    PI_IMO --> PI_M[middle/]
+    PI_IMO --> PI_O[output/]
+
+    DOL --> DOL_IMO[imo/]
+    DOL_IMO --> DOL_I[input/]
+    DOL_IMO --> DOL_M[middle/]
+    DOL_IMO --> DOL_O[output/]
+
+    OE --> OE_IMO[imo/]
+    OE_IMO --> OE_I[input/]
+    OE_IMO --> OE_M[middle/]
+    OE_IMO --> OE_O[output/]
+
+    %% Spokes
+    SPOKES --> SP_CP[company-people/]
+    SPOKES --> SP_CD[company-dol/]
+    SPOKES --> SP_CO[company-outreach/]
+    SPOKES --> SP_PO[people-outreach/]
+    SPOKES --> SP_SC[signal-company/]
+
+    %% Contracts
+    CONTRACTS --> CON1[company-people.contract.yaml]
+    CONTRACTS --> CON2[company-dol.contract.yaml]
+    CONTRACTS --> CON3[company-outreach.contract.yaml]
+    CONTRACTS --> CON4[people-outreach.contract.yaml]
+    CONTRACTS --> CON5[cl-identity.contract.yaml]
+
+    %% Docs
+    DOCS --> DOCS_ADR[adr/]
+    DOCS --> DOCS_PRD[prd/]
+    DOCS --> DOCS_ARCH[architecture/]
+    DOCS --> DOCS_DIAG[diagrams/]
+    DOCS --> DOCS_AUDIT[audit/]
+
+    %% Doctrine
+    DOCTRINE --> DOC_SPEC[REPO_DOMAIN_SPEC.md]
+    DOCTRINE --> DOC_DIAG[diagrams/]
+    DOCTRINE --> DOC_SCHEMA[schemas/]
+
+    %% Ops
+    OPS --> OPS_ENF[enforcement/]
+    OPS --> OPS_ERR[master_error_log/]
+    OPS --> OPS_PHASE[phase_registry/]
+    OPS --> OPS_PROV[providers/]
+    OPS --> OPS_VAL[validation/]
+
+    %% Style
+    style ROOT fill:#e1f5ff
+    style HUBS fill:#e8f5e9
+    style SPOKES fill:#fff4e6
+    style DOCTRINE fill:#f3e5f5
+    style CT fill:#c8e6c9
+    style PI fill:#c8e6c9
+    style DOL fill:#c8e6c9
+    style OE fill:#c8e6c9

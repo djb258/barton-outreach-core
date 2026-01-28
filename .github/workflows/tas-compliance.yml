@@ -1,0 +1,201 @@
+name: TAS Compliance Check
+
+on:
+  pull_request:
+    paths:
+      - 'docs/TAS_*.md'
+      - 'docs/diagrams/**/*.mmd'
+      - 'docs/DIAGRAMS_INDEX.md'
+      - 'neon/migrations/*.sql'
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/TAS_*.md'
+      - 'docs/diagrams/**/*.mmd'
+      - 'docs/DIAGRAMS_INDEX.md'
+      - 'neon/migrations/*.sql'
+
+jobs:
+  tas-drift-check:
+    name: TAS Documentation Drift Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Get changed files
+        id: changed
+        run: |
+          # Get list of changed files
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA=${{ github.event.pull_request.base.sha }}
+          else
+            BASE_SHA=${{ github.event.before }}
+          fi
+
+          CHANGED_FILES=$(git diff --name-only $BASE_SHA HEAD 2>/dev/null || echo "")
+
+          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          # Categorize changes
+          TAS_CHANGED=$(echo "$CHANGED_FILES" | grep -E '^docs/TAS_.*\.md$' || echo "")
+          ERD_CHANGED=$(echo "$CHANGED_FILES" | grep -E '^docs/diagrams/erd/.*\.mmd$' || echo "")
+          ARCH_CHANGED=$(echo "$CHANGED_FILES" | grep -E '^docs/diagrams/architecture/.*\.mmd$' || echo "")
+          INDEX_CHANGED=$(echo "$CHANGED_FILES" | grep -E '^docs/DIAGRAMS_INDEX\.md$' || echo "")
+          MIGRATION_CHANGED=$(echo "$CHANGED_FILES" | grep -E '^neon/migrations/.*\.sql$' || echo "")
+
+          echo "tas_changed=$([[ -n \"$TAS_CHANGED\" ]] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "erd_changed=$([[ -n \"$ERD_CHANGED\" ]] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "arch_changed=$([[ -n \"$ARCH_CHANGED\" ]] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "index_changed=$([[ -n \"$INDEX_CHANGED\" ]] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "migration_changed=$([[ -n \"$MIGRATION_CHANGED\" ]] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+
+      - name: Check TAS-ERD consistency
+        if: steps.changed.outputs.tas_changed == 'true' || steps.changed.outputs.erd_changed == 'true'
+        run: |
+          echo "::group::TAS-ERD Consistency Check"
+
+          TAS_CHANGED="${{ steps.changed.outputs.tas_changed }}"
+          ERD_CHANGED="${{ steps.changed.outputs.erd_changed }}"
+
+          if [[ "$TAS_CHANGED" == "true" && "$ERD_CHANGED" == "false" ]]; then
+            echo "::error::TAS documentation changed but ERD diagrams were not updated."
+            echo ""
+            echo "RULE: When TAS docs change, corresponding ERDs must be reviewed and updated if needed."
+            echo ""
+            echo "Changed TAS files:"
+            echo "${{ steps.changed.outputs.changed_files }}" | grep '^docs/TAS_'
+            echo ""
+            echo "Required action: Review docs/diagrams/erd/*.mmd for consistency"
+            exit 1
+          fi
+
+          if [[ "$ERD_CHANGED" == "true" && "$TAS_CHANGED" == "false" ]]; then
+            echo "::error::ERD diagrams changed but TAS documentation was not updated."
+            echo ""
+            echo "RULE: When ERD diagrams change, corresponding TAS docs must be reviewed and updated if needed."
+            echo ""
+            echo "Changed ERD files:"
+            echo "${{ steps.changed.outputs.changed_files }}" | grep '^docs/diagrams/erd/'
+            echo ""
+            echo "Required action: Review docs/TAS_*.md for consistency"
+            exit 1
+          fi
+
+          echo "TAS-ERD consistency: PASS"
+          echo "::endgroup::"
+
+      - name: Check diagram index
+        if: steps.changed.outputs.erd_changed == 'true' || steps.changed.outputs.arch_changed == 'true'
+        run: |
+          echo "::group::Diagram Index Check"
+
+          # Get all .mmd files
+          ALL_DIAGRAMS=$(find docs/diagrams -name "*.mmd" -type f | sort)
+
+          # Check each diagram is in index
+          MISSING=""
+          for diagram in $ALL_DIAGRAMS; do
+            BASENAME=$(basename "$diagram")
+            if ! grep -q "$BASENAME" docs/DIAGRAMS_INDEX.md; then
+              MISSING="$MISSING\n$diagram"
+            fi
+          done
+
+          if [[ -n "$MISSING" ]]; then
+            echo "::error::Diagrams not listed in DIAGRAMS_INDEX.md:"
+            echo -e "$MISSING"
+            echo ""
+            echo "RULE: All diagrams in docs/diagrams/**/*.mmd must be listed in docs/DIAGRAMS_INDEX.md"
+            echo ""
+            echo "Required action: Add missing diagrams to DIAGRAMS_INDEX.md"
+            exit 1
+          fi
+
+          echo "Diagram index: PASS"
+          echo "All diagrams are indexed."
+          echo "::endgroup::"
+
+      - name: Check migration documentation
+        if: steps.changed.outputs.migration_changed == 'true'
+        run: |
+          echo "::group::Migration Documentation Check"
+
+          # Get changed migration files
+          MIGRATIONS=$(echo "${{ steps.changed.outputs.changed_files }}" | grep '^neon/migrations/.*\.sql$' || echo "")
+
+          for migration in $MIGRATIONS; do
+            MIGRATION_NAME=$(basename "$migration" .sql)
+
+            # Check if migration is documented
+            if ! grep -rq "$MIGRATION_NAME" docs/; then
+              echo "::warning::Migration $migration is not referenced in any docs/*.md file"
+            fi
+
+            # Check for destructive operations
+            if grep -qiE '(DROP TABLE|DROP COLUMN|TRUNCATE|DELETE FROM.*WHERE)' "$migration"; then
+              echo "::warning::Migration $migration contains potentially destructive operations - ensure this is intentional"
+            fi
+          done
+
+          echo "Migration documentation: PASS"
+          echo "::endgroup::"
+
+      - name: Summary
+        run: |
+          echo "## TAS Compliance Check Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| TAS Changed | ${{ steps.changed.outputs.tas_changed }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| ERD Changed | ${{ steps.changed.outputs.erd_changed }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Architecture Changed | ${{ steps.changed.outputs.arch_changed }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Index Changed | ${{ steps.changed.outputs.index_changed }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Migration Changed | ${{ steps.changed.outputs.migration_changed }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All checks passed." >> $GITHUB_STEP_SUMMARY
+
+  diagram-syntax-check:
+    name: Mermaid Syntax Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Mermaid CLI
+        run: npm install -g @mermaid-js/mermaid-cli
+
+      - name: Validate Mermaid diagrams
+        run: |
+          echo "::group::Mermaid Syntax Validation"
+
+          ERRORS=""
+          for diagram in docs/diagrams/**/*.mmd; do
+            if [[ -f "$diagram" ]]; then
+              echo "Validating: $diagram"
+              if ! mmdc -i "$diagram" -o /tmp/test.svg 2>/dev/null; then
+                ERRORS="$ERRORS\n$diagram"
+                echo "::error file=$diagram::Mermaid syntax error in $diagram"
+              fi
+            fi
+          done
+
+          if [[ -n "$ERRORS" ]]; then
+            echo ""
+            echo "Diagrams with syntax errors:"
+            echo -e "$ERRORS"
+            exit 1
+          fi
+
+          echo "All diagrams validated successfully"
+          echo "::endgroup::"

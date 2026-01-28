@@ -1,0 +1,117 @@
+%% DOL_SUBHUB.mmd
+%% DOL Filings Sub-Hub (04.04.03)
+%% Source: Neon PostgreSQL dol + outreach.dol (queried 2026-01-28)
+%% Tables: 8 (dol schema) + 3 (outreach.dol*) | Rows: 568,337 (dol schema)
+%% Purpose: EIN resolution, Form 5500 + Schedule A matching
+%% Waterfall Position: #2 (PASS REQUIRED before People Intelligence)
+
+erDiagram
+    OUTREACH_OUTREACH ||--o| OUTREACH_DOL : "has DOL data"
+    OUTREACH_DOL ||--o{ OUTREACH_DOL_ERRORS : "has errors"
+    OUTREACH_DOL }o--|| DOL_FORM_5500 : "references filing"
+    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_A : "has schedule A"
+    DOL_FORM_5500 ||--o{ DOL_RENEWAL_CALENDAR : "has renewal dates"
+    DOL_EIN_URLS ||--o{ DOL_FORM_5500 : "files"
+    DOL_FORM_5500 ||--o{ DOL_PRESSURE_SIGNALS : "triggers signals"
+
+    OUTREACH_OUTREACH {
+        uuid outreach_id PK "Spine PK"
+        uuid sovereign_id FK "CL reference"
+        varchar domain "Company domain"
+    }
+
+    OUTREACH_DOL {
+        uuid dol_id PK "DOL sub-hub record ID"
+        uuid outreach_id FK "Spine FK (REQUIRED)"
+        text ein "Employer Identification Number"
+        text filing_id FK "FK to dol.form_5500"
+        boolean form_5500_matched "Form 5500 match found"
+        boolean schedule_a_matched "Schedule A match found"
+        numeric match_confidence "Match confidence 0.00-1.00"
+        text match_method "EXACT|FUZZY|EIN_ONLY|NONE"
+        jsonb match_details "Match algorithm details"
+        timestamptz matched_at "Match timestamp"
+        timestamptz created_at "Record creation time"
+        timestamptz updated_at "Last update time"
+    }
+
+    OUTREACH_DOL_ERRORS {
+        uuid error_id PK
+        uuid outreach_id FK "Spine FK"
+        text error_type "Error classification"
+        text error_message "Error details"
+        text ein "EIN that failed"
+        jsonb error_context "Additional context"
+        timestamptz created_at "Error timestamp"
+    }
+
+    DOL_FORM_5500 {
+        text filing_id PK "DOL filing ID"
+        text ein "Employer Identification Number"
+        text plan_name "Benefit plan name"
+        text sponsor_name "Plan sponsor name"
+        text sponsor_state "Sponsor state"
+        integer plan_year "Plan year (YYYY)"
+        integer plan_year_end_month "Plan year end month"
+        integer total_participants "Total plan participants"
+        numeric total_assets "Total plan assets"
+        date filing_date "Filing date"
+        text form_type "Form type"
+        text plan_type "Plan type"
+        boolean is_large_plan "Is large plan (100+ participants)"
+        timestamptz created_at "Record creation time"
+    }
+
+    DOL_SCHEDULE_A {
+        uuid schedule_id PK
+        text filing_id FK "FK to form_5500"
+        text ein "Employer Identification Number"
+        text insurance_carrier_name "Insurance carrier name"
+        text insurance_carrier_ein "Carrier EIN"
+        numeric commission_amount "Commission paid"
+        numeric premium_amount "Premium amount"
+        text policy_number "Policy number"
+        text coverage_type "Coverage type"
+        date coverage_start_date "Coverage start"
+        date coverage_end_date "Coverage end"
+        timestamptz created_at "Record creation time"
+    }
+
+    DOL_RENEWAL_CALENDAR {
+        uuid renewal_id PK
+        text filing_id FK "FK to form_5500"
+        text ein "Employer Identification Number"
+        date renewal_date "Renewal date"
+        integer days_until_renewal "Days until renewal"
+        boolean reminder_sent "Reminder sent flag"
+        text reminder_type "Reminder type"
+        timestamptz created_at "Record creation time"
+    }
+
+    DOL_EIN_URLS {
+        text ein PK "Employer Identification Number"
+        text company_name "Company name from DOL"
+        text url "Company website URL"
+        text source "URL source"
+        numeric confidence "URL confidence"
+        timestamptz verified_at "URL verification time"
+        timestamptz created_at "Record creation time"
+    }
+
+    DOL_PRESSURE_SIGNALS {
+        uuid signal_id PK
+        text filing_id FK "FK to form_5500"
+        text ein "Employer Identification Number"
+        text signal_type "RENEWAL_30D|RENEWAL_60D|RENEWAL_90D|LARGE_PLAN"
+        integer signal_strength "Signal strength 1-10"
+        timestamptz signal_date "Signal date"
+        timestamptz created_at "Record creation time"
+    }
+
+    DOL_FORM_5500_ICP_FILTERED {
+        text filing_id PK
+        text ein "Employer Identification Number"
+        text sponsor_name "Plan sponsor name"
+        boolean icp_match "ICP match flag"
+        text icp_reason "ICP match reason"
+    }

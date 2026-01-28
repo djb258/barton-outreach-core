@@ -1,0 +1,72 @@
+%% HUB_SPOKE.mmd
+%% Hub and Spoke Architecture
+%% Source: barton-outreach-core (queried 2026-01-28)
+%% Doctrine: CANONICAL_ARCHITECTURE_DOCTRINE.md v1.5.0 §3
+
+graph TB
+    subgraph PARENT["CL (Company Lifecycle) - PARENT HUB"]
+        CL_HUB[CL Hub<br/>Mints: sovereign_company_id<br/>Authority Registry]
+    end
+
+    subgraph CHILD["OUTREACH - CHILD HUB"]
+        SPINE[Outreach Spine<br/>outreach.outreach<br/>Mints: outreach_id]
+
+        subgraph SUBHUBS["Sub-Hubs (Waterfall Order)"]
+            CT_HUB[Company Target<br/>04.04.01<br/>Domain + Email]
+            DOL_HUB[DOL Filings<br/>04.04.03<br/>EIN Resolution]
+            PI_HUB[People Intelligence<br/>04.04.02<br/>Slot Assignment]
+            BLOG_HUB[Blog Content<br/>04.04.05<br/>Content Signals]
+            BIT_HUB[BIT Engine<br/>Buyer Intent]
+        end
+    end
+
+    subgraph SPOKES["Spokes (I/O Only)"]
+        SP_IDENTITY[cl-identity<br/>INGRESS ONLY]
+        SP_TARGET_PEOPLE[target-people<br/>BIDIRECTIONAL]
+        SP_TARGET_DOL[target-dol<br/>BIDIRECTIONAL]
+        SP_TARGET_OUTREACH[target-outreach<br/>BIDIRECTIONAL]
+        SP_PEOPLE_OUTREACH[people-outreach<br/>BIDIRECTIONAL]
+        SP_SIGNAL[signal-company<br/>INGRESS ONLY]
+    end
+
+    %% Parent to Child
+    CL_HUB -->|"sovereign_id"| SP_IDENTITY
+    SP_IDENTITY -->|"company data"| SPINE
+
+    %% Spine to Sub-hubs
+    SPINE --> CT_HUB
+    CT_HUB --> DOL_HUB
+    DOL_HUB --> PI_HUB
+    PI_HUB --> BLOG_HUB
+    BLOG_HUB --> BIT_HUB
+
+    %% Spoke connections
+    CT_HUB <-->|"slot_requirement<br/>slot_assignment"| SP_TARGET_PEOPLE
+    SP_TARGET_PEOPLE <--> PI_HUB
+
+    CT_HUB <-->|"ein_lookup<br/>filing_signal"| SP_TARGET_DOL
+    SP_TARGET_DOL <--> DOL_HUB
+
+    CT_HUB <-->|"target_selection<br/>engagement_signal"| SP_TARGET_OUTREACH
+
+    PI_HUB <-->|"contact_selection<br/>contact_state"| SP_PEOPLE_OUTREACH
+
+    SP_SIGNAL -->|"external signals"| BIT_HUB
+
+    %% Outreach ID registration (WRITE-ONCE)
+    SPINE -.->|"outreach_id<br/>(WRITE-ONCE)"| CL_HUB
+
+    %% Styling
+    style CL_HUB fill:#e1f5ff
+    style SPINE fill:#fff4e6
+    style CT_HUB fill:#e8f5e9
+    style DOL_HUB fill:#f3e5f5
+    style PI_HUB fill:#fce4ec
+    style BLOG_HUB fill:#e0f2f1
+    style BIT_HUB fill:#fff9c4
+    style SP_IDENTITY fill:#ffccbc
+    style SP_TARGET_PEOPLE fill:#ffccbc
+    style SP_TARGET_DOL fill:#ffccbc
+    style SP_TARGET_OUTREACH fill:#ffccbc
+    style SP_PEOPLE_OUTREACH fill:#ffccbc
+    style SP_SIGNAL fill:#ffccbc

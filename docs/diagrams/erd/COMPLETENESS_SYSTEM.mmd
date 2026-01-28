@@ -1,0 +1,102 @@
+%% COMPLETENESS_SYSTEM.mmd
+%% Completeness Contract Entity Relationship Diagram
+%% Source: TAS_COMPLETENESS_CONTRACT.md
+%% Purpose: Generic sub-hub completeness tracking
+
+erDiagram
+    HUB_REGISTRY ||--o{ COMPANY_HUB_STATUS : "defines"
+    OUTREACH_OUTREACH ||--o{ COMPANY_HUB_STATUS : "tracks"
+    COMPANY_HUB_STATUS }|--|| BLOCKER_TYPE_ENUM : "classifies"
+
+    HUB_REGISTRY {
+        varchar hub_id PK "Sub-hub identifier"
+        varchar hub_name "Display name"
+        varchar doctrine_id "Doctrine reference (04.04.XX)"
+        varchar classification "required | optional"
+        boolean gates_completion "TRUE = blocks downstream"
+        integer waterfall_order "Execution order 1-6"
+        varchar core_metric "Metric name"
+        numeric metric_healthy_threshold "Green threshold"
+        numeric metric_critical_threshold "Minimum threshold"
+        text description "Hub description"
+        timestamptz created_at "Created timestamp"
+        timestamptz updated_at "Updated timestamp"
+    }
+
+    COMPANY_HUB_STATUS {
+        text company_unique_id PK "Entity identifier"
+        varchar hub_id PK_FK "Sub-hub identifier"
+        hub_status_enum status "PASS | FAIL | IN_PROGRESS | BLOCKED"
+        blocker_type_enum blocker_type "WHY incomplete (closed ENUM)"
+        jsonb blocker_evidence "Structured evidence"
+        text status_reason "DEPRECATED: free text"
+        numeric metric_value "Current metric value"
+        timestamptz last_processed_at "Last evaluation time"
+        timestamptz created_at "Created timestamp"
+        timestamptz updated_at "Updated timestamp"
+    }
+
+    BLOCKER_TYPE_ENUM {
+        enum DATA_MISSING "Required data not present"
+        enum DATA_UNDISCOVERABLE "Cannot find via available methods"
+        enum DATA_CONFLICT "Conflicting data exists"
+        enum SOURCE_UNAVAILABLE "External source down"
+        enum NOT_APPLICABLE "Hub does not apply"
+        enum HUMAN_DECISION_REQUIRED "Needs manual review"
+        enum UPSTREAM_BLOCKED "Previous hub not PASS"
+        enum THRESHOLD_NOT_MET "Metric below minimum"
+        enum EXPIRED "Data is stale"
+    }
+
+    HUB_STATUS_ENUM {
+        enum IN_PROGRESS "Currently processing"
+        enum PASS "Requirements met"
+        enum FAIL "Requirements not met"
+        enum BLOCKED "External dependency"
+    }
+
+    OUTREACH_OUTREACH {
+        uuid outreach_id PK "Operational spine PK"
+        uuid sovereign_id FK "CL reference"
+        varchar domain "Company domain"
+    }
+
+    VW_ENTITY_COMPLETENESS {
+        text entity_id "Entity identifier"
+        varchar sub_hub_name "Sub-hub identifier"
+        varchar sub_hub_display_name "Display name"
+        integer waterfall_order "Execution order"
+        boolean is_required "Gates completion"
+        hub_status_enum completeness_status "Current status"
+        blocker_type_enum blocker_type "Blocker classification"
+        jsonb blocker_evidence "Structured evidence"
+        numeric metric_value "Current metric"
+        numeric required_threshold "Minimum threshold"
+        timestamptz last_checked_at "Last evaluation"
+        text simple_status "COMPLETE | INCOMPLETE | NOT_APPLICABLE"
+    }
+
+    VW_ENTITY_OVERALL_STATUS {
+        text entity_id "Entity identifier"
+        integer total_hubs "Total hub count"
+        integer required_hubs "Required hub count"
+        integer pass_count "PASS count"
+        integer fail_count "FAIL count"
+        integer blocked_count "BLOCKED count"
+        text overall_status "COMPLETE | INCOMPLETE | PROCESSING"
+        text[] blocking_hubs "Array of blocking hub IDs"
+        text[] blocker_types "Array of blocker types"
+        timestamptz last_checked_at "Latest evaluation"
+    }
+
+    VW_BLOCKER_ANALYSIS {
+        varchar sub_hub_name "Sub-hub identifier"
+        blocker_type_enum blocker_type "Blocker classification"
+        integer entity_count "Count of entities"
+        numeric pct_of_hub "Percent of hub failures"
+        numeric pct_of_total "Percent of all entities"
+    }
+
+    COMPANY_HUB_STATUS ||--o| VW_ENTITY_COMPLETENESS : "exposes"
+    VW_ENTITY_COMPLETENESS }o--|| VW_ENTITY_OVERALL_STATUS : "aggregates"
+    VW_ENTITY_COMPLETENESS }o--|| VW_BLOCKER_ANALYSIS : "summarizes"
