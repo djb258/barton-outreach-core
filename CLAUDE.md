@@ -16,7 +16,8 @@
 **Certification Date**: 2026-01-19
 **Baseline Freeze Date**: 2026-01-20
 **Sovereign Cleanup**: 2026-01-21 (23,025 records archived)
-**CL-Outreach Alignment**: 51,148 = 51,148 ✓
+**Commercial Eligibility Cleanup**: 2026-01-29 (5,259 excluded + 4,577 phantoms + 2,709 orphans)
+**CL-Outreach Alignment**: 42,833 = 42,833 ✓
 **Safe to Enable Live Marketing**: YES
 
 ### Key Documentation
@@ -61,7 +62,7 @@ IF outreach_id IS NULL:
 
 ALIGNMENT RULE:
 outreach.outreach count = cl.company_identity (outreach_id NOT NULL) count
-Current: 51,148 = 51,148 ✓ ALIGNED
+Current: 42,833 = 42,833 ✓ ALIGNED
 ```
 
 ### CL Authority Registry (LOCKED)
@@ -599,10 +600,10 @@ DOCTRINE_VERSION=04
 
 ---
 
-**Last Updated**: 2026-01-22
+**Last Updated**: 2026-01-29
 **Architecture**: CL Parent-Child Doctrine v1.1
 **Status**: v1.0 OPERATIONAL BASELINE (CERTIFIED + FROZEN)
-**CL-Outreach Alignment**: 51,148 = 51,148 ✓
+**CL-Outreach Alignment**: 42,833 = 42,833 ✓
 
 ---
 
@@ -641,25 +642,43 @@ See `infra/MIGRATION_ORDER.md` for execution order.
 **Cleanup Results**:
 - 23,025 orphaned outreach_ids archived
 - Archive tables created for all affected entities
-- CL-Outreach alignment restored: 51,148 = 51,148
 
-**Archive Tables**:
+---
+
+## COMMERCIAL ELIGIBILITY CLEANUP (2026-01-29)
+
+**Report**: `docs/reports/OUTREACH_CASCADE_CLEANUP_REPORT_2026-01-29.md`
+
+**Trigger**: CL excluded 5,327 non-commercial entities (government, education, healthcare, religious, insurance, financial services) to `cl.company_identity_excluded`
+
+**Cleanup Results**:
+- 5,259 excluded company outreach_ids cleared
+- 4,577 phantom outreach_ids cleared from CL
+- 756 fixable orphans registered in CL
+- 2,709 unfixable orphans archived and deleted
+- 10,846 total cascade deletions across sub-hubs
+
+**Final Alignment**: 42,833 = 42,833 ✓
+
+**Archive Tables Created/Updated**:
 - `outreach.outreach_archive`
 - `outreach.company_target_archive`
-- `outreach.people_archive`
+- `outreach.dol_archive`
+- `outreach.blog_archive`
+- `outreach.bit_scores_archive`
+- `outreach.outreach_orphan_archive` (NEW)
 - `people.company_slot_archive`
-- `people.people_master_archive`
 
 **Post-Cleanup State**:
 | Sub-Hub | Table | Records | Notes |
 |---------|-------|---------|-------|
-| Spine | outreach.outreach | 51,148 | ALIGNED WITH CL |
-| CT | outreach.company_target | 51,148 | 91.4% with email_method |
-| DOL | outreach.dol | 13,829 | 27% coverage |
-| People | outreach.people | 426 | |
-| People | people.company_slot | 153,444 | CEO: 27.1%, CFO: 8.6%, HR: 13.7% |
-| Blog | outreach.blog | 51,148 | 100% coverage |
-| BIT | outreach.bit_scores | 17,227 | |
+| Spine | outreach.outreach | 42,833 | ALIGNED WITH CL |
+| CT | outreach.company_target | 42,833 | Commercial only |
+| DOL | outreach.dol | ~12,000 | 28% coverage |
+| People | outreach.people | ~370 | |
+| People | people.company_slot | ~132,000 | |
+| Blog | outreach.blog | 42,833 | 100% coverage |
+| BIT | outreach.bit_scores | ~15,400 | |
 
 ---
 
