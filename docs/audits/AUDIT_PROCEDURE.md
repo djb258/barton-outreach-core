@@ -148,9 +148,70 @@ This document defines the MANDATORY procedure for conducting audits in the barto
 | Severity | Ship Without? | Action Required |
 |----------|---------------|-----------------|
 | **CRITICAL** | NO | Must fix before production |
-| **HIGH** | Only with ADR exception | Fix within sprint |
+| **HIGH** | NO | Must fix before marking COMPLIANT |
 | **MEDIUM** | Yes, but document why | Fix within quarter |
 | **LOW** | Yes | Fix when convenient |
+
+---
+
+## COMPLIANCE GATE (MANDATORY)
+
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                           COMPLIANCE GATE RULE                                ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                               ║
+║  You CANNOT mark an audit as COMPLIANT if:                                    ║
+║                                                                               ║
+║    1. ANY CRITICAL violations exist                                           ║
+║    2. ANY HIGH violations exist                                               ║
+║                                                                               ║
+║  HIGH violations are NOT "fix later" items.                                   ║
+║  HIGH violations BLOCK compliance.                                            ║
+║                                                                               ║
+║  The ONLY path forward is:                                                    ║
+║    → FIX the violation, OR                                                    ║
+║    → DOWNGRADE to MEDIUM with documented justification + ADR                  ║
+║                                                                               ║
+║  NEVER mark COMPLIANT with open HIGH/CRITICAL violations.                     ║
+║  This is a HARD RULE. No exceptions.                                          ║
+║                                                                               ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+```
+
+### Compliance Determination Flow
+
+```
+START: Count violations by severity
+         │
+         ▼
+    ┌─────────────────┐
+    │ CRITICAL > 0 ?  │──YES──► HALT: NON-COMPLIANT
+    └────────┬────────┘         (Cannot proceed until fixed)
+             │ NO
+             ▼
+    ┌─────────────────┐
+    │   HIGH > 0 ?    │──YES──► HALT: NON-COMPLIANT
+    └────────┬────────┘         (Cannot proceed until fixed)
+             │ NO
+             ▼
+    ┌─────────────────┐
+    │  MEDIUM > 0 ?   │──YES──► COMPLIANT WITH NOTES
+    └────────┬────────┘         (Document in attestation)
+             │ NO
+             ▼
+         COMPLIANT
+         (Clean pass)
+```
+
+### Violation Resolution Requirements
+
+| Before Marking COMPLIANT | Required Action |
+|--------------------------|-----------------|
+| CRITICAL violations | MUST be fixed. No exceptions. |
+| HIGH violations | MUST be fixed OR downgraded with ADR justification |
+| MEDIUM violations | Document in attestation, assign owner + deadline |
+| LOW violations | Optional to document |
 
 ---
 
@@ -160,20 +221,34 @@ This document defines the MANDATORY procedure for conducting audits in the barto
 
 1. Quarterly Hygiene Checklist not filled out
 2. Constitutional Attestation not produced
-3. CRITICAL violations not addressed
-4. Sign-off section incomplete
-5. Next audit not scheduled
+3. **ANY CRITICAL violations exist (unfixed)**
+4. **ANY HIGH violations exist (unfixed)**
+5. Sign-off section incomplete
+6. Next audit not scheduled
 
 **Non-compliant audits are NON-AUTHORITATIVE** and must be re-done.
+
+### Common Mistake (DO NOT DO THIS)
+
+```
+❌ WRONG: "5 HIGH violations found. Status: COMPLIANT"
+   This is INVALID. HIGH violations block compliance.
+
+✅ RIGHT: "5 HIGH violations found. Status: NON-COMPLIANT"
+   Then fix the violations and re-audit.
+
+✅ RIGHT: "0 HIGH/CRITICAL violations. 3 MEDIUM. Status: COMPLIANT WITH NOTES"
+   Medium violations are documented but don't block.
+```
 
 ---
 
 ## Historical Audits
 
-| Date | Type | Attestation | Result |
-|------|------|-------------|--------|
-| 2026-01-19 | Initial Certification | docs/reports/FINAL_CERTIFICATION_REPORT_2026-01-19.md | PASS |
-| 2026-01-29 | Post-Change (Cascade Cleanup) | docs/audits/CONSTITUTIONAL_AUDIT_ATTESTATION_2026-01-29.md | PASS |
+| Date | Type | Attestation | Result | Notes |
+|------|------|-------------|--------|-------|
+| 2026-01-19 | Initial Certification | docs/reports/FINAL_CERTIFICATION_REPORT_2026-01-19.md | PASS | v1.0 baseline |
+| 2026-01-29 | Post-Change (Cascade Cleanup) | docs/audits/CONSTITUTIONAL_AUDIT_ATTESTATION_2026-01-29.md | PASS | 4 HIGH fixed, 1 MEDIUM open |
 
 ---
 
