@@ -49,6 +49,73 @@ See `doctrine/DO_NOT_MODIFY_REGISTRY.md` for complete list.
 
 ---
 
+## IMO-CREATOR TEMPLATE INHERITANCE
+
+### Parent-Child Relationship
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         IMO-CREATOR (PARENT REPO)                            │
+│                                                                              │
+│  Location: C:\Users\CUSTOM PC\Desktop\Cursor Builds\imo-creator              │
+│  Authority: CANONICAL — Source of truth for all templates                    │
+│  Status: LOCKED — Only human-approved changes                                │
+│                                                                              │
+│  Owns:                                                                       │
+│  ├── templates/doctrine/          # Canonical doctrine files                 │
+│  ├── templates/claude/            # AI prompt templates                      │
+│  ├── templates/checklists/        # Audit checklists                         │
+│  ├── templates/audit/             # Attestation templates                    │
+│  ├── templates/adr/               # ADR templates                            │
+│  ├── templates/prd/               # PRD templates                            │
+│  └── templates/pr/                # PR templates                             │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ PULL ONLY (never push)
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     BARTON-OUTREACH-CORE (CHILD REPO)                        │
+│                                                                              │
+│  Location: C:\Users\CUSTOM PC\Desktop\Cursor Builds\barton-outreach-core     │
+│  Role: CONSUMER — Inherits templates from IMO-Creator                        │
+│                                                                              │
+│  templates/ directory mirrors IMO-Creator structure                          │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Template Sync Rules (LOCKED)
+
+| Rule | Enforcement |
+|------|-------------|
+| **Direction** | PULL from IMO-Creator → barton-outreach-core |
+| **Never Push** | AI agents CANNOT push changes to IMO-Creator |
+| **Human Approval** | IMO-Creator changes require human approval + ADR |
+| **Sync Commit** | Use `chore(templates): Sync IMO-creator to vX.X.X` |
+
+### Sync Process
+
+```bash
+# 1. Read latest templates from IMO-Creator
+#    Source: imo-creator/templates/
+
+# 2. Write to barton-outreach-core
+#    Destination: barton-outreach-core/templates/
+
+# 3. Commit with sync message
+git commit -m "chore(templates): Sync IMO-creator to vX.X.X - [description]"
+```
+
+### NEVER DO (Template Inheritance)
+
+- **NEVER** push changes to IMO-Creator
+- **NEVER** modify doctrine files without human approval
+- **NEVER** create local-only doctrine (use IMO-Creator)
+- **NEVER** diverge from IMO-Creator template structure
+
+---
+
 ## CORE ARCHITECTURE: CL AUTHORITY REGISTRY + OUTREACH SPINE
 
 ### The Golden Rule
