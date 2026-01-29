@@ -41,13 +41,13 @@ Your responsibilities:
 
 ### What IS Commercial (DO NOT EXCLUDE)
 
-- **Insurance brokers/agencies** — These ARE our market (potential partners or competitors)
+- **Insurance brokers/agencies** — They buy benefits for their own employees like any business
 - **Healthcare vendors** — Medical device companies, pharma, healthcare IT (commercial businesses)
 - **Education vendors** — Companies selling to schools (textbook publishers, EdTech)
 - **Government contractors** — Private companies with government contracts (still commercial)
 - **Religious goods vendors** — Companies selling to churches (still commercial)
 
-**Rule of thumb:** If they have employees and buy benefits like a normal business, they're commercial.
+**Rule of thumb:** If they're a private business with employees who need benefits, they're commercial — even if they work in or sell to a non-commercial sector.
 
 ---
 
