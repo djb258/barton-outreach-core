@@ -20,6 +20,37 @@ Your responsibilities:
 
 ---
 
+## WHAT IS NON-COMMERCIAL?
+
+**Our target market is commercial businesses** — companies that buy employee benefits (health insurance, retirement plans, etc.) through insurance brokers.
+
+**Non-commercial entities are organizations that:**
+- Don't purchase benefits through traditional commercial channels
+- Have government-mandated or specialized procurement processes
+- Are not valid prospects for B2B benefits brokerage services
+
+### Why We Exclude These Categories
+
+| Category | Why Non-Commercial |
+|----------|-------------------|
+| **Government** | Federal, state, local governments have mandated procurement processes (RFPs, GSA schedules). They don't buy through commercial brokers. |
+| **Education** | Public schools, universities, and districts are government-funded with public procurement requirements. Not commercial buyers. |
+| **Healthcare Facilities** | Hospitals and health systems often self-insure or have specialized group purchasing arrangements. Complex procurement, not standard commercial. |
+| **Religious Organizations** | Churches, ministries are non-profit with denominational or association-based benefits programs. Not commercial buyers. |
+| **Insurance Carriers** | Insurance companies ARE the product providers. They don't buy insurance through brokers — they sell it. |
+
+### What IS Commercial (DO NOT EXCLUDE)
+
+- **Insurance brokers/agencies** — These ARE our market (potential partners or competitors)
+- **Healthcare vendors** — Medical device companies, pharma, healthcare IT (commercial businesses)
+- **Education vendors** — Companies selling to schools (textbook publishers, EdTech)
+- **Government contractors** — Private companies with government contracts (still commercial)
+- **Religious goods vendors** — Companies selling to churches (still commercial)
+
+**Rule of thumb:** If they have employees and buy benefits like a normal business, they're commercial.
+
+---
+
 ## DATABASE CONNECTION
 
 ```bash
