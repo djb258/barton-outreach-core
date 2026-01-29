@@ -1,13 +1,14 @@
 # Barton Outreach Core - Complete System ERD
 ## Hub-and-Spoke Architecture with All Tables and Pipelines
 
-**Version:** 4.1.0
-**Last Updated:** 2026-01-22
+**Version:** 4.2.0
+**Last Updated:** 2026-01-29
 **Architecture:** CL Authority Registry + Outreach Operational Spine
 **ADR:** ADR-011_CL_Authority_Registry_Outreach_Spine.md
 **DOL Subhub:** EIN Resolution + Violation Discovery
 **Join Doctrine:** All DOL/Government data joins on EIN
 **Sovereign Cleanup:** 2026-01-21 (23,025 records archived)
+**Cascade Cleanup:** 2026-01-29 (10,846 records removed, alignment: 42,833 = 42,833)
 
 ---
 
@@ -21,7 +22,7 @@
 │  cl.company_identity                                                         │
 │  ────────────────────                                                        │
 │  sovereign_company_id   PK, IMMUTABLE (minted by CL)         51,910 total   │
-│  outreach_id            WRITE-ONCE (minted by Outreach)      51,148 claimed │
+│  outreach_id            WRITE-ONCE (minted by Outreach)      42,833 claimed │
 │  sales_process_id       WRITE-ONCE (minted by Sales)         —              │
 │  client_id              WRITE-ONCE (minted by Client)        —              │
 │                                                                              │
@@ -45,7 +46,7 @@
 │              OUTREACH OPERATIONAL SPINE (Workflow State)                     │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  outreach.outreach: 51,148 rows                                              │
+│  outreach.outreach: 42,833 rows                                              │
 │  ─────────────────────────────────────────────────────────────────────────── │
 │  outreach_id            PK (minted here, registered in CL)                   │
 │  sovereign_company_id   FK → cl.company_identity                             │
@@ -67,7 +68,7 @@
 │    ┌─────────────────────────────────────────────────────────────────────┐ │
 │    │  SUBHUB 1: COMPANY TARGET (04.04.01)                    [ACTIVE]    │ │
 │    │  ───────────────────────────────────────────────────────────────    │ │
-│    │  Records: 51,148 | 91.4% with email_method | 5,539 errors           │ │
+│    │  Records: 42,833 | 91.4% with email_method | 5,539 errors           │ │
 │    │  • Domain resolution                                                │ │
 │    │  • Email pattern discovery                                          │ │
 │    │  • company_target (FK: outreach_id)                                 │ │
@@ -102,7 +103,7 @@
 │    ┌─────────────────────────────────────────────────────────────────────┐ │
 │    │  SUBHUB 4: BLOG CONTENT (04.04.05)                      [ACTIVE]    │ │
 │    │  ───────────────────────────────────────────────────────────────    │ │
-│    │  Records: 51,148 | 100% coverage                                    │ │
+│    │  Records: 42,833 | 100% coverage                                    │ │
 │    │  • Content signals, news monitoring                                 │ │
 │    │  • blog (FK: outreach_id)                                           │ │
 │    │  • EMITS: content_signals, bit_impact_scores                        │ │
@@ -1043,7 +1044,7 @@ erDiagram
 |--------|-------|------|---------|-------------------|
 | **cl** | company_identity | 51,910 | **AUTHORITY REGISTRY** | PK: sovereign_company_id |
 | | | | Stores identity pointers: | outreach_id (WRITE-ONCE) |
-| | | | - outreach_id: 51,148 claimed | sales_process_id (WRITE-ONCE) |
+| | | | - outreach_id: 42,833 claimed | sales_process_id (WRITE-ONCE) |
 | | | | - sales_process_id: — | client_id (WRITE-ONCE) |
 | | | | - client_id: — | |
 | **cl** | company_identity_archive | 22,263 | Archived identities | Archive from cleanup |
@@ -1054,20 +1055,20 @@ erDiagram
 
 | Schema | Table | Rows | Purpose | Key Relationships |
 |--------|-------|------|---------|-------------------|
-| **outreach** | outreach | 51,148 | **MASTER SPINE** - ALIGNED WITH CL | FK: sovereign_id → cl.company_identity |
+| **outreach** | outreach | 42,833 | **MASTER SPINE** - ALIGNED WITH CL | FK: sovereign_id → cl.company_identity |
 | **outreach** | outreach_archive | 23,025 | Archived records | Sovereign cleanup 2026-01-21 |
 
 ### Sub-Hub Tables
 
 | Schema | Table | Rows | Purpose | Key Relationships |
 |--------|-------|------|---------|-------------------|
-| **outreach** | company_target | 51,148 | Company targeting | FK: outreach_id |
+| **outreach** | company_target | 42,833 | Company targeting | FK: outreach_id |
 | **outreach** | company_target_errors | 5,539 | CT errors | FK: outreach_id |
 | **outreach** | dol | 13,829 | DOL filing facts (27% coverage) | FK: outreach_id |
 | **outreach** | dol_errors | 37,319 | DOL errors | FK: outreach_id |
 | **outreach** | people | 426 | Contact records | FK: outreach_id |
 | **outreach** | people_errors | — | People errors | FK: outreach_id |
-| **outreach** | blog | 51,148 | Blog content (100% coverage) | FK: outreach_id |
+| **outreach** | blog | 42,833 | Blog content (100% coverage) | FK: outreach_id |
 | **outreach** | blog_errors | — | Blog errors | FK: outreach_id |
 
 ### People Intelligence Tables
@@ -1139,7 +1140,7 @@ erDiagram
 │                                                                             │
 │   ALIGNMENT RULE:                                                          │
 │   outreach.outreach count = cl.company_identity (PASS) count               │
-│   Current: 51,148 = 51,148 ✓ ALIGNED                                       │
+│   Current: 42,833 = 42,833 ✓ ALIGNED                                       │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -1157,4 +1158,4 @@ erDiagram
 ---
 
 *Generated: 2026-01-22 | Barton Outreach Core v4.0 | CL Parent-Child Doctrine v1.1*
-*Sovereign Cleanup: 2026-01-21 | 23,025 records archived | CL-Outreach aligned at 51,148*
+*Sovereign Cleanup: 2026-01-21 | 23,025 records archived | CL-Outreach aligned at 42,833*

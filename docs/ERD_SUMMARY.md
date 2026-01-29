@@ -1,6 +1,6 @@
 # Database ERD Summary - Barton Outreach Core
 
-**Generated**: 2026-01-28
+**Generated**: 2026-01-29
 **Database**: Marketing DB (Neon PostgreSQL)
 **Host**: ep-ancient-waterfall-a42vy0du-pooler.us-east-1.aws.neon.tech
 
@@ -844,7 +844,7 @@ vw_marketing_eligibility_with_overrides (effective_tier computed)
 | dol.form_5500 | 230,482 | Form 5500 filings |
 | dol.schedule_a | 337,476 | Schedule A records |
 
-**Alignment Status**: CL-Outreach alignment = 51,148 = 51,148 (post-sovereign cleanup on 2026-01-21)
+**Alignment Status**: CL-Outreach alignment = 42,833 = 42,833 (post-cascade cleanup on 2026-01-29)
 
 ---
 
@@ -921,10 +921,11 @@ vw_marketing_eligibility_with_overrides (effective_tier computed)
 - Marketing safety gate (HARD_FAIL enforcement)
 - Hub registry and waterfall order
 
-### Post-Cleanup State (2026-01-21)
+### Post-Cleanup State (2026-01-29)
 
-- 23,025 orphaned outreach_ids archived
-- CL-Outreach alignment restored: 51,148 = 51,148
+- 23,025 orphaned outreach_ids archived (2026-01-21 sovereign cleanup)
+- 10,846 additional records removed (2026-01-29 cascade cleanup)
+- CL-Outreach alignment restored: 42,833 = 42,833
 - Archive tables created for all affected entities
 - Safe to enable live marketing: **YES**
 

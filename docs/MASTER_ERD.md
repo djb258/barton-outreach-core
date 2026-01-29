@@ -571,14 +571,14 @@ WHERE cm.ein IS NOT NULL;
 | Reactivation candidate | `bit.v_reactivation_ready` | Direct (Lane A) |
 | Partner candidate | `bit.v_partner_outreach_ready` | Direct (Lane B) |
 
-### §6.2 Table Counts (As of 2026-01-28)
+### §6.2 Table Counts (As of 2026-01-29)
 
 | Table | Records | Notes |
 |-------|---------|-------|
-| `outreach.outreach` | 51,148 | **THE SPINE** |
-| `outreach.company_target` | 51,148 | 91% email_method |
-| `outreach.dol` | 13,829 | 27% coverage |
-| `outreach.blog` | 51,148 | 100% coverage |
+| `outreach.outreach` | 42,833 | **THE SPINE** |
+| `outreach.company_target` | 42,833 | 91% email_method |
+| `outreach.dol` | ~13,000 | 27% coverage |
+| `outreach.blog` | 42,833 | 100% coverage |
 | `outreach.people` | 426 | Active contacts |
 | `outreach.bit_scores` | 17,227 | Scored companies |
 | `dol.form_5500` | 230,482 | Large filers |

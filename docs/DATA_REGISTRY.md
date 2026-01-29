@@ -254,7 +254,7 @@ dol.form_5500.sponsor_dfe_ein (DOL SOURCE - 1M+)
 ### Outreach Sub-Hub
 | Enrichment | Date | Source | Records | Status |
 |------------|------|--------|---------|--------|
-| Domain extraction | Prior | CL pipeline | 51,148 | ✅ Complete |
+| Domain extraction | Prior | CL pipeline | 42,833 | ✅ Complete |
 | Blog source_url | - | - | 0 | ❌ PENDING |
 | DOL EIN matching | 2026-01 | DOL files | 13,829 | ✅ Complete |
 

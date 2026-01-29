@@ -2,11 +2,12 @@
 ## Version 1.0 Operational Baseline
 
 **Document ID**: `04.04.02.04.50000.001`
-**Version**: 1.0.1
-**Last Updated**: 2026-01-22
+**Version**: 1.0.2
+**Last Updated**: 2026-01-29
 **Status**: OPERATIONAL BASELINE
 **Certification**: FINAL_CERTIFICATION_REPORT_2026-01-19.md
-**Sovereign Cleanup**: 2026-01-21 (23,025 records archived, CL-Outreach aligned)
+**Sovereign Cleanup**: 2026-01-21 (23,025 records archived)
+**Cascade Cleanup**: 2026-01-29 (10,846 records removed, CL-Outreach aligned: 42,833 = 42,833)
 
 ---
 
@@ -26,14 +27,14 @@ This document defines the **v1.0 operational baseline** for Barton Outreach, cer
 
 | Component | Status | Record Count | Notes |
 |-----------|--------|--------------|-------|
-| `cl.company_identity` | LIVE | 51,148 PASS / 762 FAIL | **SOVEREIGN PARENT** |
-| `outreach.outreach` | LIVE | 51,148 rows | **MASTER SPINE** (aligned with CL) |
+| `cl.company_identity` | LIVE | 42,833 ELIGIBLE | **SOVEREIGN PARENT** |
+| `outreach.outreach` | LIVE | 42,833 rows | **MASTER SPINE** (aligned with CL) |
 | `outreach.hub_registry` | LIVE | 6 hubs | All hubs registered |
-| `outreach.company_hub_status` | LIVE | ~306K rows | Hub status tracking (6 hubs × 51K) |
+| `outreach.company_hub_status` | LIVE | ~257K rows | Hub status tracking (6 hubs × 42.8K) |
 | `outreach.manual_overrides` | LIVE | — | RLS enabled |
-| `outreach.vw_sovereign_completion` | LIVE | 51,148 rows | Sovereign view |
+| `outreach.vw_sovereign_completion` | LIVE | 42,833 rows | Sovereign view |
 | `outreach.vw_marketing_eligibility` | LIVE | — | Base eligibility |
-| `outreach.vw_marketing_eligibility_with_overrides` | LIVE | 51,148 rows | **AUTHORITATIVE** |
+| `outreach.vw_marketing_eligibility_with_overrides` | LIVE | 42,833 rows | **AUTHORITATIVE** |
 
 ### Sub-Hubs (Waterfall Order)
 
