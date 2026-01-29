@@ -1,12 +1,101 @@
-# PRD: People Sub-Hub v2.1
+# PRD: People Sub-Hub v3.0
 
-**Version:** 2.1 (Hardened per Barton Doctrine)
+**Version:** 3.0 (Constitutional Compliance)
 **Status:** Active
-**Hardening Date:** 2025-12-17
-**Last Updated:** 2025-12-17
-**Doctrine:** Bicycle Wheel v1.1 / Barton Doctrine
+**Constitutional Date:** 2026-01-29
+**Last Updated:** 2026-01-29
+**Doctrine:** IMO-Creator Constitutional Doctrine
 **Barton ID Range:** `04.04.02.04.2XXXX.###`
-**Changes:** Correlation ID enforcement, Failure handling standardization, Signal idempotency, Tooling declarations, Promotion states
+
+---
+
+## Conformance
+
+| Field | Value |
+|-------|-------|
+| **Doctrine Version** | IMO-Creator v1.0 |
+| **Domain Spec Reference** | `doctrine/REPO_DOMAIN_SPEC.md` |
+| **CC Layer** | CC-02 |
+| **PRD Constitution** | `templates/doctrine/PRD_CONSTITUTION.md` |
+
+---
+
+## 1. Sovereign Reference (CC-01)
+
+| Field | Value |
+|-------|-------|
+| **Sovereign ID** | CL-01 (Company Lifecycle) |
+| **Sovereign Boundary** | Company identity and lifecycle state |
+
+---
+
+## 2. Hub Identity (CC-02)
+
+| Field | Value |
+|-------|-------|
+| **Hub Name** | People Intelligence |
+| **Hub ID** | HUB-PEOPLE |
+| **Doctrine ID** | 04.04.02 |
+| **Owner** | Barton Outreach Core |
+| **Version** | 3.0 |
+| **Waterfall Order** | 3 |
+
+---
+
+## 3. Purpose & Transformation Declaration
+
+### Transformation Statement (REQUIRED)
+
+> **"This hub transforms raw people data and verified email patterns (CONSTANTS) into slotted contact records with generated emails and lifecycle states (VARIABLES) through CAPTURE (people data intake), COMPUTE (email generation, slot assignment, lifecycle classification), and GOVERN (signal emission with idempotency enforcement)."**
+
+| Field | Value |
+|-------|-------|
+| **Transformation Summary** | Raw people data + email patterns → Slotted contacts with emails and lifecycle states |
+
+### Constants (Inputs)
+
+_Immutable inputs received from outside this hub. Reference: `doctrine/REPO_DOMAIN_SPEC.md §2`_
+
+| Constant | Source | Description |
+|----------|--------|-------------|
+| `outreach_id` | Outreach Spine | Operational identifier for FK linkage |
+| `verified_email_pattern` | Company Target | Verified email pattern for domain |
+| `company_domain` | Company Target | Validated company domain |
+| `raw_people_data` | Enrichment Providers | Raw executive/contact data |
+| `linkedin_profile_data` | External Enrichment | LinkedIn profile information |
+
+### Variables (Outputs)
+
+_Outputs this hub produces. Reference: `doctrine/REPO_DOMAIN_SPEC.md §3`_
+
+| Variable | Destination | Description |
+|----------|-------------|-------------|
+| `slot_assignments` | Outreach People table | Executive slot assignments (CEO, CFO, HR) |
+| `contact_records` | Outreach People table | Enriched contact records |
+| `generated_email` | Outreach People table | Generated email address |
+| `email_verified_flag` | Outreach People table | Email verification status |
+| `lifecycle_state` | People Master | Contact lifecycle state (SUSPECT, WARM, etc.) |
+| `slot_filled_signal` | BIT Engine | Slot filled signal |
+| `email_verified_signal` | BIT Engine | Email verified signal |
+
+### Pass Structure
+
+_Constitutional pass mapping per `PRD_CONSTITUTION.md §Pass-to-IMO Mapping`_
+
+| Pass | Type | IMO Layer | Description |
+|------|------|-----------|-------------|
+| People Data Intake | **CAPTURE** | I (Ingress) | Receive raw people data from enrichment sources |
+| Email Generation | **COMPUTE** | M (Middle) | Generate emails using verified patterns (Phase 5) |
+| Slot Assignment | **COMPUTE** | M (Middle) | Classify titles and assign to slots (Phase 6) |
+| Lifecycle Classification | **COMPUTE** | M (Middle) | Determine lifecycle state (Phase 0) |
+| Signal Emission | **GOVERN** | O (Egress) | Emit idempotent signals to BIT Engine |
+
+### Scope Boundary
+
+| Scope | Description |
+|-------|-------------|
+| **IN SCOPE** | People lifecycle state, email generation, slot assignment, talent flow detection, enrichment queue, output writing |
+| **OUT OF SCOPE** | Company identity creation (Company Target owns), email pattern discovery (Company Target owns), BIT scoring (BIT Engine owns), DOL data (DOL owns) |
 
 ---
 

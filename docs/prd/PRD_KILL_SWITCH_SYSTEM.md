@@ -1,12 +1,13 @@
-# PRD - Kill Switch System
+# PRD - Kill Switch System v2.0
 
 ## Conformance
 
 | Field | Value |
 |-------|-------|
-| **Doctrine Version** | CL Parent-Child Doctrine v1.1 |
-| **CTB Version** | 1.0.0 |
+| **Doctrine Version** | IMO-Creator v1.0 |
+| **Domain Spec Reference** | `doctrine/REPO_DOMAIN_SPEC.md` |
 | **CC Layer** | CC-02 |
+| **PRD Constitution** | `templates/doctrine/PRD_CONSTITUTION.md` |
 
 ---
 
@@ -14,8 +15,8 @@
 
 | Field | Value |
 |-------|-------|
-| **Sovereign ID** | barton-enterprises |
-| **Sovereign Boundary** | Outreach Program |
+| **Sovereign ID** | CL-01 (Company Lifecycle) |
+| **Sovereign Boundary** | Company identity and lifecycle state |
 
 ---
 
@@ -24,13 +25,62 @@
 | Field | Value |
 |-------|-------|
 | **Hub Name** | Kill Switch System |
-| **Hub ID** | 04.04.02.04.KS |
-| **Owner** | Barton Enterprises |
-| **Version** | 1.0.0 |
+| **Hub ID** | HUB-KILL-SWITCH |
+| **Owner** | Barton Outreach Core |
+| **Version** | 2.0.0 |
 
 ---
 
-## 3. Purpose
+## 3. Purpose & Transformation Declaration
+
+### Transformation Statement (REQUIRED)
+
+> **"This system transforms marketing eligibility states and override requests (CONSTANTS) into enforced marketing restrictions with audit trails (VARIABLES) through CAPTURE (override request intake), COMPUTE (override management and TTL processing), and GOVERN (effective tier enforcement with RLS protection)."**
+
+| Field | Value |
+|-------|-------|
+| **Transformation Summary** | Override requests → Enforced marketing restrictions with audit |
+
+### Constants (Inputs)
+
+_Immutable inputs received from outside this system. Reference: `doctrine/REPO_DOMAIN_SPEC.md §2`_
+
+| Constant | Source | Description |
+|----------|--------|-------------|
+| `marketing_eligibility` | Sovereign Completion | Computed marketing tier |
+| `override_request` | Human operators | Override creation request |
+| `outreach_id` | Outreach Spine | Target company identifier |
+
+### Variables (Outputs)
+
+_Outputs this system produces. Reference: `doctrine/REPO_DOMAIN_SPEC.md §3`_
+
+| Variable | Destination | Description |
+|----------|-------------|-------------|
+| `active_override` | manual_overrides | Active marketing override |
+| `effective_tier` | Eligibility views | Effective marketing tier with overrides |
+| `audit_record` | override_audit_log | Audit trail entry |
+
+### Pass Structure
+
+_Constitutional pass mapping per `PRD_CONSTITUTION.md §Pass-to-IMO Mapping`_
+
+| Pass | Type | IMO Layer | Description |
+|------|------|-----------|-------------|
+| Override Intake | **CAPTURE** | I (Ingress) | Receive disable/enable override requests |
+| Override Management | **COMPUTE** | M (Middle) | Process override creation, TTL expiration |
+| Tier Enforcement | **GOVERN** | O (Egress) | Output effective tier with overrides applied |
+
+### Scope Boundary
+
+| Scope | Description |
+|-------|-------------|
+| **IN SCOPE** | Override creation, override expiration, effective tier computation, audit logging |
+| **OUT OF SCOPE** | Marketing tier computation (Sovereign Completion owns), outreach decisions (Outreach Execution owns) |
+
+---
+
+## 4. Purpose
 
 The Kill Switch System provides data-layer enforcement for marketing restrictions:
 

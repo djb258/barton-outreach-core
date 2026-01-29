@@ -1,11 +1,37 @@
+# =============================================================================
+# CONSTITUTIONAL COMPLIANCE (IMO-Creator v1.0)
+# =============================================================================
+constitutional:
+  doctrine_version: "IMO-Creator v1.0"
+  prd_reference: "docs/prd/PRD_TALENT_FLOW_SPOKE.md"
+  domain_spec: "doctrine/REPO_DOMAIN_SPEC.md"
+  cc_layer: CC-02
+
+  # Pass Structure (Constitutional)
+  passes:
+    - name: CAPTURE
+      imo_layer: I
+      description: "Receive person records from People Intelligence, LinkedIn changes"
+    - name: COMPUTE
+      imo_layer: M
+      description: "Movement detection, company gate check, signal value calculation"
+    - name: GOVERN
+      imo_layer: O
+      description: "Emit EXECUTIVE_JOINED, EXECUTIVE_LEFT, TITLE_CHANGE signals to BIT Engine"
+
+  # PRD Section References
+  constants_ref: "docs/prd/PRD_TALENT_FLOW_SPOKE.md §3 Constants"
+  variables_ref: "docs/prd/PRD_TALENT_FLOW_SPOKE.md §3 Variables"
+
 hub:
   id: talent-flow
   name: Talent Flow
   heir_id: 04.04.06
+  version: "3.0.0"
   description: |
     Movement detection hub. Tracks executive transitions, departures,
     and job market signals that indicate buying intent.
-  
+
   # Hub classification for sovereign completion
   classification:
     type: required          # Gates completion

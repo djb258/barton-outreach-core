@@ -6,6 +6,310 @@
 
 ---
 
+## Constitutional Compliance (IMO-Creator v1.0)
+
+| Field | Value |
+|-------|-------|
+| **Doctrine Version** | IMO-Creator v1.0 |
+| **Domain Spec Reference** | `doctrine/REPO_DOMAIN_SPEC.md` |
+| **ERD Constitution** | `templates/doctrine/ERD_CONSTITUTION.md` |
+| **ERD Doctrine** | `templates/doctrine/ERD_DOCTRINE.md` |
+| **Governing PRD** | `docs/prd/PRD_COMPANY_HUB.md`, `docs/prd/PRD_SOVEREIGN_COMPLETION.md` |
+
+---
+
+## Pressure Test Results (Constitutional Validation)
+
+_Per ERD Doctrine: Every table must answer 4 questions to prove structural validity._
+
+### CL Authority Registry Tables
+
+#### cl.company_identity
+
+| Question | Answer |
+|----------|--------|
+| **Q1: What constant(s) does this table depend on?** | External company data from intake CSV, LinkedIn API responses, domain verification results |
+| **Q2: What variable does this table represent?** | `sovereign_company_id` (minted identity), `identity_status`, `eligibility_status`, `outreach_id` (write-once pointer) |
+| **Q3: Which pass produced this table?** | CAPTURE (intake) + COMPUTE (identity resolution) + GOVERN (eligibility determination) |
+| **Q4: How is lineage enforced?** | `company_unique_id` is PK, `outreach_id` is WRITE-ONCE with `outreach_attached_at` timestamp |
+
+#### cl.company_domains / cl.company_names
+
+| Question | Answer |
+|----------|--------|
+| **Q1: What constant(s) does this table depend on?** | Raw domain/name data from intake, DNS verification results |
+| **Q2: What variable does this table represent?** | Domain variants, name variants with type classification |
+| **Q3: Which pass produced this table?** | COMPUTE (domain/name normalization) |
+| **Q4: How is lineage enforced?** | FK to `cl.company_identity.company_unique_id` |
+
+### Outreach Operational Spine Tables
+
+#### outreach.outreach
+
+| Question | Answer |
+|----------|--------|
+| **Q1: What constant(s) does this table depend on?** | `sovereign_company_id` from CL |
+| **Q2: What variable does this table represent?** | `outreach_id` (minted by Outreach), operational workflow state |
+| **Q3: Which pass produced this table?** | CAPTURE (CL identity reception) + GOVERN (operational spine initialization) |
+| **Q4: How is lineage enforced?** | `sovereign_id` FK to CL, `outreach_id` registered back to CL (WRITE-ONCE) |
+
+#### outreach.company_target
+
+| Question | Answer |
+|----------|--------|
+| **Q1: What constant(s) does this table depend on?** | `outreach_id`, domain from CL, DNS/MX verification results, pattern discovery API responses |
+| **Q2: What variable does this table represent?** | `email_method` (verified pattern), `confidence_score`, `outreach_status`, `execution_status` |
+| **Q3: Which pass produced this table?** | CAPTURE (pattern discovery intake) + COMPUTE (domain resolution, pattern verification) |
+| **Q4: How is lineage enforced?** | FK `outreach_id` to `outreach.outreach`, `imo_completed_at` timestamp |
+
+#### outreach.dol
+
+| Question | Answer |
+|----------|--------|
+| **Q1: What constant(s) does this table depend on?** | `outreach_id`, federal DOL Form 5500 data |
+| **Q2: What variable does this table represent?** | EIN match result, `form_5500_matched`, `schedule_a_matched`, `match_confidence` |
+| **Q3: Which pass produced this table?** | CAPTURE (DOL data ingestion) + COMPUTE (EIN matching) |
+| **Q4: How is lineage enforced?** | FK `outreach_id`, FK `filing_id` to `dol.form_5500` |
+
+#### outreach.people
+
+| Question | Answer |
+|----------|--------|
+| **Q1: What constant(s) does this table depend on?** | `outreach_id`, person data from People Hub, slot requirements |
+| **Q2: What variable does this table represent?** | Slot assignment, `email` (generated), `email_verified` status |
+| **Q3: Which pass produced this table?** | CAPTURE (slot requirements) + COMPUTE (email generation, slot assignment) |
+| **Q4: How is lineage enforced?** | FK `outreach_id`, FK `person_unique_id` to `people.people_master` |
+
+#### outreach.blog
+
+| Question | Answer |
+|----------|--------|
+| **Q1: What constant(s) does this table depend on?** | `outreach_id`, external RSS/blog crawl results |
+| **Q2: What variable does this table represent?** | Blog presence detection, `signal_count` |
+| **Q3: Which pass produced this table?** | CAPTURE (blog crawl) + COMPUTE (signal detection) |
+| **Q4: How is lineage enforced?** | FK `outreach_id`, `last_checked_at` timestamp |
+
+#### outreach.bit_scores
+
+| Question | Answer |
+|----------|--------|
+| **Q1: What constant(s) does this table depend on?** | `outreach_id`, signals from DOL/People/Blog sub-hubs |
+| **Q2: What variable does this table represent?** | `bit_score` (0-100), `bit_tier` (PLATINUM/GOLD/SILVER/BRONZE) |
+| **Q3: Which pass produced this table?** | COMPUTE (signal aggregation, score calculation) |
+| **Q4: How is lineage enforced?** | PK/FK `outreach_id`, `score_updated_at` timestamp |
+
+#### outreach.bit_signals
+
+| Question | Answer |
+|----------|--------|
+| **Q1: What constant(s) does this table depend on?** | `outreach_id`, signal events from sub-hubs |
+| **Q2: What variable does this table represent?** | Individual signal records with type, impact, dedup hash |
+| **Q3: Which pass produced this table?** | CAPTURE (signal reception from sub-hubs) |
+| **Q4: How is lineage enforced?** | FK `outreach_id`, `signal_hash` for 24h deduplication |
+
+#### outreach.manual_overrides (Kill Switch)
+
+| Question | Answer |
+|----------|--------|
+| **Q1: What constant(s) does this table depend on?** | `outreach_id`, human operator decisions |
+| **Q2: What variable does this table represent?** | Marketing restriction state, `override_type`, `is_active` |
+| **Q3: Which pass produced this table?** | CAPTURE (override request) + GOVERN (enforcement) |
+| **Q4: How is lineage enforced?** | FK `outreach_id`, `applied_at` + `applied_by` audit fields |
+
+#### outreach.override_audit_log
+
+| Question | Answer |
+|----------|--------|
+| **Q1: What constant(s) does this table depend on?** | `override_id`, action events |
+| **Q2: What variable does this table represent?** | Audit trail records (append-only) |
+| **Q3: Which pass produced this table?** | GOVERN (audit logging) |
+| **Q4: How is lineage enforced?** | FK `override_id`, append-only (no UPDATE/DELETE), `performed_at` timestamp |
+
+### People Intelligence Tables
+
+#### people.people_master
+
+| Question | Answer |
+|----------|--------|
+| **Q1: What constant(s) does this table depend on?** | Intake CSV person data, LinkedIn profile data |
+| **Q2: What variable does this table represent?** | Person identity, `email`, `email_verified`, `slot_type` assignment |
+| **Q3: Which pass produced this table?** | CAPTURE (person intake) + COMPUTE (dedup, email generation) |
+| **Q4: How is lineage enforced?** | `unique_id` PK, FK `company_unique_id` |
+
+#### people.company_slot
+
+| Question | Answer |
+|----------|--------|
+| **Q1: What constant(s) does this table depend on?** | `company_unique_id`, slot requirements from Company Target |
+| **Q2: What variable does this table represent?** | Slot fill state, `is_filled`, `person_unique_id` assignment |
+| **Q3: Which pass produced this table?** | COMPUTE (slot assignment algorithm) |
+| **Q4: How is lineage enforced?** | FK `company_unique_id`, FK `person_unique_id`, `filled_at` timestamp |
+
+### DOL Filings Tables
+
+#### dol.form_5500
+
+| Question | Answer |
+|----------|--------|
+| **Q1: What constant(s) does this table depend on?** | Federal DOL bulk download files |
+| **Q2: What variable does this table represent?** | Parsed filing records with EIN, plan details |
+| **Q3: Which pass produced this table?** | CAPTURE (federal data ingestion) |
+| **Q4: How is lineage enforced?** | `filing_id` PK (composite from DOL), immutable source data |
+
+#### dol.schedule_a
+
+| Question | Answer |
+|----------|--------|
+| **Q1: What constant(s) does this table depend on?** | Federal DOL Schedule A data, `filing_id` |
+| **Q2: What variable does this table represent?** | Insurance carrier details, commission data |
+| **Q3: Which pass produced this table?** | CAPTURE (Schedule A extraction) |
+| **Q4: How is lineage enforced?** | FK `filing_id` to `dol.form_5500` |
+
+#### dol.renewal_calendar
+
+| Question | Answer |
+|----------|--------|
+| **Q1: What constant(s) does this table depend on?** | `filing_id`, calculated renewal dates |
+| **Q2: What variable does this table represent?** | Renewal tracking state, `reminder_sent` |
+| **Q3: Which pass produced this table?** | COMPUTE (renewal date calculation) + GOVERN (reminder tracking) |
+| **Q4: How is lineage enforced?** | FK `filing_id` to `dol.form_5500` |
+
+---
+
+## Pass-to-Table Mapping
+
+| Pass | IMO Layer | Tables Owned |
+|------|-----------|--------------|
+| **CAPTURE** | I (Ingress) | `cl.company_identity` (intake), `outreach.outreach`, `outreach.bit_signals`, `dol.form_5500`, `dol.schedule_a`, `people.people_master` (intake) |
+| **COMPUTE** | M (Middle) | `outreach.company_target`, `outreach.dol`, `outreach.people`, `outreach.blog`, `outreach.bit_scores`, `people.company_slot`, `dol.renewal_calendar` |
+| **GOVERN** | O (Egress) | `outreach.manual_overrides`, `outreach.override_audit_log`, views (`vw_marketing_eligibility_with_overrides`, `vw_sovereign_completion`) |
+
+---
+
+## Authoritative Pass Ownership (LOCKED)
+
+_Per ERD Doctrine: Every table MUST have exactly ONE authoritative pass._
+
+| Table | Authoritative Pass | IMO Layer | Secondary Pass Interaction | Governing PRD |
+|-------|-------------------|-----------|---------------------------|---------------|
+| **cl.company_identity** | CAPTURE | I | COMPUTE (identity resolution), GOVERN (eligibility) | PRD_COMPANY_HUB.md |
+| **cl.company_domains** | COMPUTE | M | — | PRD_COMPANY_HUB.md |
+| **cl.company_names** | COMPUTE | M | — | PRD_COMPANY_HUB.md |
+| **cl.identity_confidence** | COMPUTE | M | — | PRD_COMPANY_HUB.md |
+| **outreach.outreach** | CAPTURE | I | GOVERN (registration to CL) | PRD_SOVEREIGN_COMPLETION.md |
+| **outreach.company_target** | COMPUTE | M | CAPTURE (pattern discovery intake) | PRD_COMPANY_HUB.md |
+| **outreach.dol** | COMPUTE | M | CAPTURE (DOL data ingestion) | PRD_DOL_SUBHUB.md |
+| **outreach.people** | COMPUTE | M | CAPTURE (slot requirements) | PRD_PEOPLE_SUBHUB.md |
+| **outreach.blog** | COMPUTE | M | CAPTURE (blog crawl) | PRD_BLOG_NEWS_SUBHUB.md |
+| **outreach.bit_scores** | COMPUTE | M | — | PRD_BIT_ENGINE.md |
+| **outreach.bit_signals** | CAPTURE | I | — | PRD_BIT_ENGINE.md |
+| **outreach.manual_overrides** | GOVERN | O | CAPTURE (override request) | PRD_KILL_SWITCH_SYSTEM.md |
+| **outreach.override_audit_log** | GOVERN | O | — | PRD_KILL_SWITCH_SYSTEM.md |
+| **outreach.campaigns** | COMPUTE | M | — | PRD_OUTREACH_SPOKE.md |
+| **outreach.sequences** | COMPUTE | M | — | PRD_OUTREACH_SPOKE.md |
+| **outreach.send_log** | GOVERN | O | COMPUTE (send scheduling) | PRD_OUTREACH_SPOKE.md |
+| **outreach.engagement_events** | CAPTURE | I | — | PRD_OUTREACH_SPOKE.md |
+| **outreach.bit_errors** | CAPTURE | I | — | PRD_MASTER_ERROR_LOG.md |
+| **outreach.blog_errors** | CAPTURE | I | — | PRD_MASTER_ERROR_LOG.md |
+| **outreach.company_target_errors** | CAPTURE | I | — | PRD_MASTER_ERROR_LOG.md |
+| **outreach.dol_errors** | CAPTURE | I | — | PRD_MASTER_ERROR_LOG.md |
+| **outreach.people_errors** | CAPTURE | I | — | PRD_MASTER_ERROR_LOG.md |
+| **outreach.outreach_errors** | CAPTURE | I | — | PRD_MASTER_ERROR_LOG.md |
+| **people.people_master** | CAPTURE | I | COMPUTE (dedup, email generation) | PRD_PEOPLE_SUBHUB.md |
+| **people.company_slot** | COMPUTE | M | — | PRD_PEOPLE_SUBHUB.md |
+| **people.people_candidate** | CAPTURE | I | — | PRD_PEOPLE_SUBHUB.md |
+| **dol.form_5500** | CAPTURE | I | — | PRD_DOL_SUBHUB.md |
+| **dol.schedule_a** | CAPTURE | I | — | PRD_DOL_SUBHUB.md |
+| **dol.ein_urls** | CAPTURE | I | — | PRD_DOL_SUBHUB.md |
+| **dol.renewal_calendar** | COMPUTE | M | GOVERN (reminder tracking) | PRD_DOL_SUBHUB.md |
+| **company.company_master** | CAPTURE | I | — | PRD_COMPANY_HUB.md |
+| **company.company_sidecar** | COMPUTE | M | — | PRD_COMPANY_HUB.md |
+| **company.company_slots** | COMPUTE | M | — | PRD_COMPANY_HUB.md |
+| **company.contact_enrichment** | COMPUTE | M | — | PRD_PEOPLE_SUBHUB.md |
+| **company.email_verification** | COMPUTE | M | — | PRD_PEOPLE_SUBHUB.md |
+| **bit.movement_events** | CAPTURE | I | — | PRD_TALENT_FLOW_SPOKE.md |
+| **bit.proof_lines** | COMPUTE | M | — | PRD_BIT_ENGINE.md |
+| **bit.authorization_log** | GOVERN | O | — | PRD_BIT_ENGINE.md |
+| **blog.pressure_signals** | CAPTURE | I | COMPUTE (signal detection) | PRD_BLOG_NEWS_SUBHUB.md |
+| **shq_master_error_log** | CAPTURE | I | GOVERN (audit exposure) | PRD_MASTER_ERROR_LOG.md |
+| **shq_orphan_errors** | CAPTURE | I | — | PRD_MASTER_ERROR_LOG.md |
+
+### Views (GOVERN Pass)
+
+| View | Authoritative Pass | IMO Layer | Purpose |
+|------|-------------------|-----------|---------|
+| **vw_marketing_eligibility_with_overrides** | GOVERN | O | Authoritative marketing eligibility |
+| **vw_sovereign_completion** | GOVERN | O | Hub completion aggregation |
+| **vw_marketing_eligibility** | GOVERN | O | Base eligibility (pre-override) |
+| **vw_bit_tier_distribution** | GOVERN | O | BIT tier analytics |
+| **v_company_lifecycle_status** | GOVERN | O | CL hub claim status |
+
+---
+
+## Upstream Flow Test Declaration
+
+Per ERD Constitution, the following upstream flow paths are declared and validated:
+
+### Path 1: Company Identity → Marketing Eligibility
+
+```
+CONSTANT: Intake CSV data
+    ↓ CAPTURE
+cl.company_identity (sovereign_company_id minted)
+    ↓ COMPUTE
+outreach.outreach (outreach_id minted, registered to CL)
+    ↓ COMPUTE
+outreach.company_target (domain resolved, pattern discovered)
+    ↓ COMPUTE
+outreach.bit_scores (signals aggregated, tier assigned)
+    ↓ GOVERN
+vw_marketing_eligibility_with_overrides (authoritative view)
+```
+
+### Path 2: DOL Filings → BIT Signal
+
+```
+CONSTANT: Federal DOL Form 5500 data
+    ↓ CAPTURE
+dol.form_5500 (filing parsed)
+    ↓ CAPTURE
+dol.schedule_a (Schedule A extracted)
+    ↓ COMPUTE
+outreach.dol (EIN matched to outreach_id)
+    ↓ CAPTURE
+outreach.bit_signals (DOL_FILING signal emitted)
+    ↓ COMPUTE
+outreach.bit_scores (score updated)
+```
+
+### Path 3: People → Slot Assignment
+
+```
+CONSTANT: LinkedIn profile data, slot requirements
+    ↓ CAPTURE
+people.people_master (person record created)
+    ↓ COMPUTE
+people.company_slot (slot assigned)
+    ↓ COMPUTE
+outreach.people (outreach context linked)
+    ↓ CAPTURE
+outreach.bit_signals (SLOT_FILLED signal emitted)
+```
+
+### Path 4: Kill Switch Override
+
+```
+CONSTANT: Human operator override request
+    ↓ CAPTURE
+outreach.manual_overrides (override record created)
+    ↓ GOVERN
+outreach.override_audit_log (audit record appended)
+    ↓ GOVERN
+vw_marketing_eligibility_with_overrides (effective_tier computed)
+```
+
+---
+
 ## Table of Contents
 
 1. [Database Overview](#database-overview)

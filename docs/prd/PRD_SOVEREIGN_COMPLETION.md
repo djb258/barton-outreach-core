@@ -1,12 +1,13 @@
-# PRD - Sovereign Completion System
+# PRD - Sovereign Completion System v2.0
 
 ## Conformance
 
 | Field | Value |
 |-------|-------|
-| **Doctrine Version** | CL Parent-Child Doctrine v1.1 |
-| **CTB Version** | 1.0.0 |
+| **Doctrine Version** | IMO-Creator v1.0 |
+| **Domain Spec Reference** | `doctrine/REPO_DOMAIN_SPEC.md` |
 | **CC Layer** | CC-02 |
+| **PRD Constitution** | `templates/doctrine/PRD_CONSTITUTION.md` |
 
 ---
 
@@ -14,8 +15,8 @@
 
 | Field | Value |
 |-------|-------|
-| **Sovereign ID** | barton-enterprises |
-| **Sovereign Boundary** | Outreach Program |
+| **Sovereign ID** | CL-01 (Company Lifecycle) |
+| **Sovereign Boundary** | Company identity and lifecycle state |
 
 ---
 
@@ -24,13 +25,65 @@
 | Field | Value |
 |-------|-------|
 | **Hub Name** | Sovereign Completion |
-| **Hub ID** | 04.04.02.04.SC |
-| **Owner** | Barton Enterprises |
-| **Version** | 1.0.0 |
+| **Hub ID** | HUB-SOVEREIGN-COMPLETION |
+| **Owner** | Barton Outreach Core |
+| **Version** | 2.0.0 |
 
 ---
 
-## 3. Purpose
+## 3. Purpose & Transformation Declaration
+
+### Transformation Statement (REQUIRED)
+
+> **"This system transforms sub-hub completion statuses and BIT scores (CONSTANTS) into marketing eligibility tiers with override enforcement (VARIABLES) through CAPTURE (hub status intake), COMPUTE (tier computation based on hub waterfall), and GOVERN (eligibility view exposure with kill-switch enforcement)."**
+
+| Field | Value |
+|-------|-------|
+| **Transformation Summary** | Sub-hub statuses + BIT scores → Marketing eligibility tiers |
+
+### Constants (Inputs)
+
+_Immutable inputs received from outside this system. Reference: `doctrine/REPO_DOMAIN_SPEC.md §2`_
+
+| Constant | Source | Description |
+|----------|--------|-------------|
+| `company_target_status` | Company Target | Hub completion status (PASS/FAIL/IN_PROGRESS) |
+| `dol_status` | DOL Filings | Hub completion status |
+| `people_status` | People Intelligence | Hub completion status |
+| `talent_flow_status` | Talent Flow | Hub completion status |
+| `blog_status` | Blog Content | Hub completion status (optional) |
+| `bit_score` | BIT Engine | Buyer intent score |
+
+### Variables (Outputs)
+
+_Outputs this system produces. Reference: `doctrine/REPO_DOMAIN_SPEC.md §3`_
+
+| Variable | Destination | Description |
+|----------|-------------|-------------|
+| `marketing_tier` | Eligibility views | Computed tier (-1 to 3) |
+| `overall_status` | Sovereign Completion view | Aggregated hub status |
+| `effective_tier` | With overrides view | Tier after kill-switch application |
+
+### Pass Structure
+
+_Constitutional pass mapping per `PRD_CONSTITUTION.md §Pass-to-IMO Mapping`_
+
+| Pass | Type | IMO Layer | Description |
+|------|------|-----------|-------------|
+| Hub Status Intake | **CAPTURE** | I (Ingress) | Receive status changes from sub-hubs |
+| Tier Computation | **COMPUTE** | M (Middle) | Compute marketing tier from hub statuses |
+| Eligibility Exposure | **GOVERN** | O (Egress) | Expose computed eligibility to consumers |
+
+### Scope Boundary
+
+| Scope | Description |
+|-------|-------------|
+| **IN SCOPE** | Hub status aggregation, tier computation, eligibility view exposure |
+| **OUT OF SCOPE** | Sub-hub logic (individual hubs own), override management (Kill Switch owns), outreach decisions (Outreach Execution owns) |
+
+---
+
+## 4. Purpose
 
 The Sovereign Completion System provides a single source of truth for company marketing eligibility by:
 

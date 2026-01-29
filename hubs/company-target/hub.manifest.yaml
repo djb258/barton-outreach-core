@@ -1,14 +1,39 @@
 # Company Target Sub-Hub Manifest
 # Internal anchor for Outreach Execution Hub
 # CHILD of Company Lifecycle (CL) - receives identity, never mints
-# Version: 2.1.0
+# Version: 3.0.0
+
+# =============================================================================
+# CONSTITUTIONAL COMPLIANCE (IMO-Creator v1.0)
+# =============================================================================
+constitutional:
+  doctrine_version: "IMO-Creator v1.0"
+  prd_reference: "docs/prd/PRD_COMPANY_HUB.md"
+  domain_spec: "doctrine/REPO_DOMAIN_SPEC.md"
+  cc_layer: CC-02
+
+  # Pass Structure (Constitutional)
+  passes:
+    - name: CAPTURE
+      imo_layer: I
+      description: "Receive company identity from CL, DOL signals, People signals"
+    - name: COMPUTE
+      imo_layer: M
+      description: "Domain resolution, pattern discovery, BIT scoring, readiness evaluation"
+    - name: GOVERN
+      imo_layer: O
+      description: "Emit engagement signals, route to sub-hubs"
+
+  # PRD Section References
+  constants_ref: "docs/prd/PRD_COMPANY_HUB.md §3 Constants"
+  variables_ref: "docs/prd/PRD_COMPANY_HUB.md §3 Variables"
 
 hub:
   id: HUB-COMPANY-TARGET
   name: Company Target Sub-Hub
   doctrine_id: "04.04.01"
   type: sub-hub
-  version: "2.1.0"
+  version: "3.0.0"
   description: |
     Internal anchor table for Outreach Execution Hub.
     Receives company_unique_id from Company Lifecycle (CL).

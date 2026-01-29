@@ -1,13 +1,62 @@
-# Hub-Process-Signal Ownership Matrix v2.1
+# Hub-Process-Signal Ownership Matrix v3.0
 
-**Version:** 2.1 (Hardened per Barton Doctrine)
-**Last Updated:** 2025-12-17
-**Doctrine:** Bicycle Wheel v1.1 / Barton Doctrine
-**Changes:** Correlation ID enforcement, Signal idempotency windows, PRD version alignment
+## Conformance
+
+| Field | Value |
+|-------|-------|
+| **Doctrine Version** | IMO-Creator v1.0 |
+| **Domain Spec Reference** | `doctrine/REPO_DOMAIN_SPEC.md` |
+| **CC Layer** | CC-02 (Hub Governance) |
+| **PRD Constitution** | `templates/doctrine/PRD_CONSTITUTION.md` |
+| **Document Type** | Governance Reference (NOT a Hub PRD) |
 
 ---
 
-## Quick Reference: Who Owns What
+## 1. Sovereign Reference (CC-01)
+
+| Field | Value |
+|-------|-------|
+| **Sovereign ID** | CL-01 (Company Lifecycle) |
+| **Sovereign Boundary** | Company identity and lifecycle state |
+
+---
+
+## 2. Document Identity
+
+| Field | Value |
+|-------|-------|
+| **Document Name** | Hub-Process-Signal Ownership Matrix |
+| **Document ID** | DOC-HUB-SIGNAL-MATRIX |
+| **Owner** | Barton Outreach Core |
+| **Version** | 3.0.0 |
+| **Type** | Governance Reference Document |
+
+---
+
+## 3. Purpose
+
+This document serves as the **authoritative reference** for:
+- Hub and sub-hub ownership boundaries
+- Process-to-hub assignments
+- Signal emission and routing
+- Decision authority matrix
+- Correlation ID and idempotency governance
+
+**This is NOT a hub PRD** — it documents how hubs interact and enforce boundaries.
+
+---
+
+## 4. Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0 | 2025-12-17 | Initial Hub-Process-Signal Matrix |
+| 2.1 | 2025-12-17 | Hardened: Correlation ID enforcement, Signal idempotency matrix, PRD v2.1 alignment |
+| 3.0 | 2026-01-29 | Constitutional compliance: Conformance sections, doctrine references |
+
+---
+
+## 5. Quick Reference: Who Owns What
 
 ```
 ╔═══════════════════════════════════════════════════════════════════════════════╗

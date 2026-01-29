@@ -1,14 +1,100 @@
-# PRD: Master Error Log v1.1
+# PRD: Master Error Log v2.0
 
-**Status:** Active
-**Version:** 1.1 (Hardened)
-**Last Updated:** 2025-12-17
-**Doctrine:** Bicycle Wheel v1.1 / Barton Doctrine
-**Type:** Cross-Cutting Observability Process (NOT a Hub)
+## Conformance
+
+| Field | Value |
+|-------|-------|
+| **Doctrine Version** | IMO-Creator v1.0 |
+| **Domain Spec Reference** | `doctrine/REPO_DOMAIN_SPEC.md` |
+| **CC Layer** | CC-03 (Context - Cross-Cutting) |
+| **PRD Constitution** | `templates/doctrine/PRD_CONSTITUTION.md` |
 
 ---
 
-## Ownership Statement
+## 1. Sovereign Reference (CC-01)
+
+| Field | Value |
+|-------|-------|
+| **Sovereign ID** | CL-01 (Company Lifecycle) |
+| **Sovereign Boundary** | Company identity and lifecycle state |
+
+---
+
+## 2. Process Identity (CC-03)
+
+| Field | Value |
+|-------|-------|
+| **Process Name** | Master Error Log |
+| **Process ID** | PROC-MASTER-ERROR-LOG |
+| **Owner** | Platform Team (Cross-Cutting) |
+| **Version** | 2.0.0 |
+| **Type** | Cross-Cutting Observability Process (NOT a Hub) |
+
+---
+
+## 3. Purpose & Transformation Declaration
+
+### Transformation Statement (REQUIRED)
+
+> **"This process transforms error events emitted from all hubs and sub-hubs (CONSTANTS) into a normalized global error log with correlation tracking and alerting thresholds (VARIABLES) through CAPTURE (error event intake from local sub-hub tables), COMPUTE (normalization, severity classification, correlation linking), and GOVERN (append-only log exposure with RLS enforcement and mode-based alerting)."**
+
+| Field | Value |
+|-------|-------|
+| **Transformation Summary** | Error events from all hubs → Normalized global error visibility with alerting |
+
+### Constants (Inputs)
+
+_Immutable inputs received from outside this system. Reference: `doctrine/REPO_DOMAIN_SPEC.md §2`_
+
+| Constant | Source | Description |
+|----------|--------|-------------|
+| `local_error_events` | Sub-hub failure tables | Error records from people_processing_errors, dol_processing_errors, etc. |
+| `correlation_id` | Pipeline batch | UUID v4 trace ID from batch intake |
+| `operating_mode` | System configuration | BURN_IN or STEADY_STATE |
+| `error_severity` | Sub-hub classification | LOW, MEDIUM, HIGH, CRITICAL |
+| `process_id` | Sub-hub context | Canonical process identifier |
+
+### Variables (Outputs)
+
+_Outputs this system produces. Reference: `doctrine/REPO_DOMAIN_SPEC.md §3`_
+
+| Variable | Destination | Description |
+|----------|-------------|-------------|
+| `master_error_record` | shq_master_error_log | Normalized global error record |
+| `orphan_error_record` | shq_orphan_errors | Rejected errors (missing correlation_id) |
+| `alert_event` | Alerting system | Threshold-triggered alerts |
+| `error_trend_data` | Analytics | Aggregated error trends by hub/severity |
+
+### Pass Structure
+
+_Constitutional pass mapping per `PRD_CONSTITUTION.md §Pass-to-IMO Mapping`_
+
+| Pass | Type | IMO Layer | Description |
+|------|------|-----------|-------------|
+| Error Event Intake | **CAPTURE** | I (Ingress) | Receive errors from local sub-hub tables |
+| Error Normalization | **COMPUTE** | M (Middle) | Normalize, classify, link correlation |
+| Log Exposure | **GOVERN** | O (Egress) | Append-only log with RLS and alerting |
+
+### Scope Boundary
+
+| Scope | Description |
+|-------|-------------|
+| **IN SCOPE** | Error aggregation, normalization, correlation linking, trend analysis, alerting |
+| **OUT OF SCOPE** | Error remediation (sub-hub owns), retry logic (sub-hub owns), resolution workflow (sub-hub owns), decision making (BIT Engine owns) |
+
+---
+
+## 4. CTB Placement
+
+| Field | Value | CC Layer |
+|-------|-------|----------|
+| **Trunk** | sys | CC-03 |
+| **Branch** | observability | CC-03 |
+| **Leaf** | master-error-log | CC-03 |
+
+---
+
+## 5. Ownership Statement
 
 ```
 ╔═══════════════════════════════════════════════════════════════════════════════╗

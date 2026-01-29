@@ -1,8 +1,95 @@
-# PRD — Company Hub (Central Core) v2.1
+# PRD — Company Hub (Central Core) v3.0
 
-**Version:** 2.1 (Hardened per Barton Doctrine)
-**Hardening Date:** 2025-12-17
-**Changes:** Correlation ID enforcement, Hold Queue TTL, Error Log Integration
+**Version:** 3.0 (Constitutional Compliance)
+**Constitutional Date:** 2026-01-29
+**Changes:** Constitutional transformation declaration, CAPTURE/COMPUTE/GOVERN pass mapping, Constants/Variables sections
+
+---
+
+## Conformance
+
+| Field | Value |
+|-------|-------|
+| **Doctrine Version** | IMO-Creator v1.0 |
+| **Domain Spec Reference** | `doctrine/REPO_DOMAIN_SPEC.md` |
+| **CC Layer** | CC-02 |
+| **PRD Constitution** | `templates/doctrine/PRD_CONSTITUTION.md` |
+
+---
+
+## 1. Sovereign Reference (CC-01)
+
+| Field | Value |
+|-------|-------|
+| **Sovereign ID** | CL-01 (Company Lifecycle) |
+| **Sovereign Boundary** | Company identity minting and lifecycle state |
+
+---
+
+## 2. Hub Identity (CC-02)
+
+| Field | Value |
+|-------|-------|
+| **Hub Name** | Company Target |
+| **Hub ID** | HUB-COMPANY-TARGET |
+| **Doctrine ID** | 04.04.01 |
+| **Owner** | Barton Outreach Core |
+| **Version** | 3.0 |
+| **Waterfall Order** | 1 |
+
+---
+
+## 3. Purpose & Transformation Declaration
+
+### Transformation Statement (REQUIRED)
+
+> **"This hub transforms sovereign company identities and raw domain data (CONSTANTS) into verified company targeting records with email patterns (VARIABLES) through CAPTURE (identity reception from CL), COMPUTE (domain resolution and pattern discovery), and GOVERN (verification and eligibility gating)."**
+
+| Field | Value |
+|-------|-------|
+| **Transformation Summary** | Sovereign identity → Verified targeting record with email pattern |
+
+### Constants (Inputs)
+
+_Immutable inputs received from outside this hub. Reference: `doctrine/REPO_DOMAIN_SPEC.md §2`_
+
+| Constant | Source | Description |
+|----------|--------|-------------|
+| `sovereign_company_id` | CL (Company Lifecycle) | Immutable company identity from CL |
+| `company_name` | CL (Company Lifecycle) | Canonical company name |
+| `company_domain` | CL (Company Lifecycle) | Primary domain from CL |
+| `identity_status` | CL (Company Lifecycle) | Identity verification status (PASS/FAIL) |
+| `existence_verified` | CL (Company Lifecycle) | Domain existence verification |
+
+### Variables (Outputs)
+
+_Outputs this hub produces. Reference: `doctrine/REPO_DOMAIN_SPEC.md §3`_
+
+| Variable | Destination | Description |
+|----------|-------------|-------------|
+| `outreach_id` | Outreach Spine, CL (WRITE-ONCE) | Primary targeting identifier |
+| `verified_email_pattern` | People Intelligence | Discovered and verified email pattern |
+| `target_status` | Downstream Hubs | Company targeting status (PASS/FAIL/IN_PROGRESS) |
+| `domain_resolution_status` | BIT Engine | Domain validation result |
+| `pattern_confidence` | People Intelligence | Email pattern confidence score |
+
+### Pass Structure
+
+_Constitutional pass mapping per `PRD_CONSTITUTION.md §Pass-to-IMO Mapping`_
+
+| Pass | Type | IMO Layer | Description |
+|------|------|-----------|-------------|
+| Identity Reception | **CAPTURE** | I (Ingress) | Receive sovereign_company_id and company data from CL |
+| Domain Resolution | **COMPUTE** | M (Middle) | Validate domain, discover email pattern (Phases 1-4) |
+| Pattern Verification | **COMPUTE** | M (Middle) | Verify pattern with SMTP and sample emails |
+| Eligibility Gate | **GOVERN** | O (Egress) | Gate output based on verification status |
+
+### Scope Boundary
+
+| Scope | Description |
+|-------|-------------|
+| **IN SCOPE** | Domain resolution, email pattern discovery, pattern verification, company matching, BIT signal aggregation |
+| **OUT OF SCOPE** | Minting sovereign_company_id (CL owns), slot assignment (People owns), DOL data (DOL owns), people state (People owns) |
 
 ---
 

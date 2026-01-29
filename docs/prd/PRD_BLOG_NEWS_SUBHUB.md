@@ -1,11 +1,100 @@
-# PRD: Blog/News Sub-Hub v2.1
+# PRD: Blog/News Sub-Hub v3.0
 
 **Status:** Planned
-**Version:** 2.1 (Hardened per Barton Doctrine)
-**Last Updated:** 2025-12-17
-**Doctrine:** Bicycle Wheel v1.1
-**Barton ID Range:** `04.04.02.04.4XXXX.###`
-**Changes:** Correlation ID enforcement, Failure handling standardization, Signal idempotency, Tooling declarations, Promotion states
+**Version:** 3.0 (Constitutional Compliance)
+**Constitutional Date:** 2026-01-29
+**Last Updated:** 2026-01-29
+**Doctrine:** IMO-Creator Constitutional Doctrine
+**Barton ID Range:** `04.04.05.XX.XXXXX.###`
+
+---
+
+## Conformance
+
+| Field | Value |
+|-------|-------|
+| **Doctrine Version** | IMO-Creator v1.0 |
+| **Domain Spec Reference** | `doctrine/REPO_DOMAIN_SPEC.md` |
+| **CC Layer** | CC-02 |
+| **PRD Constitution** | `templates/doctrine/PRD_CONSTITUTION.md` |
+
+---
+
+## 1. Sovereign Reference (CC-01)
+
+| Field | Value |
+|-------|-------|
+| **Sovereign ID** | CL-01 (Company Lifecycle) |
+| **Sovereign Boundary** | Company identity and lifecycle state |
+
+---
+
+## 2. Hub Identity (CC-02)
+
+| Field | Value |
+|-------|-------|
+| **Hub Name** | Blog Content |
+| **Hub ID** | HUB-BLOG-001 |
+| **Doctrine ID** | 04.04.05 |
+| **Owner** | Barton Outreach Core |
+| **Version** | 3.0 |
+| **Waterfall Order** | 5 |
+| **Classification** | Optional |
+
+---
+
+## 3. Purpose & Transformation Declaration
+
+### Transformation Statement (REQUIRED)
+
+> **"This hub transforms external news content and blog signals (CONSTANTS) into structured business event signals for buyer intent detection (VARIABLES) through CAPTURE (news and blog ingestion), COMPUTE (entity extraction, event detection, company matching), and GOVERN (signal emission with idempotency and confidence filtering)."**
+
+| Field | Value |
+|-------|-------|
+| **Transformation Summary** | External news content → Structured business event signals |
+
+### Constants (Inputs)
+
+_Immutable inputs received from outside this hub. Reference: `doctrine/REPO_DOMAIN_SPEC.md §2`_
+
+| Constant | Source | Description |
+|----------|--------|-------------|
+| `news_content_signals` | External Sources | News articles and press releases |
+| `blog_content` | External Sources | Company blog content |
+| `rss_feeds` | External Sources | RSS feed content |
+| `outreach_id` | Outreach Spine | Operational identifier for FK linkage |
+| `company_domain` | Company Target | Domain for company matching |
+
+### Variables (Outputs)
+
+_Outputs this hub produces. Reference: `doctrine/REPO_DOMAIN_SPEC.md §3`_
+
+| Variable | Destination | Description |
+|----------|-------------|-------------|
+| `funding_event_signal` | BIT Engine | Funding round detection signal |
+| `acquisition_signal` | BIT Engine | M&A activity signal |
+| `leadership_change_signal` | BIT Engine | Leadership change signal |
+| `layoff_signal` | BIT Engine | Workforce reduction signal (negative) |
+| `content_signal_count` | Outreach Blog table | Count of detected signals |
+
+### Pass Structure
+
+_Constitutional pass mapping per `PRD_CONSTITUTION.md §Pass-to-IMO Mapping`_
+
+| Pass | Type | IMO Layer | Description |
+|------|------|-----------|-------------|
+| News Ingestion | **CAPTURE** | I (Ingress) | Ingest news articles and blog content |
+| Entity Extraction | **COMPUTE** | M (Middle) | Extract companies, people, events from content |
+| Event Detection | **COMPUTE** | M (Middle) | Classify events (funding, M&A, leadership) |
+| Company Matching | **COMPUTE** | M (Middle) | Match extracted entities to Company Hub records |
+| Signal Emission | **GOVERN** | O (Egress) | Emit idempotent signals with confidence filtering |
+
+### Scope Boundary
+
+| Scope | Description |
+|-------|-------------|
+| **IN SCOPE** | News ingestion, entity extraction, event detection, company matching, signal emission |
+| **OUT OF SCOPE** | Company identity creation (Company Target owns), BIT scoring (BIT Engine owns), people management (People owns), DOL data (DOL owns) |
 
 ---
 

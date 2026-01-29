@@ -1,13 +1,38 @@
 # DOL Filings Hub Manifest
 # Altitude: 40k (System Infrastructure)
-# Version: 1.1.0
+# Version: 3.0.0
+
+# =============================================================================
+# CONSTITUTIONAL COMPLIANCE (IMO-Creator v1.0)
+# =============================================================================
+constitutional:
+  doctrine_version: "IMO-Creator v1.0"
+  prd_reference: "docs/prd/PRD_DOL_SUBHUB.md"
+  domain_spec: "doctrine/REPO_DOMAIN_SPEC.md"
+  cc_layer: CC-02
+
+  # Pass Structure (Constitutional)
+  passes:
+    - name: CAPTURE
+      imo_layer: I
+      description: "Receive federal DOL data downloads, EIN lookup requests"
+    - name: COMPUTE
+      imo_layer: M
+      description: "Filing parsing, Schedule A extraction, EIN matching, renewal calculation"
+    - name: GOVERN
+      imo_layer: O
+      description: "Emit FORM_5500_FILED, LARGE_PLAN, BROKER_CHANGE signals to BIT Engine"
+
+  # PRD Section References
+  constants_ref: "docs/prd/PRD_DOL_SUBHUB.md §3 Constants"
+  variables_ref: "docs/prd/PRD_DOL_SUBHUB.md §3 Variables"
 
 hub:
   id: HUB-DOL
   name: DOL Filings Hub
   doctrine_id: "04.04.03"
   type: sub-hub
-  version: "1.1.0"
+  version: "3.0.0"
   description: |
     Owns federal Form 5500 filing data, Schedule A insurance data,
     and compliance intelligence. Source of truth for plan renewal

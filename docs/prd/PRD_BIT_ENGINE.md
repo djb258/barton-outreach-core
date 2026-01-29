@@ -1,12 +1,96 @@
-# PRD: BIT Engine v2.1
+# PRD: BIT Engine v3.0
 
-**Version:** 2.1 (Hardened per Barton Doctrine)
+**Version:** 3.0 (Constitutional Compliance)
 **Status:** Active
-**Hardening Date:** 2025-12-19
-**Last Updated:** 2025-12-19
-**Doctrine:** Bicycle Wheel v1.1 / Barton Doctrine
+**Constitutional Date:** 2026-01-29
+**Last Updated:** 2026-01-29
+**Doctrine:** IMO-Creator Constitutional Doctrine
 **Barton ID Range:** `04.04.02.04.7XXXX.###`
-**Changes:** Signal aggregation, threshold scoring, decay model, correlation ID propagation
+
+---
+
+## Conformance
+
+| Field | Value |
+|-------|-------|
+| **Doctrine Version** | IMO-Creator v1.0 |
+| **Domain Spec Reference** | `doctrine/REPO_DOMAIN_SPEC.md` |
+| **CC Layer** | CC-02 |
+| **PRD Constitution** | `templates/doctrine/PRD_CONSTITUTION.md` |
+
+---
+
+## 1. Sovereign Reference (CC-01)
+
+| Field | Value |
+|-------|-------|
+| **Sovereign ID** | CL-01 (Company Lifecycle) |
+| **Sovereign Boundary** | Company identity and lifecycle state |
+
+---
+
+## 2. Hub Identity (CC-02)
+
+| Field | Value |
+|-------|-------|
+| **Hub Name** | BIT Engine (Buyer Intent Tool) |
+| **Hub ID** | HUB-BIT-ENGINE |
+| **Owner** | Barton Outreach Core |
+| **Version** | 3.0 |
+
+---
+
+## 3. Purpose & Transformation Declaration
+
+### Transformation Statement (REQUIRED)
+
+> **"This engine transforms sub-hub signals from People, DOL, Blog, and Talent Flow (CONSTANTS) into aggregated buyer intent scores with tier classifications (VARIABLES) through CAPTURE (signal intake with validation), COMPUTE (weighting, decay calculation, score aggregation), and GOVERN (tier assignment and persistence with deduplication enforcement)."**
+
+| Field | Value |
+|-------|-------|
+| **Transformation Summary** | Sub-hub signals → Aggregated BIT scores with tier classification |
+
+### Constants (Inputs)
+
+_Immutable inputs received from outside this engine. Reference: `doctrine/REPO_DOMAIN_SPEC.md §2`_
+
+| Constant | Source | Description |
+|----------|--------|-------------|
+| `slot_filled_signal` | People Intelligence | Signal when slot is filled |
+| `email_verified_signal` | People Intelligence | Signal when email is verified |
+| `executive_movement_signal` | Talent Flow | Executive hire/departure signals |
+| `form_5500_signal` | DOL Filings | DOL filing detection signal |
+| `broker_change_signal` | DOL Filings | Broker change detection signal |
+| `funding_event_signal` | Blog Content | Funding/news event signals |
+
+### Variables (Outputs)
+
+_Outputs this engine produces. Reference: `doctrine/REPO_DOMAIN_SPEC.md §3`_
+
+| Variable | Destination | Description |
+|----------|-------------|-------------|
+| `bit_score` | Outreach BIT Scores table | Aggregated buyer intent score (0-100) |
+| `bit_tier` | Outreach BIT Scores table | Tier classification (COLD/WARM/HOT/BURNING) |
+| `score_updated_at` | Outreach BIT Scores table | Last score update timestamp |
+| `decayed_weight` | BIT Events table | Decay-adjusted signal weight |
+
+### Pass Structure
+
+_Constitutional pass mapping per `PRD_CONSTITUTION.md §Pass-to-IMO Mapping`_
+
+| Pass | Type | IMO Layer | Description |
+|------|------|-----------|-------------|
+| Signal Intake | **CAPTURE** | I (Ingress) | Receive and validate signals from sub-hubs |
+| Score Calculation | **COMPUTE** | M (Middle) | Apply weights, calculate decay, aggregate scores |
+| Tier Classification | **COMPUTE** | M (Middle) | Classify into COLD/WARM/HOT/BURNING |
+| Score Persistence | **GOVERN** | O (Egress) | Persist scores with deduplication enforcement |
+
+### Scope Boundary
+
+| Scope | Description |
+|-------|-------------|
+| **IN SCOPE** | Signal intake, weighting, score calculation, decay, tier classification, score persistence |
+| **OUT OF SCOPE** | Signal generation (sub-hubs own), company identity (Company Target owns), outreach decisions (Outreach Execution owns), slot assignment (People owns) |
 
 ---
 

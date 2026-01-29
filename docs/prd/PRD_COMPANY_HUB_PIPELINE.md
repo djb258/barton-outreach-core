@@ -1,17 +1,110 @@
-# PRD — Company Hub Pipeline v2.1
+# PRD — Company Hub Pipeline v3.0
 
-## 1. Overview
+## Conformance
 
-- **System Name:** Barton Outreach Core
-- **Hub Name:** Company Hub
-- **Owner:** [ASSIGN: Hub Owner]
-- **Version:** 2.1 (Hardened per Barton Doctrine)
-- **Doctrine ID:** 04.04.02.04.00001.001
-- **Changes:** Correlation ID enforcement, Failure handling standardization, Signal idempotency, Tooling declarations, Promotion states
+| Field | Value |
+|-------|-------|
+| **Doctrine Version** | IMO-Creator v1.0 |
+| **Domain Spec Reference** | `doctrine/REPO_DOMAIN_SPEC.md` |
+| **CC Layer** | CC-02 |
+| **PRD Constitution** | `templates/doctrine/PRD_CONSTITUTION.md` |
 
 ---
 
-## 2. Purpose
+## 1. Sovereign Reference (CC-01)
+
+| Field | Value |
+|-------|-------|
+| **Sovereign ID** | CL-01 (Company Lifecycle) |
+| **Sovereign Boundary** | Company identity and lifecycle state |
+
+---
+
+## 2. Hub Identity (CC-02)
+
+| Field | Value |
+|-------|-------|
+| **Hub Name** | Company Hub Pipeline |
+| **Hub ID** | HUB-COMPANY-PIPELINE |
+| **Owner** | Barton Outreach Core |
+| **Version** | 3.0.0 |
+| **Doctrine ID** | 04.04.02.04.00001.001 |
+
+---
+
+## 3. Purpose & Transformation Declaration
+
+### Transformation Statement (REQUIRED)
+
+> **"This pipeline transforms raw CSV input records and external enrichment sources (CONSTANTS) into company-anchored contact records with verified emails, slots, and lifecycle states (VARIABLES) through CAPTURE (batch intake with correlation ID generation), COMPUTE (company matching, domain resolution, pattern discovery, email generation, slot assignment), and GOVERN (output writing to files and database with full audit trail)."**
+
+| Field | Value |
+|-------|-------|
+| **Transformation Summary** | Raw input records + external sources → Company-anchored contacts with emails and slots |
+
+### Constants (Inputs)
+
+_Immutable inputs received from outside this system. Reference: `doctrine/REPO_DOMAIN_SPEC.md §2`_
+
+| Constant | Source | Description |
+|----------|--------|-------------|
+| `input_csv_records` | Batch intake | Raw people records from CSV files |
+| `company_master_records` | Marketing schema | Existing company master data |
+| `external_email_patterns` | Tier 0/1/2 providers | Pattern discovery from Firecrawl, Hunter.io, etc. |
+| `dns_mx_records` | DNS infrastructure | Domain resolution and validation data |
+| `linkedin_profile_data` | External enrichment | LinkedIn profile information |
+
+### Variables (Outputs)
+
+_Outputs this system produces. Reference: `doctrine/REPO_DOMAIN_SPEC.md §3`_
+
+| Variable | Destination | Description |
+|----------|-------------|-------------|
+| `matched_companies` | company_master | Company-matched records with scores |
+| `resolved_domains` | company_master | Validated domain assignments |
+| `email_patterns` | company_master | Discovered and verified email patterns |
+| `generated_emails` | people_master | Pattern-applied email addresses |
+| `slot_assignments` | company_slot | Executive slot assignments by company |
+| `enrichment_queue` | data_enrichment_log | Items needing additional enrichment |
+| `pipeline_audit_log` | audit_log.json | Complete pipeline event history |
+
+### Pass Structure
+
+_Constitutional pass mapping per `PRD_CONSTITUTION.md §Pass-to-IMO Mapping`_
+
+| Pass | Type | IMO Layer | Description |
+|------|------|-----------|-------------|
+| Batch Intake | **CAPTURE** | I (Ingress) | Receive CSV files, generate correlation_id |
+| Company Matching (P1) | **COMPUTE** | M (Middle) | Match input to company_master |
+| Domain Resolution (P2) | **COMPUTE** | M (Middle) | Resolve and validate domains |
+| Pattern Waterfall (P3) | **COMPUTE** | M (Middle) | Discover email patterns via tiered providers |
+| Pattern Verification (P4) | **COMPUTE** | M (Middle) | Verify discovered patterns |
+| Email Generation (P5) | **COMPUTE** | M (Middle) | Apply patterns to generate emails |
+| Slot Assignment (P6) | **COMPUTE** | M (Middle) | Assign people to company slots |
+| Enrichment Queue (P7) | **COMPUTE** | M (Middle) | Queue items needing enrichment |
+| Output Writer (P8) | **GOVERN** | O (Egress) | Write outputs with audit trail |
+
+### Scope Boundary
+
+| Scope | Description |
+|-------|-------------|
+| **IN SCOPE** | Company matching, domain resolution, pattern discovery/verification, email generation, slot assignment, enrichment queuing, output writing |
+| **OUT OF SCOPE** | BIT scoring decisions (BIT Engine owns), outreach execution (Outreach Node owns), CL identity minting (CL owns) |
+
+---
+
+## 4. Overview
+
+- **System Name:** Barton Outreach Core
+- **Hub Name:** Company Hub
+- **Owner:** Barton Outreach Core
+- **Version:** 3.0.0 (Constitutional Compliance)
+- **Doctrine ID:** 04.04.02.04.00001.001
+- **Changes:** Constitutional sections, Correlation ID enforcement, Failure handling standardization, Signal idempotency, Tooling declarations, Promotion states
+
+---
+
+## 5. Purpose
 
 The Company Hub is the **central identity and signal aggregation core** for the Barton Outreach platform. It owns:
 - Company identity (company_id, domain, email_pattern)

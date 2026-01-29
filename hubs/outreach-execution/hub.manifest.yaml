@@ -1,16 +1,41 @@
 # Outreach Execution Hub Manifest
 # Altitude: 40k (System Infrastructure)
-# Version: 1.2.0
+# Version: 3.0.0
 #
 # DOCTRINE: CL Parent-Child Model
 # This is a CHILD SUB-HUB of Company Lifecycle (CL)
+
+# =============================================================================
+# CONSTITUTIONAL COMPLIANCE (IMO-Creator v1.0)
+# =============================================================================
+constitutional:
+  doctrine_version: "IMO-Creator v1.0"
+  prd_reference: "docs/prd/PRD_OUTREACH_SPOKE.md"
+  domain_spec: "doctrine/REPO_DOMAIN_SPEC.md"
+  cc_layer: CC-02
+
+  # Pass Structure (Constitutional)
+  passes:
+    - name: CAPTURE
+      imo_layer: I
+      description: "Receive BIT-qualified companies, contact lists, campaign requests"
+    - name: COMPUTE
+      imo_layer: M
+      description: "Campaign management, sequence execution, send scheduling, engagement processing"
+    - name: GOVERN
+      imo_layer: O
+      description: "Emit engagement signals, update send logs, route replies"
+
+  # PRD Section References
+  constants_ref: "docs/prd/PRD_OUTREACH_SPOKE.md §3 Constants"
+  variables_ref: "docs/prd/PRD_OUTREACH_SPOKE.md §3 Variables"
 
 hub:
   id: HUB-OUTREACH
   name: Outreach Execution Hub
   doctrine_id: "04.04.04"
   type: sub-hub
-  version: "1.2.0"
+  version: "3.0.0"
   description: |
     Owns campaign state, sequence execution, send logs, and engagement
     tracking. Manages the state machine of outreach:

@@ -1,13 +1,38 @@
 # People Intelligence Hub Manifest
 # Altitude: 40k (System Infrastructure)
-# Version: 1.1.0
+# Version: 3.0.0
+
+# =============================================================================
+# CONSTITUTIONAL COMPLIANCE (IMO-Creator v1.0)
+# =============================================================================
+constitutional:
+  doctrine_version: "IMO-Creator v1.0"
+  prd_reference: "docs/prd/PRD_PEOPLE_SUBHUB.md"
+  domain_spec: "doctrine/REPO_DOMAIN_SPEC.md"
+  cc_layer: CC-02
+
+  # Pass Structure (Constitutional)
+  passes:
+    - name: CAPTURE
+      imo_layer: I
+      description: "Receive slot requirements from Company Target, LinkedIn profiles"
+    - name: COMPUTE
+      imo_layer: M
+      description: "Deduplication, title normalization, slot assignment, email generation/verification"
+    - name: GOVERN
+      imo_layer: O
+      description: "Emit SLOT_FILLED, EMAIL_VERIFIED, MOVEMENT signals to BIT Engine"
+
+  # PRD Section References
+  constants_ref: "docs/prd/PRD_PEOPLE_SUBHUB.md §3 Constants"
+  variables_ref: "docs/prd/PRD_PEOPLE_SUBHUB.md §3 Variables"
 
 hub:
   id: HUB-PEOPLE
   name: People Intelligence Hub
   doctrine_id: "04.04.02"
   type: sub-hub
-  version: "1.1.0"
+  version: "3.0.0"
   description: |
     Owns human identity, employment state, and slot ASSIGNMENTS.
     Tracks the human lifecycle independently of companies.

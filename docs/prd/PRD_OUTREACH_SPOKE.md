@@ -1,13 +1,101 @@
-# PRD: Outreach Spoke v3.0
+# PRD: Outreach Execution Hub v4.0
 
-**Version:** 3.0 (CL Authority Registry + Outreach Operational Spine)
+**Version:** 4.0 (Constitutional Compliance)
 **Status:** Active
-**Hardening Date:** 2025-12-19
-**Last Updated:** 2026-01-22
-**Doctrine:** CL Authority Registry + Outreach Operational Spine
+**Constitutional Date:** 2026-01-29
+**Last Updated:** 2026-01-29
+**Doctrine:** IMO-Creator Constitutional Doctrine
 **ADR:** ADR-011_CL_Authority_Registry_Outreach_Spine.md
-**Barton ID Range:** `04.04.02.04.6XXXX.###`
-**Changes:** CL registry clarification, outreach_id minting pattern, calendar handoff
+**Barton ID Range:** `04.04.04.XX.XXXXX.###`
+
+---
+
+## Conformance
+
+| Field | Value |
+|-------|-------|
+| **Doctrine Version** | IMO-Creator v1.0 |
+| **Domain Spec Reference** | `doctrine/REPO_DOMAIN_SPEC.md` |
+| **CC Layer** | CC-02 |
+| **PRD Constitution** | `templates/doctrine/PRD_CONSTITUTION.md` |
+
+---
+
+## 1. Sovereign Reference (CC-01)
+
+| Field | Value |
+|-------|-------|
+| **Sovereign ID** | CL-01 (Company Lifecycle) |
+| **Sovereign Boundary** | Company identity and lifecycle state |
+
+---
+
+## 2. Hub Identity (CC-02)
+
+| Field | Value |
+|-------|-------|
+| **Hub Name** | Outreach Execution |
+| **Hub ID** | HUB-OUTREACH |
+| **Doctrine ID** | 04.04.04 |
+| **Owner** | Barton Outreach Core |
+| **Version** | 4.0 |
+| **Waterfall Order** | 6 |
+| **Classification** | Optional |
+
+---
+
+## 3. Purpose & Transformation Declaration
+
+### Transformation Statement (REQUIRED)
+
+> **"This hub transforms BIT-scored companies with filled slots (CONSTANTS) into outreach-ready campaign assignments with primary contact selection (VARIABLES) through CAPTURE (candidate intake with BIT threshold), COMPUTE (contact selection, campaign matching, cooling-off validation), and GOVERN (outreach log persistence and handoff generation)."**
+
+| Field | Value |
+|-------|-------|
+| **Transformation Summary** | BIT-scored companies → Outreach-ready campaign assignments |
+
+### Constants (Inputs)
+
+_Immutable inputs received from outside this hub. Reference: `doctrine/REPO_DOMAIN_SPEC.md §2`_
+
+| Constant | Source | Description |
+|----------|--------|-------------|
+| `outreach_id` | Outreach Spine | Operational identifier |
+| `bit_score` | BIT Engine | Buyer intent score (threshold >= 50) |
+| `slot_assignments` | People Intelligence | Filled slots (HR, CEO, CFO) |
+| `verified_email_pattern` | Company Target | Verified email pattern |
+| `company_domain` | Company Target | Validated domain |
+
+### Variables (Outputs)
+
+_Outputs this hub produces. Reference: `doctrine/REPO_DOMAIN_SPEC.md §3`_
+
+| Variable | Destination | Description |
+|----------|-------------|-------------|
+| `campaign_assignment` | Outreach tables | Campaign and sequence assignment |
+| `primary_contact` | Outreach tables | Selected primary contact |
+| `outreach_log_record` | Outreach tables | Outreach promotion record |
+| `calendar_link` | Handoff | Signed calendar booking link |
+| `cooling_off_status` | Outreach tables | Cooling-off period status |
+
+### Pass Structure
+
+_Constitutional pass mapping per `PRD_CONSTITUTION.md §Pass-to-IMO Mapping`_
+
+| Pass | Type | IMO Layer | Description |
+|------|------|-----------|-------------|
+| Candidate Intake | **CAPTURE** | I (Ingress) | Receive BIT-scored companies above threshold |
+| Contact Selection | **COMPUTE** | M (Middle) | Select primary contact (HR > CEO > CFO) |
+| Campaign Matching | **COMPUTE** | M (Middle) | Match company to campaign by industry/size |
+| Cooling-Off Validation | **COMPUTE** | M (Middle) | Validate 30-day cooling-off period |
+| Outreach Persistence | **GOVERN** | O (Egress) | Persist outreach log and generate handoff |
+
+### Scope Boundary
+
+| Scope | Description |
+|-------|-------------|
+| **IN SCOPE** | Candidate evaluation, contact selection, campaign assignment, cooling-off enforcement, outreach log persistence, calendar handoff |
+| **OUT OF SCOPE** | BIT scoring (BIT Engine owns), slot assignment (People owns), email generation (People owns), actual email sending (external system) |
 
 ---
 

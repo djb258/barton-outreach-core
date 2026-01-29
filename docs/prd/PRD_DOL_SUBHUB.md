@@ -1,11 +1,11 @@
-# PRD: DOL Sub-Hub v3.0
+# PRD: DOL Sub-Hub v4.0
 
-**Version:** 3.0 (Data Import Complete + AI-Ready Metadata)
+**Version:** 4.0 (Constitutional Compliance)
 **Status:** Active
 **CC Layer:** CC-02
-**Hardening Date:** 2026-01-15
-**Last Updated:** 2026-01-15
-**Doctrine:** CL Parent-Child Doctrine v1.0 / IMO-Creator Format
+**Constitutional Date:** 2026-01-29
+**Last Updated:** 2026-01-29
+**Doctrine:** IMO-Creator Constitutional Doctrine
 **Barton ID Range:** `04.04.03.XX.XXXXX.###`
 
 ---
@@ -14,9 +14,88 @@
 
 | Field | Value |
 |-------|-------|
-| **Doctrine Version** | 1.1.0 |
+| **Doctrine Version** | IMO-Creator v1.0 |
+| **Domain Spec Reference** | `doctrine/REPO_DOMAIN_SPEC.md` |
 | **CC Layer** | CC-02 |
-| **CTB Version** | 1.0.0 |
+| **PRD Constitution** | `templates/doctrine/PRD_CONSTITUTION.md` |
+
+---
+
+## 1. Sovereign Reference (CC-01)
+
+| Field | Value |
+|-------|-------|
+| **Sovereign ID** | CL-01 (Company Lifecycle) |
+| **Sovereign Boundary** | Company identity and lifecycle state |
+
+---
+
+## 2. Hub Identity (CC-02)
+
+| Field | Value |
+|-------|-------|
+| **Hub Name** | DOL Filings |
+| **Hub ID** | HUB-DOL |
+| **Doctrine ID** | 04.04.03 |
+| **Owner** | Barton Outreach Core |
+| **Version** | 4.0 |
+| **Waterfall Order** | 2 |
+
+---
+
+## 3. Purpose & Transformation Declaration
+
+### Transformation Statement (REQUIRED)
+
+> **"This hub transforms federal DOL filing data (CONSTANTS) into EIN-resolved company linkages and compliance signals (VARIABLES) through CAPTURE (DOL EFAST2 data ingestion), COMPUTE (EIN matching, broker change detection, renewal tracking), and GOVERN (signal emission with idempotency enforcement)."**
+
+| Field | Value |
+|-------|-------|
+| **Transformation Summary** | Federal DOL filings → EIN linkages + compliance signals |
+
+### Constants (Inputs)
+
+_Immutable inputs received from outside this hub. Reference: `doctrine/REPO_DOMAIN_SPEC.md §2`_
+
+| Constant | Source | Description |
+|----------|--------|-------------|
+| `dol_form_5500_filings` | Federal DOL EFAST2 | Annual Form 5500 filing data (230K+ records) |
+| `dol_form_5500_sf_filings` | Federal DOL EFAST2 | Annual Form 5500-SF small plan data (760K+ records) |
+| `dol_schedule_a_data` | Federal DOL EFAST2 | Insurance broker/carrier data (337K+ records) |
+| `outreach_id` | Outreach Spine | Operational identifier for FK linkage |
+| `company_domain` | Company Target | Verified domain for EIN matching |
+
+### Variables (Outputs)
+
+_Outputs this hub produces. Reference: `doctrine/REPO_DOMAIN_SPEC.md §3`_
+
+| Variable | Destination | Description |
+|----------|-------------|-------------|
+| `ein_resolution` | Outreach DOL table | EIN-to-company linkage |
+| `filing_match_status` | Outreach DOL table | Form 5500 match status |
+| `broker_change_signal` | BIT Engine | Broker change detection signal |
+| `renewal_signal` | BIT Engine | Plan renewal timing signal |
+| `large_plan_signal` | BIT Engine | Large plan (500+ participants) signal |
+| `dol_compliance_facts` | Downstream consumers | Read-only DOL facts |
+
+### Pass Structure
+
+_Constitutional pass mapping per `PRD_CONSTITUTION.md §Pass-to-IMO Mapping`_
+
+| Pass | Type | IMO Layer | Description |
+|------|------|-----------|-------------|
+| DOL Data Ingestion | **CAPTURE** | I (Ingress) | Ingest Form 5500, 5500-SF, Schedule A from EFAST2 |
+| EIN Matching | **COMPUTE** | M (Middle) | Match DOL EINs to company records |
+| Broker Change Detection | **COMPUTE** | M (Middle) | Detect broker changes year-over-year |
+| Renewal Tracking | **COMPUTE** | M (Middle) | Track plan renewal dates |
+| Signal Emission | **GOVERN** | O (Egress) | Emit idempotent signals to BIT Engine |
+
+### Scope Boundary
+
+| Scope | Description |
+|-------|-------------|
+| **IN SCOPE** | DOL data ingestion, EIN matching, broker change detection, renewal tracking, signal emission, column metadata |
+| **OUT OF SCOPE** | Company identity creation (Company Target owns), email pattern discovery (Company Target owns), BIT scoring (BIT Engine owns), people management (People owns) |
 
 ---
 

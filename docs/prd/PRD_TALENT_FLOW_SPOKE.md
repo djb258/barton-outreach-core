@@ -1,16 +1,102 @@
-# PRD: Talent Flow Spoke v2.1
+# PRD: Talent Flow Hub v3.0
 
-**Version:** 2.1 (Hardened per Barton Doctrine)
+**Version:** 3.0 (Constitutional Compliance)
 **Status:** Active
-**Hardening Date:** 2025-12-19
-**Last Updated:** 2025-12-19
-**Doctrine:** Bicycle Wheel v1.1 / Barton Doctrine
-**Barton ID Range:** `04.04.02.04.5XXXX.###`
-**Changes:** Movement detection, bi-directional company signals, correlation ID propagation
+**Constitutional Date:** 2026-01-29
+**Last Updated:** 2026-01-29
+**Doctrine:** IMO-Creator Constitutional Doctrine
+**Barton ID Range:** `04.04.06.XX.XXXXX.###`
 
 ---
 
-## Spoke Ownership Statement
+## Conformance
+
+| Field | Value |
+|-------|-------|
+| **Doctrine Version** | IMO-Creator v1.0 |
+| **Domain Spec Reference** | `doctrine/REPO_DOMAIN_SPEC.md` |
+| **CC Layer** | CC-02 |
+| **PRD Constitution** | `templates/doctrine/PRD_CONSTITUTION.md` |
+
+---
+
+## 1. Sovereign Reference (CC-01)
+
+| Field | Value |
+|-------|-------|
+| **Sovereign ID** | CL-01 (Company Lifecycle) |
+| **Sovereign Boundary** | Company identity and lifecycle state |
+
+---
+
+## 2. Hub Identity (CC-02)
+
+| Field | Value |
+|-------|-------|
+| **Hub Name** | Talent Flow |
+| **Hub ID** | talent-flow |
+| **Doctrine ID** | 04.04.06 |
+| **Owner** | Barton Outreach Core |
+| **Version** | 3.0 |
+| **Waterfall Order** | 4 |
+| **Classification** | Required |
+
+---
+
+## 3. Purpose & Transformation Declaration
+
+### Transformation Statement (REQUIRED)
+
+> **"This hub transforms executive movement data from LinkedIn and news sources (CONSTANTS) into classified movement signals with bi-directional company linkage (VARIABLES) through CAPTURE (movement data ingestion), COMPUTE (company resolution, movement classification), and GOVERN (bi-directional signal emission with idempotency enforcement)."**
+
+| Field | Value |
+|-------|-------|
+| **Transformation Summary** | Executive movement data → Classified movement signals with bi-directional company linkage |
+
+### Constants (Inputs)
+
+_Immutable inputs received from outside this hub. Reference: `doctrine/REPO_DOMAIN_SPEC.md §2`_
+
+| Constant | Source | Description |
+|----------|--------|-------------|
+| `linkedin_profile_data` | External Enrichment | LinkedIn executive movement data |
+| `news_movement_data` | External Sources | News-based executive changes |
+| `outreach_id` | Outreach Spine | Operational identifier for FK linkage |
+| `company_domain` | Company Target | Domain for company matching |
+
+### Variables (Outputs)
+
+_Outputs this hub produces. Reference: `doctrine/REPO_DOMAIN_SPEC.md §3`_
+
+| Variable | Destination | Description |
+|----------|-------------|-------------|
+| `executive_hire_signal` | BIT Engine | New executive hire signal |
+| `executive_departure_signal` | BIT Engine | Executive departure signal |
+| `lateral_move_signal` | BIT Engine | Same-level company change signal |
+| `promotion_signal` | BIT Engine | Internal promotion signal |
+| `movement_classification` | Talent Flow tables | Classified movement type |
+
+### Pass Structure
+
+_Constitutional pass mapping per `PRD_CONSTITUTION.md §Pass-to-IMO Mapping`_
+
+| Pass | Type | IMO Layer | Description |
+|------|------|-----------|-------------|
+| Movement Ingestion | **CAPTURE** | I (Ingress) | Ingest executive movement data |
+| Company Resolution | **COMPUTE** | M (Middle) | Match from/to companies to Company Hub records |
+| Movement Classification | **COMPUTE** | M (Middle) | Classify as hire, departure, lateral, promotion |
+| Bi-Directional Signal Emission | **GOVERN** | O (Egress) | Emit signals to BOTH from and to companies |
+
+### Scope Boundary
+
+| Scope | Description |
+|-------|-------------|
+| **IN SCOPE** | Movement detection, company resolution, movement classification, bi-directional signal emission |
+| **OUT OF SCOPE** | Company identity creation (Company Target owns), BIT scoring (BIT Engine owns), slot assignment (People owns), email generation (People owns) |
+
+---
+
+## Hub Ownership Statement
 
 ```
 ╔═══════════════════════════════════════════════════════════════════════════════╗
