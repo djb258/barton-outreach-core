@@ -15,7 +15,7 @@
 
 ## Overview
 
-This protocol defines the mandatory structure for all repos operating under the Barton Doctrine. Every repo is a hub. Every hub conforms to CTB. No exceptions.
+This protocol defines the mandatory structure for all repos operating under the CTB Doctrine. Every repo is a hub. Every hub conforms to CTB. No exceptions.
 
 ---
 
@@ -105,7 +105,7 @@ doctrine_version: "1.1.0"
 ctb_version: "1.0.0"
 
 # CC-01: Sovereign reference (declared externally)
-sovereign_ref: "SOV-BARTON"
+sovereign_ref: "[SOV_ID]"
 
 # CC-02: Hub declaration
 hub:
@@ -250,14 +250,14 @@ For multi-repo systems:
 ```
 IMO-Creator (Sovereign)
     │
-    ├── Hub: barton-outreach
-    │   ├── Spoke-I: DOL data ingress
-    │   ├── Spoke-I: Census API ingress
-    │   ├── Spoke-O: Neon write egress
-    │   └── Spoke-O: Email send egress
+    ├── Hub: example-hub-alpha
+    │   ├── Spoke-I: External API ingress
+    │   ├── Spoke-I: File upload ingress
+    │   ├── Spoke-O: Database write egress
+    │   └── Spoke-O: Notification egress
     │
-    ├── Hub: storage-facility-build
-    │   ├── Spoke-I: Market data ingress
+    ├── Hub: example-hub-beta
+    │   ├── Spoke-I: Webhook ingress
     │   └── Spoke-O: Report egress
     │
     └── Hub: [next project]
@@ -278,7 +278,7 @@ Every repo MUST contain a `DOCTRINE.md` with ONLY this content:
 ```markdown
 # Doctrine Reference
 
-This repo conforms to Barton Doctrine v1.1.0.
+This repo conforms to CTB Doctrine v1.1.0.
 
 **Source of truth:**
 imo-creator/templates/doctrine/
@@ -301,6 +301,48 @@ Do not duplicate. Reference and obey.
 | CC Layers | CANONICAL_ARCHITECTURE_DOCTRINE.md |
 | Descent Gates | ALTITUDE_DESCENT_MODEL.md |
 | Hub/Spoke Geometry | HUB_SPOKE_ARCHITECTURE.md |
+
+---
+
+## 9. Remediation Order (CONSTITUTIONAL LAW)
+
+When an audit identifies violations, remediation MUST follow this exact order.
+**Audits may NOT recommend fixes that violate this sequence.**
+
+### Canonical Remediation Sequence
+
+| Order | Phase | Description | Gate |
+|-------|-------|-------------|------|
+| 1 | **Constitutional Validity** | Verify CONST → VAR transformation is declared | Must pass before Phase 2 |
+| 2 | **PRD Alignment** | PRD exists and declares constants, variables, passes | Must pass before Phase 3 |
+| 3 | **Hub Manifest Alignment** | REGISTRY.yaml matches PRD declarations | Must pass before Phase 4 |
+| 4 | **ERD Validation** | All tables pass Pressure Test and Upstream Flow Test | Must pass before Phase 5 |
+| 5 | **Process Declaration** | Process references PRD/ERD, introduces no new CONST/VAR | Must pass before Phase 6 |
+| 6 | **Audit Attestation** | CONSTITUTIONAL_AUDIT_ATTESTATION.md produced | Compliance proven |
+
+### Remediation Rules
+
+| Rule | Enforcement |
+|------|-------------|
+| No skipping phases | MANDATORY |
+| No parallel remediation across phases | MANDATORY |
+| Each phase must pass before next begins | MANDATORY |
+| Attestation required at completion | MANDATORY |
+
+### Why This Order Matters
+
+```
+INVALID: "Fix ERD first, then write PRD"
+         → ERD cannot be validated without PRD constants/variables
+
+INVALID: "Add process, then fix hub manifest"
+         → Process references manifest; manifest must be correct first
+
+VALID:   "Constitutional → PRD → Manifest → ERD → Process → Attest"
+         → Each phase builds on proven foundation
+```
+
+**Constitutional rule**: Remediation order is not a suggestion. It is law. Violations of remediation order are doctrine violations.
 
 ---
 

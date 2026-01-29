@@ -3,12 +3,19 @@
 This checklist must be completed before any hub can ship.
 No exceptions. No partial compliance.
 
+**This is NOT a one-time audit.** Compliance is continuous — revalidate after every change.
+
+**This checklist MUST be referenced by an attestation document.**
+See: `templates/audit/CONSTITUTIONAL_AUDIT_ATTESTATION.md`
+
 ## Conformance
 
 | Field | Value |
 |-------|-------|
 | **Doctrine Version** | |
 | **CC Layer** | CC-02 |
+| **Last Validated** | |
+| **Validated By** | |
 
 ---
 
@@ -22,7 +29,150 @@ No exceptions. No partial compliance.
 
 ---
 
-## Canonical Chain (CC) Compliance
+# PART A — CONSTITUTIONAL VALIDITY
+
+These sections verify the hub satisfies the Transformation Law.
+Failure in Part A invalidates the hub regardless of Part B status.
+
+**Section Anchors**: §A.1 through §A.6
+
+---
+
+## Constitutional Validity (CONST → VAR) {#section-a1}
+<!-- §A.1 -->
+
+| Priority | Check |
+|----------|-------|
+| CRITICAL | [ ] Hub purpose can be stated as a CONST → VAR transformation |
+| CRITICAL | [ ] All constants are explicitly declared and bounded |
+| CRITICAL | [ ] All variables are explicitly declared and necessary |
+| CRITICAL | [ ] Hub exists because of value transformation, not convenience |
+
+**Validity Test**: Complete this statement:
+
+> "This hub transforms _________________ (constants) into _________________ (variables)."
+
+If this statement cannot be completed, the hub is invalid.
+
+---
+
+## PRD Compliance (Behavioral Proof) {#section-a2}
+<!-- §A.2 -->
+
+| Priority | Check |
+|----------|-------|
+| CRITICAL | [ ] PRD exists for this hub |
+| CRITICAL | [ ] PRD explains WHY the hub exists |
+| CRITICAL | [ ] PRD explains HOW transformation occurs |
+| CRITICAL | [ ] PRD declares constants (inputs) |
+| CRITICAL | [ ] PRD declares variables (outputs) |
+| CRITICAL | [ ] PRD declares pass structure (CAPTURE / COMPUTE / GOVERN) |
+| HIGH | [ ] PRD explicitly states what is IN scope |
+| HIGH | [ ] PRD explicitly states what is OUT of scope |
+
+**PRD must remain accurate as behavior changes.**
+
+| Field | Value |
+|-------|-------|
+| PRD Location | |
+| PRD Version | |
+
+---
+
+## ERD Compliance (Structural Proof) {#section-a3}
+<!-- §A.3 -->
+
+| Priority | Check |
+|----------|-------|
+| CRITICAL | [ ] ERD exists for this hub |
+| CRITICAL | [ ] All tables represent declared variables |
+| CRITICAL | [ ] All tables depend on declared constants |
+| CRITICAL | [ ] Each table has a producing pass (CAPTURE / COMPUTE / GOVERN) |
+| CRITICAL | [ ] Lineage to constants is enforced |
+| CRITICAL | [ ] No orphan tables (not referenced in PRD) |
+| HIGH | [ ] No speculative tables (for future use) |
+| HIGH | [ ] No convenience tables (not serving transformation) |
+
+| Field | Value |
+|-------|-------|
+| ERD Location | |
+| ERD Version | |
+
+---
+
+## ERD Pressure Test (Static) {#section-a4}
+<!-- §A.4 -->
+
+For **each table**, all four questions must pass:
+
+| # | Question | Failure Condition |
+|---|----------|-------------------|
+| Q1 | What constant(s) does this table depend on? | No constant = ILLEGAL |
+| Q2 | What variable does this table represent? | No variable = ILLEGAL |
+| Q3 | Which pass produced this table? | No pass = ILLEGAL |
+| Q4 | How is lineage enforced? | No mechanism = ILLEGAL |
+
+| Priority | Check |
+|----------|-------|
+| CRITICAL | [ ] All tables pass Q1 (constant dependency explicit) |
+| CRITICAL | [ ] All tables pass Q2 (variable output explicit) |
+| CRITICAL | [ ] All tables pass Q3 (pass ownership declared) |
+| CRITICAL | [ ] All tables pass Q4 (lineage mechanism defined) |
+
+**Partial pass = FAIL. Failure on any table invalidates the hub.**
+
+---
+
+## ERD Upstream Flow Test (Simulated) {#section-a5}
+<!-- §A.5 -->
+
+| Priority | Check |
+|----------|-------|
+| CRITICAL | [ ] Flow testing begins at declared constants (never at tables) |
+| CRITICAL | [ ] Declared passes traversed sequentially (CAPTURE → COMPUTE → GOVERN) |
+| CRITICAL | [ ] Data can reach all declared variables |
+| CRITICAL | [ ] Lineage survives end-to-end |
+| CRITICAL | [ ] No unreachable tables exist |
+
+**Flow tests must be re-evaluated after any ERD change.**
+
+---
+
+## Process Compliance (Execution Declaration) {#section-a6}
+<!-- §A.6 -->
+
+| Priority | Check |
+|----------|-------|
+| CRITICAL | [ ] Process declaration exists |
+| CRITICAL | [ ] Process references governing PRD |
+| CRITICAL | [ ] Process references governing ERD |
+| CRITICAL | [ ] Process introduces no new constants |
+| CRITICAL | [ ] Process introduces no new variables |
+| CRITICAL | [ ] Pass sequence matches PRD and ERD |
+| HIGH | [ ] Process is tool-agnostic (remains valid if tools change) |
+
+| Field | Value |
+|-------|-------|
+| Process Location | |
+| Governing PRD | |
+| Governing ERD | |
+
+---
+
+# PART B — OPERATIONAL COMPLIANCE
+
+These sections verify the hub is ready to ship.
+Part B assumes Part A passes.
+
+**Part B governs ship-readiness, not existence legitimacy.**
+Items marked CRITICAL define minimum operational safety, not architectural purity.
+
+**Section Anchors**: §B.1 through §B.11
+
+---
+
+## Canonical Chain (CC) Compliance {#section-b1}
+<!-- §B.1 -->
 
 | Priority | Check |
 |----------|-------|
@@ -35,7 +185,8 @@ No exceptions. No partial compliance.
 
 ---
 
-## Hub Identity (CC-02)
+## Hub Identity (CC-02) {#section-b2}
+<!-- §B.2 -->
 
 | Priority | Check |
 |----------|-------|
@@ -46,7 +197,8 @@ No exceptions. No partial compliance.
 
 ---
 
-## CTB Placement
+## CTB Placement {#section-b3}
+<!-- §B.3 -->
 
 | Priority | Check |
 |----------|-------|
@@ -57,7 +209,8 @@ No exceptions. No partial compliance.
 
 ---
 
-## IMO Structure
+## IMO Structure {#section-b4}
+<!-- §B.4 -->
 
 ### Ingress (I Layer)
 
@@ -87,7 +240,8 @@ No exceptions. No partial compliance.
 
 ---
 
-## Spokes
+## Spokes {#section-b5}
+<!-- §B.5 -->
 
 | Priority | Check |
 |----------|-------|
@@ -99,18 +253,20 @@ No exceptions. No partial compliance.
 
 ---
 
-## Tools
+## Tools {#section-b6}
+<!-- §B.6 -->
 
 | Priority | Check |
 |----------|-------|
-| CRITICAL | [ ] All tools scoped inside this hub |
+| CRITICAL | [ ] All tools scoped inside this hub or accessed via approved platform boundary |
 | CRITICAL | [ ] No tools exposed to spokes |
 | HIGH | [ ] All tools have Doctrine ID |
 | HIGH | [ ] All tools have ADR reference |
 
 ---
 
-## Cross-Hub Isolation
+## Cross-Hub Isolation {#section-b7}
+<!-- §B.7 -->
 
 | Priority | Check |
 |----------|-------|
@@ -120,7 +276,8 @@ No exceptions. No partial compliance.
 
 ---
 
-## Guard Rails
+## Guard Rails {#section-b8}
+<!-- §B.8 -->
 
 | Priority | Check |
 |----------|-------|
@@ -131,7 +288,8 @@ No exceptions. No partial compliance.
 
 ---
 
-## Kill Switch
+## Kill Switch {#section-b9}
+<!-- §B.9 -->
 
 | Priority | Check |
 |----------|-------|
@@ -142,7 +300,8 @@ No exceptions. No partial compliance.
 
 ---
 
-## Rollback
+## Rollback {#section-b10}
+<!-- §B.10 -->
 
 | Priority | Check |
 |----------|-------|
@@ -151,7 +310,8 @@ No exceptions. No partial compliance.
 
 ---
 
-## Observability
+## Observability {#section-b11}
+<!-- §B.11 -->
 
 | Priority | Check |
 |----------|-------|
@@ -204,9 +364,32 @@ No exceptions. No partial compliance.
 
 ---
 
+## Continuous Validity
+
+| Priority | Check |
+|----------|-------|
+| CRITICAL | [ ] This checklist has been revalidated after the most recent change |
+| CRITICAL | [ ] All Part A sections pass (constitutional validity) |
+| CRITICAL | [ ] All Part B CRITICAL items pass (operational compliance) |
+| HIGH | [ ] Drift requires redesign, not patching |
+
+**Compliance is continuous, not event-based.**
+
+---
+
 ## Compliance Summary
 
 **Before shipping, count your checks:**
+
+| Part | Section | CRITICAL Items | Your Count |
+|------|---------|----------------|------------|
+| A | Constitutional Validity | 4 | ___ / 4 |
+| A | PRD Compliance | 8 | ___ / 8 |
+| A | ERD Compliance | 6 | ___ / 6 |
+| A | Pressure Test | 4 | ___ / 4 |
+| A | Upstream Flow Test | 5 | ___ / 5 |
+| A | Process Compliance | 6 | ___ / 6 |
+| B | All Operational Sections | varies | ___ / ___ |
 
 | Priority | Must Have | Your Count |
 |----------|-----------|------------|
@@ -218,9 +401,21 @@ No exceptions. No partial compliance.
 
 ---
 
+## Final Declaration
+
+> **This hub remains valid only while all checklist items pass.**
+> **Any change that causes failure invalidates the hub until corrected.**
+
+---
+
 ## Traceability Reference
 
 | Artifact | Reference |
 |----------|-----------|
+| Constitution | CONSTITUTION.md |
+| PRD Constitution | templates/doctrine/PRD_CONSTITUTION.md |
+| ERD Constitution | templates/doctrine/ERD_CONSTITUTION.md |
+| Process Doctrine | templates/doctrine/PROCESS_DOCTRINE.md |
+| ERD Doctrine | templates/doctrine/ERD_DOCTRINE.md |
 | Canonical Doctrine | CANONICAL_ARCHITECTURE_DOCTRINE.md |
 | Hub/Spoke Doctrine | CANONICAL_ARCHITECTURE_DOCTRINE.md §3 |
