@@ -1,0 +1,731 @@
+{
+  "meta": {
+    "authority": "derived",
+    "projection_type": "system_flow",
+    "doctrine_authority": "IMO-Creator",
+    "generated_by": "Claude Code",
+    "generated_at": "2026-01-29T00:00:00Z",
+    "regenerable": true,
+    "source_of_truth": [
+      "PRD",
+      "ERD",
+      "PROCESS"
+    ],
+    "repo": "barton-outreach-core",
+    "doctrine_version": "1.5.0"
+  },
+  "nodes": [
+    {
+      "id": "hub.outreach_core",
+      "type": "hub",
+      "name": "Barton Outreach Core",
+      "cc_layer": "CC-02",
+      "imo_layer": null,
+      "constants": [
+        "sovereign_company_id",
+        "company_name",
+        "company_domain",
+        "identity_status"
+      ],
+      "variables": [
+        "outreach_id",
+        "verified_email_pattern",
+        "target_status",
+        "bit_score",
+        "marketing_eligibility"
+      ],
+      "derived_from": {
+        "registry": "REGISTRY.yaml",
+        "prd": "docs/prd/PRD_COMPANY_HUB.md"
+      }
+    },
+    {
+      "id": "hub.company_target",
+      "type": "hub",
+      "name": "Company Target",
+      "cc_layer": "CC-03",
+      "imo_layer": null,
+      "constants": [
+        "sovereign_company_id",
+        "company_domain"
+      ],
+      "variables": [
+        "verified_email_pattern",
+        "target_status",
+        "pattern_confidence"
+      ],
+      "derived_from": {
+        "registry": "REGISTRY.yaml",
+        "prd": "docs/prd/PRD_COMPANY_HUB.md"
+      }
+    },
+    {
+      "id": "hub.people_intelligence",
+      "type": "hub",
+      "name": "People Intelligence",
+      "cc_layer": "CC-03",
+      "imo_layer": null,
+      "constants": [
+        "outreach_id",
+        "slot_requirements",
+        "email_pattern"
+      ],
+      "variables": [
+        "slot_assignment",
+        "generated_email",
+        "email_verified"
+      ],
+      "derived_from": {
+        "registry": "REGISTRY.yaml",
+        "prd": "docs/prd/PRD_PEOPLE_SUBHUB.md"
+      }
+    },
+    {
+      "id": "hub.dol_filings",
+      "type": "hub",
+      "name": "DOL Filings",
+      "cc_layer": "CC-03",
+      "imo_layer": null,
+      "constants": [
+        "outreach_id",
+        "form_5500_data"
+      ],
+      "variables": [
+        "ein_match_result",
+        "filing_signal"
+      ],
+      "derived_from": {
+        "registry": "REGISTRY.yaml",
+        "prd": "docs/prd/PRD_DOL_SUBHUB.md"
+      }
+    },
+    {
+      "id": "hub.outreach_execution",
+      "type": "hub",
+      "name": "Outreach Execution",
+      "cc_layer": "CC-03",
+      "imo_layer": null,
+      "constants": [
+        "outreach_id",
+        "bit_decision"
+      ],
+      "variables": [
+        "campaign_state",
+        "sequence_state",
+        "send_log"
+      ],
+      "derived_from": {
+        "registry": "REGISTRY.yaml",
+        "prd": "docs/prd/PRD_OUTREACH_SPOKE.md"
+      }
+    },
+    {
+      "id": "table.cl.company_identity",
+      "type": "table",
+      "schema": "cl",
+      "name": "company_identity",
+      "pass_owner": "CAPTURE",
+      "imo_layer": "I",
+      "derived_from": {
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "id": "table.outreach.outreach",
+      "type": "table",
+      "schema": "outreach",
+      "name": "outreach",
+      "pass_owner": "CAPTURE",
+      "imo_layer": "I",
+      "derived_from": {
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "id": "table.outreach.company_target",
+      "type": "table",
+      "schema": "outreach",
+      "name": "company_target",
+      "pass_owner": "COMPUTE",
+      "imo_layer": "M",
+      "derived_from": {
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "id": "table.outreach.dol",
+      "type": "table",
+      "schema": "outreach",
+      "name": "dol",
+      "pass_owner": "COMPUTE",
+      "imo_layer": "M",
+      "derived_from": {
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "id": "table.outreach.people",
+      "type": "table",
+      "schema": "outreach",
+      "name": "people",
+      "pass_owner": "COMPUTE",
+      "imo_layer": "M",
+      "derived_from": {
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "id": "table.outreach.blog",
+      "type": "table",
+      "schema": "outreach",
+      "name": "blog",
+      "pass_owner": "COMPUTE",
+      "imo_layer": "M",
+      "derived_from": {
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "id": "table.outreach.bit_scores",
+      "type": "table",
+      "schema": "outreach",
+      "name": "bit_scores",
+      "pass_owner": "COMPUTE",
+      "imo_layer": "M",
+      "derived_from": {
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "id": "table.outreach.bit_signals",
+      "type": "table",
+      "schema": "outreach",
+      "name": "bit_signals",
+      "pass_owner": "CAPTURE",
+      "imo_layer": "I",
+      "derived_from": {
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "id": "table.outreach.manual_overrides",
+      "type": "table",
+      "schema": "outreach",
+      "name": "manual_overrides",
+      "pass_owner": "GOVERN",
+      "imo_layer": "O",
+      "derived_from": {
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "id": "table.outreach.override_audit_log",
+      "type": "table",
+      "schema": "outreach",
+      "name": "override_audit_log",
+      "pass_owner": "GOVERN",
+      "imo_layer": "O",
+      "derived_from": {
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "id": "table.outreach.campaigns",
+      "type": "table",
+      "schema": "outreach",
+      "name": "campaigns",
+      "pass_owner": "COMPUTE",
+      "imo_layer": "M",
+      "derived_from": {
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "id": "table.outreach.sequences",
+      "type": "table",
+      "schema": "outreach",
+      "name": "sequences",
+      "pass_owner": "COMPUTE",
+      "imo_layer": "M",
+      "derived_from": {
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "id": "table.outreach.send_log",
+      "type": "table",
+      "schema": "outreach",
+      "name": "send_log",
+      "pass_owner": "GOVERN",
+      "imo_layer": "O",
+      "derived_from": {
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "id": "table.people.people_master",
+      "type": "table",
+      "schema": "people",
+      "name": "people_master",
+      "pass_owner": "CAPTURE",
+      "imo_layer": "I",
+      "derived_from": {
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "id": "table.people.company_slot",
+      "type": "table",
+      "schema": "people",
+      "name": "company_slot",
+      "pass_owner": "COMPUTE",
+      "imo_layer": "M",
+      "derived_from": {
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "id": "table.dol.form_5500",
+      "type": "table",
+      "schema": "dol",
+      "name": "form_5500",
+      "pass_owner": "CAPTURE",
+      "imo_layer": "I",
+      "derived_from": {
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "id": "table.dol.schedule_a",
+      "type": "table",
+      "schema": "dol",
+      "name": "schedule_a",
+      "pass_owner": "CAPTURE",
+      "imo_layer": "I",
+      "derived_from": {
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "id": "table.dol.renewal_calendar",
+      "type": "table",
+      "schema": "dol",
+      "name": "renewal_calendar",
+      "pass_owner": "COMPUTE",
+      "imo_layer": "M",
+      "derived_from": {
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "id": "process.company_target",
+      "type": "process",
+      "name": "Company Target Process",
+      "cc_layer": "CC-04",
+      "passes": ["CAPTURE", "COMPUTE", "GOVERN"],
+      "derived_from": {
+        "process_doc": "ops/processes/company-target-process.md"
+      }
+    },
+    {
+      "id": "process.people_intelligence",
+      "type": "process",
+      "name": "People Intelligence Process",
+      "cc_layer": "CC-04",
+      "passes": ["CAPTURE", "COMPUTE"],
+      "derived_from": {
+        "process_doc": "ops/processes/people-intelligence-process.md"
+      }
+    },
+    {
+      "id": "process.dol_filings",
+      "type": "process",
+      "name": "DOL Filings Process",
+      "cc_layer": "CC-04",
+      "passes": ["CAPTURE", "COMPUTE"],
+      "derived_from": {
+        "process_doc": "ops/processes/dol-filings-process.md"
+      }
+    },
+    {
+      "id": "process.blog_content",
+      "type": "process",
+      "name": "Blog Content Process",
+      "cc_layer": "CC-04",
+      "passes": ["CAPTURE", "COMPUTE"],
+      "derived_from": {
+        "process_doc": "ops/processes/blog-content-process.md"
+      }
+    },
+    {
+      "id": "process.outreach_execution",
+      "type": "process",
+      "name": "Outreach Execution Process",
+      "cc_layer": "CC-04",
+      "passes": ["CAPTURE", "COMPUTE", "GOVERN"],
+      "derived_from": {
+        "process_doc": "ops/processes/outreach-execution-process.md"
+      }
+    },
+    {
+      "id": "process.kill_switch",
+      "type": "process",
+      "name": "Kill Switch Process",
+      "cc_layer": "CC-04",
+      "passes": ["CAPTURE", "GOVERN"],
+      "derived_from": {
+        "process_doc": "ops/processes/kill-switch-process.md"
+      }
+    },
+    {
+      "id": "view.vw_marketing_eligibility_with_overrides",
+      "type": "view",
+      "name": "Marketing Eligibility with Overrides",
+      "cc_layer": "CC-04",
+      "imo_layer": "O",
+      "derived_from": {
+        "prd": "docs/prd/PRD_SOVEREIGN_COMPLETION.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "id": "view.vw_sovereign_completion",
+      "type": "view",
+      "name": "Sovereign Completion",
+      "cc_layer": "CC-04",
+      "imo_layer": "O",
+      "derived_from": {
+        "prd": "docs/prd/PRD_SOVEREIGN_COMPLETION.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "id": "view.v_company_lifecycle_status",
+      "type": "view",
+      "name": "Company Lifecycle Status",
+      "cc_layer": "CC-04",
+      "imo_layer": "O",
+      "derived_from": {
+        "prd": "docs/prd/PRD_COMPANY_HUB.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "hub.outreach_core",
+      "to": "hub.company_target",
+      "flow_type": "governs",
+      "derived_from": {
+        "prd": "docs/prd/PRD_COMPANY_HUB.md",
+        "registry": "REGISTRY.yaml"
+      }
+    },
+    {
+      "from": "hub.outreach_core",
+      "to": "hub.people_intelligence",
+      "flow_type": "governs",
+      "derived_from": {
+        "prd": "docs/prd/PRD_PEOPLE_SUBHUB.md",
+        "registry": "REGISTRY.yaml"
+      }
+    },
+    {
+      "from": "hub.outreach_core",
+      "to": "hub.dol_filings",
+      "flow_type": "governs",
+      "derived_from": {
+        "prd": "docs/prd/PRD_DOL_SUBHUB.md",
+        "registry": "REGISTRY.yaml"
+      }
+    },
+    {
+      "from": "hub.outreach_core",
+      "to": "hub.outreach_execution",
+      "flow_type": "governs",
+      "derived_from": {
+        "prd": "docs/prd/PRD_OUTREACH_SPOKE.md",
+        "registry": "REGISTRY.yaml"
+      }
+    },
+    {
+      "from": "table.cl.company_identity",
+      "to": "table.outreach.outreach",
+      "flow_type": "derives",
+      "derived_from": {
+        "prd": "docs/prd/PRD_COMPANY_HUB.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "table.outreach.outreach",
+      "to": "table.outreach.company_target",
+      "flow_type": "writes",
+      "derived_from": {
+        "prd": "docs/prd/PRD_COMPANY_HUB.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "table.outreach.outreach",
+      "to": "table.outreach.dol",
+      "flow_type": "writes",
+      "derived_from": {
+        "prd": "docs/prd/PRD_DOL_SUBHUB.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "table.outreach.outreach",
+      "to": "table.outreach.people",
+      "flow_type": "writes",
+      "derived_from": {
+        "prd": "docs/prd/PRD_PEOPLE_SUBHUB.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "table.outreach.outreach",
+      "to": "table.outreach.blog",
+      "flow_type": "writes",
+      "derived_from": {
+        "prd": "docs/prd/PRD_BLOG_NEWS_SUBHUB.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "table.outreach.company_target",
+      "to": "table.outreach.bit_signals",
+      "flow_type": "emits",
+      "derived_from": {
+        "prd": "docs/prd/PRD_BIT_ENGINE.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "table.outreach.dol",
+      "to": "table.outreach.bit_signals",
+      "flow_type": "emits",
+      "derived_from": {
+        "prd": "docs/prd/PRD_BIT_ENGINE.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "table.outreach.people",
+      "to": "table.outreach.bit_signals",
+      "flow_type": "emits",
+      "derived_from": {
+        "prd": "docs/prd/PRD_BIT_ENGINE.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "table.outreach.blog",
+      "to": "table.outreach.bit_signals",
+      "flow_type": "emits",
+      "derived_from": {
+        "prd": "docs/prd/PRD_BIT_ENGINE.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "table.outreach.bit_signals",
+      "to": "table.outreach.bit_scores",
+      "flow_type": "derives",
+      "derived_from": {
+        "prd": "docs/prd/PRD_BIT_ENGINE.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "table.outreach.bit_scores",
+      "to": "view.vw_marketing_eligibility_with_overrides",
+      "flow_type": "reads",
+      "derived_from": {
+        "prd": "docs/prd/PRD_SOVEREIGN_COMPLETION.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "table.outreach.manual_overrides",
+      "to": "view.vw_marketing_eligibility_with_overrides",
+      "flow_type": "governs",
+      "derived_from": {
+        "prd": "docs/prd/PRD_KILL_SWITCH_SYSTEM.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "table.outreach.manual_overrides",
+      "to": "table.outreach.override_audit_log",
+      "flow_type": "writes",
+      "derived_from": {
+        "prd": "docs/prd/PRD_KILL_SWITCH_SYSTEM.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "table.dol.form_5500",
+      "to": "table.outreach.dol",
+      "flow_type": "reads",
+      "derived_from": {
+        "prd": "docs/prd/PRD_DOL_SUBHUB.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "table.dol.form_5500",
+      "to": "table.dol.schedule_a",
+      "flow_type": "writes",
+      "derived_from": {
+        "prd": "docs/prd/PRD_DOL_SUBHUB.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "table.dol.form_5500",
+      "to": "table.dol.renewal_calendar",
+      "flow_type": "derives",
+      "derived_from": {
+        "prd": "docs/prd/PRD_DOL_SUBHUB.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "table.people.people_master",
+      "to": "table.people.company_slot",
+      "flow_type": "writes",
+      "derived_from": {
+        "prd": "docs/prd/PRD_PEOPLE_SUBHUB.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "table.people.company_slot",
+      "to": "table.outreach.people",
+      "flow_type": "derives",
+      "derived_from": {
+        "prd": "docs/prd/PRD_PEOPLE_SUBHUB.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "table.outreach.bit_scores",
+      "to": "table.outreach.campaigns",
+      "flow_type": "reads",
+      "derived_from": {
+        "prd": "docs/prd/PRD_OUTREACH_SPOKE.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "table.outreach.campaigns",
+      "to": "table.outreach.sequences",
+      "flow_type": "writes",
+      "derived_from": {
+        "prd": "docs/prd/PRD_OUTREACH_SPOKE.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "table.outreach.sequences",
+      "to": "table.outreach.send_log",
+      "flow_type": "writes",
+      "derived_from": {
+        "prd": "docs/prd/PRD_OUTREACH_SPOKE.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "process.company_target",
+      "to": "table.outreach.company_target",
+      "flow_type": "writes",
+      "derived_from": {
+        "process_doc": "ops/processes/company-target-process.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "process.people_intelligence",
+      "to": "table.outreach.people",
+      "flow_type": "writes",
+      "derived_from": {
+        "process_doc": "ops/processes/people-intelligence-process.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "process.dol_filings",
+      "to": "table.outreach.dol",
+      "flow_type": "writes",
+      "derived_from": {
+        "process_doc": "ops/processes/dol-filings-process.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "process.blog_content",
+      "to": "table.outreach.blog",
+      "flow_type": "writes",
+      "derived_from": {
+        "process_doc": "ops/processes/blog-content-process.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "process.outreach_execution",
+      "to": "table.outreach.campaigns",
+      "flow_type": "writes",
+      "derived_from": {
+        "process_doc": "ops/processes/outreach-execution-process.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "process.kill_switch",
+      "to": "table.outreach.manual_overrides",
+      "flow_type": "writes",
+      "derived_from": {
+        "process_doc": "ops/processes/kill-switch-process.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "table.outreach.company_target",
+      "to": "view.vw_sovereign_completion",
+      "flow_type": "reads",
+      "derived_from": {
+        "prd": "docs/prd/PRD_SOVEREIGN_COMPLETION.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "table.outreach.dol",
+      "to": "view.vw_sovereign_completion",
+      "flow_type": "reads",
+      "derived_from": {
+        "prd": "docs/prd/PRD_SOVEREIGN_COMPLETION.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "table.outreach.people",
+      "to": "view.vw_sovereign_completion",
+      "flow_type": "reads",
+      "derived_from": {
+        "prd": "docs/prd/PRD_SOVEREIGN_COMPLETION.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    },
+    {
+      "from": "table.outreach.blog",
+      "to": "view.vw_sovereign_completion",
+      "flow_type": "reads",
+      "derived_from": {
+        "prd": "docs/prd/PRD_SOVEREIGN_COMPLETION.md",
+        "erd": "docs/ERD_SUMMARY.md"
+      }
+    }
+  ]
+}
