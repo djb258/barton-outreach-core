@@ -202,4 +202,77 @@ erDiagram
 
 ---
 
-**Last Updated**: 2026-01-18
+---
+
+## Cascade Cleanup Documentation
+
+**Reference**: `docs/reports/OUTREACH_CASCADE_CLEANUP_REPORT_2026-01-29.md`
+
+### Table Ownership
+
+| Table | Purpose | Cascade Order |
+|-------|---------|---------------|
+| `outreach.blog` | Outreach-scoped blog data | DELETE after bit_scores |
+| `blog.pressure_signals` | BIT v2.0 signals | Expire naturally via `expires_at` |
+| `company.company_source_urls` | Discovered URLs | NOT deleted (reference data) |
+
+### Cascade Deletion Order
+
+When CL marks a company INELIGIBLE and Outreach runs cascade cleanup:
+
+```
+1. outreach.send_log          (FK: person_id, target_id)
+2. outreach.sequences         (FK: campaign_id)
+3. outreach.campaigns         (standalone)
+4. outreach.manual_overrides  (FK: outreach_id)
+5. outreach.bit_signals       (FK: outreach_id)
+6. outreach.bit_scores        (FK: outreach_id)
+7. outreach.blog              (FK: outreach_id) ← THIS HUB
+8. people.people_master       (FK: company_slot)
+9. people.company_slot        (FK: outreach_id)
+10. outreach.people           (FK: outreach_id)
+11. outreach.dol              (FK: outreach_id)
+12. outreach.company_target   (FK: outreach_id)
+13. outreach.outreach         (SPINE - deleted last)
+```
+
+### Archive-Before-Delete Pattern
+
+```sql
+-- Delete from outreach.blog (typically has full coverage)
+DELETE FROM outreach.blog
+WHERE outreach_id IN (SELECT outreach_id FROM orphan_list);
+```
+
+### What Is NOT Deleted
+
+The following Blog reference tables are **NEVER** deleted during cascade cleanup:
+- `blog.pressure_signals` — Expire naturally via `expires_at`
+- `company.company_source_urls` — Discovered URLs (may be reused)
+- `company.url_discovery_failures` — Failure tracking
+
+### Post-Cleanup State (2026-01-29)
+
+| Table | Records | Notes |
+|-------|---------|-------|
+| outreach.blog | 42,833 | 100% coverage of outreach spine |
+| blog.pressure_signals | — | Expire via `expires_at` |
+| company.company_source_urls | 97,124 | Unchanged (reference data) |
+
+### Cleanup Trigger
+
+This hub's `outreach.blog` data is cleaned when:
+1. CL marks company as `INELIGIBLE` (eligibility_status)
+2. CL moves company to `cl.company_identity_excluded`
+3. Outreach cascade cleanup runs via `OUTREACH_CASCADE_CLEANUP.prompt.md`
+
+### Pressure Signal Expiration
+
+`blog.pressure_signals` are NOT cascade-deleted. They expire naturally:
+- Each signal has `expires_at` timestamp
+- BIT v2.0 union view filters: `WHERE expires_at > NOW()`
+- Orphaned signals become invisible automatically
+
+---
+
+**Last Updated**: 2026-01-29

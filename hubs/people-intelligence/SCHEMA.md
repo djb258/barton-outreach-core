@@ -452,5 +452,99 @@ Outreach-scoped person records with engagement tracking.
 
 ---
 
+---
+
+## Cascade Cleanup Documentation
+
+**Reference**: `docs/reports/OUTREACH_CASCADE_CLEANUP_REPORT_2026-01-29.md`
+
+### Table Ownership
+
+| Table | Purpose | Cascade Order |
+|-------|---------|---------------|
+| `people.people_master` | Master person records | DELETE after company_slot |
+| `people.people_master_archive` | Archived person records | Receives orphaned records |
+| `people.company_slot` | Slot assignments | DELETE early (FK to outreach_id) |
+| `people.company_slot_archive` | Archived slots | Receives orphaned records |
+| `outreach.people` | Outreach-scoped people | DELETE after slots |
+| `outreach.people_archive` | Archived outreach people | Receives orphaned records |
+
+### Cascade Deletion Order
+
+When CL marks a company INELIGIBLE and Outreach runs cascade cleanup:
+
+```
+1. outreach.send_log          (FK: person_id, target_id)
+2. outreach.sequences         (FK: campaign_id)
+3. outreach.campaigns         (standalone)
+4. outreach.manual_overrides  (FK: outreach_id)
+5. outreach.bit_signals       (FK: outreach_id)
+6. outreach.bit_scores        (FK: outreach_id)
+7. outreach.blog              (FK: outreach_id)
+8. people.people_master       (FK: company_slot) ← THIS HUB
+9. people.company_slot        (FK: outreach_id) ← THIS HUB
+10. outreach.people           (FK: outreach_id) ← THIS HUB
+11. outreach.dol              (FK: outreach_id)
+12. outreach.company_target   (FK: outreach_id)
+13. outreach.outreach         (SPINE - deleted last)
+```
+
+### Archive-Before-Delete Pattern
+
+Before deleting People hub records:
+
+```sql
+-- 1. Archive people_master
+INSERT INTO people.people_master_archive
+SELECT *, 'CL_INELIGIBLE_CASCADE' as archive_reason, NOW() as archived_at
+FROM people.people_master pm
+WHERE pm.company_slot_unique_id IN (
+    SELECT cs.slot_id::text FROM people.company_slot cs
+    WHERE cs.outreach_id IN (SELECT outreach_id FROM orphan_list)
+);
+
+-- 2. Archive company_slot
+INSERT INTO people.company_slot_archive
+SELECT *, 'CL_INELIGIBLE_CASCADE' as archive_reason, NOW() as archived_at
+FROM people.company_slot
+WHERE outreach_id IN (SELECT outreach_id FROM orphan_list);
+
+-- 3. Archive outreach.people
+INSERT INTO outreach.people_archive
+SELECT *, 'CL_INELIGIBLE_CASCADE' as archive_reason, NOW() as archived_at
+FROM outreach.people
+WHERE outreach_id IN (SELECT outreach_id FROM orphan_list);
+
+-- 4. Delete in reverse order
+DELETE FROM people.people_master WHERE ...;
+DELETE FROM people.company_slot WHERE ...;
+DELETE FROM outreach.people WHERE ...;
+```
+
+### Post-Cleanup State (2026-01-29)
+
+| Table | Records | Notes |
+|-------|---------|-------|
+| people.company_slot | ~145,000 | Cascade deleted 8,127 |
+| people.people_master | — | Follows slot deletions |
+| outreach.people | 426 | Minimal records |
+
+### Cleanup Trigger
+
+This hub's data is cleaned when:
+1. CL marks company as `INELIGIBLE` (eligibility_status)
+2. CL moves company to `cl.company_identity_excluded`
+3. Outreach cascade cleanup runs via `OUTREACH_CASCADE_CLEANUP.prompt.md`
+
+### Slot Fill Rates (Post-Cleanup)
+
+| Slot Type | Fill Rate |
+|-----------|-----------|
+| CEO | 27.1% |
+| CFO | 8.6% |
+| HR | 13.7% |
+
+---
+
 *Generated from Neon PostgreSQL via READ-ONLY connection*
-*Last verified: 2026-01-26*
+*Last verified: 2026-01-29*

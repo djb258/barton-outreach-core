@@ -440,5 +440,124 @@ Individual BIT signal events.
 
 ---
 
+---
+
+## Cascade Cleanup Documentation
+
+**Reference**: `docs/reports/OUTREACH_CASCADE_CLEANUP_REPORT_2026-01-29.md`
+
+### Table Ownership (SPINE OWNER)
+
+This hub owns the **operational spine** (`outreach.outreach`). All other sub-hubs FK to this table.
+
+| Table | Purpose | Cascade Order |
+|-------|---------|---------------|
+| `outreach.outreach` | **SPINE** - Root records | DELETE LAST |
+| `outreach.outreach_archive` | Archived spine records | Receives orphaned records |
+| `outreach.outreach_orphan_archive` | Unfixable orphans | Receives orphans with invalid sovereign_id |
+| `outreach.campaigns` | Campaign definitions | DELETE early |
+| `outreach.sequences` | Email sequences | DELETE after send_log |
+| `outreach.send_log` | Send tracking | DELETE FIRST |
+| `outreach.bit_scores` | BIT scores | DELETE after bit_signals |
+| `outreach.bit_signals` | BIT signal events | DELETE early |
+| `outreach.manual_overrides` | Kill switch overrides | DELETE early |
+
+### Cascade Deletion Order (AUTHORITATIVE)
+
+This hub defines the deletion order for all sub-hubs:
+
+```
+1. outreach.send_log          (FK: person_id, target_id, campaign_id, sequence_id)
+2. outreach.sequences         (FK: campaign_id)
+3. outreach.campaigns         (standalone)
+4. outreach.manual_overrides  (FK: outreach_id)
+5. outreach.bit_signals       (FK: outreach_id)
+6. outreach.bit_scores        (FK: outreach_id)
+7. outreach.blog              (FK: outreach_id) → Blog Hub
+8. people.people_master       (FK: company_slot) → People Hub
+9. people.company_slot        (FK: outreach_id) → People Hub
+10. outreach.people           (FK: outreach_id) → People Hub
+11. outreach.dol              (FK: outreach_id) → DOL Hub
+12. outreach.company_target   (FK: outreach_id) → Company Target Hub
+13. outreach.outreach         (SPINE - deleted LAST)
+```
+
+### Archive-Before-Delete Pattern
+
+Before deleting spine records:
+
+```sql
+-- 1. Archive to outreach_archive
+INSERT INTO outreach.outreach_archive
+SELECT *, 'CL_INELIGIBLE_CASCADE' as archive_reason, NOW() as archived_at
+FROM outreach.outreach
+WHERE outreach_id IN (SELECT outreach_id FROM orphan_list);
+
+-- 2. For orphans with invalid sovereign_id, use outreach_orphan_archive
+INSERT INTO outreach.outreach_orphan_archive
+SELECT outreach_id, sovereign_id, created_at, updated_at, domain,
+       'INVALID_SOVEREIGN_ID' as archive_reason, NOW() as archived_at
+FROM outreach.outreach o
+WHERE NOT EXISTS (SELECT 1 FROM cl.company_identity ci WHERE ci.outreach_id = o.outreach_id)
+  AND NOT EXISTS (SELECT 1 FROM cl.company_identity ci2 WHERE ci2.sovereign_company_id = o.sovereign_id);
+
+-- 3. Delete spine last
+DELETE FROM outreach.outreach
+WHERE outreach_id IN (SELECT outreach_id FROM orphan_list);
+```
+
+### Post-Cleanup State (2026-01-29)
+
+| Table | Records | Notes |
+|-------|---------|-------|
+| outreach.outreach | **42,833** | ALIGNED with CL |
+| outreach.outreach_archive | — | Contains excluded records |
+| outreach.outreach_orphan_archive | 2,709 | Unfixable orphans |
+| outreach.bit_scores | ~17,000 | BIT-scored records |
+| outreach.campaigns | — | Campaign definitions |
+| outreach.send_log | — | Send history |
+
+### Alignment Verification Query
+
+Run this to verify CL-Outreach alignment:
+
+```sql
+SELECT
+    'cl.company_identity' as source,
+    COUNT(*) as with_outreach_id
+FROM cl.company_identity
+WHERE outreach_id IS NOT NULL
+UNION ALL
+SELECT
+    'outreach.outreach' as source,
+    COUNT(*) as count
+FROM outreach.outreach;
+
+-- Expected: Both counts should match (42,833 = 42,833)
+```
+
+### Cleanup Trigger
+
+This hub's data (and all sub-hub data) is cleaned when:
+1. CL marks company as `INELIGIBLE` (eligibility_status)
+2. CL moves company to `cl.company_identity_excluded`
+3. Outreach cascade cleanup runs via `OUTREACH_CASCADE_CLEANUP.prompt.md`
+
+### Golden Rule (LOCKED)
+
+```
+IF outreach_id IS NULL:
+    STOP. DO NOT PROCEED.
+    1. Mint outreach_id in outreach.outreach (operational spine)
+    2. Write outreach_id ONCE to cl.company_identity (authority registry)
+    3. If CL write fails (already claimed) → HARD FAIL
+
+ALIGNMENT RULE:
+outreach.outreach count = cl.company_identity (outreach_id NOT NULL) count
+Current: 42,833 = 42,833 ✓ ALIGNED
+```
+
+---
+
 *Generated from Neon PostgreSQL via READ-ONLY connection*
-*Last verified: 2026-01-25*
+*Last verified: 2026-01-29*

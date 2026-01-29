@@ -472,5 +472,89 @@ Outreach-scoped DOL summary data.
 
 ---
 
+---
+
+## Cascade Cleanup Documentation
+
+**Reference**: `docs/reports/OUTREACH_CASCADE_CLEANUP_REPORT_2026-01-29.md`
+
+### Table Ownership
+
+| Table | Purpose | Cascade Order |
+|-------|---------|---------------|
+| `outreach.dol` | Outreach-scoped DOL data | DELETE before company_target |
+| `dol.form_5500` | Raw DOL filings | NOT deleted (reference data) |
+| `dol.schedule_a` | Insurance contracts | NOT deleted (reference data) |
+| `dol.renewal_calendar` | Renewal tracking | NOT deleted (reference data) |
+| `dol.ein_urls` | EIN→URL mappings | NOT deleted (reference data) |
+
+### Cascade Deletion Order
+
+When CL marks a company INELIGIBLE and Outreach runs cascade cleanup:
+
+```
+1. outreach.send_log          (FK: person_id, target_id)
+2. outreach.sequences         (FK: campaign_id)
+3. outreach.campaigns         (standalone)
+4. outreach.manual_overrides  (FK: outreach_id)
+5. outreach.bit_signals       (FK: outreach_id)
+6. outreach.bit_scores        (FK: outreach_id)
+7. outreach.blog              (FK: outreach_id)
+8. people.people_master       (FK: company_slot)
+9. people.company_slot        (FK: outreach_id)
+10. outreach.people           (FK: outreach_id)
+11. outreach.dol              (FK: outreach_id) ← THIS HUB
+12. outreach.company_target   (FK: outreach_id)
+13. outreach.outreach         (SPINE - deleted last)
+```
+
+### Archive-Before-Delete Pattern
+
+Before deleting `outreach.dol` records:
+
+```sql
+-- 1. Archive (if archive table exists)
+-- Note: outreach.dol typically has minimal records
+
+-- 2. Delete from outreach.dol
+DELETE FROM outreach.dol
+WHERE outreach_id IN (SELECT outreach_id FROM orphan_list);
+```
+
+### What Is NOT Deleted
+
+The following DOL reference tables are **NEVER** deleted during cascade cleanup:
+- `dol.form_5500` — Government filing data (immutable)
+- `dol.form_5500_sf` — Short form filings (immutable)
+- `dol.schedule_a` — Insurance contract data (immutable)
+- `dol.renewal_calendar` — Derived renewal data (may be refreshed)
+- `dol.ein_urls` — EIN→URL mappings (FREE tier data)
+- `dol.pressure_signals` — May expire naturally via `expires_at`
+
+### Post-Cleanup State (2026-01-29)
+
+| Table | Records | Notes |
+|-------|---------|-------|
+| outreach.dol | ~13,000 | 27% coverage of outreach spine |
+| dol.form_5500 | ~250,000 | Unchanged (reference data) |
+| dol.schedule_a | ~400,000 | Unchanged (reference data) |
+| dol.ein_urls | 119,409 | Unchanged (FREE tier) |
+
+### Cleanup Trigger
+
+This hub's `outreach.dol` data is cleaned when:
+1. CL marks company as `INELIGIBLE` (eligibility_status)
+2. CL moves company to `cl.company_identity_excluded`
+3. Outreach cascade cleanup runs via `OUTREACH_CASCADE_CLEANUP.prompt.md`
+
+### EIN Matching After Cleanup
+
+After cascade cleanup, companies may lose their DOL match. To re-match:
+1. Query `dol.ein_urls` for domain matches
+2. Query `dol.form_5500` for EIN resolution
+3. Re-populate `outreach.dol` via DOL hub processing
+
+---
+
 *Generated from Neon PostgreSQL via READ-ONLY connection*
-*Last verified: 2026-01-25*
+*Last verified: 2026-01-29*
