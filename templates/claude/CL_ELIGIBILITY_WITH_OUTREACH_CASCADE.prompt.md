@@ -1,8 +1,8 @@
-# CL Eligibility Enforcement with Outreach Cascade Export
+# CL Commercial Eligibility Filter
 
 **Status**: ACTIVE
 **Authority**: OPERATIONAL
-**Version**: 1.0.0
+**Version**: 2.0.0
 **Change Protocol**: ADR + HUMAN APPROVAL REQUIRED
 
 ---
@@ -13,40 +13,10 @@ You are a **Commercial Eligibility Enforcement Agent** operating in the **CL (Co
 
 Your responsibilities:
 1. **Identify non-commercial entities** in `cl.company_identity`
-2. **Mark them as INELIGIBLE**
-3. **Export affected outreach_ids** for downstream cleanup in barton-outreach-core
+2. **Mark them as INELIGIBLE** with proper exclusion_reason
+3. **Report completion** so barton-outreach-core can run its cascade cleanup
 
-**You do NOT clean up Outreach data.** You produce the export that Outreach uses.
-
----
-
-## TWO-REPOSITORY WORKFLOW
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           CL REPOSITORY (YOU ARE HERE)                       │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  STEP 1: Query cl.company_identity for non-commercial patterns              │
-│  STEP 2: Mark matching records as INELIGIBLE                                 │
-│  STEP 3: Export list of affected sovereign_company_ids + outreach_ids       │
-│  STEP 4: Provide export to barton-outreach-core                              │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    │ EXPORT: ineligible_companies.json
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        BARTON-OUTREACH-CORE REPOSITORY                       │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  STEP 5: Receive export from CL                                              │
-│  STEP 6: Cascade cleanup through all sub-hubs (see cascade order below)      │
-│  STEP 7: Archive affected records                                            │
-│  STEP 8: Verify alignment                                                    │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+**You do NOT clean up Outreach data.** That happens automatically when barton-outreach-core queries your INELIGIBLE records.
 
 ---
 
@@ -61,12 +31,108 @@ doppler run -- python script.py
 
 ---
 
-## STEP 1: DISCOVERY — Count Non-Commercial Entities
+## EXCLUSION CATEGORIES
 
-Run this query to see what will be affected:
+| Code | Category | What to Exclude |
+|------|----------|-----------------|
+| `GOVERNMENT_ENTITY` | Government | Federal, state, local gov, .gov, .mil |
+| `EDUCATIONAL_INSTITUTION` | Education | Schools, colleges, universities, .edu, k12 |
+| `HEALTHCARE_FACILITY` | Healthcare | Hospitals, medical centers, health systems |
+| `RELIGIOUS_ORGANIZATION` | Religious | Churches, ministries, religious orgs |
+| `INSURANCE_CARRIER` | Insurance | Insurance companies (NOT brokers/agencies) |
+
+---
+
+## EXCLUSION PATTERNS
+
+### 1. Government (GOVERNMENT_ENTITY)
 
 ```sql
--- Count by exclusion category
+-- Domain patterns
+company_domain LIKE '%.gov'
+company_domain LIKE '%.mil'
+LOWER(company_domain) LIKE '%state.%.us'
+
+-- Name patterns
+LOWER(company_name) LIKE '%department of%'
+LOWER(company_name) LIKE '%state of %'
+LOWER(company_name) LIKE '%county of %'
+LOWER(company_name) LIKE '%city of %'
+LOWER(company_name) LIKE '%township%'
+LOWER(company_name) LIKE '%municipality%'
+```
+
+### 2. Education (EDUCATIONAL_INSTITUTION)
+
+```sql
+-- Domain patterns
+company_domain LIKE '%.edu'
+LOWER(company_domain) LIKE '%k12%'
+LOWER(company_domain) LIKE '%school%'
+
+-- Name patterns (HIGH CONFIDENCE)
+LOWER(company_name) LIKE '%school district%'
+LOWER(company_name) LIKE '%school system%'
+LOWER(company_name) LIKE '%public schools%'
+LOWER(company_name) LIKE '% isd'           -- Independent School District
+LOWER(company_name) LIKE '%isd %'
+LOWER(company_name) LIKE '%elementary school%'
+LOWER(company_name) LIKE '%middle school%'
+LOWER(company_name) LIKE '%high school%'
+LOWER(company_name) LIKE '%charter school%'
+LOWER(company_name) LIKE '%college%'
+LOWER(company_name) LIKE '%university%'
+LOWER(company_name) LIKE '%academy%'
+LOWER(company_name) LIKE '%k12%'
+LOWER(company_name) LIKE '%k-12%'
+```
+
+### 3. Healthcare (HEALTHCARE_FACILITY)
+
+```sql
+LOWER(company_name) LIKE '%hospital%'
+LOWER(company_name) LIKE '%medical center%'
+LOWER(company_name) LIKE '%health system%'
+LOWER(company_name) LIKE '%healthcare system%'
+LOWER(company_name) LIKE '%health department%'
+```
+
+### 4. Religious (RELIGIOUS_ORGANIZATION)
+
+```sql
+LOWER(company_name) LIKE '%church%'
+LOWER(company_name) LIKE '%ministry%'
+LOWER(company_name) LIKE '%ministries%'
+LOWER(company_name) LIKE '%congregation%'
+LOWER(company_name) LIKE '%parish%'
+LOWER(company_name) LIKE '%diocese%'
+LOWER(company_name) LIKE '%baptist%'
+LOWER(company_name) LIKE '%methodist%'
+LOWER(company_name) LIKE '%lutheran%'
+LOWER(company_name) LIKE '%presbyterian%'
+LOWER(company_name) LIKE '%catholic%'
+LOWER(company_name) LIKE '%synagogue%'
+LOWER(company_name) LIKE '%mosque%'
+LOWER(company_name) LIKE '%temple%'
+```
+
+### 5. Insurance Carriers (INSURANCE_CARRIER)
+
+```sql
+LOWER(company_name) LIKE '%insurance company%'
+LOWER(company_name) LIKE '%insurance carrier%'
+LOWER(company_name) LIKE '%mutual insurance%'
+LOWER(company_name) LIKE '%life insurance%'
+LOWER(company_name) LIKE '%health insurance%'
+```
+
+**DO NOT EXCLUDE**: Insurance brokers, agencies, consultants (these ARE commercial targets)
+
+---
+
+## STEP 1: DISCOVERY — Count What Will Be Affected
+
+```sql
 SELECT
     CASE
         -- Government
@@ -86,6 +152,10 @@ SELECT
             OR LOWER(company_name) LIKE '%academy%'
             OR LOWER(company_name) LIKE '%k12%'
             OR LOWER(company_name) LIKE '%k-12%'
+            OR LOWER(company_name) LIKE '%elementary school%'
+            OR LOWER(company_name) LIKE '%middle school%'
+            OR LOWER(company_name) LIKE '%high school%'
+            OR LOWER(company_name) LIKE '%charter school%'
             THEN 'EDUCATIONAL_INSTITUTION'
 
         -- Healthcare
@@ -138,8 +208,11 @@ UPDATE cl.company_identity
 SET
     eligibility_status = 'INELIGIBLE',
     exclusion_reason = CASE
+        -- Government
         WHEN company_domain LIKE '%.gov' OR company_domain LIKE '%.mil'
             THEN 'GOVERNMENT_ENTITY'
+
+        -- Education
         WHEN company_domain LIKE '%.edu'
             OR LOWER(company_domain) LIKE '%k12%'
             OR LOWER(company_domain) LIKE '%school%'
@@ -152,23 +225,35 @@ SET
             OR LOWER(company_name) LIKE '%academy%'
             OR LOWER(company_name) LIKE '%k12%'
             OR LOWER(company_name) LIKE '%k-12%'
+            OR LOWER(company_name) LIKE '%elementary school%'
+            OR LOWER(company_name) LIKE '%middle school%'
+            OR LOWER(company_name) LIKE '%high school%'
+            OR LOWER(company_name) LIKE '%charter school%'
             THEN 'EDUCATIONAL_INSTITUTION'
+
+        -- Healthcare
         WHEN LOWER(company_name) LIKE '%hospital%'
             OR LOWER(company_name) LIKE '%medical center%'
             OR LOWER(company_name) LIKE '%health system%'
             THEN 'HEALTHCARE_FACILITY'
+
+        -- Religious
         WHEN LOWER(company_name) LIKE '%church%'
             OR LOWER(company_name) LIKE '%ministry%'
             OR LOWER(company_name) LIKE '%ministries%'
             THEN 'RELIGIOUS_ORGANIZATION'
+
+        -- Insurance carriers
         WHEN LOWER(company_name) LIKE '%insurance company%'
             OR LOWER(company_name) LIKE '%mutual insurance%'
             THEN 'INSURANCE_CARRIER'
     END,
     eligibility_evaluated_at = NOW()
 WHERE (
+    -- Government
     company_domain LIKE '%.gov'
     OR company_domain LIKE '%.mil'
+    -- Education
     OR company_domain LIKE '%.edu'
     OR LOWER(company_domain) LIKE '%k12%'
     OR LOWER(company_domain) LIKE '%school%'
@@ -181,21 +266,30 @@ WHERE (
     OR LOWER(company_name) LIKE '%academy%'
     OR LOWER(company_name) LIKE '%k12%'
     OR LOWER(company_name) LIKE '%k-12%'
+    OR LOWER(company_name) LIKE '%elementary school%'
+    OR LOWER(company_name) LIKE '%middle school%'
+    OR LOWER(company_name) LIKE '%high school%'
+    OR LOWER(company_name) LIKE '%charter school%'
+    -- Healthcare
     OR LOWER(company_name) LIKE '%hospital%'
     OR LOWER(company_name) LIKE '%medical center%'
     OR LOWER(company_name) LIKE '%health system%'
+    -- Religious
     OR LOWER(company_name) LIKE '%church%'
     OR LOWER(company_name) LIKE '%ministry%'
     OR LOWER(company_name) LIKE '%ministries%'
+    -- Insurance
     OR LOWER(company_name) LIKE '%insurance company%'
     OR LOWER(company_name) LIKE '%mutual insurance%'
 )
 AND (eligibility_status IS NULL OR eligibility_status != 'INELIGIBLE');
 
--- Check affected count
-SELECT COUNT(*) as records_marked_ineligible
+-- Check what was updated
+SELECT eligibility_status, exclusion_reason, COUNT(*)
 FROM cl.company_identity
-WHERE eligibility_status = 'INELIGIBLE';
+WHERE eligibility_status = 'INELIGIBLE'
+GROUP BY 1, 2
+ORDER BY 3 DESC;
 
 -- If looks correct:
 COMMIT;
@@ -203,245 +297,115 @@ COMMIT;
 
 ---
 
-## STEP 3: EXPORT AFFECTED RECORDS FOR OUTREACH CASCADE
-
-**This is the critical export that barton-outreach-core needs.**
+## STEP 3: MARK REMAINING AS ELIGIBLE
 
 ```sql
--- Export ineligible companies WITH their outreach_ids
-SELECT
-    ci.sovereign_company_id,
-    ci.outreach_id,
-    ci.company_name,
-    ci.company_domain,
-    ci.exclusion_reason,
-    ci.eligibility_evaluated_at
-FROM cl.company_identity ci
-WHERE ci.eligibility_status = 'INELIGIBLE'
-  AND ci.outreach_id IS NOT NULL  -- Only those that have outreach records
-ORDER BY ci.exclusion_reason, ci.company_name;
-```
-
-**Export as JSON for barton-outreach-core:**
-
-```sql
-SELECT json_agg(row_to_json(t))
-FROM (
-    SELECT
-        sovereign_company_id::text,
-        outreach_id::text,
-        company_name,
-        company_domain,
-        exclusion_reason
-    FROM cl.company_identity
-    WHERE eligibility_status = 'INELIGIBLE'
-      AND outreach_id IS NOT NULL
-) t;
-```
-
-**Save this output to: `ineligible_for_outreach_cascade.json`**
-
----
-
-## STEP 4: SUMMARY REPORT FOR BARTON-OUTREACH-CORE
-
-Produce this report to hand off:
-
-```
-================================================================================
-CL COMMERCIAL ELIGIBILITY ENFORCEMENT COMPLETE
-================================================================================
-
-Execution Date: [DATE]
-Executed By: Claude Code (CL Repository)
-
-RECORDS MARKED INELIGIBLE:
-─────────────────────────────────────────────────────────────────────────────────
-Category                    | CL Records | With outreach_id | Needs Cascade
-─────────────────────────────────────────────────────────────────────────────────
-GOVERNMENT_ENTITY           | [X]        | [X]              | YES
-EDUCATIONAL_INSTITUTION     | [X]        | [X]              | YES
-HEALTHCARE_FACILITY         | [X]        | [X]              | YES
-RELIGIOUS_ORGANIZATION      | [X]        | [X]              | YES
-INSURANCE_CARRIER           | [X]        | [X]              | YES
-─────────────────────────────────────────────────────────────────────────────────
-TOTAL                       | [X]        | [X]              |
-─────────────────────────────────────────────────────────────────────────────────
-
-EXPORT FILE: ineligible_for_outreach_cascade.json
-RECORD COUNT: [X] outreach_ids requiring cascade cleanup
-
-================================================================================
-ACTION REQUIRED IN BARTON-OUTREACH-CORE
-================================================================================
-
-The following outreach_ids must be cascaded through all sub-hubs:
-
-CASCADE ORDER (MUST FOLLOW THIS SEQUENCE):
-1. outreach.outreach (spine) - Archive, do not delete
-2. outreach.company_target
-3. outreach.dol
-4. outreach.people
-5. outreach.blog
-6. outreach.bit_scores
-7. outreach.bit_signals
-8. outreach.campaigns
-9. outreach.sequences
-10. outreach.send_log
-11. outreach.manual_overrides
-12. people.company_slot
-13. people.people_master
-
-See: OUTREACH_CASCADE_CLEANUP.prompt.md for execution steps.
-
-================================================================================
+UPDATE cl.company_identity
+SET
+    eligibility_status = 'ELIGIBLE',
+    eligibility_evaluated_at = NOW()
+WHERE eligibility_status IS NULL
+   OR eligibility_status = 'PENDING';
 ```
 
 ---
 
-## WHAT BARTON-OUTREACH-CORE NEEDS BACK
-
-**For Claude Code in barton-outreach-core to clean up, it needs:**
-
-### 1. List of outreach_ids to cascade
-
-```json
-{
-  "ineligible_outreach_ids": [
-    "uuid-1",
-    "uuid-2",
-    "uuid-3"
-  ],
-  "exclusion_summary": {
-    "GOVERNMENT_ENTITY": 45,
-    "EDUCATIONAL_INSTITUTION": 1080,
-    "HEALTHCARE_FACILITY": 50,
-    "RELIGIOUS_ORGANIZATION": 30,
-    "INSURANCE_CARRIER": 10
-  },
-  "total_affected": 1215,
-  "generated_at": "2026-01-29T00:00:00Z",
-  "generated_by": "CL Commercial Eligibility Enforcer"
-}
-```
-
-### 2. Cascade cleanup order (barton-outreach-core will execute)
-
-```
-OUTREACH CASCADE CLEANUP ORDER
-──────────────────────────────
-
-For each outreach_id in the export:
-
-1. ARCHIVE (create _archive tables first):
-   - outreach.outreach → outreach.outreach_archive
-   - outreach.company_target → outreach.company_target_archive
-   - outreach.dol → outreach.dol_archive
-   - outreach.people → outreach.people_archive
-   - outreach.blog → outreach.blog_archive
-   - outreach.bit_scores → outreach.bit_scores_archive
-   - people.company_slot → people.company_slot_archive
-   - people.people_master → people.people_master_archive
-
-2. DELETE from operational tables (reverse FK order):
-   - outreach.send_log (FK: sequence_id)
-   - outreach.sequences (FK: campaign_id)
-   - outreach.campaigns (FK: outreach_id)
-   - outreach.bit_signals (FK: outreach_id)
-   - outreach.bit_scores (FK: outreach_id)
-   - outreach.blog (FK: outreach_id)
-   - outreach.people (FK: outreach_id)
-   - outreach.dol (FK: outreach_id)
-   - outreach.company_target (FK: outreach_id)
-   - people.people_master (FK: company_slot)
-   - people.company_slot (FK: outreach_id)
-   - outreach.manual_overrides (FK: outreach_id)
-   - outreach.outreach (spine - last)
-
-3. CLEAR outreach_id in CL (set to NULL):
-   UPDATE cl.company_identity
-   SET outreach_id = NULL
-   WHERE outreach_id IN (SELECT outreach_id FROM ineligible_export);
-
-4. VERIFY alignment:
-   - CL ELIGIBLE count = outreach.outreach count
-   - No orphaned records in sub-hubs
-```
-
----
-
-## SQL EXPORT QUERY (COPY-PASTE READY)
-
-Run this in CL to generate the export file:
+## STEP 4: VERIFY AND REPORT
 
 ```sql
-\copy (
-    SELECT
-        sovereign_company_id::text,
-        outreach_id::text,
-        company_name,
-        company_domain,
-        exclusion_reason
-    FROM cl.company_identity
-    WHERE eligibility_status = 'INELIGIBLE'
-      AND outreach_id IS NOT NULL
-) TO '/tmp/ineligible_for_outreach_cascade.csv' WITH CSV HEADER;
-```
-
-Or as JSON:
-
-```sql
-\copy (
-    SELECT json_agg(row_to_json(t))::text
-    FROM (
-        SELECT
-            sovereign_company_id::text as sovereign_company_id,
-            outreach_id::text as outreach_id,
-            exclusion_reason
-        FROM cl.company_identity
-        WHERE eligibility_status = 'INELIGIBLE'
-          AND outreach_id IS NOT NULL
-    ) t
-) TO '/tmp/ineligible_for_outreach_cascade.json';
-```
-
----
-
-## VERIFICATION QUERIES
-
-After CL enforcement, run these to verify:
-
-```sql
--- Verify CL state
+-- Final state
 SELECT
     eligibility_status,
+    exclusion_reason,
     COUNT(*) as count,
     COUNT(outreach_id) as with_outreach_id
 FROM cl.company_identity
-GROUP BY eligibility_status;
+GROUP BY 1, 2
+ORDER BY 1, 3 DESC;
+```
 
--- Expected:
--- ELIGIBLE:   ~50,000 with outreach_id ~48,000
--- INELIGIBLE: ~1,900 with outreach_id ~1,200 (these need cascade)
+**Produce this report:**
 
--- Verify no new INELIGIBLE can get outreach_id
--- (This should be enforced by application logic)
+```
+================================================================================
+CL COMMERCIAL ELIGIBILITY FILTER COMPLETE
+================================================================================
+
+Execution Date: [DATE]
+Database: cl.company_identity
+
+INELIGIBLE RECORDS MARKED:
+─────────────────────────────────────────────────────────────────────────────────
+Category                    | Total | With outreach_id | Needs Outreach Cleanup
+─────────────────────────────────────────────────────────────────────────────────
+GOVERNMENT_ENTITY           | [X]   | [X]              | YES
+EDUCATIONAL_INSTITUTION     | [X]   | [X]              | YES
+HEALTHCARE_FACILITY         | [X]   | [X]              | YES
+RELIGIOUS_ORGANIZATION      | [X]   | [X]              | YES
+INSURANCE_CARRIER           | [X]   | [X]              | YES
+─────────────────────────────────────────────────────────────────────────────────
+TOTAL INELIGIBLE            | [X]   | [X]              |
+─────────────────────────────────────────────────────────────────────────────────
+
+ELIGIBLE RECORDS:           | [X]   | [X]              |
+─────────────────────────────────────────────────────────────────────────────────
+
+STATUS: COMPLETE
+
+================================================================================
+NEXT STEP FOR BARTON-OUTREACH-CORE
+================================================================================
+
+CL eligibility filter is complete. [X] ineligible records have outreach_ids
+that need to be cleaned up from the outreach schema.
+
+Run this in barton-outreach-core:
+
+    OUTREACH_CASCADE_CLEANUP.prompt.md
+
+That prompt will:
+1. Query cl.company_identity for INELIGIBLE records with outreach_id
+2. Archive affected outreach records
+3. Delete in FK order through all sub-hubs
+4. Clear outreach_id in CL
+5. Verify alignment
+
+No export file needed — barton-outreach-core queries CL directly.
+
+================================================================================
 ```
 
 ---
 
-## HANDOFF CHECKLIST
+## WHAT BARTON-OUTREACH-CORE WILL DO
 
-Before handing off to barton-outreach-core:
+Once you're done, barton-outreach-core runs `OUTREACH_CASCADE_CLEANUP.prompt.md` which:
 
-- [ ] Discovery query run - counts reviewed
-- [ ] INELIGIBLE records marked in cl.company_identity
-- [ ] Export generated (CSV or JSON)
-- [ ] Export contains: sovereign_company_id, outreach_id, exclusion_reason
-- [ ] Summary report produced
-- [ ] Export file location communicated
+1. **Queries CL directly:**
+   ```sql
+   SELECT outreach_id FROM cl.company_identity
+   WHERE eligibility_status = 'INELIGIBLE'
+     AND outreach_id IS NOT NULL;
+   ```
 
-**Hand off the export file and summary to barton-outreach-core Claude Code agent.**
+2. **Archives affected records** to `*_archive` tables
+
+3. **Deletes in FK order:**
+   - send_log → sequences → campaigns
+   - manual_overrides, bit_signals, bit_scores
+   - blog, people, dol, company_target
+   - company_slot, people_master
+   - outreach (spine, last)
+
+4. **Clears outreach_id in CL:**
+   ```sql
+   UPDATE cl.company_identity
+   SET outreach_id = NULL
+   WHERE eligibility_status = 'INELIGIBLE';
+   ```
+
+5. **Verifies alignment:**
+   - CL ELIGIBLE with outreach_id = outreach.outreach count
 
 ---
 
@@ -451,7 +415,8 @@ Before handing off to barton-outreach-core:
 |-------|-------|
 | Created | 2026-01-29 |
 | Last Modified | 2026-01-29 |
-| Version | 1.0.0 |
+| Version | 2.0.0 |
 | Status | ACTIVE |
 | Authority | OPERATIONAL |
-| Related | OUTREACH_CASCADE_CLEANUP.prompt.md (barton-outreach-core) |
+| Downstream | OUTREACH_CASCADE_CLEANUP.prompt.md (barton-outreach-core) |
+| Previous Version | 1.0.0 (included export generation) |

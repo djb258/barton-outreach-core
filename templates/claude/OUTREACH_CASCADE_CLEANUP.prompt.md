@@ -1,8 +1,8 @@
-# Outreach Cascade Cleanup
+# Outreach Cascade Cleanup (CL Direct Query)
 
 **Status**: ACTIVE
 **Authority**: OPERATIONAL
-**Version**: 1.0.0
+**Version**: 2.0.0
 **Change Protocol**: ADR + HUMAN APPROVAL REQUIRED
 
 ---
@@ -11,30 +11,28 @@
 
 You are a **Cascade Cleanup Agent** operating in the **barton-outreach-core repository**.
 
-Your responsibility is to **receive ineligible outreach_ids from CL** and **cascade the cleanup through all sub-hubs** in the correct order.
+Your responsibility is to **query CL for ineligible outreach_ids** and **cascade the cleanup through all sub-hubs** in the correct order.
 
 You do **NOT** determine eligibility. CL already did that.
-You **DO** execute the cleanup using the export CL provided.
+You **DO** query CL and execute the cleanup autonomously.
 
 ---
 
 ## PREREQUISITE
 
-**You must have received an export from CL containing:**
+**CL must have already marked non-commercial entities as INELIGIBLE.**
 
-```json
-{
-  "ineligible_outreach_ids": ["uuid-1", "uuid-2", ...],
-  "exclusion_summary": {
-    "GOVERNMENT_ENTITY": N,
-    "EDUCATIONAL_INSTITUTION": N,
-    ...
-  },
-  "total_affected": N
-}
+Verify by running:
+
+```sql
+-- Check if CL has INELIGIBLE records with outreach_ids
+SELECT COUNT(*) as pending_cleanup
+FROM cl.company_identity
+WHERE eligibility_status = 'INELIGIBLE'
+  AND outreach_id IS NOT NULL;
 ```
 
-**If you don't have this export, STOP.** Request it from CL using `CL_ELIGIBILITY_WITH_OUTREACH_CASCADE.prompt.md`.
+**If this returns 0, STOP.** CL hasn't run its eligibility filter yet.
 
 ---
 
@@ -49,6 +47,50 @@ doppler run -- python script.py
 
 ---
 
+## STEP 0: DISCOVERY — Query CL for Ineligible Outreach IDs
+
+**This is your source of truth.** Query CL directly.
+
+```sql
+-- Get all outreach_ids that need cleanup
+SELECT
+    ci.outreach_id,
+    ci.sovereign_company_id,
+    ci.exclusion_reason,
+    ci.company_name,
+    ci.company_domain
+FROM cl.company_identity ci
+WHERE ci.eligibility_status = 'INELIGIBLE'
+  AND ci.outreach_id IS NOT NULL
+ORDER BY ci.exclusion_reason;
+```
+
+**Count by category:**
+
+```sql
+SELECT
+    exclusion_reason,
+    COUNT(*) as count
+FROM cl.company_identity
+WHERE eligibility_status = 'INELIGIBLE'
+  AND outreach_id IS NOT NULL
+GROUP BY exclusion_reason
+ORDER BY count DESC;
+```
+
+**Expected output:**
+```
+exclusion_reason           | count
+---------------------------+-------
+EDUCATIONAL_INSTITUTION    | ~1080
+GOVERNMENT_ENTITY          | ~150
+HEALTHCARE_FACILITY        | ~150
+RELIGIOUS_ORGANIZATION     | ~70
+INSURANCE_CARRIER          | ~15
+```
+
+---
+
 ## CASCADE ORDER (CRITICAL)
 
 **You MUST follow this exact order.** FK constraints require it.
@@ -57,6 +99,10 @@ doppler run -- python script.py
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                         CASCADE CLEANUP ORDER                                │
 ├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  PHASE 0: QUERY CL (done above)                                              │
+│  ────────────────────────────                                                │
+│  Get ineligible outreach_ids directly from cl.company_identity              │
 │                                                                              │
 │  PHASE 1: CREATE ARCHIVE TABLES (if not exist)                               │
 │  ─────────────────────────────────────────────                               │
@@ -163,59 +209,91 @@ CREATE TABLE IF NOT EXISTS people.people_master_archive (
 
 ## PHASE 2: ARCHIVE AFFECTED RECORDS
 
-**Replace `$INELIGIBLE_IDS` with the actual list from CL export.**
+**Uses subquery to CL — no import file needed.**
 
 ```sql
 BEGIN;
 
 -- Archive outreach spine
 INSERT INTO outreach.outreach_archive
-SELECT *, NOW(), 'INELIGIBLE_COMMERCIAL_FILTER'
-FROM outreach.outreach
-WHERE outreach_id IN ($INELIGIBLE_IDS);
+SELECT o.*, NOW(), 'INELIGIBLE_COMMERCIAL_FILTER'
+FROM outreach.outreach o
+WHERE o.outreach_id IN (
+    SELECT outreach_id FROM cl.company_identity
+    WHERE eligibility_status = 'INELIGIBLE'
+      AND outreach_id IS NOT NULL
+);
 
 -- Archive company_target
 INSERT INTO outreach.company_target_archive
-SELECT *, NOW(), 'INELIGIBLE_COMMERCIAL_FILTER'
-FROM outreach.company_target
-WHERE outreach_id IN ($INELIGIBLE_IDS);
+SELECT ct.*, NOW(), 'INELIGIBLE_COMMERCIAL_FILTER'
+FROM outreach.company_target ct
+WHERE ct.outreach_id IN (
+    SELECT outreach_id FROM cl.company_identity
+    WHERE eligibility_status = 'INELIGIBLE'
+      AND outreach_id IS NOT NULL
+);
 
 -- Archive dol
 INSERT INTO outreach.dol_archive
-SELECT *, NOW(), 'INELIGIBLE_COMMERCIAL_FILTER'
-FROM outreach.dol
-WHERE outreach_id IN ($INELIGIBLE_IDS);
+SELECT d.*, NOW(), 'INELIGIBLE_COMMERCIAL_FILTER'
+FROM outreach.dol d
+WHERE d.outreach_id IN (
+    SELECT outreach_id FROM cl.company_identity
+    WHERE eligibility_status = 'INELIGIBLE'
+      AND outreach_id IS NOT NULL
+);
 
 -- Archive people (outreach schema)
 INSERT INTO outreach.people_archive
-SELECT *, NOW(), 'INELIGIBLE_COMMERCIAL_FILTER'
-FROM outreach.people
-WHERE outreach_id IN ($INELIGIBLE_IDS);
+SELECT p.*, NOW(), 'INELIGIBLE_COMMERCIAL_FILTER'
+FROM outreach.people p
+WHERE p.outreach_id IN (
+    SELECT outreach_id FROM cl.company_identity
+    WHERE eligibility_status = 'INELIGIBLE'
+      AND outreach_id IS NOT NULL
+);
 
 -- Archive blog
 INSERT INTO outreach.blog_archive
-SELECT *, NOW(), 'INELIGIBLE_COMMERCIAL_FILTER'
-FROM outreach.blog
-WHERE outreach_id IN ($INELIGIBLE_IDS);
+SELECT b.*, NOW(), 'INELIGIBLE_COMMERCIAL_FILTER'
+FROM outreach.blog b
+WHERE b.outreach_id IN (
+    SELECT outreach_id FROM cl.company_identity
+    WHERE eligibility_status = 'INELIGIBLE'
+      AND outreach_id IS NOT NULL
+);
 
 -- Archive bit_scores
 INSERT INTO outreach.bit_scores_archive
-SELECT *, NOW(), 'INELIGIBLE_COMMERCIAL_FILTER'
-FROM outreach.bit_scores
-WHERE outreach_id IN ($INELIGIBLE_IDS);
+SELECT bs.*, NOW(), 'INELIGIBLE_COMMERCIAL_FILTER'
+FROM outreach.bit_scores bs
+WHERE bs.outreach_id IN (
+    SELECT outreach_id FROM cl.company_identity
+    WHERE eligibility_status = 'INELIGIBLE'
+      AND outreach_id IS NOT NULL
+);
 
 -- Archive company_slot
 INSERT INTO people.company_slot_archive
-SELECT *, NOW(), 'INELIGIBLE_COMMERCIAL_FILTER'
-FROM people.company_slot
-WHERE outreach_id IN ($INELIGIBLE_IDS);
+SELECT cs.*, NOW(), 'INELIGIBLE_COMMERCIAL_FILTER'
+FROM people.company_slot cs
+WHERE cs.outreach_id IN (
+    SELECT outreach_id FROM cl.company_identity
+    WHERE eligibility_status = 'INELIGIBLE'
+      AND outreach_id IS NOT NULL
+);
 
 -- Archive people_master (via slot)
 INSERT INTO people.people_master_archive
 SELECT pm.*, NOW(), 'INELIGIBLE_COMMERCIAL_FILTER'
 FROM people.people_master pm
 JOIN people.company_slot cs ON pm.company_slot_unique_id = cs.slot_id::text
-WHERE cs.outreach_id IN ($INELIGIBLE_IDS);
+WHERE cs.outreach_id IN (
+    SELECT outreach_id FROM cl.company_identity
+    WHERE eligibility_status = 'INELIGIBLE'
+      AND outreach_id IS NOT NULL
+);
 
 COMMIT;
 
@@ -239,8 +317,18 @@ SELECT 'bit_scores_archive', COUNT(*) FROM outreach.bit_scores_archive WHERE arc
 
 **CRITICAL: Execute in this exact order to avoid FK violations.**
 
+**Uses CTE for cleaner subquery reference.**
+
 ```sql
 BEGIN;
+
+-- Define ineligible IDs once
+WITH ineligible AS (
+    SELECT outreach_id
+    FROM cl.company_identity
+    WHERE eligibility_status = 'INELIGIBLE'
+      AND outreach_id IS NOT NULL
+)
 
 -- 1. Delete send_log (FK: sequence_id)
 DELETE FROM outreach.send_log
@@ -248,7 +336,7 @@ WHERE sequence_id IN (
     SELECT sequence_id FROM outreach.sequences
     WHERE campaign_id IN (
         SELECT campaign_id FROM outreach.campaigns
-        WHERE outreach_id IN ($INELIGIBLE_IDS)
+        WHERE outreach_id IN (SELECT outreach_id FROM ineligible)
     )
 );
 
@@ -256,62 +344,114 @@ WHERE sequence_id IN (
 DELETE FROM outreach.sequences
 WHERE campaign_id IN (
     SELECT campaign_id FROM outreach.campaigns
-    WHERE outreach_id IN ($INELIGIBLE_IDS)
+    WHERE outreach_id IN (
+        SELECT outreach_id FROM cl.company_identity
+        WHERE eligibility_status = 'INELIGIBLE'
+          AND outreach_id IS NOT NULL
+    )
 );
 
 -- 3. Delete campaigns (FK: outreach_id)
 DELETE FROM outreach.campaigns
-WHERE outreach_id IN ($INELIGIBLE_IDS);
+WHERE outreach_id IN (
+    SELECT outreach_id FROM cl.company_identity
+    WHERE eligibility_status = 'INELIGIBLE'
+      AND outreach_id IS NOT NULL
+);
 
 -- 4. Delete override_audit_log (FK: override_id)
 DELETE FROM outreach.override_audit_log
 WHERE override_id IN (
     SELECT override_id FROM outreach.manual_overrides
-    WHERE outreach_id IN ($INELIGIBLE_IDS)
+    WHERE outreach_id IN (
+        SELECT outreach_id FROM cl.company_identity
+        WHERE eligibility_status = 'INELIGIBLE'
+          AND outreach_id IS NOT NULL
+    )
 );
 
 -- 5. Delete manual_overrides (FK: outreach_id)
 DELETE FROM outreach.manual_overrides
-WHERE outreach_id IN ($INELIGIBLE_IDS);
+WHERE outreach_id IN (
+    SELECT outreach_id FROM cl.company_identity
+    WHERE eligibility_status = 'INELIGIBLE'
+      AND outreach_id IS NOT NULL
+);
 
 -- 6. Delete bit_signals (FK: outreach_id)
 DELETE FROM outreach.bit_signals
-WHERE outreach_id IN ($INELIGIBLE_IDS);
+WHERE outreach_id IN (
+    SELECT outreach_id FROM cl.company_identity
+    WHERE eligibility_status = 'INELIGIBLE'
+      AND outreach_id IS NOT NULL
+);
 
 -- 7. Delete bit_scores (FK: outreach_id)
 DELETE FROM outreach.bit_scores
-WHERE outreach_id IN ($INELIGIBLE_IDS);
+WHERE outreach_id IN (
+    SELECT outreach_id FROM cl.company_identity
+    WHERE eligibility_status = 'INELIGIBLE'
+      AND outreach_id IS NOT NULL
+);
 
 -- 8. Delete blog (FK: outreach_id)
 DELETE FROM outreach.blog
-WHERE outreach_id IN ($INELIGIBLE_IDS);
+WHERE outreach_id IN (
+    SELECT outreach_id FROM cl.company_identity
+    WHERE eligibility_status = 'INELIGIBLE'
+      AND outreach_id IS NOT NULL
+);
 
 -- 9. Delete people_master (FK: company_slot)
 DELETE FROM people.people_master
 WHERE company_slot_unique_id IN (
     SELECT slot_id::text FROM people.company_slot
-    WHERE outreach_id IN ($INELIGIBLE_IDS)
+    WHERE outreach_id IN (
+        SELECT outreach_id FROM cl.company_identity
+        WHERE eligibility_status = 'INELIGIBLE'
+          AND outreach_id IS NOT NULL
+    )
 );
 
 -- 10. Delete company_slot (FK: outreach_id)
 DELETE FROM people.company_slot
-WHERE outreach_id IN ($INELIGIBLE_IDS);
+WHERE outreach_id IN (
+    SELECT outreach_id FROM cl.company_identity
+    WHERE eligibility_status = 'INELIGIBLE'
+      AND outreach_id IS NOT NULL
+);
 
 -- 11. Delete outreach.people (FK: outreach_id)
 DELETE FROM outreach.people
-WHERE outreach_id IN ($INELIGIBLE_IDS);
+WHERE outreach_id IN (
+    SELECT outreach_id FROM cl.company_identity
+    WHERE eligibility_status = 'INELIGIBLE'
+      AND outreach_id IS NOT NULL
+);
 
 -- 12. Delete dol (FK: outreach_id)
 DELETE FROM outreach.dol
-WHERE outreach_id IN ($INELIGIBLE_IDS);
+WHERE outreach_id IN (
+    SELECT outreach_id FROM cl.company_identity
+    WHERE eligibility_status = 'INELIGIBLE'
+      AND outreach_id IS NOT NULL
+);
 
 -- 13. Delete company_target (FK: outreach_id)
 DELETE FROM outreach.company_target
-WHERE outreach_id IN ($INELIGIBLE_IDS);
+WHERE outreach_id IN (
+    SELECT outreach_id FROM cl.company_identity
+    WHERE eligibility_status = 'INELIGIBLE'
+      AND outreach_id IS NOT NULL
+);
 
 -- 14. Delete outreach spine (LAST)
 DELETE FROM outreach.outreach
-WHERE outreach_id IN ($INELIGIBLE_IDS);
+WHERE outreach_id IN (
+    SELECT outreach_id FROM cl.company_identity
+    WHERE eligibility_status = 'INELIGIBLE'
+      AND outreach_id IS NOT NULL
+);
 
 COMMIT;
 ```
@@ -320,7 +460,7 @@ COMMIT;
 
 ## PHASE 4: CLEAR outreach_id IN CL
 
-**Run this in CL database (or via cross-schema if same DB):**
+**After Outreach cleanup is done, clear the now-orphaned outreach_ids in CL.**
 
 ```sql
 -- Clear outreach_id for ineligible companies
@@ -366,38 +506,39 @@ WHERE ci.sovereign_company_id IS NULL;
 
 ## PYTHON SCRIPT TEMPLATE
 
-For bulk execution with the CL export:
+For automated execution (queries CL directly, no import file):
 
 ```python
 """
-Outreach Cascade Cleanup
-========================
-Receives ineligible_outreach_ids from CL and cascades cleanup.
+Outreach Cascade Cleanup (CL Direct Query)
+==========================================
+Queries CL for ineligible outreach_ids and cascades cleanup.
 
 Usage:
-    doppler run -- python outreach_cascade_cleanup.py --input ineligible_for_outreach_cascade.json
+    doppler run -- python outreach_cascade_cleanup.py --dry-run
+    doppler run -- python outreach_cascade_cleanup.py --execute
 """
 
 import os
-import json
 import argparse
 import psycopg2
 from datetime import datetime
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
-def load_ineligible_ids(filepath: str) -> list:
-    """Load ineligible outreach_ids from CL export."""
-    with open(filepath, 'r') as f:
-        data = json.load(f)
+# CL query for ineligible outreach_ids
+INELIGIBLE_QUERY = """
+    SELECT outreach_id
+    FROM cl.company_identity
+    WHERE eligibility_status = 'INELIGIBLE'
+      AND outreach_id IS NOT NULL
+"""
 
-    if isinstance(data, list):
-        # Array of objects with outreach_id
-        return [r['outreach_id'] for r in data if r.get('outreach_id')]
-    elif isinstance(data, dict) and 'ineligible_outreach_ids' in data:
-        return data['ineligible_outreach_ids']
-    else:
-        raise ValueError("Invalid export format")
+def get_ineligible_ids(conn) -> list:
+    """Query CL directly for ineligible outreach_ids."""
+    cur = conn.cursor()
+    cur.execute(INELIGIBLE_QUERY)
+    return [row[0] for row in cur.fetchall()]
 
 def cascade_cleanup(conn, outreach_ids: list, dry_run: bool = True):
     """Execute cascade cleanup for given outreach_ids."""
@@ -406,20 +547,25 @@ def cascade_cleanup(conn, outreach_ids: list, dry_run: bool = True):
     # Convert to tuple for SQL IN clause
     ids_tuple = tuple(outreach_ids)
 
+    if not ids_tuple:
+        print("No ineligible outreach_ids found. Nothing to clean.")
+        return
+
     print(f"Processing {len(outreach_ids)} outreach_ids...")
 
     # Phase 2: Archive
-    print("PHASE 2: Archiving records...")
-    archive_tables = [
+    print("\nPHASE 2: Archiving records...")
+    archive_queries = [
         ('outreach.outreach', 'outreach.outreach_archive'),
         ('outreach.company_target', 'outreach.company_target_archive'),
         ('outreach.dol', 'outreach.dol_archive'),
         ('outreach.people', 'outreach.people_archive'),
         ('outreach.blog', 'outreach.blog_archive'),
         ('outreach.bit_scores', 'outreach.bit_scores_archive'),
+        ('people.company_slot', 'people.company_slot_archive'),
     ]
 
-    for src, dst in archive_tables:
+    for src, dst in archive_queries:
         cur.execute(f'''
             INSERT INTO {dst}
             SELECT *, NOW(), 'INELIGIBLE_COMMERCIAL_FILTER'
@@ -428,51 +574,118 @@ def cascade_cleanup(conn, outreach_ids: list, dry_run: bool = True):
         ''', (ids_tuple,))
         print(f"  Archived {cur.rowcount} from {src}")
 
-    if dry_run:
-        print("\nDRY RUN - Rolling back...")
-        conn.rollback()
-        return
-
     # Phase 3: Delete in order
     print("\nPHASE 3: Deleting records...")
 
-    delete_order = [
-        "DELETE FROM outreach.send_log WHERE sequence_id IN (SELECT sequence_id FROM outreach.sequences WHERE campaign_id IN (SELECT campaign_id FROM outreach.campaigns WHERE outreach_id IN %s))",
-        "DELETE FROM outreach.sequences WHERE campaign_id IN (SELECT campaign_id FROM outreach.campaigns WHERE outreach_id IN %s)",
-        "DELETE FROM outreach.campaigns WHERE outreach_id IN %s",
-        "DELETE FROM outreach.override_audit_log WHERE override_id IN (SELECT override_id FROM outreach.manual_overrides WHERE outreach_id IN %s)",
-        "DELETE FROM outreach.manual_overrides WHERE outreach_id IN %s",
-        "DELETE FROM outreach.bit_signals WHERE outreach_id IN %s",
-        "DELETE FROM outreach.bit_scores WHERE outreach_id IN %s",
-        "DELETE FROM outreach.blog WHERE outreach_id IN %s",
-        "DELETE FROM people.people_master WHERE company_slot_unique_id IN (SELECT slot_id::text FROM people.company_slot WHERE outreach_id IN %s)",
-        "DELETE FROM people.company_slot WHERE outreach_id IN %s",
-        "DELETE FROM outreach.people WHERE outreach_id IN %s",
-        "DELETE FROM outreach.dol WHERE outreach_id IN %s",
-        "DELETE FROM outreach.company_target WHERE outreach_id IN %s",
-        "DELETE FROM outreach.outreach WHERE outreach_id IN %s",
+    delete_queries = [
+        ("outreach.send_log", """
+            DELETE FROM outreach.send_log
+            WHERE sequence_id IN (
+                SELECT sequence_id FROM outreach.sequences
+                WHERE campaign_id IN (
+                    SELECT campaign_id FROM outreach.campaigns
+                    WHERE outreach_id IN %s
+                )
+            )
+        """),
+        ("outreach.sequences", """
+            DELETE FROM outreach.sequences
+            WHERE campaign_id IN (
+                SELECT campaign_id FROM outreach.campaigns
+                WHERE outreach_id IN %s
+            )
+        """),
+        ("outreach.campaigns", "DELETE FROM outreach.campaigns WHERE outreach_id IN %s"),
+        ("outreach.override_audit_log", """
+            DELETE FROM outreach.override_audit_log
+            WHERE override_id IN (
+                SELECT override_id FROM outreach.manual_overrides
+                WHERE outreach_id IN %s
+            )
+        """),
+        ("outreach.manual_overrides", "DELETE FROM outreach.manual_overrides WHERE outreach_id IN %s"),
+        ("outreach.bit_signals", "DELETE FROM outreach.bit_signals WHERE outreach_id IN %s"),
+        ("outreach.bit_scores", "DELETE FROM outreach.bit_scores WHERE outreach_id IN %s"),
+        ("outreach.blog", "DELETE FROM outreach.blog WHERE outreach_id IN %s"),
+        ("people.people_master", """
+            DELETE FROM people.people_master
+            WHERE company_slot_unique_id IN (
+                SELECT slot_id::text FROM people.company_slot
+                WHERE outreach_id IN %s
+            )
+        """),
+        ("people.company_slot", "DELETE FROM people.company_slot WHERE outreach_id IN %s"),
+        ("outreach.people", "DELETE FROM outreach.people WHERE outreach_id IN %s"),
+        ("outreach.dol", "DELETE FROM outreach.dol WHERE outreach_id IN %s"),
+        ("outreach.company_target", "DELETE FROM outreach.company_target WHERE outreach_id IN %s"),
+        ("outreach.outreach", "DELETE FROM outreach.outreach WHERE outreach_id IN %s"),
     ]
 
-    for sql in delete_order:
+    for table, sql in delete_queries:
         cur.execute(sql, (ids_tuple,))
-        print(f"  Deleted {cur.rowcount} rows")
+        print(f"  {table}: deleted {cur.rowcount}")
+
+    # Phase 4: Clear outreach_id in CL
+    print("\nPHASE 4: Clearing outreach_id in CL...")
+    cur.execute("""
+        UPDATE cl.company_identity
+        SET outreach_id = NULL
+        WHERE eligibility_status = 'INELIGIBLE'
+          AND outreach_id IS NOT NULL
+    """)
+    print(f"  Cleared {cur.rowcount} outreach_ids in CL")
+
+    if dry_run:
+        print("\n*** DRY RUN - Rolling back all changes ***")
+        conn.rollback()
+        return
 
     conn.commit()
-    print("\nCascade cleanup complete!")
+    print("\nCascade cleanup committed!")
+
+    # Phase 5: Verify
+    print("\nPHASE 5: Verifying alignment...")
+    cur.execute("""
+        SELECT COUNT(*) FROM cl.company_identity
+        WHERE eligibility_status = 'ELIGIBLE'
+          AND outreach_id IS NOT NULL
+    """)
+    cl_count = cur.fetchone()[0]
+
+    cur.execute("SELECT COUNT(*) FROM outreach.outreach")
+    outreach_count = cur.fetchone()[0]
+
+    print(f"  CL ELIGIBLE with outreach_id: {cl_count}")
+    print(f"  outreach.outreach count:      {outreach_count}")
+
+    if cl_count == outreach_count:
+        print("  ✓ ALIGNED")
+    else:
+        print(f"  ✗ MISMATCH (diff: {abs(cl_count - outreach_count)})")
 
 def main():
     parser = argparse.ArgumentParser(description='Outreach Cascade Cleanup')
-    parser.add_argument('--input', required=True, help='Path to CL export JSON')
-    parser.add_argument('--execute', action='store_true', help='Actually execute (default is dry run)')
+    parser.add_argument('--execute', action='store_true',
+                        help='Actually execute (default is dry run)')
+    parser.add_argument('--dry-run', action='store_true',
+                        help='Dry run only (default)')
     args = parser.parse_args()
-
-    outreach_ids = load_ineligible_ids(args.input)
-    print(f"Loaded {len(outreach_ids)} ineligible outreach_ids from {args.input}")
 
     conn = psycopg2.connect(DATABASE_URL)
 
     try:
+        # Query CL for ineligible IDs
+        print("Querying CL for ineligible outreach_ids...")
+        outreach_ids = get_ineligible_ids(conn)
+        print(f"Found {len(outreach_ids)} ineligible outreach_ids in CL")
+
+        if not outreach_ids:
+            print("Nothing to clean up.")
+            return
+
+        # Execute cleanup
         cascade_cleanup(conn, outreach_ids, dry_run=not args.execute)
+
     finally:
         conn.close()
 
@@ -492,8 +705,21 @@ OUTREACH CASCADE CLEANUP COMPLETE
 ================================================================================
 
 Execution Date: [DATE]
-Input File: [filepath]
-Dry Run: [YES/NO]
+Source: CL Direct Query (cl.company_identity WHERE eligibility_status = 'INELIGIBLE')
+Mode: [DRY RUN / EXECUTED]
+
+INELIGIBLE BREAKDOWN (from CL):
+─────────────────────────────────────────────────────────────────────────────────
+Exclusion Reason             | Count
+─────────────────────────────────────────────────────────────────────────────────
+EDUCATIONAL_INSTITUTION      | [X]
+GOVERNMENT_ENTITY            | [X]
+HEALTHCARE_FACILITY          | [X]
+RELIGIOUS_ORGANIZATION       | [X]
+INSURANCE_CARRIER            | [X]
+─────────────────────────────────────────────────────────────────────────────────
+TOTAL                        | [X]
+─────────────────────────────────────────────────────────────────────────────────
 
 RECORDS ARCHIVED:
 ─────────────────────────────────────────────────────────────────────────────────
@@ -541,13 +767,37 @@ STATUS: [SUCCESS / FAILED]
 
 ---
 
+## SIMPLIFIED WORKFLOW
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              SIMPLIFIED WORKFLOW                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   1. CL marks non-commercial as INELIGIBLE (separate operation)              │
+│                                                                              │
+│   2. Run this prompt in barton-outreach-core:                                │
+│      - Queries CL for ineligible outreach_ids                                │
+│      - Archives affected records                                             │
+│      - Deletes in FK order                                                   │
+│      - Clears outreach_id in CL                                              │
+│      - Verifies alignment                                                    │
+│                                                                              │
+│   No export file. No handoff. Outreach handles everything autonomously.      │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## Document Control
 
 | Field | Value |
 |-------|-------|
 | Created | 2026-01-29 |
 | Last Modified | 2026-01-29 |
-| Version | 1.0.0 |
+| Version | 2.0.0 |
 | Status | ACTIVE |
 | Authority | OPERATIONAL |
-| Prerequisite | CL_ELIGIBILITY_WITH_OUTREACH_CASCADE.prompt.md (CL) |
+| Prerequisite | CL has marked records as INELIGIBLE |
+| Previous Version | 1.0.0 (required export file) |
