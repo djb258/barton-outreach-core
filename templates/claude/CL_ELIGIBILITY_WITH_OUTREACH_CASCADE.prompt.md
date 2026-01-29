@@ -24,30 +24,23 @@ Your responsibilities:
 
 **Our target market is commercial businesses** — companies that buy employee benefits (health insurance, retirement plans, etc.) through insurance brokers.
 
-**Non-commercial entities are organizations that:**
-- Don't purchase benefits through traditional commercial channels
-- Have government-mandated or specialized procurement processes
-- Are not valid prospects for B2B benefits brokerage services
+### Categories We Exclude
 
-### Why We Exclude These Categories
+| Category | Why Exclude | Examples |
+|----------|-------------|----------|
+| **Government** | Mandated procurement (RFPs, GSA). Don't buy through commercial brokers. | City of Houston, Texas DPS, any .gov/.mil domain |
+| **Schools & Universities** | Government-funded with public procurement requirements. | Springfield School District, Harvard University, any .edu domain |
+| **Hospitals & Health Systems** | Self-insure or specialized group purchasing. Not standard commercial. | Memorial Hospital, Mayo Clinic Health System |
+| **Churches & Religious Orgs** | Non-profit with denominational benefits programs. | First Baptist Church, Catholic Diocese of Austin |
+| **Insurance Carriers** | They SELL insurance. They don't buy it. | State Farm Insurance Company, Mutual of Omaha |
 
-| Category | Why Non-Commercial |
-|----------|-------------------|
-| **Government** | Federal, state, local governments have mandated procurement processes (RFPs, GSA schedules). They don't buy through commercial brokers. |
-| **Education** | Public schools, universities, and districts are government-funded with public procurement requirements. Not commercial buyers. |
-| **Healthcare Facilities** | Hospitals and health systems often self-insure or have specialized group purchasing arrangements. Complex procurement, not standard commercial. |
-| **Religious Organizations** | Churches, ministries are non-profit with denominational or association-based benefits programs. Not commercial buyers. |
-| **Insurance Carriers** | Insurance companies ARE the product providers. They don't buy insurance through brokers — they sell it. |
+### Important Distinction
 
-### What IS Commercial (DO NOT EXCLUDE)
+**Insurance CARRIERS vs BROKERS:**
+- **Carriers** (EXCLUDE): Companies that underwrite/provide insurance policies (State Farm, Blue Cross)
+- **Brokers/Agencies** (KEEP): Companies that sell insurance on behalf of carriers — they're commercial businesses with employees who need benefits
 
-- **Insurance brokers/agencies** — They buy benefits for their own employees like any business
-- **Healthcare vendors** — Medical device companies, pharma, healthcare IT (commercial businesses)
-- **Education vendors** — Companies selling to schools (textbook publishers, EdTech)
-- **Government contractors** — Private companies with government contracts (still commercial)
-- **Religious goods vendors** — Companies selling to churches (still commercial)
-
-**Rule of thumb:** If they're a private business with employees who need benefits, they're commercial — even if they work in or sell to a non-commercial sector.
+The SQL patterns specifically target "insurance company", "insurance carrier", "mutual insurance" — NOT "insurance agency" or "insurance broker".
 
 ---
 
