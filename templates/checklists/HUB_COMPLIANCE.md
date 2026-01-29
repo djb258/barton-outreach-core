@@ -24,8 +24,90 @@ See: `templates/audit/CONSTITUTIONAL_AUDIT_ATTESTATION.md`
 | Priority | Meaning | Ship Without? |
 |----------|---------|---------------|
 | **CRITICAL** | Blocks ship | NO — must be checked |
-| **HIGH** | Strongly recommended | Only with ADR exception |
+| **HIGH** | Blocks compliance | NO — must fix or downgrade with ADR |
 | **MEDIUM** | Nice to have | Yes, but document why |
+| **LOW** | Optional | Yes |
+
+---
+
+## COMPLIANCE GATE (MANDATORY)
+
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                      ZERO-TOLERANCE ENFORCEMENT RULE                          ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                               ║
+║  You CANNOT mark a hub as COMPLIANT if:                                       ║
+║                                                                               ║
+║    1. ANY CRITICAL items are unchecked                                        ║
+║    2. ANY HIGH violations exist (unfixed)                                     ║
+║                                                                               ║
+║  HIGH violations are NOT "fix later" items.                                   ║
+║  HIGH violations BLOCK compliance.                                            ║
+║                                                                               ║
+║  The ONLY path forward is:                                                    ║
+║    → FIX the violation, OR                                                    ║
+║    → DOWNGRADE to MEDIUM with documented justification + ADR                  ║
+║                                                                               ║
+║  NEVER mark COMPLIANT with open HIGH/CRITICAL violations.                     ║
+║  This is a HARD RULE. No exceptions.                                          ║
+║                                                                               ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+```
+
+### Common Mistake (DO NOT DO THIS)
+
+```
+❌ WRONG: "5 HIGH violations found. Status: COMPLIANT"
+   This is INVALID. HIGH violations block compliance.
+
+✅ RIGHT: "5 HIGH violations found. Status: NON-COMPLIANT"
+   Then fix the violations and re-audit.
+
+✅ RIGHT: "0 HIGH/CRITICAL violations. 3 MEDIUM. Status: COMPLIANT WITH NOTES"
+   Medium violations are documented but don't block.
+```
+
+**Constitutional Authority**: See CONSTITUTION.md §Violation Zero Tolerance
+
+---
+
+### AI Agent Compliance Rule (MANDATORY)
+
+**AI agents filling out this checklist are bound by CONSTITUTION.md §Violation Zero Tolerance.**
+
+| Prohibited Action | Consequence |
+|-------------------|-------------|
+| Marking COMPLIANT when CRITICAL items are unchecked | AUDIT INVALIDATED |
+| Marking COMPLIANT when HIGH violations exist (unfixed) | AUDIT INVALIDATED |
+| Downgrading violations to skip the gate | DOCTRINE VIOLATION |
+| Using "partial pass" or "conditional compliance" | NO SUCH STATUS EXISTS |
+| Proceeding past violations without human approval | WORK INVALIDATED |
+
+**Required behavior when violations exist:**
+
+```
+CHECKLIST FAILED
+────────────────
+Hub: [HUB-ID]
+Status: NON-COMPLIANT
+
+CRITICAL unchecked: [count]
+HIGH violations: [count]
+
+Violations:
+1. §[section] — [description]
+2. §[section] — [description]
+
+HUMAN ACTION REQUIRED:
+- Review violations above
+- Fix violations OR downgrade with ADR justification
+- Re-run checklist after remediation
+
+This hub CANNOT ship until violations are resolved.
+```
+
+**There is no "continue anyway" option. AI agents must STOP and report.**
 
 ---
 
@@ -398,6 +480,72 @@ Items marked CRITICAL define minimum operational safety, not architectural purit
 | MEDIUM | Optional | ___ / ___ |
 
 **If any CRITICAL item is unchecked, this hub may not ship.**
+**If any HIGH violation exists, this hub is NON-COMPLIANT.**
+
+---
+
+## Compliance Gate Verification (MANDATORY — CANNOT BE SKIPPED)
+
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                           ZERO-TOLERANCE GATE                                 ║
+║                                                                               ║
+║  YOU MUST FILL OUT THIS SECTION. SKIPPING IS A DOCTRINE VIOLATION.           ║
+║                                                                               ║
+║  Per CONSTITUTION.md §Violation Zero Tolerance:                               ║
+║  • Any violation = FAIL                                                       ║
+║  • No green checkmark with violations                                         ║
+║  • AI agents CANNOT mark COMPLIANT with unresolved violations                 ║
+║                                                                               ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+```
+
+### Step 1: Count Your Violations (MANDATORY)
+
+| Violation Type | Count | Enter Number |
+|----------------|-------|--------------|
+| CRITICAL items unchecked | Must be 0 | ______ |
+| HIGH violations unfixed | Must be 0 | ______ |
+
+### Step 2: Gate Decision (MANDATORY)
+
+```
+IF CRITICAL unchecked > 0  →  STOP. Status = NON-COMPLIANT. No exceptions.
+IF HIGH violations > 0     →  STOP. Status = NON-COMPLIANT. No exceptions.
+IF BOTH = 0                →  MAY proceed to mark COMPLIANT.
+```
+
+### Step 3: Declare Status (MANDATORY)
+
+**Select ONE. This is your final declaration.**
+
+| Condition | Status | Select |
+|-----------|--------|--------|
+| CRITICAL > 0 OR HIGH > 0 | **NON-COMPLIANT** | [ ] ← ONLY valid option if violations exist |
+| CRITICAL = 0 AND HIGH = 0, MEDIUM items exist | **COMPLIANT WITH NOTES** | [ ] |
+| CRITICAL = 0 AND HIGH = 0, no MEDIUM items | **COMPLIANT** | [ ] |
+
+### Step 4: AI Agent Acknowledgment (MANDATORY FOR AI AGENTS)
+
+If you are an AI agent filling out this checklist, you MUST complete this acknowledgment:
+
+```
+I, [AI AGENT NAME], acknowledge that:
+
+[ ] I have read CONSTITUTION.md §Violation Zero Tolerance
+[ ] I understand that ANY violation = FAIL
+[ ] I have counted violations above truthfully
+[ ] I have NOT marked COMPLIANT if violations exist
+[ ] I understand that falsifying this checklist INVALIDATES the audit
+
+CRITICAL count declared above: ______
+HIGH count declared above: ______
+Status selected above: ______________________
+
+If CRITICAL > 0 or HIGH > 0 and I selected COMPLIANT, this audit is INVALID.
+```
+
+**AI agents who skip this acknowledgment or falsify counts have violated doctrine.**
 
 ---
 
@@ -405,6 +553,9 @@ Items marked CRITICAL define minimum operational safety, not architectural purit
 
 > **This hub remains valid only while all checklist items pass.**
 > **Any change that causes failure invalidates the hub until corrected.**
+> **HIGH violations BLOCK compliance — they are NOT "fix later" items.**
+>
+> **ZERO TOLERANCE: If you declared violations above and marked COMPLIANT, this audit is VOID.**
 
 ---
 
