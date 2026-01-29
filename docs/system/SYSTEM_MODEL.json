@@ -1,0 +1,467 @@
+{
+  "meta": {
+    "artifact_type": "system_model",
+    "authority": "derived",
+    "sources_of_truth": ["PRD", "ERD", "Process"],
+    "repository": "barton-outreach-core",
+    "doctrine_version": "1.5.0",
+    "generated_at": "2026-01-29T00:00:00Z",
+    "commit_sha": "d5c20dfff06bd4531945f293cd2c875165d835e7",
+    "regenerable": true
+  },
+
+  "ui_contract": {
+    "read_from": "docs/system/SYSTEM_MODEL.json",
+    "rules": [
+      "UI must read ONLY this file for system understanding",
+      "UI must NOT infer structure from codebase",
+      "UI must NOT browse the repository",
+      "UI must render this model verbatim",
+      "UI rebuilds are triggered when this file changes"
+    ],
+    "authority": "This contract is binding for all UI builders"
+  },
+
+  "hub_topology": {
+    "sovereign": {
+      "id": "IMO-Creator",
+      "type": "parent_repository",
+      "authority": "CC-01"
+    },
+    "root_hub": {
+      "hub_id": "HUB-OUTREACH-001",
+      "name": "Barton Outreach Core",
+      "cc_layer": "CC-02",
+      "ctb_placement": {
+        "trunk": "barton-outreach-core",
+        "branch": "app",
+        "leaf": "outreach"
+      },
+      "governing_prd": "docs/prd/PRD_COMPANY_HUB.md",
+      "governing_erd": "docs/ERD_SUMMARY.md",
+      "status": "ACTIVE"
+    },
+    "sub_hubs": [
+      {
+        "hub_id": "HUB-CT-04.04.01",
+        "name": "Company Target",
+        "parent_hub": "HUB-OUTREACH-001",
+        "cc_layer": "CC-03",
+        "ctb_placement": {
+          "trunk": "barton-outreach-core",
+          "branch": "app",
+          "leaf": "company-target"
+        },
+        "governing_prd": "docs/prd/PRD_COMPANY_HUB.md",
+        "waterfall_order": 1
+      },
+      {
+        "hub_id": "HUB-DOL-04.04.03",
+        "name": "DOL Filings",
+        "parent_hub": "HUB-OUTREACH-001",
+        "cc_layer": "CC-03",
+        "ctb_placement": {
+          "trunk": "barton-outreach-core",
+          "branch": "data",
+          "leaf": "dol-filings"
+        },
+        "governing_prd": "docs/prd/PRD_DOL_SUBHUB.md",
+        "waterfall_order": 2
+      },
+      {
+        "hub_id": "HUB-PPL-04.04.02",
+        "name": "People Intelligence",
+        "parent_hub": "HUB-OUTREACH-001",
+        "cc_layer": "CC-03",
+        "ctb_placement": {
+          "trunk": "barton-outreach-core",
+          "branch": "app",
+          "leaf": "people-intelligence"
+        },
+        "governing_prd": "docs/prd/PRD_PEOPLE_SUBHUB.md",
+        "waterfall_order": 3
+      },
+      {
+        "hub_id": "HUB-BLG-04.04.05",
+        "name": "Blog Content",
+        "parent_hub": "HUB-OUTREACH-001",
+        "cc_layer": "CC-03",
+        "ctb_placement": {
+          "trunk": "barton-outreach-core",
+          "branch": "data",
+          "leaf": "blog-content"
+        },
+        "governing_prd": "docs/prd/PRD_BLOG_NEWS_SUBHUB.md",
+        "waterfall_order": 4
+      },
+      {
+        "hub_id": "HUB-OEX-04.04.04",
+        "name": "Outreach Execution",
+        "parent_hub": "HUB-OUTREACH-001",
+        "cc_layer": "CC-03",
+        "ctb_placement": {
+          "trunk": "barton-outreach-core",
+          "branch": "app",
+          "leaf": "outreach-execution"
+        },
+        "governing_prd": "docs/prd/PRD_OUTREACH_SPOKE.md",
+        "waterfall_order": 5
+      }
+    ],
+    "explicit_exclusions": [
+      "Sales hub (separate repository)",
+      "Client hub (separate repository)",
+      "CL hub (parent authority, read-only reference)"
+    ]
+  },
+
+  "imo_flows": {
+    "HUB-OUTREACH-001": {
+      "ingress": {
+        "sources": [
+          {"type": "cl_identity", "description": "sovereign_company_id from CL"},
+          {"type": "csv_intake", "description": "Raw company data files"},
+          {"type": "webhook", "description": "External signals"}
+        ]
+      },
+      "middle": {
+        "responsibilities": [
+          "Mint outreach_id",
+          "Register outreach_id in CL (write-once)",
+          "Orchestrate waterfall sequence",
+          "Compute BIT scores",
+          "Determine marketing eligibility"
+        ]
+      },
+      "egress": {
+        "destinations": [
+          {"type": "cl_registry", "description": "Write outreach_id to CL"},
+          {"type": "marketing_view", "description": "vw_marketing_eligibility_with_overrides"},
+          {"type": "handoff_webhook", "description": "Sales handoff on booking"}
+        ]
+      }
+    },
+    "HUB-CT-04.04.01": {
+      "ingress": {
+        "sources": [
+          {"type": "outreach_spine", "description": "outreach_id from spine"},
+          {"type": "domain_resolver", "description": "Company domains"}
+        ]
+      },
+      "middle": {
+        "responsibilities": [
+          "Resolve company domain",
+          "Discover email patterns",
+          "Verify email patterns",
+          "Compute pattern confidence"
+        ]
+      },
+      "egress": {
+        "destinations": [
+          {"type": "company_target_table", "description": "outreach.company_target"},
+          {"type": "bit_signal", "description": "Emit BIT signals"}
+        ]
+      }
+    },
+    "HUB-DOL-04.04.03": {
+      "ingress": {
+        "sources": [
+          {"type": "outreach_spine", "description": "outreach_id from spine"},
+          {"type": "form_5500", "description": "DOL Form 5500 filings"}
+        ]
+      },
+      "middle": {
+        "responsibilities": [
+          "Match company to EIN",
+          "Parse Form 5500 data",
+          "Extract Schedule A",
+          "Compute renewal calendar"
+        ]
+      },
+      "egress": {
+        "destinations": [
+          {"type": "dol_table", "description": "outreach.dol"},
+          {"type": "bit_signal", "description": "Emit DOL BIT signals"}
+        ]
+      }
+    },
+    "HUB-PPL-04.04.02": {
+      "ingress": {
+        "sources": [
+          {"type": "outreach_spine", "description": "outreach_id from spine"},
+          {"type": "linkedin_profiles", "description": "Executive profiles"},
+          {"type": "email_pattern", "description": "From company_target"}
+        ]
+      },
+      "middle": {
+        "responsibilities": [
+          "Create CEO/CFO/HR slots",
+          "Assign people to slots",
+          "Generate emails from patterns",
+          "Verify emails"
+        ]
+      },
+      "egress": {
+        "destinations": [
+          {"type": "people_table", "description": "outreach.people"},
+          {"type": "bit_signal", "description": "Emit people BIT signals"}
+        ]
+      }
+    },
+    "HUB-BLG-04.04.05": {
+      "ingress": {
+        "sources": [
+          {"type": "outreach_spine", "description": "outreach_id from spine"},
+          {"type": "rss_feeds", "description": "Company blog/news"}
+        ]
+      },
+      "middle": {
+        "responsibilities": [
+          "Monitor company blogs",
+          "Detect content signals",
+          "Classify news events"
+        ]
+      },
+      "egress": {
+        "destinations": [
+          {"type": "blog_table", "description": "outreach.blog"},
+          {"type": "bit_signal", "description": "Emit content BIT signals"}
+        ]
+      }
+    },
+    "HUB-OEX-04.04.04": {
+      "ingress": {
+        "sources": [
+          {"type": "bit_scores", "description": "From BIT engine"},
+          {"type": "eligibility_view", "description": "From marketing eligibility"}
+        ]
+      },
+      "middle": {
+        "responsibilities": [
+          "Create campaigns",
+          "Build sequences",
+          "Execute sends"
+        ]
+      },
+      "egress": {
+        "destinations": [
+          {"type": "campaign_tables", "description": "outreach.campaigns, sequences, send_log"},
+          {"type": "external_esp", "description": "Email service provider"}
+        ]
+      }
+    }
+  },
+
+  "data_ownership": {
+    "cl_schema": {
+      "owner": "CL (external)",
+      "access": "READ-ONLY",
+      "tables": ["company_identity"],
+      "write_exception": "outreach_id (WRITE-ONCE)"
+    },
+    "outreach_schema": {
+      "owner": "HUB-OUTREACH-001",
+      "access": "READ-WRITE",
+      "tables": [
+        "outreach",
+        "company_target",
+        "dol",
+        "people",
+        "blog",
+        "bit_scores",
+        "bit_signals",
+        "campaigns",
+        "sequences",
+        "send_log",
+        "manual_overrides",
+        "override_audit_log"
+      ]
+    },
+    "people_schema": {
+      "owner": "HUB-PPL-04.04.02",
+      "access": "READ-WRITE",
+      "tables": ["people_master", "company_slot", "people_staging"]
+    },
+    "dol_schema": {
+      "owner": "HUB-DOL-04.04.03",
+      "access": "READ-WRITE",
+      "tables": ["form_5500", "schedule_a", "renewal_calendar", "ein_registry"]
+    },
+    "shared_ownership": "PROHIBITED"
+  },
+
+  "interactions": {
+    "allowed_flows": [
+      {
+        "from": "CL",
+        "to": "HUB-OUTREACH-001",
+        "direction": "INBOUND",
+        "data": "sovereign_company_id"
+      },
+      {
+        "from": "HUB-OUTREACH-001",
+        "to": "CL",
+        "direction": "OUTBOUND",
+        "data": "outreach_id (WRITE-ONCE)"
+      },
+      {
+        "from": "HUB-OUTREACH-001",
+        "to": "HUB-CT-04.04.01",
+        "direction": "DOWNWARD",
+        "data": "outreach_id"
+      },
+      {
+        "from": "HUB-OUTREACH-001",
+        "to": "HUB-DOL-04.04.03",
+        "direction": "DOWNWARD",
+        "data": "outreach_id"
+      },
+      {
+        "from": "HUB-OUTREACH-001",
+        "to": "HUB-PPL-04.04.02",
+        "direction": "DOWNWARD",
+        "data": "outreach_id"
+      },
+      {
+        "from": "HUB-OUTREACH-001",
+        "to": "HUB-BLG-04.04.05",
+        "direction": "DOWNWARD",
+        "data": "outreach_id"
+      },
+      {
+        "from": "HUB-CT-04.04.01",
+        "to": "HUB-OUTREACH-001",
+        "direction": "UPWARD",
+        "data": "bit_signal"
+      },
+      {
+        "from": "HUB-DOL-04.04.03",
+        "to": "HUB-OUTREACH-001",
+        "direction": "UPWARD",
+        "data": "bit_signal"
+      },
+      {
+        "from": "HUB-PPL-04.04.02",
+        "to": "HUB-OUTREACH-001",
+        "direction": "UPWARD",
+        "data": "bit_signal"
+      },
+      {
+        "from": "HUB-BLG-04.04.05",
+        "to": "HUB-OUTREACH-001",
+        "direction": "UPWARD",
+        "data": "bit_signal"
+      },
+      {
+        "from": "HUB-OUTREACH-001",
+        "to": "HUB-OEX-04.04.04",
+        "direction": "DOWNWARD",
+        "data": "bit_decision"
+      }
+    ],
+    "prohibited_flows": [
+      {
+        "from": "HUB-CT-04.04.01",
+        "to": "HUB-DOL-04.04.03",
+        "reason": "No sideways hub-to-hub calls"
+      },
+      {
+        "from": "HUB-PPL-04.04.02",
+        "to": "CL",
+        "reason": "Sub-hubs cannot write to CL"
+      },
+      {
+        "from": "HUB-OUTREACH-001",
+        "to": "Sales",
+        "reason": "Handoff via webhook only, no direct invocation"
+      }
+    ]
+  },
+
+  "artifacts": {
+    "prds": [
+      "docs/prd/PRD_COMPANY_HUB.md",
+      "docs/prd/PRD_COMPANY_HUB_PIPELINE.md",
+      "docs/prd/PRD_PEOPLE_SUBHUB.md",
+      "docs/prd/PRD_DOL_SUBHUB.md",
+      "docs/prd/PRD_BLOG_NEWS_SUBHUB.md",
+      "docs/prd/PRD_OUTREACH_SPOKE.md",
+      "docs/prd/PRD_BIT_ENGINE.md",
+      "docs/prd/PRD_KILL_SWITCH_SYSTEM.md",
+      "docs/prd/PRD_SOVEREIGN_COMPLETION.md",
+      "docs/prd/PRD_MASTER_ERROR_LOG.md",
+      "docs/prd/HUB_PROCESS_SIGNAL_MATRIX.md",
+      "docs/prd/PRD_TALENT_FLOW.md"
+    ],
+    "erds": [
+      "docs/ERD_SUMMARY.md"
+    ],
+    "processes": [
+      "ops/processes/company-target-process.md",
+      "ops/processes/people-intelligence-process.md",
+      "ops/processes/dol-filings-process.md",
+      "ops/processes/blog-content-process.md",
+      "ops/processes/outreach-execution-process.md",
+      "ops/processes/sovereign-completion-process.md",
+      "ops/processes/kill-switch-process.md",
+      "ops/processes/talent-flow-process.md"
+    ],
+    "doctrine": [
+      "doctrine/CL_ADMISSION_GATE_DOCTRINE.md",
+      "doctrine/CL_COMMERCIAL_ELIGIBILITY_DOCTRINE.md",
+      "doctrine/REPO_DOMAIN_SPEC.md",
+      "doctrine/CONSTITUTIONAL_INDEX.md"
+    ],
+    "system_artifacts": [
+      "docs/system/SYSTEM_MODEL.json",
+      "docs/system-flow/SYSTEM_FLOW_PROJECTION.json"
+    ]
+  },
+
+  "change_impact": {
+    "PRD_COMPANY_HUB.md": [
+      "docs/system/SYSTEM_MODEL.json",
+      "docs/system-flow/SYSTEM_FLOW_PROJECTION.json",
+      "docs/ui/UI_PRD_COMPANY_HUB.md"
+    ],
+    "ERD_SUMMARY.md": [
+      "docs/system/SYSTEM_MODEL.json",
+      "docs/system-flow/SYSTEM_FLOW_PROJECTION.json",
+      "docs/ui/UI_ERD_SUMMARY.md"
+    ],
+    "REGISTRY.yaml": [
+      "docs/system/SYSTEM_MODEL.json"
+    ],
+    "hub.manifest.yaml": [
+      "docs/system/SYSTEM_MODEL.json"
+    ],
+    "SYSTEM_MODEL.json": [
+      "docs/ui/*"
+    ],
+    "canonical_doctrine_update": [
+      "docs/system/SYSTEM_MODEL.json",
+      "docs/system-flow/SYSTEM_FLOW_PROJECTION.json",
+      "docs/ui/*"
+    ]
+  },
+
+  "operational_metrics": {
+    "current_counts": {
+      "cl_with_outreach_id": 51913,
+      "outreach_spine": 49933,
+      "company_target": 45816,
+      "with_email_patterns": 41808,
+      "marketing_eligible": 15033
+    },
+    "commercial_filter": {
+      "excluded_categories": [
+        "GOVERNMENT_ENTITY",
+        "EDUCATIONAL_INSTITUTION",
+        "HEALTHCARE_FACILITY",
+        "RELIGIOUS_ORGANIZATION",
+        "INSURANCE_CARRIER"
+      ],
+      "exclusion_doctrine": "doctrine/CL_COMMERCIAL_ELIGIBILITY_DOCTRINE.md"
+    }
+  }
+}
