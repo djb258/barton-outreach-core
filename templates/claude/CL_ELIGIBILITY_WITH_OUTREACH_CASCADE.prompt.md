@@ -2,7 +2,7 @@
 
 **Status**: ACTIVE
 **Authority**: OPERATIONAL
-**Version**: 2.0.0
+**Version**: 2.1.0
 **Change Protocol**: ADR + HUMAN APPROVAL REQUIRED
 
 ---
@@ -32,15 +32,8 @@ Your responsibilities:
 | **Schools & Universities** | Government-funded with public procurement requirements. | Springfield School District, Harvard University, any .edu domain |
 | **Hospitals & Health Systems** | Self-insure or specialized group purchasing. Not standard commercial. | Memorial Hospital, Mayo Clinic Health System |
 | **Churches & Religious Orgs** | Non-profit with denominational benefits programs. | First Baptist Church, Catholic Diocese of Austin |
-| **Insurance Carriers** | They SELL insurance. They don't buy it. | State Farm Insurance Company, Mutual of Omaha |
-
-### Important Distinction
-
-**Insurance CARRIERS vs BROKERS:**
-- **Carriers** (EXCLUDE): Companies that underwrite/provide insurance policies (State Farm, Blue Cross)
-- **Brokers/Agencies** (KEEP): Companies that sell insurance on behalf of carriers — they're commercial businesses with employees who need benefits
-
-The SQL patterns specifically target "insurance company", "insurance carrier", "mutual insurance" — NOT "insurance agency" or "insurance broker".
+| **Insurance (ALL)** | They ARE the insurance industry. Carriers sell it, brokers/agencies distribute it. Not our market. | State Farm, Allstate Insurance Agency, ABC Insurance Brokers |
+| **Financial Services** | Financial advisors and wealth managers have their own benefits arrangements. Not standard commercial buyers. | Edward Jones, Morgan Stanley, Ameriprise Financial, Raymond James |
 
 ---
 
@@ -63,7 +56,8 @@ doppler run -- python script.py
 | `EDUCATIONAL_INSTITUTION` | Education | Schools, colleges, universities, .edu, k12 |
 | `HEALTHCARE_FACILITY` | Healthcare | Hospitals, medical centers, health systems |
 | `RELIGIOUS_ORGANIZATION` | Religious | Churches, ministries, religious orgs |
-| `INSURANCE_CARRIER` | Insurance | Insurance companies (NOT brokers/agencies) |
+| `INSURANCE_ENTITY` | Insurance | ALL insurance: carriers, agencies, brokers, underwriters |
+| `FINANCIAL_SERVICES` | Financial | Financial advisors, wealth management, investment firms |
 
 ---
 
@@ -94,11 +88,11 @@ company_domain LIKE '%.edu'
 LOWER(company_domain) LIKE '%k12%'
 LOWER(company_domain) LIKE '%school%'
 
--- Name patterns (HIGH CONFIDENCE)
+-- Name patterns
 LOWER(company_name) LIKE '%school district%'
 LOWER(company_name) LIKE '%school system%'
 LOWER(company_name) LIKE '%public schools%'
-LOWER(company_name) LIKE '% isd'           -- Independent School District
+LOWER(company_name) LIKE '% isd'
 LOWER(company_name) LIKE '%isd %'
 LOWER(company_name) LIKE '%elementary school%'
 LOWER(company_name) LIKE '%middle school%'
@@ -140,17 +134,55 @@ LOWER(company_name) LIKE '%mosque%'
 LOWER(company_name) LIKE '%temple%'
 ```
 
-### 5. Insurance Carriers (INSURANCE_CARRIER)
+### 5. Insurance — ALL (INSURANCE_ENTITY)
 
 ```sql
+-- Carriers
 LOWER(company_name) LIKE '%insurance company%'
 LOWER(company_name) LIKE '%insurance carrier%'
 LOWER(company_name) LIKE '%mutual insurance%'
 LOWER(company_name) LIKE '%life insurance%'
 LOWER(company_name) LIKE '%health insurance%'
+
+-- Brokers and Agencies
+LOWER(company_name) LIKE '%insurance agency%'
+LOWER(company_name) LIKE '%insurance agencies%'
+LOWER(company_name) LIKE '%insurance broker%'
+LOWER(company_name) LIKE '%insurance brokerage%'
+LOWER(company_name) LIKE '%insurance group%'
+LOWER(company_name) LIKE '%insurance services%'
+
+-- Underwriters
+LOWER(company_name) LIKE '%underwriters%'
+LOWER(company_name) LIKE '%underwriting%'
 ```
 
-**DO NOT EXCLUDE**: Insurance brokers, agencies, consultants (these ARE commercial targets)
+### 6. Financial Services (FINANCIAL_SERVICES)
+
+```sql
+-- Financial advisors
+LOWER(company_name) LIKE '%financial advisor%'
+LOWER(company_name) LIKE '%financial advisors%'
+LOWER(company_name) LIKE '%financial planning%'
+LOWER(company_name) LIKE '%financial services%'
+LOWER(company_name) LIKE '%financial group%'
+
+-- Wealth management
+LOWER(company_name) LIKE '%wealth management%'
+LOWER(company_name) LIKE '%wealth advisor%'
+LOWER(company_name) LIKE '%investment advisor%'
+LOWER(company_name) LIKE '%investment management%'
+
+-- Known firms
+LOWER(company_name) LIKE '%edward jones%'
+LOWER(company_name) LIKE '%raymond james%'
+LOWER(company_name) LIKE '%ameriprise%'
+LOWER(company_name) LIKE '%morgan stanley%'
+LOWER(company_name) LIKE '%merrill lynch%'
+LOWER(company_name) LIKE '%charles schwab%'
+LOWER(company_name) LIKE '%fidelity%'
+LOWER(company_name) LIKE '%vanguard%'
+```
 
 ---
 
@@ -194,10 +226,32 @@ SELECT
             OR LOWER(company_name) LIKE '%ministries%'
             THEN 'RELIGIOUS_ORGANIZATION'
 
-        -- Insurance carriers
+        -- Insurance (ALL)
         WHEN LOWER(company_name) LIKE '%insurance company%'
+            OR LOWER(company_name) LIKE '%insurance carrier%'
             OR LOWER(company_name) LIKE '%mutual insurance%'
-            THEN 'INSURANCE_CARRIER'
+            OR LOWER(company_name) LIKE '%insurance agency%'
+            OR LOWER(company_name) LIKE '%insurance agencies%'
+            OR LOWER(company_name) LIKE '%insurance broker%'
+            OR LOWER(company_name) LIKE '%insurance brokerage%'
+            OR LOWER(company_name) LIKE '%insurance group%'
+            OR LOWER(company_name) LIKE '%insurance services%'
+            OR LOWER(company_name) LIKE '%underwriters%'
+            THEN 'INSURANCE_ENTITY'
+
+        -- Financial Services
+        WHEN LOWER(company_name) LIKE '%financial advisor%'
+            OR LOWER(company_name) LIKE '%financial advisors%'
+            OR LOWER(company_name) LIKE '%financial planning%'
+            OR LOWER(company_name) LIKE '%financial services%'
+            OR LOWER(company_name) LIKE '%wealth management%'
+            OR LOWER(company_name) LIKE '%investment advisor%'
+            OR LOWER(company_name) LIKE '%edward jones%'
+            OR LOWER(company_name) LIKE '%raymond james%'
+            OR LOWER(company_name) LIKE '%ameriprise%'
+            OR LOWER(company_name) LIKE '%morgan stanley%'
+            OR LOWER(company_name) LIKE '%merrill lynch%'
+            THEN 'FINANCIAL_SERVICES'
 
         ELSE 'COMMERCIAL'
     END AS category,
@@ -207,18 +261,6 @@ WHERE eligibility_status IS NULL
    OR eligibility_status != 'INELIGIBLE'
 GROUP BY 1
 ORDER BY 2 DESC;
-```
-
-**Expected output:**
-```
-category                  | count
---------------------------+-------
-COMMERCIAL                | ~48000
-EDUCATIONAL_INSTITUTION   | ~1500
-GOVERNMENT_ENTITY         | ~150
-HEALTHCARE_FACILITY       | ~150
-RELIGIOUS_ORGANIZATION    | ~70
-INSURANCE_CARRIER         | ~15
 ```
 
 ---
@@ -267,10 +309,32 @@ SET
             OR LOWER(company_name) LIKE '%ministries%'
             THEN 'RELIGIOUS_ORGANIZATION'
 
-        -- Insurance carriers
+        -- Insurance (ALL)
         WHEN LOWER(company_name) LIKE '%insurance company%'
+            OR LOWER(company_name) LIKE '%insurance carrier%'
             OR LOWER(company_name) LIKE '%mutual insurance%'
-            THEN 'INSURANCE_CARRIER'
+            OR LOWER(company_name) LIKE '%insurance agency%'
+            OR LOWER(company_name) LIKE '%insurance agencies%'
+            OR LOWER(company_name) LIKE '%insurance broker%'
+            OR LOWER(company_name) LIKE '%insurance brokerage%'
+            OR LOWER(company_name) LIKE '%insurance group%'
+            OR LOWER(company_name) LIKE '%insurance services%'
+            OR LOWER(company_name) LIKE '%underwriters%'
+            THEN 'INSURANCE_ENTITY'
+
+        -- Financial Services
+        WHEN LOWER(company_name) LIKE '%financial advisor%'
+            OR LOWER(company_name) LIKE '%financial advisors%'
+            OR LOWER(company_name) LIKE '%financial planning%'
+            OR LOWER(company_name) LIKE '%financial services%'
+            OR LOWER(company_name) LIKE '%wealth management%'
+            OR LOWER(company_name) LIKE '%investment advisor%'
+            OR LOWER(company_name) LIKE '%edward jones%'
+            OR LOWER(company_name) LIKE '%raymond james%'
+            OR LOWER(company_name) LIKE '%ameriprise%'
+            OR LOWER(company_name) LIKE '%morgan stanley%'
+            OR LOWER(company_name) LIKE '%merrill lynch%'
+            THEN 'FINANCIAL_SERVICES'
     END,
     eligibility_evaluated_at = NOW()
 WHERE (
@@ -302,9 +366,29 @@ WHERE (
     OR LOWER(company_name) LIKE '%church%'
     OR LOWER(company_name) LIKE '%ministry%'
     OR LOWER(company_name) LIKE '%ministries%'
-    -- Insurance
+    -- Insurance (ALL)
     OR LOWER(company_name) LIKE '%insurance company%'
+    OR LOWER(company_name) LIKE '%insurance carrier%'
     OR LOWER(company_name) LIKE '%mutual insurance%'
+    OR LOWER(company_name) LIKE '%insurance agency%'
+    OR LOWER(company_name) LIKE '%insurance agencies%'
+    OR LOWER(company_name) LIKE '%insurance broker%'
+    OR LOWER(company_name) LIKE '%insurance brokerage%'
+    OR LOWER(company_name) LIKE '%insurance group%'
+    OR LOWER(company_name) LIKE '%insurance services%'
+    OR LOWER(company_name) LIKE '%underwriters%'
+    -- Financial Services
+    OR LOWER(company_name) LIKE '%financial advisor%'
+    OR LOWER(company_name) LIKE '%financial advisors%'
+    OR LOWER(company_name) LIKE '%financial planning%'
+    OR LOWER(company_name) LIKE '%financial services%'
+    OR LOWER(company_name) LIKE '%wealth management%'
+    OR LOWER(company_name) LIKE '%investment advisor%'
+    OR LOWER(company_name) LIKE '%edward jones%'
+    OR LOWER(company_name) LIKE '%raymond james%'
+    OR LOWER(company_name) LIKE '%ameriprise%'
+    OR LOWER(company_name) LIKE '%morgan stanley%'
+    OR LOWER(company_name) LIKE '%merrill lynch%'
 )
 AND (eligibility_status IS NULL OR eligibility_status != 'INELIGIBLE');
 
@@ -366,7 +450,8 @@ GOVERNMENT_ENTITY           | [X]   | [X]              | YES
 EDUCATIONAL_INSTITUTION     | [X]   | [X]              | YES
 HEALTHCARE_FACILITY         | [X]   | [X]              | YES
 RELIGIOUS_ORGANIZATION      | [X]   | [X]              | YES
-INSURANCE_CARRIER           | [X]   | [X]              | YES
+INSURANCE_ENTITY            | [X]   | [X]              | YES
+FINANCIAL_SERVICES          | [X]   | [X]              | YES
 ─────────────────────────────────────────────────────────────────────────────────
 TOTAL INELIGIBLE            | [X]   | [X]              |
 ─────────────────────────────────────────────────────────────────────────────────
@@ -439,8 +524,7 @@ Once you're done, barton-outreach-core runs `OUTREACH_CASCADE_CLEANUP.prompt.md`
 |-------|-------|
 | Created | 2026-01-29 |
 | Last Modified | 2026-01-29 |
-| Version | 2.0.0 |
+| Version | 2.1.0 |
 | Status | ACTIVE |
 | Authority | OPERATIONAL |
 | Downstream | OUTREACH_CASCADE_CLEANUP.prompt.md (barton-outreach-core) |
-| Previous Version | 1.0.0 (included export generation) |
