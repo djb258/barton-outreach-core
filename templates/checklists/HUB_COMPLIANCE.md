@@ -469,7 +469,55 @@ Items marked CRITICAL define minimum operational safety, not architectural purit
 | CRITICAL | [ ] Hub identity consistent across CLAUDE.md, README.md, REGISTRY.yaml |
 | HIGH | [ ] No stale examples or code snippets in docs |
 
+### ERD Metrics Verification (MANDATORY)
+
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    METRICS LIVE IN ERD_METRICS.yaml, NOT MD FILES             ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                               ║
+║  MD files are ARCHITECTURE (CONST) — structure, rules, relationships.        ║
+║  ERD_METRICS.yaml is DATA (VAR) — counts, statistics, runtime state.         ║
+║                                                                               ║
+║  DO NOT put record counts in MD files.                                        ║
+║  DO put record counts in erd/ERD_METRICS.yaml.                                ║
+║                                                                               ║
+║  Before work sessions, sync ERD_METRICS.yaml from database.                   ║
+║  This ensures decisions are based on CURRENT data.                            ║
+║                                                                               ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+```
+
+| Priority | Check |
+|----------|-------|
+| CRITICAL | [ ] erd/ERD_METRICS.yaml exists (created from template) |
+| CRITICAL | [ ] ERD_METRICS.yaml has been synced this session |
+| CRITICAL | [ ] sync.last_updated is within stale_after_hours threshold |
+| HIGH | [ ] All tables from ERD.md are represented in ERD_METRICS.yaml |
+| HIGH | [ ] Queries section documents how to refresh each metric |
+
+**Metrics Sync Verification Output (REQUIRED):**
+
+```
+ERD METRICS STATUS
+──────────────────
+File: erd/ERD_METRICS.yaml
+Last Synced: [timestamp]
+Stale Threshold: [hours]
+Status: [CURRENT / STALE]
+
+Key Metrics:
+  [table_name]: [count] records
+  [table_name]: [count] records
+  [aggregate_name]: [value]
+
+Alerts: [count]
+```
+
+**If ERD_METRICS.yaml is missing or stale, sync before proceeding.**
+
 **Documentation drift is a violation. If structure changed, docs MUST be updated.**
+**Metrics are NOT in MD files. Metrics are in ERD_METRICS.yaml.**
 
 ---
 

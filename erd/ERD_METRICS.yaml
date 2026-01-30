@@ -1,0 +1,259 @@
+# ERD Metrics - Runtime Data Snapshot
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# PURPOSE: Current state of ERD tables for operational decision-making
+# AUTHORITY: CC-04 (Process/Runtime)
+# UPDATE FREQUENCY: Before any work session, minimum daily
+#
+# THIS FILE IS AUTO-UPDATED. Manual edits will be overwritten.
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# SYNC METADATA
+# ─────────────────────────────────────────────────────────────────────────────────
+sync:
+  last_updated: "2026-01-30T12:00:00Z"
+  updated_by: "claude-code"
+  source: "doppler://neon/barton-outreach-core"
+  next_sync_due: "2026-01-31T12:00:00Z"
+
+  frequency: daily
+  stale_after_hours: 24
+  auto_sync_on_session: true
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# HUB IDENTITY
+# ─────────────────────────────────────────────────────────────────────────────────
+hub:
+  hub_id: "HUB-OUTREACH-001"
+  hub_name: "barton-outreach-core"
+  sovereign_id: "CL-01"
+  erd_version: "4.3.0"
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# TABLE METRICS
+# ─────────────────────────────────────────────────────────────────────────────────
+
+tables:
+  # ═══════════════════════════════════════════════════════════════════════════
+  # OUTREACH SCHEMA (Operational Spine)
+  # ═══════════════════════════════════════════════════════════════════════════
+  outreach.outreach:
+    total_records: 42192
+    description: "Master spine - commercial companies"
+    alignment_status: "ALIGNED"
+
+  outreach.outreach_excluded:
+    total_records: 2432
+    description: "Non-commercial exclusions"
+
+  outreach.company_target:
+    total_records: 41425
+    description: "Company targeting data"
+    coverage_percent: 98.2
+
+  outreach.dol:
+    total_records: 16860
+    description: "DOL filing facts"
+    coverage_percent: 40.0
+
+  outreach.blog:
+    total_records: 41425
+    description: "Blog content records"
+    coverage_percent: 98.2
+
+  outreach.bit_scores:
+    total_records: 13226
+    description: "BIT scored companies"
+    coverage_percent: 31.4
+
+  outreach.people:
+    total_records: 324
+    description: "Active outreach contacts"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PEOPLE SCHEMA
+  # ═══════════════════════════════════════════════════════════════════════════
+  people.company_slot:
+    total_records: 126576
+    description: "Slot assignments"
+
+  people.people_master:
+    total_records: 78143
+    description: "All people records"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # CL SCHEMA (Authority Registry)
+  # ═══════════════════════════════════════════════════════════════════════════
+  cl.company_identity:
+    total_records: 47348
+    description: "Authority registry"
+    with_outreach_id: 42192
+
+  cl.company_domains:
+    total_records: 46583
+    description: "Domain registry"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # DOL SCHEMA
+  # ═══════════════════════════════════════════════════════════════════════════
+  dol.form_5500:
+    total_records: 230482
+    description: "Large filers (100+ participants)"
+
+  dol.form_5500_sf:
+    total_records: 760839
+    description: "Small filers (<100 participants)"
+
+  dol.ein_urls:
+    total_records: 119409
+    description: "EIN to URL mapping"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # COMPANY SCHEMA
+  # ═══════════════════════════════════════════════════════════════════════════
+  company.company_master:
+    total_records: 74641
+    description: "Company master records"
+
+  company.company_source_urls:
+    total_records: 97124
+    description: "Company source URLs"
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# AGGREGATE METRICS
+# ─────────────────────────────────────────────────────────────────────────────────
+aggregates:
+  total_records_all_tables: 1897750
+
+  # CL-Outreach Alignment (Golden Rule)
+  cl_outreach_alignment:
+    outreach_spine: 42192
+    cl_with_outreach_id: 42192
+    status: "ALIGNED"
+    delta: 0
+
+  # Coverage Metrics
+  coverage:
+    company_target_coverage: 98.2
+    dol_coverage: 40.0
+    blog_coverage: 98.2
+    bit_scores_coverage: 31.4
+
+  # Exclusion Metrics
+  exclusions:
+    total_excluded: 2432
+    exclusion_rate_percent: 5.5
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# FILTER/EXCLUSION METRICS
+# ─────────────────────────────────────────────────────────────────────────────────
+filters:
+  total_excluded: 2432
+  exclusion_reasons:
+    - reason: "CL_NOT_PASS (PENDING)"
+      count: 723
+    - reason: "TLD: .org"
+      count: 675
+    - reason: "NOT_IN_CL"
+      count: 497
+    - reason: "Keyword match"
+      count: 380
+    - reason: "TLD: .edu"
+      count: 84
+    - reason: "TLD: .coop"
+      count: 40
+    - reason: "Other TLDs"
+      count: 31
+    - reason: "CL_FAIL"
+      count: 2
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# DATA QUALITY METRICS
+# ─────────────────────────────────────────────────────────────────────────────────
+data_quality:
+  null_rate_percent: 0
+  duplicate_rate_percent: 0
+  last_quality_check: "2026-01-30T12:00:00Z"
+  quality_status: "PASS"
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# SYNC QUERIES (Reference)
+# ─────────────────────────────────────────────────────────────────────────────────
+queries:
+  # Core alignment
+  outreach_spine: |
+    SELECT COUNT(*) FROM outreach.outreach;
+
+  cl_with_outreach_id: |
+    SELECT COUNT(*) FROM cl.company_identity WHERE outreach_id IS NOT NULL;
+
+  outreach_excluded: |
+    SELECT COUNT(*) FROM outreach.outreach_excluded;
+
+  # Sub-hub counts
+  company_target: |
+    SELECT COUNT(*) FROM outreach.company_target;
+
+  dol: |
+    SELECT COUNT(*) FROM outreach.dol;
+
+  blog: |
+    SELECT COUNT(*) FROM outreach.blog;
+
+  bit_scores: |
+    SELECT COUNT(*) FROM outreach.bit_scores;
+
+  outreach_people: |
+    SELECT COUNT(*) FROM outreach.people;
+
+  # People/CL counts
+  company_slot: |
+    SELECT COUNT(*) FROM people.company_slot;
+
+  people_master: |
+    SELECT COUNT(*) FROM people.people_master;
+
+  cl_company_identity: |
+    SELECT COUNT(*) FROM cl.company_identity;
+
+  cl_company_domains: |
+    SELECT COUNT(*) FROM cl.company_domains;
+
+  # DOL counts
+  form_5500: |
+    SELECT COUNT(*) FROM dol.form_5500;
+
+  form_5500_sf: |
+    SELECT COUNT(*) FROM dol.form_5500_sf;
+
+  ein_urls: |
+    SELECT COUNT(*) FROM dol.ein_urls;
+
+  # Company counts
+  company_master: |
+    SELECT COUNT(*) FROM company.company_master;
+
+  company_source_urls: |
+    SELECT COUNT(*) FROM company.company_source_urls;
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# ALERTS / THRESHOLDS
+# ─────────────────────────────────────────────────────────────────────────────────
+thresholds:
+  min_outreach_spine: 40000
+  max_exclusion_rate: 10
+  alignment_delta_max: 0
+
+alerts: []
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DOCUMENT CONTROL
+# ═══════════════════════════════════════════════════════════════════════════════
+document_control:
+  template_version: "1.0.0"
+  template_source: "imo-creator/templates/erd/ERD_METRICS.yaml.template"
+  created: "2026-01-30"
+  authority: "CC-04"
+  change_protocol: "Auto-updated by sync process"

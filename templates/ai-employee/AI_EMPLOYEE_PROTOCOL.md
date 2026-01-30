@@ -179,6 +179,107 @@ Proceeding: [YES / HALTED - reason]
 
 ---
 
+## Metrics Sync Protocol (MANDATORY FOR CHILD REPOS)
+
+**After repository detection, if in a CHILD repo, you MUST sync ERD metrics.**
+
+Good decisions require current data. Stale metrics lead to bad decisions.
+
+### When to Sync Metrics
+
+| Trigger | Action |
+|---------|--------|
+| Session start | SYNC before any work |
+| Before data-dependent decisions | SYNC to get current counts |
+| After data modifications | SYNC to reflect changes |
+| Metrics older than 24 hours | SYNC (data is stale) |
+
+### Sync Process
+
+```
+STEP 1: Locate erd/ERD_METRICS.yaml
+        │
+        ├─ EXISTS → Check sync.last_updated
+        │           │
+        │           ├─ Older than sync.stale_after_hours → SYNC NOW
+        │           └─ Recent → May proceed (sync optional)
+        │
+        └─ MISSING → Create from template, then SYNC
+
+STEP 2: Connect to data source
+        │
+        └─ Use Doppler for connection strings
+           doppler run -- <sync_command>
+
+STEP 3: Run queries from ERD_METRICS.yaml queries section
+        │
+        └─ Update all table counts and aggregates
+
+STEP 4: Update sync metadata
+        │
+        ├─ sync.last_updated: [current timestamp]
+        ├─ sync.updated_by: [your agent name]
+        └─ sync.next_sync_due: [calculated from frequency]
+
+STEP 5: Check thresholds and report alerts
+```
+
+### Mandatory Sync Report
+
+After syncing, output:
+
+```
+METRICS SYNC COMPLETE
+─────────────────────
+Repository: [repo name]
+ERD Version: [version]
+Sync Time: [timestamp]
+Source: [database/connection]
+
+Key Metrics:
+  [metric_name]: [value]
+  [metric_name]: [value]
+  [metric_name]: [value]
+
+Alerts: [count] ([list if any])
+Status: CURRENT
+```
+
+### Sync Failure Protocol
+
+If sync fails:
+
+```
+METRICS SYNC FAILED
+───────────────────
+Repository: [repo name]
+Error: [error message]
+Last Known Good Sync: [timestamp]
+
+WARNING: Operating on stale data.
+Stale metrics age: [hours/days]
+
+Options:
+1. Fix connection and retry sync
+2. Proceed with WARNING (document stale data risk)
+3. HALT until sync succeeds
+
+Human decision required for options 2-3.
+```
+
+### Why This Matters
+
+| Without Metrics Sync | With Metrics Sync |
+|---------------------|-------------------|
+| "We have ~40k companies" (guess) | "We have 42,192 companies" (fact) |
+| Decisions based on stale data | Decisions based on current data |
+| Surprised by data changes | Aware of data changes |
+| No threshold alerts | Automatic threshold alerts |
+
+**Architectural note:** Metrics live in `erd/ERD_METRICS.yaml`, NOT in MD files. MD files are for architecture (CONST). Metrics are runtime data (VAR).
+
+---
+
 ## Task Acceptance Protocol
 
 Before accepting any task, AI employee MUST verify:
@@ -553,6 +654,48 @@ This repository CANNOT proceed until violations are resolved.
 ```
 
 **There is no "continue anyway" option for violations.**
+
+### Verification Depth (MANDATORY)
+
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║              MD FILES = ARCHITECTURE | ERD_METRICS.yaml = DATA                ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                               ║
+║  MD files (CLAUDE.md, PRD.md, ERD.md) are ARCHITECTURAL documents.            ║
+║  They define STRUCTURE, RULES, RELATIONSHIPS — not counts or statistics.      ║
+║                                                                               ║
+║  DO NOT put data values (counts, statistics, metrics) in MD files.            ║
+║  DO put data values in erd/ERD_METRICS.yaml.                                  ║
+║                                                                               ║
+║  When verifying MD files, check:                                              ║
+║    □ Does the file exist?                                                     ║
+║    □ Is the structure correct?                                                ║
+║    □ Are references and paths valid?                                          ║
+║    □ Is hub identity consistent across files?                                 ║
+║                                                                               ║
+║  When verifying data accuracy, check:                                         ║
+║    □ Does erd/ERD_METRICS.yaml exist?                                         ║
+║    □ Has it been synced this session?                                         ║
+║    □ Is sync.last_updated within threshold?                                   ║
+║                                                                               ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+```
+
+**Separation of concerns:**
+```
+MD files (CONST - Architecture):
+  - CLAUDE.md → How repo works, rules, locked files
+  - PRD.md → What hub does, transformation logic
+  - ERD.md → Data structure, tables, relationships
+
+ERD_METRICS.yaml (VAR - Runtime Data):
+  - Record counts → 42,192 companies
+  - Statistics → 5.7% exclusion rate
+  - Timestamps → Last synced: 2026-01-30T14:32:00Z
+```
+
+**If you find data values in MD files, move them to ERD_METRICS.yaml.**
 
 ---
 
