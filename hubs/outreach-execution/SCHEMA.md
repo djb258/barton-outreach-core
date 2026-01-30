@@ -16,7 +16,9 @@ The Outreach Execution hub manages campaign orchestration, email sequences, send
 | Schema | Table | Purpose |
 |--------|-------|---------|
 | `outreach` | `outreach` | Root outreach context records |
+| `outreach` | `outreach_excluded` | **EXCLUSION TABLE** - All non-commercial/invalid records |
 | `outreach` | `outreach_archive` | Archived outreach records |
+| `outreach` | `outreach_orphan_archive` | Orphaned records with invalid sovereign_id |
 | `outreach` | `outreach_errors` | Outreach pipeline errors |
 | `outreach` | `campaigns` | Campaign definitions |
 | `outreach` | `sequences` | Email sequence templates |
@@ -275,6 +277,56 @@ Root outreach context binding company identity to outreach program.
 | `domain` | varchar | NULL | - | Company domain |
 | `created_at` | timestamptz | NOT NULL | now() | Record creation time |
 | `updated_at` | timestamptz | NOT NULL | now() | Last update time |
+
+### outreach.outreach_excluded (EXCLUSION TABLE)
+
+**THE SINGULAR EXCLUSION TABLE** - All records that should NOT be in the active outreach spine.
+
+This table consolidates ALL exclusions from:
+- Non-commercial entities (churches, schools, hospitals, government)
+- CL PENDING records (not yet PASS)
+- CL FAIL records
+- Invalid sovereign_ids (NOT_IN_CL)
+- Data quality issues (duplicate domains, bad mappings)
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| `outreach_id` | uuid | NOT NULL | - | Primary key (was in outreach.outreach) |
+| `company_name` | text | NULL | - | Company name from CL |
+| `domain` | text | NULL | - | Company domain |
+| `exclusion_reason` | text | NULL | - | Why excluded (see categories below) |
+| `sovereign_id` | uuid | NULL | - | Original sovereign_id reference |
+| `cl_status` | text | NULL | - | CL identity_status at time of exclusion |
+| `excluded_by` | text | NULL | - | What process excluded this record |
+| `excluded_at` | timestamptz | NULL | now() | When excluded |
+| `created_at` | timestamptz | NULL | - | Original creation time |
+| `updated_at` | timestamptz | NULL | - | Original update time |
+
+**Exclusion Reason Categories:**
+
+| Reason | Description |
+|--------|-------------|
+| `CL_NOT_PASS: identity_status=PENDING` | CL record exists but not yet verified |
+| `CL_FAIL: identity_status=FAIL` | CL explicitly marked as FAIL |
+| `NOT_IN_CL: sovereign_id does not exist` | Invalid sovereign_id reference |
+| `NON_COMMERCIAL_TLD: .gov` | Government entity |
+| `NON_COMMERCIAL_TLD: .edu` | Educational institution |
+| `NON_COMMERCIAL_TLD: .org` | Non-profit organization |
+| `NON_COMMERCIAL_TLD: .church` | Religious organization |
+| `NON_COMMERCIAL_KEYWORD: church` | Church keyword in name |
+| `NON_COMMERCIAL_KEYWORD: school` | School keyword in name |
+| `NON_COMMERCIAL_KEYWORD: hospital` | Healthcare facility |
+| `DUPLICATE_DOMAIN` | Domain already exists in outreach.outreach |
+| `DATA_QUALITY` | Data quality issue (bad mapping, etc.) |
+
+**Query to check exclusion distribution:**
+
+```sql
+SELECT exclusion_reason, COUNT(*)
+FROM outreach.outreach_excluded
+GROUP BY exclusion_reason
+ORDER BY COUNT(*) DESC;
+```
 
 ### outreach.campaigns
 
