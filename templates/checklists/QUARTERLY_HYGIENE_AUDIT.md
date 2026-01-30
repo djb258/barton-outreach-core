@@ -2,7 +2,7 @@
 
 **Status**: TEMPLATE
 **Authority**: CONSTITUTIONAL
-**Version**: 1.0.0
+**Version**: 1.1.0
 
 ---
 
@@ -152,6 +152,87 @@ For each hub, verify:
 
 ---
 
+## 7. Data Accuracy Verification
+
+**Purpose**: Verify all documented data values in MD files match the Neon database (source of truth).
+
+### Required Queries
+
+Run these queries against Neon and record actual values:
+
+```sql
+-- Core alignment (MUST MATCH)
+SELECT COUNT(*) FROM outreach.outreach;                                    -- Spine
+SELECT COUNT(*) FROM cl.company_identity WHERE outreach_id IS NOT NULL;    -- CL claimed
+SELECT COUNT(*) FROM outreach.outreach_excluded;                           -- Excluded
+
+-- Sub-hub counts
+SELECT COUNT(*) FROM outreach.company_target;
+SELECT COUNT(*) FROM outreach.dol;
+SELECT COUNT(*) FROM outreach.blog;
+SELECT COUNT(*) FROM outreach.bit_scores;
+SELECT COUNT(*) FROM outreach.people;
+
+-- People/CL counts
+SELECT COUNT(*) FROM people.company_slot;
+SELECT COUNT(*) FROM people.people_master;
+SELECT COUNT(*) FROM cl.company_identity;
+SELECT COUNT(*) FROM cl.company_domains;
+```
+
+### Verification Table
+
+| Metric | Neon Value | CLAUDE.md | DATA_REGISTRY.md | SCHEMA.md | Status |
+|--------|------------|-----------|------------------|-----------|--------|
+| outreach.outreach | | | | | [ ] MATCH / [ ] STALE |
+| CL with outreach_id | | | | | [ ] MATCH / [ ] STALE |
+| outreach_excluded | | | | | [ ] MATCH / [ ] STALE |
+| company_target | | | | | [ ] MATCH / [ ] STALE |
+| outreach.dol | | | | | [ ] MATCH / [ ] STALE |
+| outreach.blog | | | | | [ ] MATCH / [ ] STALE |
+| bit_scores | | | | | [ ] MATCH / [ ] STALE |
+| outreach.people | | | | | [ ] MATCH / [ ] STALE |
+| company_slot | | | | | [ ] MATCH / [ ] STALE |
+| people_master | | | | | [ ] MATCH / [ ] STALE |
+| cl.company_identity | | | | | [ ] MATCH / [ ] STALE |
+| cl.company_domains | | | | | [ ] MATCH / [ ] STALE |
+
+### Alignment Rule Verification
+
+```
+CL-Outreach Golden Rule:
+outreach.outreach count = cl.company_identity (outreach_id NOT NULL) count
+
+Actual: _______ = _______ [ ] ALIGNED / [ ] MISALIGNED
+```
+
+### Files to Check
+
+| File | Contains Data Values | Checked |
+|------|---------------------|---------|
+| `CLAUDE.md` | Post-Cleanup State table | [ ] |
+| `docs/DATA_REGISTRY.md` | All table counts | [ ] |
+| `hubs/*/SCHEMA.md` | Hub-specific counts | [ ] |
+| `docs/MASTER_ERD.md` | Table counts section | [ ] |
+| `docs/COMPLETE_SYSTEM_ERD.md` | Architecture diagrams | [ ] |
+| `docs/ERD_SUMMARY.md` | Summary counts | [ ] |
+
+### Data Accuracy Result
+
+| Check | Status |
+|-------|--------|
+| [ ] All documented values match Neon | |
+| [ ] CL-Outreach alignment verified | |
+| [ ] Stale values updated (if any) | |
+
+**Data Accuracy Finding**: [ ] All values current / [ ] Updates applied (list files below)
+
+Files updated:
+-
+-
+
+---
+
 ## Violations Found
 
 | # | Violation | Severity | Category | Status |
@@ -239,6 +320,7 @@ For each hub, verify:
 | Constitutional Attestation | templates/audit/CONSTITUTIONAL_AUDIT_ATTESTATION.md |
 | Hub Compliance | templates/checklists/HUB_COMPLIANCE.md |
 | Hygiene Auditor | templates/claude/HYGIENE_AUDITOR.prompt.md |
+| Data Accuracy Report | docs/reports/DATA_ACCURACY_CHECK_{DATE}.md |
 
 ---
 
@@ -246,6 +328,6 @@ For each hub, verify:
 
 | Field | Value |
 |-------|-------|
-| Template Version | 1.0.0 |
+| Template Version | 1.1.0 |
 | Authority | CONSTITUTIONAL |
 | Change Protocol | ADR + HUMAN APPROVAL REQUIRED |

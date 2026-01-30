@@ -17,7 +17,8 @@
 **Baseline Freeze Date**: 2026-01-20
 **Sovereign Cleanup**: 2026-01-21 (23,025 records archived)
 **Commercial Eligibility Cleanup**: 2026-01-29 (5,259 excluded + 4,577 phantoms + 2,709 orphans)
-**CL-Outreach Alignment**: 42,833 = 42,833 ✓
+**Exclusion Consolidation**: 2026-01-30 (2,432 total excluded records)
+**CL-Outreach Alignment**: 42,192 = 42,192 ✓
 **Safe to Enable Live Marketing**: YES
 
 ### Key Documentation
@@ -129,7 +130,7 @@ IF outreach_id IS NULL:
 
 ALIGNMENT RULE:
 outreach.outreach count = cl.company_identity (outreach_id NOT NULL) count
-Current: 42,833 = 42,833 ✓ ALIGNED
+Current: 42,192 = 42,192 ✓ ALIGNED
 ```
 
 ### CL Authority Registry (LOCKED)
@@ -667,10 +668,10 @@ DOCTRINE_VERSION=04
 
 ---
 
-**Last Updated**: 2026-01-29
+**Last Updated**: 2026-01-30
 **Architecture**: CL Parent-Child Doctrine v1.1
 **Status**: v1.0 OPERATIONAL BASELINE (CERTIFIED + FROZEN)
-**CL-Outreach Alignment**: 42,833 = 42,833 ✓
+**CL-Outreach Alignment**: 42,192 = 42,192 ✓
 
 ---
 
@@ -725,7 +726,7 @@ See `infra/MIGRATION_ORDER.md` for execution order.
 - 2,709 unfixable orphans archived and deleted
 - 10,846 total cascade deletions across sub-hubs
 
-**Final Alignment**: 42,833 = 42,833 ✓
+**Alignment at 2026-01-21**: 42,833 = 42,833 (subsequently refined to 42,192 via exclusion consolidation)
 
 **Archive Tables Created/Updated**:
 - `outreach.outreach_archive`
@@ -736,16 +737,17 @@ See `infra/MIGRATION_ORDER.md` for execution order.
 - `outreach.outreach_orphan_archive` (NEW)
 - `people.company_slot_archive`
 
-**Post-Cleanup State**:
+**Post-Cleanup State (as of 2026-01-30)**:
 | Sub-Hub | Table | Records | Notes |
 |---------|-------|---------|-------|
-| Spine | outreach.outreach | 42,833 | ALIGNED WITH CL |
-| CT | outreach.company_target | 42,833 | Commercial only |
-| DOL | outreach.dol | ~12,000 | 28% coverage |
-| People | outreach.people | ~370 | |
-| People | people.company_slot | ~132,000 | |
-| Blog | outreach.blog | 42,833 | 100% coverage |
-| BIT | outreach.bit_scores | ~15,400 | |
+| Spine | outreach.outreach | 42,192 | ALIGNED WITH CL |
+| Excluded | outreach.outreach_excluded | 2,432 | All non-commercial/invalid |
+| CT | outreach.company_target | 41,425 | 98.2% coverage |
+| DOL | outreach.dol | 16,860 | 40.0% coverage |
+| People | outreach.people | 324 | |
+| People | people.company_slot | 126,576 | 3.0 avg slots/company |
+| Blog | outreach.blog | 41,425 | 98.2% coverage |
+| BIT | outreach.bit_scores | 13,226 | 31.4% coverage |
 
 ---
 
@@ -907,6 +909,36 @@ SELECT * FROM bit.proof_lines WHERE company_unique_id = ? AND valid_until > NOW(
 
 ---
 
-**Last Updated**: 2026-01-25
+**Last Updated**: 2026-01-30
 **Architecture**: CL Parent-Child Doctrine v1.1 + BIT Authorization v2.0
 **Status**: v1.0 OPERATIONAL BASELINE + BIT v2.0 Phase 1
+
+---
+
+## EXCLUSION CONSOLIDATION (2026-01-30)
+
+**Report**: `docs/reports/HUB_COMPLIANCE_AUDIT_2026-01-30.md`
+
+**Purpose**: Consolidated all non-commercial/invalid records into single exclusion table
+
+**Exclusion Breakdown (2,432 total)**:
+| Category | Count | % |
+|----------|-------|---|
+| CL_NOT_PASS (PENDING) | 723 | 29.7% |
+| TLD: .org | 675 | 27.8% |
+| Keyword match (church, school, hospital) | 380 | 15.6% |
+| NOT_IN_CL (invalid sovereign_id) | 497 | 20.4% |
+| TLD: .edu | 84 | 3.5% |
+| TLD: .coop | 40 | 1.6% |
+| Other TLDs (.gov, .church) | 31 | 1.3% |
+| CL_FAIL | 2 | 0.1% |
+
+**Exclusion Table**: `outreach.outreach_excluded`
+- All non-commercial entities
+- All CL non-PASS records
+- All invalid sovereign_ids
+- Full audit trail preserved
+
+**Final Alignment**: 42,192 = 42,192 ✓
+
+**Q1 2026 Audit Status**: COMPLIANT (0 CRITICAL, 0 HIGH violations)

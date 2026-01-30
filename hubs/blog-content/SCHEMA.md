@@ -251,11 +251,11 @@ The following Blog reference tables are **NEVER** deleted during cascade cleanup
 - `company.company_source_urls` — Discovered URLs (may be reused)
 - `company.url_discovery_failures` — Failure tracking
 
-### Post-Cleanup State (2026-01-29)
+### Post-Cleanup State (2026-01-30)
 
 | Table | Records | Notes |
 |-------|---------|-------|
-| outreach.blog | 42,833 | 100% coverage of outreach spine |
+| outreach.blog | 41,425 | 98.2% coverage of outreach spine |
 | blog.pressure_signals | — | Expire via `expires_at` |
 | company.company_source_urls | 97,124 | Unchanged (reference data) |
 
@@ -275,4 +275,4 @@ This hub's `outreach.blog` data is cleaned when:
 
 ---
 
-**Last Updated**: 2026-01-29
+**Last Updated**: 2026-01-30

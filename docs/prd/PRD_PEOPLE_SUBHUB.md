@@ -1,9 +1,9 @@
 # PRD: People Sub-Hub v3.0
 
-**Version:** 3.0 (Constitutional Compliance)
+**Version:** 3.0 (Constitutional Compliance + FREE Extraction Complete)
 **Status:** Active
 **Constitutional Date:** 2026-01-29
-**Last Updated:** 2026-01-29
+**Last Updated:** 2026-01-30
 **Doctrine:** IMO-Creator Constitutional Doctrine
 **Barton ID Range:** `04.04.02.04.2XXXX.###`
 
@@ -1254,17 +1254,110 @@ doppler run -- python hubs/people-intelligence/imo/middle/phases/ceo_email_pipel
 
 ---
 
-## 15. Version History
+## 15. FREE State Extraction Pipeline
+
+**Implementation File:** `scripts/state_extraction_pipeline.py`
+**ADR:** [ADR-019: FREE Extraction Pipeline Complete](../adr/ADR-019_FREE_Extraction_Pipeline_Complete.md)
+**Status:** ✅ COMPLETE (2026-01-30)
+
+### Overview
+
+The FREE State Extraction Pipeline is a 7-stage automated process that extracts executive contact information from company website URLs without any API costs (beyond Neon database).
+
+### Pipeline Stages
+
+| Stage | Name | Function |
+|-------|------|----------|
+| 1 | Baseline | Count companies, URLs, existing people, slot coverage |
+| 2 | Mint Orphans | Create records for companies found in `web_pages_combined` but missing from `company_target` |
+| 3 | Initialize Slots | Create empty slot records (CEO, CFO, HR) for companies |
+| 4 | **FREE Extraction** | Parse HTML from `web_pages_combined` for executive names/titles |
+| 5 | Assign Slots | Match extracted people to appropriate C-suite slots |
+| 6 | Generate Emails | Create email addresses using verified company patterns |
+| 7 | Final Report | Output stats and remaining paid queue count |
+
+### Source Type Constraints (COMPLIANCE CRITICAL)
+
+```
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                    APPROVED SOURCE TYPES - HARD LAW                           ║
+║                                                                               ║
+║   The FREE extraction pipeline ONLY processes these 4 source types:          ║
+║                                                                               ║
+║   ✅ leadership_page  - Executive team pages                                  ║
+║   ✅ team_page        - Staff/team directories                                ║
+║   ✅ about_page       - About us pages with personnel                         ║
+║   ✅ blog             - Blog author bios                                      ║
+║                                                                               ║
+║   EXCLUDED (NOT PROCESSED):                                                   ║
+║   ❌ contact_page     - No people data, just addresses                        ║
+║   ❌ careers_page     - Job listings, not current executives                  ║
+║   ❌ press_page       - Press releases, not reliable people data              ║
+║                                                                               ║
+║   WARNING: Status checks MUST use same 4 source types or counts are WRONG    ║
+║                                                                               ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+```
+
+### Target States
+
+| State | Companies | URLs | Status |
+|-------|-----------|------|--------|
+| PA | 21,098 | - | ✅ COMPLETE |
+| OH | 14,330 | - | ✅ COMPLETE |
+| VA | 8,143 | - | ✅ COMPLETE |
+| MD | 7,117 | - | ✅ COMPLETE |
+| NC | 10,794 | - | ✅ COMPLETE |
+| KY | 4,428 | - | ✅ COMPLETE |
+| OK | 3,523 | - | ✅ COMPLETE |
+| DE | 1,456 | - | ✅ COMPLETE |
+| WV | 1,194 | - | ✅ COMPLETE |
+| **TOTAL** | **72,083** | - | ✅ ALL COMPLETE |
+
+### Results Summary
+
+| Metric | Value |
+|--------|-------|
+| **Total People Extracted** | 77,256+ |
+| **CEO Slots Filled** | ~37.2% |
+| **CFO Slots Filled** | ~11.7% |
+| **HR Slots Filled** | ~15.7% |
+| **Paid Queue Remaining** | ~27,338 URLs |
+
+### CLI Usage
+
+```bash
+# Run extraction for a state
+doppler run -- python scripts/state_extraction_pipeline.py --state PA --batch-size 500
+
+# Check status with CORRECT source types
+doppler run -- python scripts/correct_status.py
+```
+
+### Key Tables
+
+| Table | Purpose |
+|-------|---------|
+| `web_pages_combined` | Source HTML content (source_type filtered) |
+| `company_target` | Company anchor records |
+| `company_slot` | Slot assignments (CEO, CFO, HR per company) |
+| `people_master` | Extracted person records |
+| `email_queue` | Generated email addresses |
+
+---
+
+## 16. Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2025-12-17 | Initial People Sub-Hub PRD with clean boundaries |
 | 2.1 | 2025-12-17 | Hardened: Correlation ID, Signal idempotency, TTL policies, Two-layer errors, Promotion states |
 | 2.2 | 2026-01-14 | Added: Production implementation details (CEO Email Pipeline, multi-slot support) |
+| 3.0 | 2026-01-30 | Added: FREE State Extraction Pipeline (§15) - 77,256 people extracted across 9 states |
 
 ---
 
-*Document Version: 2.1*
-*Last Updated: 2025-12-17*
+*Document Version: 3.0*
+*Last Updated: 2026-01-30*
 *Owner: People Sub-Hub*
 *Doctrine: Bicycle Wheel v1.1 / Barton Doctrine*

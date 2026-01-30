@@ -51,8 +51,8 @@ erDiagram
     }
 
     %% ═══════════════════════════════════════════════════════════════
-    %% OUTREACH SPINE (Primary Pipeline) - 46,494 commercial companies
-    %% Cleaned 2026-01-27: Removed 5,067 duplicates + 1,210 non-commercial
+    %% OUTREACH SPINE (Primary Pipeline) - 42,192 commercial companies
+    %% Cleaned 2026-01-30: Exclusion consolidation + orphan cleanup
     %% ═══════════════════════════════════════════════════════════════
 
     OUTREACH_OUTREACH {
@@ -571,21 +571,21 @@ WHERE cm.ein IS NOT NULL;
 | Reactivation candidate | `bit.v_reactivation_ready` | Direct (Lane A) |
 | Partner candidate | `bit.v_partner_outreach_ready` | Direct (Lane B) |
 
-### §6.2 Table Counts (As of 2026-01-29)
+### §6.2 Table Counts (As of 2026-01-30)
 
 | Table | Records | Notes |
 |-------|---------|-------|
-| `outreach.outreach` | 42,833 | **THE SPINE** |
-| `outreach.company_target` | 42,833 | 91% email_method |
-| `outreach.dol` | ~13,000 | 27% coverage |
-| `outreach.blog` | 42,833 | 100% coverage |
-| `outreach.people` | 426 | Active contacts |
-| `outreach.bit_scores` | 17,227 | Scored companies |
+| `outreach.outreach` | 42,192 | **THE SPINE** |
+| `outreach.company_target` | 41,425 | 91% email_method |
+| `outreach.dol` | 16,860 | 40% coverage |
+| `outreach.blog` | 41,425 | 98% coverage |
+| `outreach.people` | 324 | Active contacts |
+| `outreach.bit_scores` | 13,226 | Scored companies |
 | `dol.form_5500` | 230,482 | Large filers |
-| `dol.form_5500_sf` | 760,652 | Small filers |
+| `dol.form_5500_sf` | 760,839 | Small filers |
 | `dol.ein_urls` | 119,409 | EIN→URL mapping |
-| `people.people_master` | 26,299 | All people |
-| `people.company_slot` | 153,444 | Slot assignments |
+| `people.people_master` | 78,143 | All people |
+| `people.company_slot` | 126,576 | Slot assignments |
 | `company.company_master` | 74,641 | **DISCONNECTED** |
 | `sales.appointment_history` | 0 | Lane A (new) |
 | `partners.fractional_cfo_master` | 0 | Lane B (new) |

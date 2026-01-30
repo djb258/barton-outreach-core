@@ -525,9 +525,9 @@ DELETE FROM outreach.people WHERE ...;
 
 | Table | Records | Notes |
 |-------|---------|-------|
-| people.company_slot | ~145,000 | Cascade deleted 8,127 |
-| people.people_master | — | Follows slot deletions |
-| outreach.people | 426 | Minimal records |
+| people.company_slot | 126,576 | Cascade deleted 8,127 |
+| people.people_master | 78,143 | Follows slot deletions |
+| outreach.people | 324 | Minimal records |
 
 ### Cleanup Trigger
 
@@ -547,4 +547,4 @@ This hub's data is cleaned when:
 ---
 
 *Generated from Neon PostgreSQL via READ-ONLY connection*
-*Last verified: 2026-01-29*
+*Last verified: 2026-01-30*

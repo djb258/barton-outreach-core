@@ -1,14 +1,15 @@
 # Barton Outreach Core - Complete System ERD
 ## Hub-and-Spoke Architecture with All Tables and Pipelines
 
-**Version:** 4.2.0
-**Last Updated:** 2026-01-29
+**Version:** 4.3.0
+**Last Updated:** 2026-01-30
 **Architecture:** CL Authority Registry + Outreach Operational Spine
 **ADR:** ADR-011_CL_Authority_Registry_Outreach_Spine.md
 **DOL Subhub:** EIN Resolution + Violation Discovery
 **Join Doctrine:** All DOL/Government data joins on EIN
 **Sovereign Cleanup:** 2026-01-21 (23,025 records archived)
-**Cascade Cleanup:** 2026-01-29 (10,846 records removed, alignment: 42,833 = 42,833)
+**Cascade Cleanup:** 2026-01-30 (alignment: 42,192 = 42,192)
+**FREE Extraction:** 2026-01-30 COMPLETE - 77,256 people, 9 states
 
 ---
 
@@ -21,8 +22,8 @@
 │                                                                              │
 │  cl.company_identity                                                         │
 │  ────────────────────                                                        │
-│  sovereign_company_id   PK, IMMUTABLE (minted by CL)         51,910 total   │
-│  outreach_id            WRITE-ONCE (minted by Outreach)      42,833 claimed │
+│  sovereign_company_id   PK, IMMUTABLE (minted by CL)         47,348 total   │
+│  outreach_id            WRITE-ONCE (minted by Outreach)      42,192 claimed │
 │  sales_process_id       WRITE-ONCE (minted by Sales)         —              │
 │  client_id              WRITE-ONCE (minted by Client)        —              │
 │                                                                              │
@@ -46,7 +47,7 @@
 │              OUTREACH OPERATIONAL SPINE (Workflow State)                     │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  outreach.outreach: 42,833 rows                                              │
+│  outreach.outreach: 42,192 rows                                              │
 │  ─────────────────────────────────────────────────────────────────────────── │
 │  outreach_id            PK (minted here, registered in CL)                   │
 │  sovereign_company_id   FK → cl.company_identity                             │
@@ -68,7 +69,7 @@
 │    ┌─────────────────────────────────────────────────────────────────────┐ │
 │    │  SUBHUB 1: COMPANY TARGET (04.04.01)                    [ACTIVE]    │ │
 │    │  ───────────────────────────────────────────────────────────────    │ │
-│    │  Records: 42,833 | 91.4% with email_method | 5,539 errors           │ │
+│    │  Records: 41,425 | 91.4% with email_method | 5,539 errors           │ │
 │    │  • Domain resolution                                                │ │
 │    │  • Email pattern discovery                                          │ │
 │    │  • company_target (FK: outreach_id)                                 │ │
@@ -87,11 +88,12 @@
 │    └─────────────────────────────────────────────────────────────────────┘ │
 │                                        │                                   │
 │                                        ▼                                   │
-│    ┌─────────────────────────────────────────────────────────────────────┐ │
+│  ┌─────────────────────────────────────────────────────────────────────┐ │
 │    │  SUBHUB 3: PEOPLE INTELLIGENCE (04.04.02)               [ACTIVE]    │ │
 │    │  ───────────────────────────────────────────────────────────────    │ │
-│    │  outreach.people: 426 | people.company_slot: 153,444                │ │
-│    │  CEO: 27.1% | CFO: 8.6% | HR: 13.7% filled                          │ │
+│    │  people.people_master: 77,256 | people.company_slot: 127,083       │ │
+│    │  CEO: 37.2% | CFO: 11.7% | HR: 15.7% filled                         │ │
+│    │  FREE EXTRACTION: ✅ COMPLETE (2026-01-30)                          │ │
 │    │  • CONSUMER ONLY - Does NOT discover patterns or EINs               │ │
 │    │  • Slot assignment (seniority-based)                                │ │
 │    │  • Email verification (MillionVerifier)                             │ │
@@ -103,7 +105,7 @@
 │    ┌─────────────────────────────────────────────────────────────────────┐ │
 │    │  SUBHUB 4: BLOG CONTENT (04.04.05)                      [ACTIVE]    │ │
 │    │  ───────────────────────────────────────────────────────────────    │ │
-│    │  Records: 42,833 | 100% coverage                                    │ │
+│    │  Records: 41,425 | 98% coverage                                     │ │
 │    │  • Content signals, news monitoring                                 │ │
 │    │  • blog (FK: outreach_id)                                           │ │
 │    │  • EMITS: content_signals, bit_impact_scores                        │ │
@@ -113,7 +115,7 @@
 │    ┌─────────────────────────────────────────────────────────────────────┐ │
 │    │  BIT ENGINE + OUTREACH EXECUTION                                    │ │
 │    │  ───────────────────────────────────────────────────────────────    │ │
-│    │  BIT Scores: 17,227                                                 │ │
+│    │  BIT Scores: 13,226                                                 │ │
 │    │  • Aggregates signals from all 4 subhubs                            │ │
 │    │  • Calculates BIT Score (0-100)                                     │ │
 │    │  • Triggers outreach campaigns                                      │ │
@@ -1042,9 +1044,9 @@ erDiagram
 
 | Schema | Table | Rows | Purpose | Key Relationships |
 |--------|-------|------|---------|-------------------|
-| **cl** | company_identity | 51,910 | **AUTHORITY REGISTRY** | PK: sovereign_company_id |
+| **cl** | company_identity | 47,348 | **AUTHORITY REGISTRY** | PK: sovereign_company_id |
 | | | | Stores identity pointers: | outreach_id (WRITE-ONCE) |
-| | | | - outreach_id: 42,833 claimed | sales_process_id (WRITE-ONCE) |
+| | | | - outreach_id: 42,192 claimed | sales_process_id (WRITE-ONCE) |
 | | | | - sales_process_id: — | client_id (WRITE-ONCE) |
 | | | | - client_id: — | |
 | **cl** | company_identity_archive | 22,263 | Archived identities | Archive from cleanup |
@@ -1055,30 +1057,35 @@ erDiagram
 
 | Schema | Table | Rows | Purpose | Key Relationships |
 |--------|-------|------|---------|-------------------|
-| **outreach** | outreach | 42,833 | **MASTER SPINE** - ALIGNED WITH CL | FK: sovereign_id → cl.company_identity |
+| **outreach** | outreach | 42,192 | **MASTER SPINE** - ALIGNED WITH CL | FK: sovereign_id → cl.company_identity |
 | **outreach** | outreach_archive | 23,025 | Archived records | Sovereign cleanup 2026-01-21 |
 
 ### Sub-Hub Tables
 
 | Schema | Table | Rows | Purpose | Key Relationships |
 |--------|-------|------|---------|-------------------|
-| **outreach** | company_target | 42,833 | Company targeting | FK: outreach_id |
+| **outreach** | company_target | 41,425 | Company targeting | FK: outreach_id |
 | **outreach** | company_target_errors | 5,539 | CT errors | FK: outreach_id |
-| **outreach** | dol | 13,829 | DOL filing facts (27% coverage) | FK: outreach_id |
+| **outreach** | dol | 16,860 | DOL filing facts (40% coverage) | FK: outreach_id |
 | **outreach** | dol_errors | 37,319 | DOL errors | FK: outreach_id |
-| **outreach** | people | 426 | Contact records | FK: outreach_id |
+| **outreach** | people | 324 | Contact records | FK: outreach_id |
 | **outreach** | people_errors | — | People errors | FK: outreach_id |
-| **outreach** | blog | 42,833 | Blog content (100% coverage) | FK: outreach_id |
+| **outreach** | blog | 41,425 | Blog content (98% coverage) | FK: outreach_id |
 | **outreach** | blog_errors | — | Blog errors | FK: outreach_id |
 
 ### People Intelligence Tables
 
 | Schema | Table | Rows | Purpose | Key Relationships |
 |--------|-------|------|---------|-------------------|
-| **people** | people_master | ~190K | Master people records | FK: company_unique_id |
-| **people** | company_slot | 153,444 | Slot assignments | FK: outreach_id, person_unique_id |
+| **people** | people_master | **77,256** | Master people records | FK: company_unique_id |
+| **people** | company_slot | 127,083 | Slot assignments (42,361 x 3) | FK: outreach_id, person_unique_id |
+| **people** | people_staging | — | Pre-promotion staging | FK: company_unique_id |
+| **people** | paid_enrichment_queue | 27,338 | URLs for Clay enrichment | FK: company_unique_id |
 | **people** | company_slot_archive | — | Archived slots | Sovereign cleanup |
 | **people** | people_resolution_history | — | Resolution audit | FK: outreach_id |
+
+> **FREE Extraction Complete (2026-01-30):** 77,256 people extracted from 9 target states.
+> See [ADR-019](adr/ADR-019_FREE_Extraction_Pipeline_Complete.md) for details.
 
 ### BIT Engine Tables
 
@@ -1140,7 +1147,7 @@ erDiagram
 │                                                                             │
 │   ALIGNMENT RULE:                                                          │
 │   outreach.outreach count = cl.company_identity (PASS) count               │
-│   Current: 42,833 = 42,833 ✓ ALIGNED                                       │
+│   Current: 42,192 = 42,192 ✓ ALIGNED                                       │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -1157,5 +1164,5 @@ erDiagram
 
 ---
 
-*Generated: 2026-01-22 | Barton Outreach Core v4.0 | CL Parent-Child Doctrine v1.1*
-*Sovereign Cleanup: 2026-01-21 | 23,025 records archived | CL-Outreach aligned at 42,833*
+*Generated: 2026-01-30 | Barton Outreach Core v4.0 | CL Parent-Child Doctrine v1.1*
+*Current Alignment: 42,192 = 42,192 | Exclusion Consolidation: 2026-01-30*

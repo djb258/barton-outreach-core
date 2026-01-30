@@ -1,7 +1,7 @@
 # Barton Outreach Core - Complete Data Flow
 
-**Version**: 2.1.0
-**Last Updated**: 2025-12-19
+**Version**: 2.2.0
+**Last Updated**: 2026-01-30
 **Architecture**: Bicycle Wheel Doctrine v1.1
 
 ---
@@ -851,7 +851,8 @@
 | ├─ Phase 7 | Pipeline | `phases/phase7_enrichment_queue.py` | ACTIVE | Priority queue (H/M/L) |
 | ├─ Phase 8 | Pipeline | `phases/phase8_output_writer.py` | ACTIVE | CSV output |
 | ├─ **Talent Flow** | Sub-Hub | `spokes/people/talent_flow/` | SHELL | LinkedIn→Movement→Signals |
-| └─ **Email Verify** | Sub-Wheel | `sub_wheels/email_verification/` | ACTIVE | Pattern→MillionVerify |
+| ├─ **Email Verify** | Sub-Wheel | `sub_wheels/email_verification/` | ACTIVE | Pattern→MillionVerify |
+| └─ **FREE Extract** | Pipeline | `scripts/state_extraction_pipeline.py` | ✅ COMPLETE | 7-stage state extraction |
 | **DOL Spoke** | Spoke #2 | `spokes/dol/` | ACTIVE | Import→Match→Validate→Signal |
 | ├─ Import | Pipeline | `importers/import_5500.py` | ACTIVE | CSV→Staging→Tables |
 | ├─ Process | Pipeline | `dol_spoke.py` | ACTIVE | EIN→Company→HubGate |
@@ -859,6 +860,46 @@
 | **Blog Spoke** | Spoke #3 | `spokes/blog/` | PLANNED | News→Sentiment→Signal |
 | **Outreach** | Output | - | PLANNED | BIT≥25→Campaign→Send |
 
+### FREE State Extraction Pipeline (✅ COMPLETE - 2026-01-30)
+
+```
+╔═══════════════════════════════════════════════════════════════════════════════════════╗
+║                          FREE STATE EXTRACTION PIPELINE                                ║
+║                        scripts/state_extraction_pipeline.py                            ║
+║                              Status: ✅ ALL 9 STATES COMPLETE                          ║
+╠═══════════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                        ║
+║   APPROVED SOURCE TYPES (4 only - COMPLIANCE CRITICAL):                               ║
+║   ├── leadership_page    (Executive team pages)                                        ║
+║   ├── team_page          (Staff directories)                                           ║
+║   ├── about_page         (About us with personnel)                                     ║
+║   └── blog               (Blog author bios)                                            ║
+║                                                                                        ║
+║   7-STAGE PIPELINE:                                                                    ║
+║   ┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐                 ║
+║   │ Stage 1 │──▶│ Stage 2 │──▶│ Stage 3 │──▶│ Stage 4 │──▶│ Stage 5 │                 ║
+║   │Baseline │   │  Mint   │   │  Init   │   │  FREE   │   │ Assign  │                 ║
+║   │ Check   │   │ Orphans │   │  Slots  │   │ Extract │   │  Slots  │                 ║
+║   └─────────┘   └─────────┘   └─────────┘   └─────────┘   └─────────┘                 ║
+║                                                    │             │                     ║
+║                                                    ▼             ▼                     ║
+║                                              ┌─────────┐   ┌─────────┐                 ║
+║                                              │ Stage 6 │──▶│ Stage 7 │                 ║
+║                                              │Generate │   │  Final  │                 ║
+║                                              │ Emails  │   │ Report  │                 ║
+║                                              └─────────┘   └─────────┘                 ║
+║                                                                                        ║
+║   RESULTS:                                                                             ║
+║   ├── States Processed: PA, OH, VA, MD, NC, KY, OK, DE, WV                            ║
+║   ├── Total People: 77,256+                                                            ║
+║   ├── CEO Slots: ~37.2%                                                                ║
+║   ├── CFO Slots: ~11.7%                                                                ║
+║   ├── HR Slots: ~15.7%                                                                 ║
+║   └── Paid Queue: ~27,338 URLs remaining for Clay API                                  ║
+║                                                                                        ║
+╚═══════════════════════════════════════════════════════════════════════════════════════╝
+```
+
 ---
 
-*Document generated from codebase analysis - 2025-12-19*
+*Document generated from codebase analysis - 2026-01-30*

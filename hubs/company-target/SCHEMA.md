@@ -480,7 +480,7 @@ WHERE outreach_id IN (SELECT outreach_id FROM orphan_list);
 
 | Table | Records | Notes |
 |-------|---------|-------|
-| outreach.company_target | 42,833 | Aligned with spine |
+| outreach.company_target | 41,425 | Aligned with spine |
 | outreach.company_target_archive | — | Contains orphaned records |
 
 ### Cleanup Trigger
@@ -493,4 +493,4 @@ This hub's data is cleaned when:
 ---
 
 *Generated from Neon PostgreSQL via READ-ONLY connection*
-*Last verified: 2026-01-29*
+*Last verified: 2026-01-30*

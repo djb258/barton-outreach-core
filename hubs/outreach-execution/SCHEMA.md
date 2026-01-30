@@ -562,10 +562,10 @@ WHERE outreach_id IN (SELECT outreach_id FROM orphan_list);
 
 | Table | Records | Notes |
 |-------|---------|-------|
-| outreach.outreach | **42,833** | ALIGNED with CL |
+| outreach.outreach | **42,192** | ALIGNED with CL |
 | outreach.outreach_archive | — | Contains excluded records |
 | outreach.outreach_orphan_archive | 2,709 | Unfixable orphans |
-| outreach.bit_scores | ~17,000 | BIT-scored records |
+| outreach.bit_scores | 13,226 | BIT-scored records |
 | outreach.campaigns | — | Campaign definitions |
 | outreach.send_log | — | Send history |
 
@@ -585,7 +585,7 @@ SELECT
     COUNT(*) as count
 FROM outreach.outreach;
 
--- Expected: Both counts should match (42,833 = 42,833)
+-- Expected: Both counts should match (42,192 = 42,192)
 ```
 
 ### Cleanup Trigger
@@ -606,10 +606,10 @@ IF outreach_id IS NULL:
 
 ALIGNMENT RULE:
 outreach.outreach count = cl.company_identity (outreach_id NOT NULL) count
-Current: 42,833 = 42,833 ✓ ALIGNED
+Current: 42,192 = 42,192 ✓ ALIGNED
 ```
 
 ---
 
 *Generated from Neon PostgreSQL via READ-ONLY connection*
-*Last verified: 2026-01-29*
+*Last verified: 2026-01-30*

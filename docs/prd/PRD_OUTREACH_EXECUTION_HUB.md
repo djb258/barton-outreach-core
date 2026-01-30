@@ -132,7 +132,7 @@ IF outreach_id IS NULL:
 
 ALIGNMENT RULE:
 outreach.outreach count = cl.company_identity (outreach_id NOT NULL) count
-Current: 42,833 = 42,833 ✓ ALIGNED
+Current: 42,192 = 42,192 ✓ ALIGNED
 ```
 
 ---
@@ -143,14 +143,14 @@ Current: 42,833 = 42,833 ✓ ALIGNED
 
 | Schema | Table | Purpose | Records |
 |--------|-------|---------|---------|
-| `outreach` | `outreach` | **THE SPINE** - Root records | 42,833 |
+| `outreach` | `outreach` | **THE SPINE** - Root records | 42,192 |
 | `outreach` | `outreach_archive` | Archived spine records | — |
 | `outreach` | `outreach_orphan_archive` | Unfixable orphans | 2,709 |
 | `outreach` | `campaigns` | Campaign definitions | — |
 | `outreach` | `sequences` | Email sequence templates | — |
 | `outreach` | `send_log` | Individual send tracking | — |
 | `outreach` | `engagement_events` | All engagement events | — |
-| `outreach` | `bit_scores` | BIT scores by outreach | ~17,000 |
+| `outreach` | `bit_scores` | BIT scores by outreach | 13,226 |
 | `outreach` | `bit_signals` | BIT signal events | — |
 | `outreach` | `manual_overrides` | Kill switch overrides | — |
 | `outreach` | `override_audit_log` | Kill switch audit trail | — |

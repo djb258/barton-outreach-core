@@ -839,12 +839,12 @@ vw_marketing_eligibility_with_overrides (effective_tier computed)
 | outreach.bit_signals | 0 | Signal log (empty) |
 | outreach.manual_overrides | 0 | Kill switches (empty) |
 | outreach.override_audit_log | 0 | Audit trail (empty) |
-| people.company_slot | 149,172 | Slot assignments |
-| people.people_master | 71,237 | People records |
+| people.company_slot | 126,576 | Slot assignments |
+| people.people_master | 78,143 | People records |
 | dol.form_5500 | 230,482 | Form 5500 filings |
 | dol.schedule_a | 337,476 | Schedule A records |
 
-**Alignment Status**: CL-Outreach alignment = 42,833 = 42,833 (post-cascade cleanup on 2026-01-29)
+**Alignment Status**: CL-Outreach alignment = 42,192 = 42,192 (post-exclusion consolidation 2026-01-30)
 
 ---
 
@@ -921,11 +921,11 @@ vw_marketing_eligibility_with_overrides (effective_tier computed)
 - Marketing safety gate (HARD_FAIL enforcement)
 - Hub registry and waterfall order
 
-### Post-Cleanup State (2026-01-29)
+### Post-Cleanup State (2026-01-30)
 
 - 23,025 orphaned outreach_ids archived (2026-01-21 sovereign cleanup)
-- 10,846 additional records removed (2026-01-29 cascade cleanup)
-- CL-Outreach alignment restored: 42,833 = 42,833
+- Exclusion consolidation completed (2026-01-30)
+- CL-Outreach alignment: 42,192 = 42,192
 - Archive tables created for all affected entities
 - Safe to enable live marketing: **YES**
 

@@ -1,5 +1,9 @@
 # State Blog → People Extraction Pipeline
 
+## ✅ PIPELINE COMPLETION STATUS - 2026-01-30
+
+> **ALL 9 STATES COMPLETE** - FREE extraction finished for all target states.
+
 ## Quick Reference
 
 ```bash
@@ -9,64 +13,69 @@ doppler run -- python scripts/state_extraction_pipeline.py --state PA --batch-si
 # Run for all 9 target states
 doppler run -- python scripts/state_extraction_pipeline.py --state ALL --batch-size 500
 
-# Quick assignment (after pipeline completes)
-doppler run -- python scripts/quick_assign.py
+# Check extraction status
+doppler run -- python scripts/correct_status.py
 
-# Summary report
-doppler run -- python scripts/wv_summary.py
+# Full status report
+doppler run -- python scripts/full_status_check.py
 ```
 
-## Target States (9 Total) - REVISED 2026-01-28
+## Target States (9 Total) - FINAL STATUS 2026-01-30
 
-| State | Code | Companies | People | Status |
-|-------|------|-----------|--------|--------|
-| Pennsylvania | PA | 16,571 | 16,433 | 🔄 IN PROGRESS |
-| Ohio | OH | 14,843 | 18,546 | 🔄 IN PROGRESS |
-| Virginia | VA | 11,983 | 4,234 | ⏳ PENDING |
-| North Carolina | NC | 10,794 | 4,816 | ⏳ PENDING |
-| Maryland | MD | 8,344 | 11,963 | 🔄 IN PROGRESS |
-| Kentucky | KY | 3,864 | 1,687 | ⏳ PENDING |
-| Oklahoma | OK | 3,743 | 128 | ⏳ PENDING |
-| West Virginia | WV | 1,340 | 660 | 🔄 IN PROGRESS |
-| Delaware | DE | 3,159 | 1,173 | 🔄 IN PROGRESS |
+| State | Code | Companies | People | FREE Status | Paid Queue |
+|-------|------|-----------|--------|-------------|------------|
+| Pennsylvania | PA | 16,571 | 16,433 | ✅ COMPLETE | 6,966 |
+| Ohio | OH | 14,843 | 18,546 | ✅ COMPLETE | 6,215 |
+| Virginia | VA | 11,983 | 13,786 | ✅ COMPLETE | 4,576 |
+| North Carolina | NC | 10,794 | 8,924 | ✅ COMPLETE | 3,333 |
+| Maryland | MD | 8,344 | 11,963 | ✅ COMPLETE | 2,939 |
+| Kentucky | KY | 3,864 | 3,516 | ✅ COMPLETE | 996 |
+| Oklahoma | OK | 3,743 | 2,106 | ✅ COMPLETE | 1,210 |
+| Delaware | DE | 3,159 | 1,322 | ✅ COMPLETE | 841 |
+| West Virginia | WV | 1,340 | 660 | ✅ COMPLETE | 262 |
 
-> **Note:** Previous target states (VT, WY, AK, ND, SD, MT, RI) were deprecated on 2026-01-28.
-> See [ADR-018](adr/ADR-018_FREE_Extraction_Pipeline_Progress.md) for details.
+> **Total People Extracted:** 77,256  
+> **Paid Enrichment Queue:** 27,338 URLs (ready for Clay API)
 
 ---
 
-## Extraction Progress Summary (2026-01-28)
+## Extraction Final Summary (2026-01-30)
 
 ```
 ======================================================================
-         FREE EXTRACTION PIPELINE - PROGRESS REPORT
+         FREE EXTRACTION PIPELINE - COMPLETION REPORT
 ======================================================================
 
-Extraction Status Distribution:
-  pending:          71,511 URLs (73.6%)
-  queued_for_paid:  17,092 URLs (17.6%)
-  complete:          8,439 URLs (8.7%)
-  failed:                9 URLs (0.0%)
+FREE Extraction Status:
+  complete:        14,630 URLs
+  queued_for_paid: 27,338 URLs (awaiting PAID enrichment)
+  pending:              0 URLs ← ALL PROCESSED
+  failed:               9 URLs
 
-Total People Extracted: 59,640
+Total People Extracted: 77,256
 
-Paid Enrichment Queue: 17,174 URLs (ready for Clay)
+Slot Coverage (Overall):
+  CEO: 15,759/42,361 (37.2%)
+  CFO:  4,975/42,361 (11.7%)
+  HR:   6,636/42,361 (15.7%)
+
+PAID Enrichment Queue: 27,338 URLs (ready for Clay)
 ======================================================================
 ```
 
-### By State
+### Final Results By State
 
 | State | Complete | Paid Queue | Pending | People |
 |-------|----------|------------|---------|--------|
-| PA | 3,451 | 6,966 | 14,416 | 16,433 |
-| OH | 3,054 | 6,215 | 12,912 | 18,546 |
-| MD | 1,529 | 2,939 | 5,720 | 11,963 |
-| VA | 0 | 0 | 16,404 | 4,234 |
-| NC | 0 | 0 | 12,259 | 4,816 |
-| WV | 115 | 262 | 610 | 660 |
-| DE | 290 | 710 | 1,604 | 1,173 |
-| KY | 0 | 0 | 3,661 | 1,687 |
-| OK | 0 | 0 | 3,925 | 128 |
+| PA | 3,451 | 6,966 | 0 | 16,433 |
+| OH | 3,054 | 6,215 | 0 | 18,546 |
+| VA | 2,426 | 4,576 | 0 | 13,786 |
+| NC | 1,457 | 3,333 | 0 | 8,924 |
+| MD | 1,529 | 2,939 | 0 | 11,963 |
+| KY | 525 | 996 | 0 | 3,516 |
+| OK | 496 | 1,210 | 0 | 2,106 |
+| DE | 341 | 841 | 0 | 1,322 |
+| WV | 115 | 262 | 0 | 660 |
 
 ---
 
@@ -269,13 +278,31 @@ GROUP BY 1, 2;
 
 ## Next Steps
 
-1. **Run VA:** `doppler run -- python scripts/state_extraction_pipeline.py --state VA --batch-size 500`
-2. **Run NC:** `doppler run -- python scripts/state_extraction_pipeline.py --state NC --batch-size 500`
-3. **Complete WV:** `doppler run -- python scripts/state_extraction_pipeline.py --state WV --batch-size 500`
-4. **Complete DE:** `doppler run -- python scripts/state_extraction_pipeline.py --state DE --batch-size 500`
-5. **Run KY:** `doppler run -- python scripts/state_extraction_pipeline.py --state KY --batch-size 500`
-6. **Run OK:** `doppler run -- python scripts/state_extraction_pipeline.py --state OK --batch-size 500`
-7. **Paid enrichment:** Send 17,174 queued URLs to Clay
+### ✅ COMPLETED (2026-01-30)
+1. ~~Run VA~~ → DONE - 13,786 people
+2. ~~Run NC~~ → DONE - 8,924 people  
+3. ~~Complete WV~~ → DONE - 660 people
+4. ~~Complete DE~~ → DONE - 1,322 people
+5. ~~Run KY~~ → DONE - 3,516 people
+6. ~~Run OK~~ → DONE - 2,106 people
+7. ~~Run PA~~ → DONE - 16,433 people
+8. ~~Run OH~~ → DONE - 18,546 people
+9. ~~Run MD~~ → DONE - 11,963 people
+
+### NEXT: PAID Enrichment
+- **27,338 URLs** in `queued_for_paid` status
+- These are URLs where FREE extraction found no patterns
+- Ready to send to Clay API for paid enrichment
+
+```sql
+-- Check paid queue by state
+SELECT cm.address_state, COUNT(*) 
+FROM company.company_source_urls csu
+JOIN company.company_master cm ON csu.company_unique_id = cm.company_unique_id
+WHERE csu.extraction_status = 'queued_for_paid'
+GROUP BY cm.address_state
+ORDER BY COUNT(*) DESC;
+```
 
 ---
 
@@ -305,6 +332,35 @@ self.conn.commit()
 
 ---
 
-*Last Updated: January 28, 2026*
-*Pipeline Version: 1.1*
-*See: [ADR-018](adr/ADR-018_FREE_Extraction_Pipeline_Progress.md)*
+## COMPLIANCE CHECKLIST
+
+### Source Types Used by Pipeline
+The pipeline ONLY processes these 4 source types:
+```python
+PEOPLE_SOURCE_TYPES = ['leadership_page', 'team_page', 'about_page', 'blog']
+```
+
+> ⚠️ **WARNING:** Do NOT include `contact_page`, `careers_page`, or `press_page` when checking status.
+> The pipeline does not process these types.
+
+### Status Check Query (CORRECT)
+```sql
+-- CORRECT: Uses only pipeline source types
+SELECT cm.address_state,
+    COUNT(*) FILTER (WHERE extraction_status = 'pending') as pending,
+    COUNT(*) FILTER (WHERE extraction_status = 'queued_for_paid') as queued_paid,
+    COUNT(*) FILTER (WHERE extraction_status = 'complete') as complete
+FROM company.company_source_urls csu
+JOIN company.company_master cm ON csu.company_unique_id = cm.company_unique_id
+WHERE csu.source_type IN ('leadership_page', 'team_page', 'about_page', 'blog')
+GROUP BY cm.address_state;
+```
+
+### Status Check Scripts
+- `scripts/correct_status.py` - Uses correct source types
+- `scripts/full_status_check.py` - Comprehensive status report
+
+---
+
+*Last Updated: January 30, 2026*
+*Pipeline Version: 1.2 - COMPLETE*

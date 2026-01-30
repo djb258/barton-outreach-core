@@ -1,7 +1,7 @@
 # Data Registry — Sub-Hub Reference
 
-**Generated**: 2026-01-23  
-**Purpose**: Single source of truth for where data lives across all sub-hubs.  
+**Generated**: 2026-01-30
+**Purpose**: Single source of truth for where data lives across all sub-hubs.
 **Usage**: Reference this document FIRST before searching for data.
 
 ---
@@ -11,18 +11,18 @@
 ### URLs / Domains
 | Location | Column | Records | Coverage | Notes |
 |----------|--------|---------|----------|-------|
-| `outreach.outreach` | `domain` | **46,494** | **100%** | Master domain list (commercial only) |
-| `outreach.blog` | `source_url` | ~46K | **0%** ❌ | NEEDS POPULATION |
+| `outreach.outreach` | `domain` | **42,192** | **100%** | Master domain list (commercial only) |
+| `outreach.blog` | `source_url` | ~41K | **0%** ❌ | NEEDS POPULATION |
 | `company.company_master` | `website_url` | 74,641 | ~98% | Full URLs |
 | `company.company_source_urls` | `source_url` | 97,124 | 100% | Crawl source URLs |
-| `cl.company_domains` | `domain` | 51,910 | 100% | CL domain registry |
+| `cl.company_domains` | `domain` | 46,583 | 100% | CL domain registry |
 | `dol.ein_urls` | `url` | **119,409** | 100% | ✅ **DOL EIN→URL discovery** |
 
 ### EIN / DOL Data
 | Location | Column | Records | Coverage | Notes |
 |----------|--------|---------|----------|-------|
 | `dol.ein_urls` | `ein` | **119,409** | 100% | ✅ **EIN→URL mapping (FREE)** |
-| `outreach.dol` | `ein` | 13,829 | 100% | Outreach-linked EINs |
+| `outreach.dol` | `ein` | 16,860 | 100% | Outreach-linked EINs |
 | `company.company_master` | `ein` | 74,641 | ~27% | Matched EINs |
 | `dol.form_5500` | `sponsor_dfe_ein` | 230,482 | 100% | Large filers |
 | `dol.form_5500_sf` | `sf_spons_ein` | 760,652 | 100% | Small filers |
@@ -30,17 +30,17 @@
 ### Email / Contact Data
 | Location | Column | Records | Coverage | Notes |
 |----------|--------|---------|----------|-------|
-| `people.people_master` | `email` | 26,299 | 95.9% verified | Primary contacts |
-| `outreach.people` | `email` | 426 | 100% | Active outreach contacts |
-| `people.company_slot` | `person_unique_id` | 153,444 | 17.5% filled | Slot assignments |
+| `people.people_master` | `email` | 78,143 | 95.9% verified | Primary contacts |
+| `outreach.people` | `email` | 324 | 100% | Active outreach contacts |
+| `people.company_slot` | `person_unique_id` | 126,576 | 17.5% filled | Slot assignments |
 | `intake.people_raw_intake` | `email` | 120,045 | Staging | Raw intake data |
 
 ### Company Identifiers
 | Location | Column | Records | Notes |
 |----------|--------|---------|-------|
-| `outreach.outreach` | `outreach_id` | **46,494** | **MASTER LIST** (commercial companies) |
-| `outreach.outreach_excluded` | `outreach_id` | 1,210 | Non-commercial exclusions |
-| `cl.company_identity` | `sovereign_company_id` | 51,910 | Authority registry |
+| `outreach.outreach` | `outreach_id` | **42,192** | **MASTER LIST** (commercial companies) |
+| `outreach.outreach_excluded` | `outreach_id` | 2,432 | Non-commercial exclusions |
+| `cl.company_identity` | `sovereign_company_id` | 47,348 | Authority registry |
 | `company.company_master` | `company_unique_id` | 74,641 | Company master ID |
 
 ---
@@ -83,7 +83,7 @@
 ## ID Relationships (How Tables Connect)
 
 ```
-outreach.outreach.outreach_id (MASTER - 46,494 commercial)
+outreach.outreach.outreach_id (MASTER - 42,192 commercial)
     │
     ├── outreach.blog.outreach_id
     ├── outreach.dol.outreach_id  
@@ -96,7 +96,7 @@ outreach.outreach.outreach_id (MASTER - 46,494 commercial)
             ├── people.company_slot.company_unique_id
             └── clay.company_raw.company_unique_id
 
-cl.company_identity.sovereign_company_id (AUTHORITY - 51,910)
+cl.company_identity.sovereign_company_id (AUTHORITY - 47,348)
     │
     ├── cl.company_domains.sovereign_company_id
     └── cl.company_identity_bridge → company.company_master
@@ -118,13 +118,13 @@ dol.form_5500.sponsor_dfe_ein (DOL SOURCE - 1M+)
 
 | Table | Rows | Key Columns | Enrichment Status |
 |-------|------|-------------|-------------------|
-| `outreach` | **46,494** | outreach_id, sovereign_id, domain | ✅ domain 100% (commercial only) |
-| `outreach_excluded` | 1,210 | outreach_id, domain, exclusion_reason | Non-commercial (gov/edu/church/etc) |
-| `blog` | ~46K | outreach_id, source_url, context_summary | ❌ source_url 0% |
-| `company_target` | **45,816** | outreach_id, outreach_status, email_method | ✅ email_method 91% |
-| `dol` | 13,829 | outreach_id, ein, filing_present | ✅ ein 100% |
-| `people` | 426 | person_id, email, email_verified | ✅ email 100% |
-| `bit_scores` | 17,227 | outreach_id, score, score_tier | Active scoring |
+| `outreach` | **42,192** | outreach_id, sovereign_id, domain | ✅ domain 100% (commercial only) |
+| `outreach_excluded` | 2,432 | outreach_id, domain, exclusion_reason | Non-commercial (gov/edu/church/etc) |
+| `blog` | ~41K | outreach_id, source_url, context_summary | ❌ source_url 0% |
+| `company_target` | **41,425** | outreach_id, outreach_status, email_method | ✅ email_method 91% |
+| `dol` | 16,860 | outreach_id, ein, filing_present | ✅ ein 100% |
+| `people` | 324 | person_id, email, email_verified | ✅ email 100% |
+| `bit_scores` | 13,226 | outreach_id, score, score_tier | Active scoring |
 | `company_hub_status` | 68,908 | company_unique_id, hub_id, status | Hub tracking |
 | `dol_errors` | 37,319 | outreach_id, failure_code | Error queue |
 
@@ -160,8 +160,8 @@ dol.form_5500.sponsor_dfe_ein (DOL SOURCE - 1M+)
 
 | Table | Rows | Key Columns | Notes |
 |-------|------|-------------|-------|
-| `company_identity` | 51,910 | sovereign_company_id, canonical_name | Authority master |
-| `company_domains` | 51,910 | sovereign_company_id, domain, is_verified | Domain registry |
+| `company_identity` | 47,348 | sovereign_company_id, canonical_name | Authority master |
+| `company_domains` | 46,583 | sovereign_company_id, domain, is_verified | Domain registry |
 | `company_identity_bridge` | 71,820 | sovereign_company_id, company_unique_id | Links to company_master |
 | `company_candidate` | 62,162 | candidate_id, domain, source | Pending resolution |
 | `domain_hierarchy` | 4,705 | parent_domain, child_domain | Domain relationships |
@@ -212,8 +212,8 @@ dol.form_5500.sponsor_dfe_ein (DOL SOURCE - 1M+)
 
 | Table | Rows | Key Columns | Notes |
 |-------|------|-------------|-------|
-| `people_master` | 26,299 | person_unique_id, email, linkedin_url | Primary contacts |
-| `company_slot` | 153,444 | company_unique_id, slot_type, person_unique_id | 17.5% filled |
+| `people_master` | 78,143 | person_unique_id, email, linkedin_url | Primary contacts |
+| `company_slot` | 126,576 | company_unique_id, slot_type, person_unique_id | 17.5% filled |
 | `people_errors` | 1,053 | error details | Processing errors |
 
 **people_master enrichment coverage:**
@@ -254,7 +254,7 @@ dol.form_5500.sponsor_dfe_ein (DOL SOURCE - 1M+)
 ### Outreach Sub-Hub
 | Enrichment | Date | Source | Records | Status |
 |------------|------|--------|---------|--------|
-| Domain extraction | Prior | CL pipeline | 42,833 | ✅ Complete |
+| Domain extraction | Prior | CL pipeline | 42,192 | ✅ Complete |
 | Blog source_url | - | - | 0 | ❌ PENDING |
 | DOL EIN matching | 2026-01 | DOL files | 13,829 | ✅ Complete |
 
@@ -351,7 +351,7 @@ FROM schema.table;
 
 ---
 
-*Last updated: 2026-01-28*
+*Last updated: 2026-01-30*
 
 ---
 
@@ -362,5 +362,5 @@ FROM schema.table;
 - **Moved 1,210 non-commercial entities** to `outreach.outreach_excluded`:
   - TLD exclusions: .gov (14), .edu (84), .org (675), .church (17), .coop (40)
   - Keyword exclusions: government, school, church, insurance, etc. (380)
-- **Net result**: 46,494 clean, commercial companies in outreach spine
-- Sub-hub cascades: dol (18,575), company_target (45,816)
+- **Net result**: 42,192 clean, commercial companies in outreach spine
+- Sub-hub cascades: dol (16,860), company_target (41,425)
