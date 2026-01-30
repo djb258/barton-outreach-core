@@ -2,7 +2,7 @@
 
 **Status**: DRAFT
 **Authority**: OPERATIONAL
-**Version**: 1.1.0
+**Version**: 1.2.0
 **Change Protocol**: ADR + HUMAN APPROVAL REQUIRED
 
 ---
@@ -87,6 +87,95 @@ AI EMPLOYEE (This protocol)
 | "Improve" templates | DOCTRINE VIOLATION |
 | Add "helpful" features | DOCTRINE VIOLATION |
 | Proceed when blocked | ESCALATION REQUIRED |
+
+---
+
+## Repository Detection Protocol (MANDATORY FIRST STEP)
+
+**Before any operation, you MUST determine repository type.**
+
+AI agents operate differently in parent vs child repositories. Incorrect detection leads to incorrect behavior.
+
+### Detection Method (Structural Markers)
+
+Use file/folder existence, NOT content parsing:
+
+```
+STEP 1: Does IMO_CONTROL.json exist at repo root?
+        │
+        ├─ YES → This is a CHILD repo (governed by imo-creator)
+        │        Your authority: OPERATIONAL
+        │        Your actions: May modify child artifacts
+        │
+        └─ NO → Continue to Step 2
+
+STEP 2: Does templates/doctrine/ directory exist?
+        │
+        ├─ YES → This is IMO-CREATOR (parent repo)
+        │        Your authority: READ-ONLY
+        │        Your actions: May read, may NOT modify doctrine
+        │
+        └─ NO → UNGOVERNED repo
+                 Action: HALT and request governance setup
+```
+
+### Detection Summary Table
+
+| Marker | Parent (imo-creator) | Child Repo |
+|--------|---------------------|------------|
+| `templates/doctrine/` directory | ✅ EXISTS | ❌ ABSENT |
+| `IMO_CONTROL.json` at root | ❌ ABSENT | ✅ EXISTS |
+| `TEMPLATES_MANIFEST.yaml` | ✅ EXISTS (authoritative) | ❌ ABSENT or synced copy |
+
+### Authority by Repository Type
+
+| Repository Type | Your Authority | Permitted Actions |
+|-----------------|---------------|-------------------|
+| **PARENT (imo-creator)** | READ-ONLY | Read doctrine, read templates, may NOT modify |
+| **CHILD** | OPERATIONAL | Read parent doctrine, modify child artifacts within gates |
+| **UNGOVERNED** | NONE | HALT immediately, request governance setup |
+
+### Reading Order by Repository Type
+
+**If PARENT (imo-creator):**
+```
+1. CONSTITUTION.md (repo root)
+2. templates/TEMPLATES_MANIFEST.yaml
+3. templates/IMO_SYSTEM_SPEC.md
+4. templates/doctrine/CANONICAL_ARCHITECTURE_DOCTRINE.md
+5. Task-specific prompts in templates/claude/
+```
+
+**If CHILD:**
+```
+1. IMO_CONTROL.json (repo root)
+2. DOCTRINE.md (repo root - points to parent)
+3. REGISTRY.yaml (hub identity)
+4. docs/PRD.md (if exists)
+5. Parent doctrine as referenced
+```
+
+### Mandatory Detection Report
+
+After detection, you MUST output:
+
+```
+REPOSITORY DETECTION
+────────────────────
+Repository: [repo name]
+Type: [PARENT / CHILD / UNGOVERNED]
+
+Detection markers:
+  IMO_CONTROL.json at root: [YES / NO]
+  templates/doctrine/ exists: [YES / NO]
+
+Authority level: [READ-ONLY / OPERATIONAL / NONE]
+Reading order: [in_parent_repo / in_child_repo / N/A]
+
+Proceeding: [YES / HALTED - reason]
+```
+
+**Failure to run detection before operations is a PROTOCOL VIOLATION.**
 
 ---
 
@@ -307,9 +396,50 @@ Human intervention required.
 
 ## Completion Protocol
 
-### Task Completion Checklist
+### MANDATORY: Execute HUB_COMPLIANCE.md Before Completion
 
-Before declaring task complete, AI employee verifies:
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                     YOU CANNOT DECLARE TASK COMPLETE                          ║
+║                  WITHOUT RUNNING HUB_COMPLIANCE.md CHECKLIST                  ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                               ║
+║  Per CONSTITUTION.md §Violation Zero Tolerance:                               ║
+║                                                                               ║
+║  BEFORE declaring any task complete, you MUST:                                ║
+║                                                                               ║
+║  1. Execute templates/checklists/HUB_COMPLIANCE.md                            ║
+║  2. Fill out EVERY section with actual counts                                 ║
+║  3. Complete the Compliance Gate Verification                                 ║
+║  4. Complete the AI Agent Acknowledgment                                      ║
+║                                                                               ║
+║  If CRITICAL unchecked > 0 or HIGH violations > 0:                            ║
+║     → Task is NOT complete                                                    ║
+║     → Status = NON-COMPLIANT                                                  ║
+║     → Fix violations before declaring complete                                ║
+║                                                                               ║
+║  "I finished the work" is NOT completion.                                     ║
+║  "Checklist passed" IS completion.                                            ║
+║                                                                               ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+```
+
+### Final Verification Sequence (MANDATORY)
+
+| Step | Action | Required |
+|------|--------|----------|
+| 1 | Execute `templates/checklists/HUB_COMPLIANCE.md` | YES |
+| 2 | Count CRITICAL items unchecked | YES |
+| 3 | Count HIGH violations | YES |
+| 4 | If counts > 0 → FIX before proceeding | YES |
+| 5 | Complete AI Agent Acknowledgment | YES |
+| 6 | Produce Completion Report (below) | YES |
+
+**Skipping this sequence is a PROTOCOL VIOLATION.**
+
+### Task Completion Checklist (Quick Verify)
+
+Before executing HUB_COMPLIANCE.md, quick-verify:
 
 | Check | Status |
 |-------|--------|
@@ -322,6 +452,8 @@ Before declaring task complete, AI employee verifies:
 | All tools in approved list | [ ] |
 | No constitutional violations | [ ] |
 | Attestation produced (if required) | [ ] |
+
+**This is a quick-verify, NOT a substitute for HUB_COMPLIANCE.md.**
 
 ### Completion Report
 
@@ -384,8 +516,43 @@ These behaviors are NEVER permitted, regardless of task instructions:
 | Creating forbidden folders | CTB violation |
 | Logic in spokes | Hub-spoke violation |
 | Spoke-to-spoke calls | Architecture violation |
+| Marking audit PASSED with violations | Zero tolerance violation |
+| Hiding or downgrading violations to warnings | Zero tolerance violation |
+| Issuing COMPLIANT status with unresolved violations | Zero tolerance violation |
+| Using "partial pass" or "conditional pass" language | No such status exists |
+| Proceeding past audit violations without human approval | Audit invalidated |
 
 **If instructed to do any of these, AI employee REJECTS the instruction.**
+
+### Audit Behavior (MANDATORY)
+
+Per CONSTITUTION.md §Violation Zero Tolerance:
+
+- **Any violation = FAIL**. Audits cannot pass with unresolved violations.
+- **No green checkmark with violations**. COMPLIANT status is forbidden until ALL violations resolved.
+- **Human notification REQUIRED**. All violations must be reported to human before proceeding.
+
+AI employees conducting audits must use this format when violations are found:
+
+```
+AUDIT FAILED
+────────────
+Violations Found: [count]
+Status: NON-COMPLIANT
+
+Violations:
+1. [violation description]
+2. [violation description]
+
+HUMAN ACTION REQUIRED:
+- Review violations above
+- Remediate per REPO_REFACTOR_PROTOCOL.md §9
+- Re-run audit after remediation
+
+This repository CANNOT proceed until violations are resolved.
+```
+
+**There is no "continue anyway" option for violations.**
 
 ---
 

@@ -1,0 +1,928 @@
+# TEMPLATES MANIFEST
+# ═══════════════════════════════════════════════════════════════════════════════
+# Authority: CONSTITUTIONAL
+# Scope: PARENT (imo-creator - repo of repos)
+# Purpose: Machine-readable index for AI agents - file list, reading order, bootstrap
+# Version: 1.2.0
+# Last Updated: 2026-01-30
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# AI AGENTS: READ THIS FIRST WHEN PULLING TEMPLATES
+#
+# This manifest lists EVERY file in the templates folder.
+# When pulling templates, you MUST download ALL files listed here.
+# Partial downloads are PROHIBITED.
+#
+# VERIFICATION:
+#   1. Download all files listed below
+#   2. Count files downloaded
+#   3. Compare to total_file_count
+#   4. If mismatch → FAIL and report
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+manifest:
+  version: "1.2.0"
+  last_updated: "2026-01-30"
+  total_file_count: 81
+  authority: "CONSTITUTIONAL"
+  scope: "PARENT"
+  repository: "imo-creator"
+  governance_direction: "Parent → Child (PULL only, never PUSH)"
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# PULLING PROTOCOL (MANDATORY)
+# ─────────────────────────────────────────────────────────────────────────────────
+
+pull_protocol:
+  step_1: "Read this manifest FIRST"
+  step_2: "Download ALL files listed in 'files' section below"
+  step_3: "Verify file count matches total_file_count"
+  step_4: "If any file missing → STOP and report"
+  step_5: "Confirm pull complete before proceeding"
+
+  prohibited:
+    - "Partial downloads"
+    - "Skipping files you think are not needed"
+    - "Guessing what files exist"
+    - "Downloading only some folders"
+
+  required_output: |
+    TEMPLATE PULL COMPLETE
+    ──────────────────────
+    Source: github.com/djb258/imo-creator
+    Files downloaded: [count]
+    Expected: [total_file_count]
+    Status: [COMPLETE / INCOMPLETE]
+
+    Missing files (if any):
+    - [list]
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# FILE REGISTRY (COMPLETE LIST)
+# ─────────────────────────────────────────────────────────────────────────────────
+
+files:
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # ROOT LEVEL FILES
+  # ═══════════════════════════════════════════════════════════════════════════
+  root:
+    - path: "templates/TEMPLATES_MANIFEST.yaml"
+      purpose: "This file - complete file list for pulling"
+      required: true
+
+    - path: "templates/README.md"
+      purpose: "Directory guide and reading order"
+      required: true
+
+    - path: "templates/IMO_SYSTEM_SPEC.md"
+      purpose: "Compiled system index - FIRST READ for AI agents"
+      required: true
+
+    - path: "templates/AI_EMPLOYEE_OPERATING_CONTRACT.md"
+      purpose: "Agent constraints and permissions"
+      required: true
+
+    - path: "templates/SNAP_ON_TOOLBOX.yaml"
+      purpose: "Master tool registry - approved tools only"
+      required: true
+
+    - path: "templates/GUARDSPEC.md"
+      purpose: "Guard specifications"
+      required: true
+
+    - path: "templates/TEMPLATE_STAMP_PROTOCOL.md"
+      purpose: "Template stamping protocol"
+      required: true
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # DOCTRINE (LOCKED - AI CANNOT MODIFY)
+  # ═══════════════════════════════════════════════════════════════════════════
+  doctrine:
+    - path: "templates/doctrine/CANONICAL_ARCHITECTURE_DOCTRINE.md"
+      purpose: "Root doctrine - CC layers, CTB structure"
+      required: true
+      locked: true
+
+    - path: "templates/doctrine/HUB_SPOKE_ARCHITECTURE.md"
+      purpose: "Hub/Spoke geometry, IMO model"
+      required: true
+      locked: true
+
+    - path: "templates/doctrine/ALTITUDE_DESCENT_MODEL.md"
+      purpose: "Descent gates, altitude levels"
+      required: true
+      locked: true
+
+    - path: "templates/doctrine/REPO_REFACTOR_PROTOCOL.md"
+      purpose: "Refactor sequence, structure requirements"
+      required: true
+      locked: true
+
+    - path: "templates/doctrine/TEMPLATE_IMMUTABILITY.md"
+      purpose: "Immutability rules, AI prohibition"
+      required: true
+      locked: true
+
+    - path: "templates/doctrine/PRD_CONSTITUTION.md"
+      purpose: "PRD governance rules"
+      required: true
+      locked: true
+
+    - path: "templates/doctrine/ERD_CONSTITUTION.md"
+      purpose: "ERD governance rules"
+      required: true
+      locked: true
+
+    - path: "templates/doctrine/ERD_DOCTRINE.md"
+      purpose: "ERD structure and validation"
+      required: true
+      locked: true
+
+    - path: "templates/doctrine/PROCESS_DOCTRINE.md"
+      purpose: "Process declaration rules"
+      required: true
+      locked: true
+
+    - path: "templates/doctrine/DBA_ENFORCEMENT_DOCTRINE.md"
+      purpose: "Database change rules"
+      required: true
+      locked: true
+
+    - path: "templates/doctrine/DOCUMENTATION_ERD_DOCTRINE.md"
+      purpose: "Documentation ERD standards"
+      required: true
+      locked: true
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # CLAUDE PROMPTS (LOCKED - AI CANNOT MODIFY)
+  # ═══════════════════════════════════════════════════════════════════════════
+  claude:
+    - path: "templates/claude/APPLY_DOCTRINE.prompt.md"
+      purpose: "Main doctrine execution prompt"
+      required: true
+      locked: true
+
+    - path: "templates/claude/DECLARE_STRUCTURE_AND_RENDER_TREE.prompt.md"
+      purpose: "Structure declaration and CTB rendering"
+      required: true
+      locked: true
+
+    - path: "templates/claude/DECLARE_DATA_AND_RENDER_ERD.prompt.md"
+      purpose: "Data declaration and ERD rendering"
+      required: true
+      locked: true
+
+    - path: "templates/claude/DECLARE_EXECUTION_WIRING.prompt.md"
+      purpose: "Execution wiring declaration"
+      required: true
+      locked: true
+
+    - path: "templates/claude/DBA_ENFORCEMENT.prompt.md"
+      purpose: "DBA enforcement prompt"
+      required: true
+      locked: true
+
+    - path: "templates/claude/DOCUMENTATION_ERD_ENFORCEMENT.prompt.md"
+      purpose: "Documentation ERD enforcement"
+      required: true
+      locked: true
+
+    - path: "templates/claude/SYSTEM_FLOW_PROJECTION.prompt.md"
+      purpose: "System flow visualization"
+      required: true
+      locked: true
+
+    - path: "templates/claude/SYSTEM_MODEL_REGENERATOR.prompt.md"
+      purpose: "System model compilation"
+      required: true
+      locked: true
+
+    - path: "templates/claude/UI_DOCTRINE_GENERATOR.prompt.md"
+      purpose: "UI doctrine bootstrap"
+      required: true
+      locked: true
+
+    - path: "templates/claude/UI_DOCTRINE_REGENERATOR.prompt.md"
+      purpose: "UI doctrine CI sync"
+      required: true
+      locked: true
+
+    - path: "templates/claude/HYGIENE_AUDITOR.prompt.md"
+      purpose: "Scheduled hygiene audits"
+      required: true
+      locked: true
+
+    - path: "templates/claude/CLEANUP_EXECUTOR.prompt.md"
+      purpose: "Cleanup execution after audits"
+      required: true
+      locked: true
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # AI EMPLOYEE
+  # ═══════════════════════════════════════════════════════════════════════════
+  ai_employee:
+    - path: "templates/ai-employee/AI_EMPLOYEE_PROTOCOL.md"
+      purpose: "AI employee operational protocol"
+      required: true
+
+    - path: "templates/ai-employee/AI_EMPLOYEE_TASK.yaml"
+      purpose: "AI employee task payload format"
+      required: true
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # TEMPLATES (COPY TO CHILD REPOS)
+  # ═══════════════════════════════════════════════════════════════════════════
+  prd:
+    - path: "templates/prd/PRD_HUB.md"
+      purpose: "Hub PRD template"
+      required: true
+      action: "Copy and fill in"
+
+  adr:
+    - path: "templates/adr/ADR.md"
+      purpose: "ADR template"
+      required: true
+      action: "Copy and fill in"
+
+  pr:
+    - path: "templates/pr/PULL_REQUEST_TEMPLATE_HUB.md"
+      purpose: "Hub PR template"
+      required: true
+      action: "Copy and fill in"
+
+    - path: "templates/pr/PULL_REQUEST_TEMPLATE_SPOKE.md"
+      purpose: "Spoke PR template"
+      required: true
+      action: "Copy and fill in"
+
+  checklists:
+    - path: "templates/checklists/HUB_COMPLIANCE.md"
+      purpose: "Hub compliance checklist"
+      required: true
+      action: "Execute per hub"
+
+    - path: "templates/checklists/QUARTERLY_HYGIENE_AUDIT.md"
+      purpose: "Quarterly audit checklist"
+      required: true
+      action: "Execute quarterly"
+
+  audit:
+    - path: "templates/audit/CONSTITUTIONAL_AUDIT_ATTESTATION.md"
+      purpose: "Audit attestation template"
+      required: true
+      action: "Produce after audits"
+
+  child:
+    - path: "templates/child/DOCTRINE.md.template"
+      purpose: "Child repo doctrine pointer template"
+      required: true
+      action: "Copy to child repos"
+
+    - path: "templates/child/IMO_CONTROL.json.template"
+      purpose: "Child repo control file template"
+      required: true
+      action: "Copy to child repos"
+
+    - path: "templates/child/REGISTRY.yaml.template"
+      purpose: "Child repo registry template"
+      required: true
+      action: "Copy to child repos"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # CONFIG
+  # ═══════════════════════════════════════════════════════════════════════════
+  config:
+    - path: "templates/config/global_manifest.yaml"
+      purpose: "Global automation config"
+      required: true
+
+    - path: "templates/config/ctb.branchmap.yaml"
+      purpose: "CTB branch mapping"
+      required: true
+
+    - path: "templates/config/CTB_DOCTRINE.md"
+      purpose: "CTB doctrine reference"
+      required: true
+
+    - path: "templates/config/ctb_version.json"
+      purpose: "CTB version tracking"
+      required: true
+
+    - path: "templates/config/imo_global_config.yaml"
+      purpose: "IMO global config"
+      required: true
+
+    - path: "templates/config/imo-ra-schema.json"
+      purpose: "IMO-RA schema definition"
+      required: true
+
+    - path: "templates/config/QUICK_REFERENCE.md"
+      purpose: "Quick reference guide"
+      required: true
+
+    - path: "templates/config/repo_organization_standard.yaml"
+      purpose: "Repo organization standards"
+      required: true
+
+    - path: "templates/config/repo_taxonomy.yaml"
+      purpose: "Repo taxonomy definitions"
+      required: true
+
+    - path: "templates/config/required_tools.yaml"
+      purpose: "Required tools list"
+      required: true
+
+    - path: "templates/config/branch_protection_config.json"
+      purpose: "Branch protection settings"
+      required: true
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # INTEGRATIONS
+  # ═══════════════════════════════════════════════════════════════════════════
+  integrations:
+    - path: "templates/integrations/TOOLS.md"
+      purpose: "Tool doctrine"
+      required: true
+
+    - path: "templates/integrations/COMPOSIO.md"
+      purpose: "Composio integration guide"
+      required: true
+
+    - path: "templates/integrations/DOPPLER.md"
+      purpose: "Doppler integration guide"
+      required: true
+
+    - path: "templates/integrations/doppler.yaml.template"
+      purpose: "Doppler config template"
+      required: true
+
+    - path: "templates/integrations/HEIR.md"
+      purpose: "HEIR integration guide"
+      required: true
+
+    - path: "templates/integrations/heir.doctrine.yaml.template"
+      purpose: "HEIR config template"
+      required: true
+
+    - path: "templates/integrations/OBSIDIAN.md"
+      purpose: "Obsidian integration guide"
+      required: true
+
+    - path: "templates/integrations/doppler/doppler.bash"
+      purpose: "Doppler bash config"
+      required: false
+
+    - path: "templates/integrations/doppler/doppler.fish"
+      purpose: "Doppler fish config"
+      required: false
+
+    - path: "templates/integrations/doppler/doppler.zsh"
+      purpose: "Doppler zsh config"
+      required: false
+
+    - path: "templates/integrations/hostinger/integrations.yaml"
+      purpose: "Hostinger integration config"
+      required: false
+
+    - path: "templates/integrations/hostinger/README.md"
+      purpose: "Hostinger integration guide"
+      required: false
+
+    - path: "templates/integrations/abacus-ai/integrations.yaml"
+      purpose: "Abacus AI integration config"
+      required: false
+
+    - path: "templates/integrations/abacus-ai/README.md"
+      purpose: "Abacus AI integration guide"
+      required: false
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # SCRIPTS
+  # ═══════════════════════════════════════════════════════════════════════════
+  scripts:
+    - path: "templates/scripts/apply_doctrine_audit.sh"
+      purpose: "Doctrine audit script"
+      required: true
+
+    - path: "templates/scripts/install-hooks.sh"
+      purpose: "Git hooks installer (Unix)"
+      required: true
+
+    - path: "templates/scripts/install-hooks.ps1"
+      purpose: "Git hooks installer (Windows)"
+      required: true
+
+    - path: "templates/scripts/update_from_imo_creator.sh"
+      purpose: "Pull updates from imo-creator"
+      required: true
+
+    - path: "templates/scripts/push-doctrine-update.sh"
+      purpose: "Push doctrine updates (Unix)"
+      required: true
+
+    - path: "templates/scripts/push-doctrine-update.ps1"
+      purpose: "Push doctrine updates (Windows)"
+      required: true
+
+    - path: "templates/scripts/ctb_init.sh"
+      purpose: "CTB initialization"
+      required: true
+
+    - path: "templates/scripts/ctb_verify.sh"
+      purpose: "CTB verification"
+      required: true
+
+    - path: "templates/scripts/ctb_enforce.sh"
+      purpose: "CTB enforcement"
+      required: true
+
+    - path: "templates/scripts/ctb_check_version.sh"
+      purpose: "CTB version check"
+      required: true
+
+    - path: "templates/scripts/ctb_scaffold_new_repo.sh"
+      purpose: "New repo scaffolding"
+      required: true
+
+    - path: "templates/scripts/apply_ctb_plan.py"
+      purpose: "CTB plan application"
+      required: true
+
+    - path: "templates/scripts/dev_setup.sh"
+      purpose: "Development setup"
+      required: true
+
+    - path: "templates/scripts/security_lockdown.sh"
+      purpose: "Security lockdown"
+      required: true
+
+    - path: "templates/scripts/install_required_tools.sh"
+      purpose: "Install required tools"
+      required: true
+
+    - path: "templates/scripts/verify_required_tools.sh"
+      purpose: "Verify required tools"
+      required: true
+
+    - path: "templates/scripts/hooks/pre-commit"
+      purpose: "Pre-commit hook"
+      required: true
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # VALIDATORS
+  # ═══════════════════════════════════════════════════════════════════════════
+  validators:
+    - path: "templates/validators/README.md"
+      purpose: "Validator documentation"
+      required: true
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# READING ORDER (CONTEXT-AWARE)
+# ─────────────────────────────────────────────────────────────────────────────────
+
+reading_order:
+  description: "Reading order depends on repository type. Detect first, then follow appropriate sequence."
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # DETECTION FIRST (MANDATORY)
+  # ═══════════════════════════════════════════════════════════════════════════
+  detection:
+    description: "Determine repository type BEFORE reading"
+    method: "Structural markers (not content parsing)"
+    steps:
+      - "Check: Does IMO_CONTROL.json exist at repo root?"
+      - "If YES → CHILD repo → Follow in_child_repo sequence"
+      - "If NO → Check: Does templates/doctrine/ directory exist?"
+      - "If YES → PARENT repo (imo-creator) → Follow in_parent_repo sequence"
+      - "If NO → UNGOVERNED → HALT"
+    reference: "templates/ai-employee/AI_EMPLOYEE_PROTOCOL.md §Repository Detection Protocol"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PARENT REPO (imo-creator) READING ORDER
+  # ═══════════════════════════════════════════════════════════════════════════
+  in_parent_repo:
+    description: "When AI is operating in imo-creator itself"
+    authority: "READ-ONLY"
+    note: "You may read but NOT modify doctrine or templates"
+
+    sequence:
+      - order: 1
+        file: "CONSTITUTION.md"
+        location: "repo root"
+        purpose: "Constitutional orientation - what is governed"
+        required: true
+        prerequisites: []
+
+      - order: 2
+        file: "templates/TEMPLATES_MANIFEST.yaml"
+        location: "templates/"
+        purpose: "This file - machine-readable index"
+        required: true
+        prerequisites: ["CONSTITUTION.md"]
+
+      - order: 3
+        file: "templates/IMO_SYSTEM_SPEC.md"
+        location: "templates/"
+        purpose: "Compiled system index"
+        required: true
+        prerequisites: ["TEMPLATES_MANIFEST.yaml"]
+
+      - order: 4
+        file: "templates/AI_EMPLOYEE_OPERATING_CONTRACT.md"
+        location: "templates/"
+        purpose: "Agent constraints and permissions"
+        required: true
+        prerequisites: ["IMO_SYSTEM_SPEC.md"]
+
+      - order: 5
+        file: "templates/doctrine/CANONICAL_ARCHITECTURE_DOCTRINE.md"
+        location: "templates/doctrine/"
+        purpose: "Root doctrine - CC layers, CTB structure"
+        required: true
+        prerequisites: ["AI_EMPLOYEE_OPERATING_CONTRACT.md"]
+
+      - order: 6
+        file: "templates/SNAP_ON_TOOLBOX.yaml"
+        location: "templates/"
+        purpose: "Tool registry - check before using any tool"
+        required: true
+        prerequisites: ["CANONICAL_ARCHITECTURE_DOCTRINE.md"]
+
+      - order: 7
+        file: "templates/claude/APPLY_DOCTRINE.prompt.md"
+        location: "templates/claude/"
+        purpose: "Main execution prompt"
+        required: true
+        prerequisites: ["SNAP_ON_TOOLBOX.yaml"]
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # CHILD REPO READING ORDER
+  # ═══════════════════════════════════════════════════════════════════════════
+  in_child_repo:
+    description: "When AI is operating in a child repo governed by imo-creator"
+    authority: "OPERATIONAL"
+    note: "You may modify child artifacts within gates, but NOT parent doctrine"
+
+    sequence:
+      - order: 1
+        file: "IMO_CONTROL.json"
+        location: "repo root"
+        purpose: "Structural governance contract for this repo"
+        required: true
+        prerequisites: []
+
+      - order: 2
+        file: "DOCTRINE.md"
+        location: "repo root"
+        purpose: "Pointer to parent doctrine version"
+        required: true
+        prerequisites: ["IMO_CONTROL.json"]
+
+      - order: 3
+        file: "REGISTRY.yaml"
+        location: "repo root"
+        purpose: "Hub identity and structure"
+        required: true
+        prerequisites: ["DOCTRINE.md"]
+
+      - order: 4
+        file: "CLAUDE.md"
+        location: "repo root"
+        purpose: "Repo-specific AI instructions"
+        required: false
+        prerequisites: ["REGISTRY.yaml"]
+
+      - order: 5
+        file: "docs/prd/PRD.md"
+        location: "docs/prd/"
+        purpose: "Product requirements for this hub"
+        required: false
+        prerequisites: ["REGISTRY.yaml"]
+        note: "Path may vary - check REGISTRY.yaml for actual location"
+
+      - order: 6
+        file: "Parent doctrine (as referenced)"
+        location: "Pull from imo-creator or local cache"
+        purpose: "Constitutional law from parent"
+        required: true
+        prerequisites: ["DOCTRINE.md"]
+        note: "DOCTRINE.md specifies which version to reference"
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# CATEGORIES (AI MODIFICATION PERMISSIONS)
+# ─────────────────────────────────────────────────────────────────────────────────
+
+categories:
+  - name: "doctrine"
+    description: "Constitutional law - the rules"
+    ai_can_modify: false
+    ai_can_read: true
+    ai_can_copy: false
+    change_requires: "ADR + Human Approval"
+
+  - name: "claude"
+    description: "System prompts - how to execute"
+    ai_can_modify: false
+    ai_can_read: true
+    ai_can_copy: false
+    change_requires: "ADR + Human Approval"
+
+  - name: "prd"
+    description: "PRD template - copy and fill in"
+    ai_can_modify: false
+    ai_can_read: true
+    ai_can_copy: true
+    action: "Copy to child repo, fill in values"
+
+  - name: "adr"
+    description: "ADR template - copy and fill in"
+    ai_can_modify: false
+    ai_can_read: true
+    ai_can_copy: true
+    action: "Copy to child repo, fill in values"
+
+  - name: "pr"
+    description: "PR templates - copy and fill in"
+    ai_can_modify: false
+    ai_can_read: true
+    ai_can_copy: true
+    action: "Copy to child repo, fill in values"
+
+  - name: "checklists"
+    description: "Compliance checklists - execute per project"
+    ai_can_modify: false
+    ai_can_read: true
+    ai_can_copy: true
+    action: "Copy to child repo, execute and fill in"
+
+  - name: "audit"
+    description: "Audit attestation templates"
+    ai_can_modify: false
+    ai_can_read: true
+    ai_can_copy: true
+    action: "Produce after audits"
+
+  - name: "child"
+    description: "Child repo bootstrap templates"
+    ai_can_modify: false
+    ai_can_read: true
+    ai_can_copy: true
+    action: "Copy to child repo root"
+
+  - name: "config"
+    description: "Configuration files"
+    ai_can_modify: false
+    ai_can_read: true
+    ai_can_copy: true
+    action: "Reference or copy as needed"
+
+  - name: "integrations"
+    description: "Integration guides and templates"
+    ai_can_modify: false
+    ai_can_read: true
+    ai_can_copy: true
+    action: "Reference for setup"
+
+  - name: "scripts"
+    description: "Automation scripts"
+    ai_can_modify: false
+    ai_can_read: true
+    ai_can_copy: true
+    action: "Copy and execute"
+
+  - name: "ai_employee"
+    description: "AI employee governance"
+    ai_can_modify: false
+    ai_can_read: true
+    ai_can_copy: true
+    action: "Follow protocol, use task format"
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# BOOTSTRAP (NEW CHILD REPO SETUP)
+# ─────────────────────────────────────────────────────────────────────────────────
+
+bootstrap:
+  description: "Steps to bootstrap a new child repo from imo-creator"
+
+  prerequisites:
+    - "Git repository initialized"
+    - "Access to imo-creator repo (github.com/djb258/imo-creator)"
+
+  steps:
+    - step: 1
+      action: "clone_or_pull"
+      description: "Get latest imo-creator templates"
+      command: "git clone https://github.com/djb258/imo-creator.git /tmp/imo-creator || git -C /tmp/imo-creator pull"
+
+    - step: 2
+      action: "copy_control_files"
+      description: "Copy governance files to child repo root"
+      files:
+        - source: "templates/child/IMO_CONTROL.json.template"
+          destination: "IMO_CONTROL.json"
+          then: "Fill in hub-specific values"
+        - source: "templates/child/DOCTRINE.md.template"
+          destination: "DOCTRINE.md"
+          then: "Update version reference"
+        - source: "templates/child/REGISTRY.yaml.template"
+          destination: "REGISTRY.yaml"
+          then: "Fill in hub identity"
+
+    - step: 3
+      action: "create_structure"
+      description: "Create CTB folder structure"
+      folders:
+        - "src/sys/"
+        - "src/data/"
+        - "src/app/"
+        - "src/ai/"
+        - "src/ui/"
+        - "docs/"
+        - "docs/prd/"
+        - "docs/adr/"
+        - "config/"
+        - "scripts/"
+
+    - step: 4
+      action: "copy_templates"
+      description: "Copy artifact templates"
+      files:
+        - source: "templates/prd/PRD_HUB.md"
+          destination: "docs/prd/PRD_HUB.md"
+        - source: "templates/adr/ADR.md"
+          destination: "docs/adr/ADR_TEMPLATE.md"
+        - source: "templates/checklists/HUB_COMPLIANCE.md"
+          destination: "docs/checklists/HUB_COMPLIANCE.md"
+
+    - step: 5
+      action: "install_hooks"
+      description: "Install git hooks"
+      command: "cp templates/scripts/hooks/pre-commit .git/hooks/ && chmod +x .git/hooks/pre-commit"
+
+    - step: 6
+      action: "create_claude_md"
+      description: "Create CLAUDE.md for AI agents"
+      template: |
+        # CLAUDE.md — [HUB_NAME]
+
+        ## CANONICAL REFERENCE
+
+        | Template | imo-creator Path | Version |
+        |----------|------------------|---------|
+        | Doctrine | templates/doctrine/CANONICAL_ARCHITECTURE_DOCTRINE.md | 1.x.x |
+        | Manifest | templates/TEMPLATES_MANIFEST.yaml | 1.1.0 |
+
+        ## This Hub
+
+        | Field | Value |
+        |-------|-------|
+        | Hub ID | [HUB-XXX] |
+        | Hub Name | [NAME] |
+        | Purpose | [DESCRIPTION] |
+
+        ## Reading Order
+
+        See templates/TEMPLATES_MANIFEST.yaml reading_order section.
+
+  validation:
+    - check: "IMO_CONTROL.json exists at repo root"
+      required: true
+    - check: "DOCTRINE.md exists at repo root"
+      required: true
+    - check: "REGISTRY.yaml exists at repo root"
+      required: true
+    - check: "src/ folder structure matches CTB"
+      required: true
+    - check: "Run ./scripts/verify_templates_manifest.sh"
+      required: true
+
+  output: |
+    BOOTSTRAP COMPLETE
+    ──────────────────
+    Child repo: [REPO_NAME]
+    Hub ID: [HUB_ID]
+    Doctrine version: [VERSION]
+
+    Governance files: CREATED
+    CTB structure: CREATED
+    Git hooks: INSTALLED
+
+    Next steps:
+    1. Fill in IMO_CONTROL.json
+    2. Create PRD in docs/prd/
+    3. Run compliance checklist
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# UPDATE MANIFEST (FOR SYNC SCRIPTS)
+# ─────────────────────────────────────────────────────────────────────────────────
+
+update_manifest:
+  description: "What to sync when updating child repos from imo-creator"
+
+  always_sync:
+    description: "These files are ALWAYS synced on update"
+    files:
+      - "templates/doctrine/CANONICAL_ARCHITECTURE_DOCTRINE.md"
+      - "templates/doctrine/HUB_SPOKE_ARCHITECTURE.md"
+      - "templates/doctrine/ALTITUDE_DESCENT_MODEL.md"
+      - "templates/doctrine/REPO_REFACTOR_PROTOCOL.md"
+      - "templates/doctrine/TEMPLATE_IMMUTABILITY.md"
+      - "templates/TEMPLATES_MANIFEST.yaml"
+      - "templates/IMO_SYSTEM_SPEC.md"
+      - "templates/AI_EMPLOYEE_OPERATING_CONTRACT.md"
+      - "templates/SNAP_ON_TOOLBOX.yaml"
+      - "templates/claude/APPLY_DOCTRINE.prompt.md"
+      - "templates/checklists/HUB_COMPLIANCE.md"
+
+  sync_if_missing:
+    description: "These files are synced only if they don't exist in child"
+    files:
+      - "templates/prd/PRD_HUB.md"
+      - "templates/adr/ADR.md"
+      - "templates/pr/PULL_REQUEST_TEMPLATE_HUB.md"
+      - "templates/pr/PULL_REQUEST_TEMPLATE_SPOKE.md"
+      - "templates/audit/CONSTITUTIONAL_AUDIT_ATTESTATION.md"
+
+  never_sync:
+    description: "These are child-repo specific, never overwrite"
+    files:
+      - "IMO_CONTROL.json"
+      - "REGISTRY.yaml"
+      - "CLAUDE.md"
+      - "docs/prd/*.md"
+      - "docs/adr/*.md"
+
+  post_sync:
+    description: "Run these after syncing"
+    commands:
+      - "./scripts/verify_templates_manifest.sh"
+      - "Verify doctrine version matches"
+      - "Review CHANGELOG for breaking changes"
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# CHANGELOG
+# ─────────────────────────────────────────────────────────────────────────────────
+
+changelog:
+  - version: "1.2.0"
+    date: "2026-01-30"
+    breaking: false
+    changes:
+      - "Added scope declaration (PARENT/CHILD awareness)"
+      - "Split reading_order into in_parent_repo and in_child_repo"
+      - "Added detection section with structural markers"
+      - "Fixed version mismatch between header and manifest section"
+      - "Added governance_direction to manifest section"
+    migration: "AI agents must now run detection before reading"
+
+  - version: "1.1.0"
+    date: "2026-01-30"
+    breaking: false
+    changes:
+      - "Added reading_order section for programmatic reading sequence"
+      - "Added categories section with ai_can_modify flags"
+      - "Added bootstrap section for new repo setup"
+      - "Added update_manifest section for sync scripts"
+      - "Added changelog section"
+    migration: "No migration needed - additive changes only"
+
+  - version: "1.0.0"
+    date: "2026-01-30"
+    breaking: false
+    changes:
+      - "Initial manifest with complete file list"
+      - "Pull protocol and verification checklist"
+    migration: "N/A - initial version"
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# VERIFICATION CHECKLIST
+# ─────────────────────────────────────────────────────────────────────────────────
+
+verification:
+  after_pull: |
+    After pulling templates, verify:
+
+    [ ] All files in this manifest exist locally
+    [ ] File count matches total_file_count (81 files)
+    [ ] No files were skipped or missed
+    [ ] Doctrine files are present and locked
+    [ ] Claude prompts are present and locked
+    [ ] Scripts are present and executable
+
+    If any check fails → STOP and re-pull.
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# DOCUMENT CONTROL
+# ─────────────────────────────────────────────────────────────────────────────────
+
+document_control:
+  created: "2026-01-30"
+  last_modified: "2026-01-30"
+  version: "1.2.0"
+  doctrine_version: "1.3.0"
+  status: "ACTIVE"
+  authority: "CONSTITUTIONAL"
+  scope: "PARENT"
+  update_trigger: "Any file added/removed from templates/"
