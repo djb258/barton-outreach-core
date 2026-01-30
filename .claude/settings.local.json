@@ -193,7 +193,27 @@
       "Bash(timeout /t 15 /nobreak)",
       "Bash(gh auth:*)",
       "Bash(claude auth status:*)",
-      "Bash(claude --version:*)"
+      "Bash(claude --version:*)",
+      "Bash(where:*)",
+      "Bash(timeout:*)",
+      "Bash(for i in {1..10})",
+      "Bash(wmic process:*)",
+      "Bash(for i in {1..60})",
+      "Bash(then cat \"C:\\\\Users\\\\CUSTOM~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-CUSTOM-PC-Desktop-Cursor-Builds-barton-outreach-core\\\\tasks\\\\b49f204.output\")",
+      "Bash(break)",
+      "Bash(del:*)",
+      "Bash(npm init:*)",
+      "Bash(npm --version:*)",
+      "Bash(node --version:*)",
+      "Bash(npm.cmd install:*)",
+      "Bash(git clean:*)",
+      "Bash(for folder in utils helpers common shared lib misc)",
+      "Bash(then echo \"FORBIDDEN: $folder\")",
+      "Bash(for folder in src/utils src/helpers src/common src/shared src/lib src/misc)",
+      "Bash(sort:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(copy:*)",
+      "Bash(__NEW_LINE_222db766b1085b48__ echo \"\")"
     ],
     "deny": []
   }
