@@ -371,29 +371,45 @@ def classify_tier(score: int) -> str:
 
 ## 10. Schema
 
+> **ERD Reference**: `hubs/outreach-execution/SCHEMA.md`
+
 ```sql
--- Signal storage
-CREATE TABLE bit.events (
-    event_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    company_id VARCHAR(25) NOT NULL REFERENCES marketing.company_master(company_unique_id),
-    event_type VARCHAR(50) NOT NULL,
-    event_payload JSONB,
-    detected_at TIMESTAMP DEFAULT NOW(),
-    correlation_id UUID NOT NULL,
+-- Signal storage (ERD: outreach.bit_signals)
+CREATE TABLE outreach.bit_signals (
+    signal_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    outreach_id UUID NOT NULL REFERENCES outreach.outreach(outreach_id),
+    signal_type VARCHAR(50) NOT NULL,
+    signal_impact NUMERIC NOT NULL,
     source_spoke VARCHAR(50) NOT NULL,
-    base_weight INTEGER NOT NULL,
-    decayed_weight NUMERIC(10,2),
-    created_at TIMESTAMP DEFAULT NOW()
+    correlation_id UUID NOT NULL,
+    process_id UUID,
+    signal_metadata JSONB,
+    decay_period_days INTEGER NOT NULL DEFAULT 90,
+    decayed_impact NUMERIC,
+    signal_timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    processed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_bit_events_company ON bit.events(company_id);
-CREATE INDEX idx_bit_events_type ON bit.events(event_type);
-CREATE INDEX idx_bit_events_correlation ON bit.events(correlation_id);
+CREATE INDEX idx_bit_signals_outreach ON outreach.bit_signals(outreach_id);
+CREATE INDEX idx_bit_signals_type ON outreach.bit_signals(signal_type);
+CREATE INDEX idx_bit_signals_correlation ON outreach.bit_signals(correlation_id);
 
--- Company score cache
-ALTER TABLE marketing.company_master ADD COLUMN IF NOT EXISTS bit_score INTEGER DEFAULT 0;
-ALTER TABLE marketing.company_master ADD COLUMN IF NOT EXISTS bit_tier VARCHAR(10) DEFAULT 'COLD';
-ALTER TABLE marketing.company_master ADD COLUMN IF NOT EXISTS last_scored_at TIMESTAMP;
+-- Company score cache (ERD: outreach.bit_scores)
+CREATE TABLE outreach.bit_scores (
+    outreach_id UUID PRIMARY KEY REFERENCES outreach.outreach(outreach_id),
+    score NUMERIC NOT NULL DEFAULT 0,
+    score_tier VARCHAR(10) NOT NULL DEFAULT 'COLD',
+    signal_count INTEGER NOT NULL DEFAULT 0,
+    people_score NUMERIC NOT NULL DEFAULT 0,
+    dol_score NUMERIC NOT NULL DEFAULT 0,
+    blog_score NUMERIC NOT NULL DEFAULT 0,
+    talent_flow_score NUMERIC NOT NULL DEFAULT 0,
+    last_signal_at TIMESTAMPTZ,
+    last_scored_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 ```
 
 ---

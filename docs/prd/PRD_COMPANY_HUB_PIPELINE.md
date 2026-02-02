@@ -554,9 +554,12 @@ Result:   HR Director replaces HR Manager
 | `audit_log.json` | Complete event log |
 
 **Database Writes:**
-- `marketing.people_master` — Person records
-- `marketing.company_slot` — Slot assignments
-- `marketing.data_enrichment_log` — Enrichment tracking
+
+> **ERD Reference**: `hubs/people-intelligence/SCHEMA.md`
+
+- `people.people_master` — Person records (ERD verified)
+- `people.company_slot` — Slot assignments (ERD verified)
+- `outreach.people` — Outreach-attached people (ERD verified)
 - `public.shq_error_log` — Errors and failures
 
 ---

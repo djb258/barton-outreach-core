@@ -407,31 +407,39 @@ def _get_primary_contact(company_id: str, company_data: Dict) -> Optional[Dict]:
 
 ## 7. Outreach Log Schema
 
+> **ERD Reference**: `hubs/outreach-execution/SCHEMA.md`
+
 ```sql
-CREATE TABLE marketing.outreach_log (
-    outreach_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    company_id VARCHAR(25) NOT NULL REFERENCES marketing.company_master(company_unique_id),
-    person_id VARCHAR(25) NOT NULL REFERENCES marketing.people_master(unique_id),
-    correlation_id UUID NOT NULL,
-    campaign_id VARCHAR(50),
-    sequence_id VARCHAR(50),
-    bit_score INTEGER NOT NULL,
-    slot_type VARCHAR(10) NOT NULL,
-    status VARCHAR(20) DEFAULT 'queued',  -- queued, sent, delivered, opened, clicked, replied, bounced, unsubscribed
-    queued_at TIMESTAMP DEFAULT NOW(),
-    sent_at TIMESTAMP,
-    delivered_at TIMESTAMP,
-    opened_at TIMESTAMP,
-    clicked_at TIMESTAMP,
-    replied_at TIMESTAMP,
-    external_id VARCHAR(100),  -- Instantly/HeyReach ID
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+-- ERD: outreach.send_log (operational send tracking)
+CREATE TABLE outreach.send_log (
+    send_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    campaign_id UUID REFERENCES outreach.campaigns(campaign_id),
+    sequence_id UUID REFERENCES outreach.sequences(sequence_id),
+    person_id UUID REFERENCES outreach.people(person_id),
+    target_id UUID REFERENCES outreach.company_target(target_id),
+    company_unique_id TEXT,
+    email_to VARCHAR NOT NULL,
+    email_subject TEXT,
+    sequence_step INTEGER NOT NULL DEFAULT 1,
+    send_status VARCHAR NOT NULL DEFAULT 'pending',  -- pending, sent, delivered, opened, clicked, replied, bounced
+    scheduled_at TIMESTAMPTZ,
+    sent_at TIMESTAMPTZ,
+    delivered_at TIMESTAMPTZ,
+    bounced_at TIMESTAMPTZ,
+    opened_at TIMESTAMPTZ,
+    clicked_at TIMESTAMPTZ,
+    replied_at TIMESTAMPTZ,
+    open_count INTEGER NOT NULL DEFAULT 0,
+    click_count INTEGER NOT NULL DEFAULT 0,
+    error_message TEXT,
+    retry_count INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_outreach_company ON marketing.outreach_log(company_id);
-CREATE INDEX idx_outreach_status ON marketing.outreach_log(status);
-CREATE INDEX idx_outreach_correlation ON marketing.outreach_log(correlation_id);
+CREATE INDEX idx_send_log_campaign ON outreach.send_log(campaign_id);
+CREATE INDEX idx_send_log_status ON outreach.send_log(send_status);
+CREATE INDEX idx_send_log_person ON outreach.send_log(person_id);
 ```
 
 ---

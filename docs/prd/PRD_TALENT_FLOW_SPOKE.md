@@ -228,11 +228,11 @@ The Talent Flow Spoke monitors executive movements between companies, detecting 
 ║   2. Same person + same movement = ONE signal (even if re-detected)           ║
 ║   3. Signal dedup key: (company_id, person_id, movement_type, detected_date)  ║
 ║                                                                               ║
-║   DEDUP CHECK:                                                                ║
-║   SELECT * FROM bit.events                                                    ║
-║   WHERE company_id = ? AND person_id = ?                                      ║
-║     AND event_type = 'EXECUTIVE_HIRE'                                         ║
-║     AND detected_at > NOW() - INTERVAL '365 days';                            ║
+║   DEDUP CHECK (ERD: outreach.bit_signals):                                    ║
+║   SELECT * FROM outreach.bit_signals                                          ║
+║   WHERE outreach_id = ? AND signal_metadata->>'person_id' = ?                 ║
+║     AND signal_type = 'EXECUTIVE_HIRE'                                        ║
+║     AND signal_timestamp > NOW() - INTERVAL '365 days';                       ║
 ║                                                                               ║
 ║   IF EXISTS: Skip emission, log as duplicate.                                 ║
 ║                                                                               ║
