@@ -123,6 +123,12 @@ erDiagram
         varchar execution_status
         timestamp imo_completed_at
         boolean is_catchall
+        text canonical_verified_email "v1.3: Promoted verified email"
+        text derived_email_pattern "v1.3: Derived from verified"
+        varchar email_pattern_status "GUESS or VERIFIED"
+        boolean pattern_locked "v1.3: Lock until downgrade"
+        timestamp pattern_verified_at "v1.3: When verified"
+        text pattern_verification_method "single_person_verified"
     }
 
     OUTREACH_COMPANY_TARGET_ERRORS {
@@ -223,6 +229,21 @@ Primary target tracking table for companies in the outreach pipeline.
 | `is_catchall` | boolean | NULL | false | Domain is catch-all |
 | `created_at` | timestamptz | NOT NULL | now() | Record creation time |
 | `updated_at` | timestamptz | NOT NULL | now() | Last update time |
+
+#### v1.3 Verification Fields (Waterfall Doctrine)
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| `canonical_verified_email` | text | NULL | - | Promoted verified email from People |
+| `derived_email_pattern` | text | NULL | - | Pattern derived mechanically from verified email |
+| `email_pattern_status` | varchar | NULL | 'GUESS' | GUESS (inferred) or VERIFIED (proven) |
+| `pattern_confidence` | varchar | NULL | - | HIGH (verified), MEDIUM, LOW |
+| `pattern_locked` | boolean | NULL | false | Prevents overwrite until downgrade |
+| `verified_source` | text | NULL | - | Verification tool (e.g., MillionVerifier) |
+| `pattern_verified_at` | timestamptz | NULL | - | When pattern was verified |
+| `pattern_verification_method` | text | NULL | - | How verified (single_person_verified) |
+
+> **See**: `docs/OUTREACH_WATERFALL_DOCTRINE.md` §"Verification Gate: Pattern State Flip" for agent flow.
 
 ### outreach.company_target_errors
 

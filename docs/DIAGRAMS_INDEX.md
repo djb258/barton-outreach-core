@@ -1,9 +1,16 @@
 # Diagrams Index
 
 **Repository**: barton-outreach-core
-**Generated**: 2026-01-28
+**Generated**: 2026-02-02
 **Source of Truth**: Neon PostgreSQL (live database queries)
 **Doctrine**: DOCUMENTATION_ERD_DOCTRINE.md v1.0.0
+
+---
+
+## ⚠️ CRITICAL: Authoritative Table Reference
+
+> **ALL work MUST use `outreach.company_target` as the company source (41,425 companies).**
+> **See [AUTHORITATIVE_TABLE_REFERENCE.md](AUTHORITATIVE_TABLE_REFERENCE.md) for complete details.**
 
 ---
 
@@ -11,6 +18,7 @@
 
 | Category | Diagram | Description |
 |----------|---------|-------------|
+| **ERD** | [PEOPLE_DATA_FLOW_ERD.md](diagrams/PEOPLE_DATA_FLOW_ERD.md) | ⭐ **START HERE** - People slot/enrichment flow |
 | **ERD** | [CORE_SCHEMA.mmd](diagrams/erd/CORE_SCHEMA.mmd) | Complete system entity relationships |
 | **ERD** | [CL_AUTHORITY_REGISTRY.mmd](diagrams/erd/CL_AUTHORITY_REGISTRY.mmd) | CL parent hub schema |
 | **ERD** | [OUTREACH_SPINE.mmd](diagrams/erd/OUTREACH_SPINE.mmd) | Outreach operational spine |
@@ -30,6 +38,17 @@
 ---
 
 ## ERD Diagrams
+
+### ⭐ People Data Flow (START HERE)
+
+#### PEOPLE_DATA_FLOW_ERD.md
+**Location**: `docs/diagrams/PEOPLE_DATA_FLOW_ERD.md`
+**Purpose**: Complete people data flow from company_target through slots to outreach
+**Key Tables**:
+- `outreach.company_target` → AUTHORITATIVE (41,425)
+- `people.company_slot` → Slot assignments (CEO, CFO, HR)
+- `people.people_master` → People data
+- `outreach.people` → Promoted for outreach
 
 ### Overall System
 

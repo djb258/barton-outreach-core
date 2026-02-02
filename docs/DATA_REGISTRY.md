@@ -1,8 +1,26 @@
 # Data Registry — Sub-Hub Reference
 
-**Generated**: 2026-01-30
+**Generated**: 2026-02-02
 **Purpose**: Single source of truth for where data lives across all sub-hubs.
 **Usage**: Reference this document FIRST before searching for data.
+
+---
+
+## ⚠️ CRITICAL: AUTHORITATIVE TABLE
+
+> **ALL pipeline work MUST use `outreach.company_target` as the company source.**
+> **See [AUTHORITATIVE_TABLE_REFERENCE.md](AUTHORITATIVE_TABLE_REFERENCE.md) for complete details.**
+
+| What | Table | Count | Primary Key |
+|------|-------|-------|-------------|
+| **AUTHORITATIVE Companies** | `outreach.company_target` | **41,425** | `outreach_id` |
+| Slots | `people.company_slot` | 124,275 | `slot_id` |
+| People | `people.people_master` | 78,143 | `unique_id` |
+
+### DO NOT USE These as Company Source:
+- ❌ `company.company_master` (74,641 - too broad)
+- ❌ `people.people_master` (78,143 - people, not companies)
+- ❌ `outreach.outreach` (42,192 - different scope)
 
 ---
 
@@ -14,9 +32,50 @@
 | `outreach.outreach` | `domain` | **42,192** | **100%** | Master domain list (commercial only) |
 | `outreach.blog` | `source_url` | ~41K | **0%** ❌ | NEEDS POPULATION |
 | `company.company_master` | `website_url` | 74,641 | ~98% | Full URLs |
-| `company.company_source_urls` | `source_url` | 97,124 | 100% | Crawl source URLs |
+| `company.company_source_urls` | `source_url` | 97,124 | 100% | ✅ **About Us & News URLs** |
 | `cl.company_domains` | `domain` | 46,583 | 100% | CL domain registry |
 | `dol.ein_urls` | `url` | **119,409** | 100% | ✅ **DOL EIN→URL discovery** |
+
+### 🔗 Blog Sub-Hub URL Storage (`company.company_source_urls`)
+
+> **Need About Us or News URLs?** This is the table!
+> **Outreach Coverage**: 19,996 companies (47.6%)
+
+| Source Type | Count | Purpose |
+|-------------|-------|---------|
+| `about_page` | **24,099** | Company About Us pages |
+| `press_page` | **14,377** | News/Press/Announcements |
+| `leadership_page` | 9,214 | Executive bios |
+| `team_page` | 7,959 | Staff listings |
+| `careers_page` | 16,262 | Job postings |
+| `contact_page` | 25,213 | Contact info |
+
+#### Bridge Path (outreach → company_source_urls)
+```
+outreach.outreach (domain)
+    ↓ JOIN ON: domain → website_url (normalized)
+company.company_master (company_unique_id)
+    ↓ JOIN ON: company_unique_id
+company.company_source_urls (source_url)
+```
+
+#### Quick Queries
+```sql
+-- About Us URLs (standalone)
+SELECT company_unique_id, source_url FROM company.company_source_urls WHERE source_type = 'about_page';
+
+-- News/Press URLs (standalone)
+SELECT company_unique_id, source_url FROM company.company_source_urls WHERE source_type = 'press_page';
+
+-- ✅ BRIDGE: Get URLs for Outreach Companies
+SELECT o.outreach_id, o.domain, csu.source_type, csu.source_url
+FROM outreach.outreach o
+JOIN company.company_master cm ON LOWER(o.domain) = LOWER(
+    REPLACE(REPLACE(REPLACE(cm.website_url, 'http://', ''), 'https://', ''), 'www.', '')
+)
+JOIN company.company_source_urls csu ON csu.company_unique_id = cm.company_unique_id
+WHERE csu.source_type IN ('about_page', 'press_page');
+```
 
 ### EIN / DOL Data
 | Location | Column | Records | Coverage | Notes |
@@ -38,7 +97,8 @@
 ### Company Identifiers
 | Location | Column | Records | Notes |
 |----------|--------|---------|-------|
-| `outreach.outreach` | `outreach_id` | **42,192** | **MASTER LIST** (commercial companies) |
+| **`outreach.company_target`** | `outreach_id` | **41,425** | ⭐ **AUTHORITATIVE COMPANY LIST** |
+| `outreach.outreach` | `outreach_id` | 42,192 | Outreach spine |
 | `outreach.outreach_excluded` | `outreach_id` | 2,432 | Non-commercial exclusions |
 | `cl.company_identity` | `sovereign_company_id` | 47,348 | Authority registry |
 | `company.company_master` | `company_unique_id` | 74,641 | Company master ID |
@@ -49,7 +109,7 @@
 
 | Schema | Purpose | Key Tables | Master ID | Total Rows |
 |--------|---------|------------|-----------|------------|
-| `outreach` | Outreach spine & coordination | outreach, blog, dol, company_target | `outreach_id` | 344K |
+| `outreach` | Outreach spine & coordination | **company_target**, outreach, blog, dol | `outreach_id` | 344K |
 | `company` | Company master & enrichment | company_master, company_source_urls | `company_unique_id` | 218K |
 | `cl` | Company Lifecycle pipeline | company_identity, company_domains | `sovereign_company_id` | 477K |
 | `dol` | DOL Form 5500 filings | form_5500, form_5500_sf | `ein` | 1.3M |
@@ -83,7 +143,14 @@
 ## ID Relationships (How Tables Connect)
 
 ```
-outreach.outreach.outreach_id (MASTER - 42,192 commercial)
+outreach.company_target.outreach_id (AUTHORITATIVE - 41,425)
+    │
+    ├── people.company_slot.outreach_id (CEO, CFO, HR slots)
+    │       └── person_unique_id → people.people_master.unique_id
+    │
+    └── outreach.people.outreach_id (promoted for outreach)
+
+outreach.outreach.outreach_id (SPINE - 42,192 commercial)
     │
     ├── outreach.blog.outreach_id
     ├── outreach.dol.outreach_id  

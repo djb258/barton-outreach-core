@@ -1,9 +1,18 @@
 %% BLOG_SUBHUB.mmd
 %% Blog Content Sub-Hub (04.04.05)
-%% Source: Neon PostgreSQL outreach.blog + blog schema (queried 2026-01-28)
-%% Tables: 4 (outreach.blog*) | Rows: 46,468 (100% coverage)
-%% Purpose: Content signals, news monitoring, pressure detection
+%% Source: Neon PostgreSQL outreach.blog + company schema (queried 2026-02-02)
+%% Tables: 4 (outreach.blog*) + company.company_source_urls | Rows: 46,468 + 97,124 URLs
+%% Purpose: Content signals, news monitoring, pressure detection, URL discovery
 %% Waterfall Position: #4 (PASS, executes after People Intelligence)
+%%
+%% URL STORAGE REFERENCE (company.company_source_urls):
+%%   - about_page: 24,099 URLs (Company About Us pages)
+%%   - press_page: 14,377 URLs (News/Press/Announcements)
+%%   - contact_page: 25,213 URLs
+%%   - careers_page: 16,262 URLs
+%%   - leadership_page: 9,214 URLs
+%%   - team_page: 7,959 URLs
+%%   TOTAL: 97,124 URLs
 
 erDiagram
     OUTREACH_OUTREACH ||--o| OUTREACH_BLOG : "has blog"
@@ -11,6 +20,8 @@ erDiagram
     OUTREACH_BLOG ||--o{ BLOG_INGRESS_CONTROL : "controlled by"
     OUTREACH_BLOG ||--o{ BLOG_SOURCE_HISTORY : "has history"
     OUTREACH_BLOG ||--o{ PEOPLE_PRESSURE_SIGNALS : "generates signals"
+    COMPANY_COMPANY_MASTER ||--o{ COMPANY_SOURCE_URLS : "has discovered URLs"
+    COMPANY_COMPANY_MASTER ||--o{ URL_DISCOVERY_FAILURES : "has failed discoveries"
 
     OUTREACH_OUTREACH {
         uuid outreach_id PK "Spine PK"
@@ -92,4 +103,44 @@ erDiagram
         jsonb keywords "Extracted keywords"
         boolean is_relevant "Relevance flag"
         timestamptz fetched_at "Fetch timestamp"
+    }
+
+    %% ═══════════════════════════════════════════════════════════════
+    %% URL DISCOVERY TABLES (company schema)
+    %% These store About Us, News/Press, and other discovered URLs
+    %% TOTAL: 97,124 URLs across 6 source types
+    %% ═══════════════════════════════════════════════════════════════
+
+    COMPANY_COMPANY_MASTER {
+        text company_unique_id PK "04.04.01.xx format"
+        text company_name "Company name"
+        text website_url "Main company URL"
+    }
+
+    COMPANY_SOURCE_URLS {
+        uuid source_id PK "URL record ID"
+        text company_unique_id FK "FK to company_master"
+        varchar source_type "about_page|press_page|leadership_page|team_page|careers_page|contact_page"
+        text source_url "Full URL"
+        text page_title "Extracted page title"
+        timestamptz discovered_at "Discovery timestamp"
+        varchar discovered_from "crawl|manual|rss"
+        timestamptz last_checked_at "Last accessibility check"
+        integer http_status "HTTP status code"
+        boolean is_accessible "URL accessibility"
+        text content_checksum "Content hash for change detection"
+        varchar extraction_status "pending|extracted|failed"
+        timestamptz extracted_at "Extraction timestamp"
+        integer people_extracted "Count of people found"
+    }
+
+    URL_DISCOVERY_FAILURES {
+        uuid failure_id PK "Failure record ID"
+        text company_unique_id FK "FK to company_master"
+        text website_url "Company website URL"
+        varchar failure_reason "Reason code"
+        integer retry_count "Retry attempts"
+        timestamptz last_attempt_at "Last attempt"
+        timestamptz next_retry_at "Scheduled retry"
+        timestamptz resolved_at "Resolution time"
     }

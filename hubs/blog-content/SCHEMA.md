@@ -171,25 +171,65 @@ Tracks companies where URL discovery failed for retry.
 
 ---
 
-## Statistics (2026-01-18)
+## Statistics (2026-02-02)
+
+> **⚠️ QUICK REFERENCE**: Need About Us or News URLs? Query `company.company_source_urls` with `source_type = 'about_page'` or `source_type = 'press_page'`
+> **Outreach Coverage**: 19,996 companies (47.6%)
 
 | Metric | Value |
 |--------|-------|
 | Total URLs | 97,124 |
 | Companies with URLs | 30,771 |
+| Outreach Companies with URLs | 19,996 (47.6%) |
 | Failed Companies | 42,348 |
 | Avg URLs/Company | 3.2 |
 
 ### By Source Type
 
-| Type | Count |
-|------|-------|
-| contact_page | 25,213 |
-| about_page | 24,099 |
-| careers_page | 16,262 |
-| press_page | 14,377 |
-| leadership_page | 9,214 |
-| team_page | 7,959 |
+| Type | Count | Purpose |
+|------|-------|---------|
+| contact_page | 25,213 | Contact info verification |
+| **about_page** | **24,099** | **Company About Us pages** |
+| careers_page | 16,262 | Expansion/hiring signals |
+| **press_page** | **14,377** | **News/Press/Announcements** |
+| leadership_page | 9,214 | Executive bios |
+| team_page | 7,959 | Staff listings |
+
+### ⚠️ Bridge Path (Outreach → company_source_urls)
+
+`company_source_urls` uses `company_unique_id` in `04.04.01.xx` format.
+`outreach.outreach` uses `domain`. **Bridge via domain matching:**
+
+```
+outreach.outreach (domain)
+    ↓ JOIN: domain → website_url (normalized)
+company.company_master (company_unique_id)
+    ↓ JOIN: company_unique_id
+company.company_source_urls (source_url)
+```
+
+### Quick Query Reference
+
+```sql
+-- About Us URLs (standalone)
+SELECT company_unique_id, source_url, page_title 
+FROM company.company_source_urls 
+WHERE source_type = 'about_page';
+
+-- News/Press URLs (standalone)
+SELECT company_unique_id, source_url, page_title 
+FROM company.company_source_urls 
+WHERE source_type = 'press_page';
+
+-- ✅ BRIDGE: Get URLs for Outreach Companies
+SELECT o.outreach_id, o.domain, csu.source_type, csu.source_url
+FROM outreach.outreach o
+JOIN company.company_master cm ON LOWER(o.domain) = LOWER(
+    REPLACE(REPLACE(REPLACE(cm.website_url, 'http://', ''), 'https://', ''), 'www.', '')
+)
+JOIN company.company_source_urls csu ON csu.company_unique_id = cm.company_unique_id
+WHERE csu.source_type IN ('about_page', 'press_page');
+```
 
 ---
 

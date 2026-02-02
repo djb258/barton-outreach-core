@@ -1,8 +1,8 @@
 # Master ERD - Complete Database Architecture
 
 **Status**: CANONICAL REFERENCE
-**Version**: 1.0.0
-**Last Updated**: 2026-01-28
+**Version**: 1.1.0
+**Last Updated**: 2026-02-02
 **Authority**: Barton Doctrine v1.1
 
 ---
@@ -12,6 +12,42 @@
 **AI AGENTS**: Read this document FIRST before any database work. This is the single source of truth.
 
 **HUMANS**: This document answers "where does X live?" and "how do I join X to Y?"
+
+---
+
+## ⚠️ CRITICAL: Authoritative Table Reference
+
+> **ALL pipeline work MUST use `outreach.company_target` as the authoritative company list.**
+> **See [AUTHORITATIVE_TABLE_REFERENCE.md](AUTHORITATIVE_TABLE_REFERENCE.md) for complete details.**
+
+### The Single Source of Truth
+
+| What | Table | Count | Primary Key |
+|------|-------|-------|-------------|
+| **Companies (Authoritative)** | `outreach.company_target` | 41,425 | `outreach_id` |
+| **People Slots** | `people.company_slot` | 124,275 (3 per company) | `slot_id` |
+| **People Data** | `people.people_master` | 78,143 | `unique_id` |
+| **Outreach People** | `outreach.people` | 324 | `person_id` |
+
+### Key Linkages
+
+```
+outreach.company_target.outreach_id (41,425 companies)
+    │
+    ├── people.company_slot.outreach_id (CEO, CFO, HR slots)
+    │       └── person_unique_id → people.people_master.unique_id
+    │
+    └── outreach.people.outreach_id (promoted for outreach)
+```
+
+### Current Enrichment Status (2026-02-02)
+
+| Metric | Count | % |
+|--------|-------|---|
+| Total companies | 41,425 | 100% |
+| Companies with ≥1 person | 18,353 | 44.3% |
+| Companies with ≥1 email | 15,401 | 37.2% |
+| **Companies needing people** | **23,072** | **55.7%** |
 
 ---
 
@@ -78,6 +114,11 @@ erDiagram
         text outreach_status
         numeric bit_score_snapshot
         text email_method
+        text canonical_verified_email "v1.3: Promoted verified email"
+        text derived_email_pattern "v1.3: Derived from verified"
+        varchar email_pattern_status "GUESS or VERIFIED"
+        boolean pattern_locked "v1.3: Prevents overwrite"
+        timestamptz pattern_verified_at "v1.3: Verification timestamp"
         timestamptz created_at
     }
 
@@ -231,6 +272,7 @@ erDiagram
 
     %% ═══════════════════════════════════════════════════════════════
     %% COMPANY SCHEMA (LEGACY - DISCONNECTED)
+    %% Includes URL Discovery for Blog Sub-Hub
     %% ═══════════════════════════════════════════════════════════════
 
     COMPANY_COMPANY_MASTER {
@@ -240,6 +282,27 @@ erDiagram
         text company_name
         text linkedin_url
         timestamptz created_at
+    }
+
+    COMPANY_SOURCE_URLS {
+        uuid source_id PK "URL record ID"
+        text company_unique_id FK "FK to company_master"
+        varchar source_type "about_page|press_page|leadership_page|team_page|careers_page|contact_page"
+        text source_url "Full URL - About Us, News, etc."
+        text page_title "Extracted page title"
+        boolean is_accessible "URL accessibility"
+        varchar extraction_status "pending|extracted|failed"
+        integer people_extracted "People found from page"
+        timestamptz discovered_at
+    }
+
+    URL_DISCOVERY_FAILURES {
+        uuid failure_id PK
+        text company_unique_id FK
+        text website_url
+        varchar failure_reason
+        integer retry_count
+        timestamptz next_retry_at
     }
 
     %% ═══════════════════════════════════════════════════════════════
@@ -348,6 +411,10 @@ erDiagram
     %% People Slot → People Master
     PEOPLE_PEOPLE_MASTER ||--o{ PEOPLE_COMPANY_SLOT : "person_unique_id"
 
+    %% Company URL Discovery (Blog Sub-Hub)
+    COMPANY_COMPANY_MASTER ||--o{ COMPANY_SOURCE_URLS : "company_unique_id"
+    COMPANY_COMPANY_MASTER ||--o| URL_DISCOVERY_FAILURES : "company_unique_id"
+
     %% DOL Internal
     DOL_FORM_5500 ||--o{ DOL_SCHEDULE_A : "filing_id"
 
@@ -424,7 +491,41 @@ JOIN outreach.outreach o ON o.outreach_id = od.outreach_id
 WHERE f.spons_dfe_mail_us_state = 'PA';
 ```
 
-### §3.3 People to Companies
+### §3.3 Outreach to Company Source URLs (About Us / News)
+
+> **Bridge Path**: `company_source_urls` uses `04.04.01.xx` format, outreach uses `domain`. Bridge via domain → website_url.
+
+```
+outreach.outreach (domain)
+  │
+  │ JOIN ON: domain → website_url (normalized)
+  ▼
+company.company_master (company_unique_id)
+  │
+  │ JOIN ON: company_unique_id
+  ▼
+company.company_source_urls (source_url)
+```
+
+**Coverage**: 19,996 outreach companies have URLs (47.6%)
+
+**SQL Example: Get About Us and News URLs for outreach companies**
+```sql
+SELECT 
+    o.outreach_id,
+    o.domain,
+    csu.source_type,
+    csu.source_url,
+    csu.page_title
+FROM outreach.outreach o
+JOIN company.company_master cm ON LOWER(o.domain) = LOWER(
+    REPLACE(REPLACE(REPLACE(cm.website_url, 'http://', ''), 'https://', ''), 'www.', '')
+)
+JOIN company.company_source_urls csu ON csu.company_unique_id = cm.company_unique_id
+WHERE csu.source_type IN ('about_page', 'press_page');
+```
+
+### §3.4 People to Companies
 
 ```
 people.people_master (person_unique_id)

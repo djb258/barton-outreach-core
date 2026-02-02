@@ -1,11 +1,91 @@
-# PRD: People Sub-Hub v3.0
+# PRD: People Sub-Hub v3.1
 
-**Version:** 3.0 (Constitutional Compliance + FREE Extraction Complete)
+**Version:** 3.1 (Authoritative Table Reference + Live Metrics)
 **Status:** Active
 **Constitutional Date:** 2026-01-29
-**Last Updated:** 2026-01-30
+**Last Updated:** 2026-02-02
 **Doctrine:** IMO-Creator Constitutional Doctrine
 **Barton ID Range:** `04.04.02.04.2XXXX.###`
+
+---
+
+## ⚠️ AUTHORITATIVE TABLE REFERENCE
+
+> **CRITICAL: All People Sub-Hub operations MUST use `outreach.company_target` as the company source.**
+> **See [AUTHORITATIVE_TABLE_REFERENCE.md](../AUTHORITATIVE_TABLE_REFERENCE.md) for complete details.**
+
+### The Single Source of Truth
+
+| Table | Schema | Count | Purpose |
+|-------|--------|-------|---------|
+| `company_target` | `outreach` | **41,425** | **AUTHORITATIVE company list** |
+| `company_slot` | `people` | 124,275 | Slot assignments (3 per company) |
+| `people_master` | `people` | 78,143 | People data (name, email, etc.) |
+| `people` | `outreach` | 324 | People promoted for outreach |
+
+### Data Flow
+
+```
+Clay (CL) Exports
+       ↓
+outreach.company_target (41,425) ← AUTHORITATIVE SOURCE
+       ↓ outreach_id
+people.company_slot (CEO, CFO, HR slots)
+       ↓ person_unique_id → unique_id
+people.people_master (enriched people data)
+       ↓ promotion
+outreach.people (ready for outreach)
+```
+
+### Join Keys
+
+| From Table | To Table | Join Key |
+|------------|----------|----------|
+| `outreach.company_target` | `people.company_slot` | `outreach_id` |
+| `people.company_slot` | `people.people_master` | `person_unique_id` = `unique_id` |
+| `outreach.company_target` | `outreach.people` | `outreach_id` |
+
+---
+
+## 📊 LIVE ENRICHMENT STATUS (2026-02-02)
+
+### Company-Level Coverage
+
+| Metric | Count | % of 41,425 |
+|--------|-------|-------------|
+| Total companies | 41,425 | 100% |
+| Companies with ≥1 filled slot | 18,353 | **44.3%** |
+| Companies with ≥1 person WITH email | 15,401 | **37.2%** |
+| Companies with all 3 slots filled | 1,760 | 4.2% |
+| **Companies needing people** | **23,072** | **55.7%** |
+
+### Slot-Level Coverage
+
+| Slot | Total | Filled | Has Person | Has Email | Needs Email | Empty |
+|------|-------|--------|------------|-----------|-------------|-------|
+| **CEO** | 41,425 | 15,171 (36.6%) | 15,171 | 12,061 (29.1%) | 3,110 | 26,254 (63.4%) |
+| **CFO** | 41,425 | 4,807 (11.6%) | 4,805 | 3,723 (9.0%) | 1,082 | 36,618 (88.4%) |
+| **HR** | 41,425 | 6,575 (15.9%) | 6,533 | 6,030 (14.6%) | 503 | 34,850 (84.1%) |
+
+### Enrichment Priorities
+
+| Priority | Action | Count | Impact |
+|----------|--------|-------|--------|
+| 1 | Find CEOs for empty slots | 26,254 | HIGH - Primary contact |
+| 2 | Get emails for existing CEOs | 3,110 | HIGH - Enable outreach |
+| 3 | Find HR contacts | 34,850 | MEDIUM - Benefits decision maker |
+| 4 | Find CFOs | 36,618 | MEDIUM - Financial decision maker |
+| 5 | Get emails for people missing them | 4,695 | LOW - Complete records |
+
+### Source of Current People
+
+| Source System | Filled Slots |
+|---------------|-------------|
+| `intake_promotion` | 21,909 |
+| `free_extraction` | 3,820 |
+| `people_master_bridge` | 322 |
+| `people_master_match` | 174 |
+| `wv_executive_import` | 153 |
 
 ---
 
