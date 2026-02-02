@@ -1,6 +1,46 @@
 # Blog Content Hub — Database Schema
 
+> **AUTHORITY**: Neon PostgreSQL (Production)
+> **VERIFIED**: 2026-02-02 via READ-ONLY connection
+> **HUB ID**: 04.04.05
+> **STATUS**: NEON VERIFIED
+
+---
+
+## Primary Tables
+
+| Schema | Table | Purpose |
+|--------|-------|---------|
+| `outreach` | `blog` | Outreach-scoped blog content signals |
+| `outreach` | `blog_archive` | Archived blog records |
+| `outreach` | `blog_errors` | Blog pipeline errors |
+| `outreach` | `blog_ingress_control` | Pipeline gate switches |
+| `outreach` | `blog_source_history` | Source tracking |
+| `company` | `company_source_urls` | Discovered URLs |
+| `company` | `url_discovery_failures` | Discovery failure tracking |
+
+---
+
 ## Tables
+
+### outreach.blog (8 columns)
+
+Content signals for outreach intelligence.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| `blog_id` | uuid | NOT NULL | gen_random_uuid() | Primary key |
+| `outreach_id` | uuid | NOT NULL | - | FK to outreach.outreach |
+| `context_summary` | text | NULL | - | AI-generated summary |
+| `source_type` | text | NULL | - | Signal type |
+| `source_url` | text | NULL | - | Source link |
+| `context_timestamp` | timestamptz | NULL | - | Signal timestamp |
+| `created_at` | timestamptz | NULL | now() | Record creation time |
+| `source_type_enum` | enum | NULL | - | Enum version |
+
+**Coverage** (as of v1.0): 42,192 records (100% of outreach spine)
+
+---
 
 ### blog.pressure_signals (BIT v2.0)
 

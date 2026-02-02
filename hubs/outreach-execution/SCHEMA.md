@@ -28,13 +28,14 @@ The Outreach Execution hub manages campaign orchestration, email sequences, send
 | `outreach` | `bit_signals` | BIT signal events |
 | `outreach` | `bit_errors` | BIT processing errors |
 | `outreach` | `hub_registry` | Hub definitions |
-| `outreach_ctx` | `context` | Outreach context registry |
-| `outreach_ctx` | `spend_log` | Provider spend tracking |
-| `cl` | `company_identity` | Company Lifecycle identity |
-| `cl` | `company_domains` | CL domain records |
-| `bit` | `bit_signal` | Legacy BIT signals |
-| `bit` | `bit_company_score` | Legacy company scores |
-| `bit` | `bit_contact_score` | Legacy contact scores |
+| `outreach` | `manual_overrides` | **KILL SWITCH** - Manual override controls |
+| `outreach` | `override_audit_log` | **KILL SWITCH** - Override audit trail |
+| `cl` | `company_identity` | CL Authority Registry (identity pointers) |
+| `cl` | `company_domains` | CL domain records (1:N) |
+| `bit` | `authorization_log` | BIT authorization requests |
+| `bit` | `movement_events` | BIT movement detection |
+| `bit` | `phase_state` | BIT phase state per company |
+| `bit` | `proof_lines` | BIT authorization proof lines |
 
 ---
 
@@ -62,21 +63,24 @@ erDiagram
     OUTREACH_PEOPLE ||--o{ OUTREACH_SEND_LOG : "person_id"
     OUTREACH_PEOPLE ||--o{ OUTREACH_ENGAGEMENT_EVENTS : "person_id"
 
-    OUTREACH_CTX_CONTEXT ||--o{ OUTREACH_CTX_SPEND_LOG : "outreach_context_id"
+    OUTREACH_MANUAL_OVERRIDES ||--o{ OUTREACH_OVERRIDE_AUDIT_LOG : "override_id"
+    OUTREACH_HUB_REGISTRY ||--o{ OUTREACH_COMPANY_HUB_STATUS : "hub_id"
 
     CL_COMPANY_IDENTITY {
-        uuid company_unique_id PK
+        uuid sovereign_company_id PK "Minted by CL (IMMUTABLE)"
+        uuid company_unique_id UK "Legacy ID"
         text company_name
         text company_domain
-        text linkedin_company_url
-        text source_system
-        text company_fingerprint
-        boolean existence_verified
-        text identity_status
+        text canonical_name
+        text identity_status "PENDING|PASS|FAIL"
         int identity_pass
-        uuid outreach_id
-        uuid sales_process_id
-        uuid client_id
+        text eligibility_status
+        text exclusion_reason
+        uuid outreach_id "WRITE-ONCE (minted by Outreach)"
+        uuid sales_process_id "WRITE-ONCE (minted by Sales)"
+        uuid client_id "WRITE-ONCE (minted by Client)"
+        timestamptz outreach_attached_at
+        timestamptz created_at
     }
 
     CL_COMPANY_DOMAINS {
@@ -90,11 +94,11 @@ erDiagram
     }
 
     OUTREACH_OUTREACH {
-        uuid outreach_id PK
-        uuid sovereign_id FK
+        uuid outreach_id PK "Minted here, registered in CL"
+        uuid sovereign_id FK "FK to cl.company_identity.sovereign_company_id"
         varchar domain
-        timestamp created_at
-        timestamp updated_at
+        timestamptz created_at
+        timestamptz updated_at
     }
 
     OUTREACH_CAMPAIGNS {
@@ -210,55 +214,89 @@ erDiagram
         uuid correlation_id
     }
 
-    OUTREACH_CTX_CONTEXT {
-        text outreach_context_id PK
-        timestamp created_at
-        text status
-        text notes
-    }
-
-    OUTREACH_CTX_SPEND_LOG {
-        bigint id PK
-        text outreach_context_id FK
-        uuid company_sov_id
-        text tool_name
-        int tier
-        numeric cost_credits
-        timestamp attempted_at
-    }
-
-    BIT_BIT_SIGNAL {
-        int signal_id PK
+    OUTREACH_MANUAL_OVERRIDES {
+        uuid override_id PK
         text company_unique_id
-        text contact_unique_id
-        text signal_type
-        int signal_strength
-        text source
-        text source_campaign_id
+        enum override_type "HARD_FAIL|SKIP|etc"
+        text reason
         jsonb metadata
-        timestamp captured_at
+        timestamptz created_at
+        text created_by
+        timestamptz expires_at
+        boolean is_active
+        timestamptz deactivated_at
+        text deactivated_by
+        text deactivation_reason
     }
 
-    BIT_BIT_COMPANY_SCORE {
+    OUTREACH_OVERRIDE_AUDIT_LOG {
+        uuid audit_id PK
+        text company_unique_id
+        uuid override_id FK
+        text action
+        enum override_type
+        jsonb old_value
+        jsonb new_value
+        text performed_by
+        timestamptz performed_at
+    }
+
+    OUTREACH_HUB_REGISTRY {
+        varchar hub_id PK
+        varchar hub_name
+        varchar doctrine_id
+        varchar classification "ANCHOR|SUB-HUB"
+        boolean gates_completion
+        int waterfall_order
+        varchar core_metric
+        numeric metric_healthy_threshold
+        numeric metric_critical_threshold
+        text description
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    BIT_AUTHORIZATION_LOG {
+        uuid log_id PK
+        text company_unique_id
+        text requested_action
+        int requested_band
+        boolean authorized
+        int actual_band
+        text denial_reason
+        text proof_id FK
+        boolean proof_valid
+        timestamptz requested_at
+        text requested_by
+        text correlation_id
+    }
+
+    BIT_PHASE_STATE {
         text company_unique_id PK
-        int score
-        int signal_count
-        timestamp last_signal_at
-        int email_score
-        int linkedin_score
-        int website_score
-        text score_tier
+        int current_band
+        text phase_status "SILENT|EMERGING|ACTIVE|STASIS"
+        boolean dol_active
+        boolean people_active
+        boolean blog_active
+        text primary_pressure
+        int aligned_domains
+        timestamptz last_movement_at
+        timestamptz last_band_change_at
+        timestamptz updated_at
     }
 
-    BIT_BIT_CONTACT_SCORE {
-        text contact_unique_id PK
-        int score
-        int signal_count
-        int email_opens
-        int email_clicks
-        int linkedin_views
-        int replies
-        text engagement_tier
+    BIT_PROOF_LINES {
+        text proof_id PK
+        text company_unique_id
+        int band
+        text pressure_class
+        array sources
+        jsonb evidence
+        array movement_ids
+        text human_readable
+        timestamptz generated_at
+        timestamptz valid_until
+        text generated_by
     }
 ```
 
@@ -463,7 +501,63 @@ Individual BIT signal events.
 | outreach.send_log | person_id | outreach.people | person_id |
 | outreach.send_log | target_id | outreach.company_target | target_id |
 | outreach.sequences | campaign_id | outreach.campaigns | campaign_id |
-| outreach_ctx.spend_log | outreach_context_id | outreach_ctx.context | outreach_context_id |
+| outreach.override_audit_log | override_id | outreach.manual_overrides | override_id |
+
+---
+
+### outreach.manual_overrides (KILL SWITCH)
+
+Manual override controls for marketing eligibility. v1.0 FROZEN component.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| `override_id` | uuid | NOT NULL | gen_random_uuid() | Primary key |
+| `company_unique_id` | text | NOT NULL | - | Company identifier |
+| `override_type` | enum | NOT NULL | - | Override type (HARD_FAIL, SKIP, etc) |
+| `reason` | text | NOT NULL | - | Human-readable reason |
+| `metadata` | jsonb | NULL | '{}' | Additional context |
+| `created_at` | timestamptz | NOT NULL | now() | Creation time |
+| `created_by` | text | NOT NULL | CURRENT_USER | Who created |
+| `expires_at` | timestamptz | NULL | - | Optional expiration |
+| `is_active` | boolean | NOT NULL | true | Active flag |
+| `deactivated_at` | timestamptz | NULL | - | Deactivation time |
+| `deactivated_by` | text | NULL | - | Who deactivated |
+| `deactivation_reason` | text | NULL | - | Why deactivated |
+
+### outreach.override_audit_log (KILL SWITCH AUDIT)
+
+Immutable audit trail for all override actions.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| `audit_id` | uuid | NOT NULL | gen_random_uuid() | Primary key |
+| `company_unique_id` | text | NOT NULL | - | Company identifier |
+| `override_id` | uuid | NULL | - | FK to manual_overrides |
+| `action` | text | NOT NULL | - | Action taken |
+| `override_type` | enum | NULL | - | Override type |
+| `old_value` | jsonb | NULL | - | Previous state |
+| `new_value` | jsonb | NULL | - | New state |
+| `performed_by` | text | NOT NULL | CURRENT_USER | Actor |
+| `performed_at` | timestamptz | NOT NULL | now() | Timestamp |
+
+### outreach.hub_registry
+
+Waterfall order and health metrics for all hubs.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| `hub_id` | varchar(50) | NOT NULL | - | Primary key |
+| `hub_name` | varchar(100) | NOT NULL | - | Display name |
+| `doctrine_id` | varchar(20) | NOT NULL | - | Doctrine reference |
+| `classification` | varchar(20) | NOT NULL | - | Type: ANCHOR, SUB-HUB |
+| `gates_completion` | boolean | NOT NULL | false | Blocks downstream? |
+| `waterfall_order` | integer | NOT NULL | - | Execution order |
+| `core_metric` | varchar(50) | NOT NULL | - | Key metric name |
+| `metric_healthy_threshold` | numeric | NULL | - | Green threshold |
+| `metric_critical_threshold` | numeric | NULL | - | Red threshold |
+| `description` | text | NULL | - | Purpose |
+| `created_at` | timestamptz | NOT NULL | now() | Creation time |
+| `updated_at` | timestamptz | NOT NULL | now() | Update time |
 
 ---
 
@@ -612,4 +706,5 @@ Current: 42,192 = 42,192 ✓ ALIGNED
 ---
 
 *Generated from Neon PostgreSQL via READ-ONLY connection*
-*Last verified: 2026-01-30*
+*Last verified: 2026-02-02*
+*ERD Sync: NEON_SCHEMA_REFERENCE_FOR_ERD.md*

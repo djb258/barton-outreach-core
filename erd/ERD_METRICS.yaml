@@ -13,10 +13,10 @@
 # SYNC METADATA
 # ─────────────────────────────────────────────────────────────────────────────────
 sync:
-  last_updated: "2026-01-30T12:00:00Z"
+  last_updated: "2026-02-02T06:00:00Z"
   updated_by: "claude-code"
   source: "doppler://neon/barton-outreach-core"
-  next_sync_due: "2026-01-31T12:00:00Z"
+  next_sync_due: "2026-02-03T06:00:00Z"
 
   frequency: daily
   stale_after_hours: 24

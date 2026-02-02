@@ -23,9 +23,9 @@ The Company Target hub manages company identity resolution, domain verification,
 | `company` | `company_slots` | Executive position tracking |
 | `company` | `company_sidecar` | Enrichment metadata |
 | `company` | `email_verification` | Email verification results |
-| `marketing` | `company_master` | Marketing-layer company data |
-| `company_target` | `vw_all_pressure_signals` | **BIT v2.0** Union view of all pressure signals |
-| `company_target` | `vw_company_authorization` | **BIT v2.0** Company authorization status view |
+| `cl` | `company_identity` | CL Authority Registry (identity pointers) |
+| `bit` | `phase_state` | BIT v2.0 current phase per company |
+| `bit` | `authorization_log` | BIT v2.0 authorization requests |
 
 ## BIT v2.0 Functions
 
@@ -54,55 +54,57 @@ erDiagram
 
     OUTREACH_HUB_REGISTRY ||--o{ OUTREACH_COMPANY_HUB_STATUS : "hub_id"
 
-    DOL_PRESSURE_SIGNALS }|--|| COMPANY_TARGET_VW_ALL_PRESSURE_SIGNALS : "union"
-    PEOPLE_PRESSURE_SIGNALS }|--|| COMPANY_TARGET_VW_ALL_PRESSURE_SIGNALS : "union"
-    BLOG_PRESSURE_SIGNALS }|--|| COMPANY_TARGET_VW_ALL_PRESSURE_SIGNALS : "union"
-
-    COMPANY_TARGET_VW_ALL_PRESSURE_SIGNALS {
-        uuid signal_id PK
-        text company_unique_id FK
-        varchar signal_type
-        enum pressure_domain
-        int magnitude
-        timestamptz expires_at
-        text source_hub
-    }
+    DOL_PRESSURE_SIGNALS }|--|| BIT_PHASE_STATE : "signals"
+    PEOPLE_PRESSURE_SIGNALS }|--|| BIT_PHASE_STATE : "signals"
 
     DOL_PRESSURE_SIGNALS {
         uuid signal_id PK
         text company_unique_id FK
-        enum pressure_domain
+        varchar signal_type
+        enum pressure_domain "STRUCTURAL_PRESSURE"
         int magnitude
+        timestamptz expires_at
     }
 
     PEOPLE_PRESSURE_SIGNALS {
         uuid signal_id PK
         text company_unique_id FK
-        enum pressure_domain
+        varchar signal_type
+        enum pressure_domain "DECISION_SURFACE"
         int magnitude
+        timestamptz expires_at
     }
 
-    BLOG_PRESSURE_SIGNALS {
-        uuid signal_id PK
-        text company_unique_id FK
-        enum pressure_domain
-        int magnitude
+    BIT_PHASE_STATE {
+        text company_unique_id PK
+        int current_band "0-5"
+        text phase_status "SILENT|EMERGING|ACTIVE|STASIS"
+        boolean dol_active
+        boolean people_active
+        boolean blog_active
+        int aligned_domains
+        timestamptz updated_at
     }
 
     CL_COMPANY_IDENTITY {
-        uuid company_unique_id PK
+        uuid sovereign_company_id PK "Minted by CL (IMMUTABLE)"
+        uuid company_unique_id UK "Legacy ID"
         text company_name
         text company_domain
-        text source_system
-        timestamp created_at
+        text canonical_name
+        text identity_status "PENDING|PASS|FAIL"
+        int identity_pass
+        text eligibility_status
+        uuid outreach_id "WRITE-ONCE"
+        timestamptz created_at
     }
 
     OUTREACH_OUTREACH {
-        uuid outreach_id PK
-        uuid sovereign_id FK
+        uuid outreach_id PK "Minted here, registered in CL"
+        uuid sovereign_id FK "FK to cl.company_identity.sovereign_company_id"
         varchar domain
-        timestamp created_at
-        timestamp updated_at
+        timestamptz created_at
+        timestamptz updated_at
     }
 
     OUTREACH_COMPANY_TARGET {
@@ -192,14 +194,6 @@ erDiagram
         jsonb verification_result
     }
 
-    MARKETING_COMPANY_MASTER {
-        varchar company_unique_id PK
-        varchar company_name
-        varchar domain
-        varchar email_pattern
-        numeric pattern_confidence
-        varchar source
-    }
 ```
 
 ---
@@ -493,4 +487,5 @@ This hub's data is cleaned when:
 ---
 
 *Generated from Neon PostgreSQL via READ-ONLY connection*
-*Last verified: 2026-01-30*
+*Last verified: 2026-02-02*
+*ERD Sync: NEON_SCHEMA_REFERENCE_FOR_ERD.md*

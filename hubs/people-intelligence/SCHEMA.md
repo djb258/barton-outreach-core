@@ -26,7 +26,7 @@ The People Intelligence hub manages executive/contact data, slot assignments, em
 | `people` | `slot_ingress_control` | Pipeline gate switches |
 | `people` | `person_movement_history` | Job movement tracking |
 | `people` | `pressure_signals` | **BIT v2.0** DECISION_SURFACE signals |
-| `marketing` | `people_master` | Marketing-layer person data |
+| `cl` | `company_identity` | CL Authority Registry reference |
 | `outreach` | `people` | Outreach-scoped person records |
 | `outreach` | `people_archive` | Archived outreach persons |
 | `outreach` | `people_errors` | Outreach pipeline errors |
@@ -47,8 +47,6 @@ erDiagram
     PEOPLE_PEOPLE_MASTER ||--o{ PEOPLE_PERSON_MOVEMENT_HISTORY : "unique_id"
     PEOPLE_PEOPLE_MASTER ||--o{ PEOPLE_PERSON_SCORES : "unique_id"
     PEOPLE_PERSON_MOVEMENT_HISTORY ||--o{ PEOPLE_PRESSURE_SIGNALS : "source_record_id"
-
-    MARKETING_COMPANY_MASTER ||--o{ MARKETING_PEOPLE_MASTER : "company_unique_id"
 
     PEOPLE_PRESSURE_SIGNALS {
         uuid signal_id PK
@@ -215,19 +213,6 @@ erDiagram
         jsonb raw_payload
     }
 
-    MARKETING_PEOPLE_MASTER {
-        varchar unique_id PK
-        varchar company_unique_id FK
-        varchar full_name
-        varchar first_name
-        varchar last_name
-        varchar email
-        boolean email_verified
-        numeric email_confidence
-        varchar linkedin_url
-        varchar title
-        varchar title_seniority
-    }
 ```
 
 ---
@@ -354,7 +339,6 @@ Outreach-scoped person records with engagement tracking.
 | people.people_sidecar | person_unique_id | people.people_master | unique_id |
 | people.person_movement_history | person_unique_id | people.people_master | unique_id |
 | people.person_scores | person_unique_id | people.people_master | unique_id |
-| marketing.people_master | company_unique_id | marketing.company_master | company_unique_id |
 | outreach.people | outreach_id | outreach.outreach | outreach_id |
 | outreach.people | target_id | outreach.company_target | target_id |
 | outreach.people_errors | outreach_id | outreach.outreach | outreach_id |
@@ -547,4 +531,5 @@ This hub's data is cleaned when:
 ---
 
 *Generated from Neon PostgreSQL via READ-ONLY connection*
-*Last verified: 2026-01-30*
+*Last verified: 2026-02-02*
+*ERD Sync: NEON_SCHEMA_REFERENCE_FOR_ERD.md*
