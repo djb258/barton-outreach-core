@@ -19,52 +19,159 @@ from psycopg2.extras import execute_values
 import os
 from datetime import datetime
 
-# Title matching patterns for each slot type
-SLOT_PATTERNS = {
-    'CEO': {
-        'title_patterns': ['%ceo%', '%chief executive%', '%president%'],
-        'exact_titles': ['owner', 'founder'],
-        'departments': []
-    },
-    'CFO': {
-        'title_patterns': ['%cfo%', '%chief financial%', '%controller%', '%treasurer%'],
-        'exact_titles': [],
-        'departments': ['Finance']
-    },
-    'HR': {
-        'title_patterns': ['%hr %', '%human resource%', '%talent%', '%recruiting%', '%people operations%'],
-        'exact_titles': [],
-        'departments': ['HR']
-    }
+# DEPARTMENT-FIRST slot filling strategy
+# Step 1: Filter by Department (column Q in Hunter CSV)
+# Step 2: Then filter by Job Title (column R) and Position Raw (column S)
+#
+# This is more accurate than title-only matching because Hunter's
+# Department field is already normalized.
+
+SLOT_DEPARTMENT_MAP = {
+    'CEO': ['Executive', 'Management'],  # Both departments have CEO-type contacts
+    'CFO': ['Finance', 'Executive', 'Management', 'Operations & logistics'],  # CFO titles spread across depts
+    'HR': ['HR', 'Executive', 'Management', 'Operations & logistics'],         # HR titles spread across depts
 }
 
-def build_title_filter(slot_type):
-    """Build SQL WHERE clause for title matching."""
-    patterns = SLOT_PATTERNS[slot_type]
-    conditions = []
+# For CFO/HR, we also do TITLE-BASED matching (ignores department)
+# This catches CFO/HR people who are tagged as Executive, Management, or NULL department
+# NOTE: HR excludes recruiters, talent acquisition, staffing
+TITLE_BASED_PATTERNS = {
+    'CFO': [
+        '%cfo%', '%chief financial%', '%controller%', '%finance director%',
+        '%vp finance%', '%vp of finance%', '%treasurer%', '%accounting director%',
+        '%finance manager%', '%accounting manager%', '%comptroller%'
+    ],
+    'HR': [
+        # HR Directors and Managers
+        '%human resource% director%', '%hr director%', '%director of human%', '%director of hr%',
+        '%human resource% manager%', '%hr manager%',
+        # Head of HR
+        '%head of human%', '%head of hr%',
+        # VP and C-level HR
+        '%vp%human resource%', '%vice president%human resource%', 
+        '%chro%', '%chief human resource%', '%chief people%',
+        # Senior HR
+        '%senior%human resource%', '%senior hr%',
+        '%senior human resource% manager%', '%senior hr manager%',
+        # HR Coordinators
+        '%human resource% coordinator%', '%hr coordinator%',
+        # Benefits and Payroll (often handles benefits)
+        '%benefit% manager%', '%benefit% director%', '%benefit% coordinator%',
+        '%benefit% administrator%', '%benefit% specialist%',
+        '%payroll manager%', '%payroll director%', '%payroll coordinator%',
+        '%payroll administrator%', '%payroll specialist%',
+    ],
+}
+
+# Within each department, prioritize by job title
+# Higher priority = filled first (lower number = higher priority)
+TITLE_PRIORITY = {
+    'CEO': [
+        # Priority 1: C-level executives
+        ('%ceo%', 1), ('%chief executive%', 1), ('ceo', 1),
+        # Priority 2: Presidents and owners
+        ('%president%', 2), ('owner', 2), ('founder', 2),
+        # Priority 3: Managing/General managers
+        ('%managing director%', 3), ('%general manager%', 3),
+        # Priority 4: COO (often acts as CEO)
+        ('%coo%', 4), ('%chief operating%', 4),
+        # Priority 5: Partners and VPs
+        ('partner', 5), ('%vice president%', 5), ('%vp %', 5),
+        # Priority 6: Directors
+        ('%director%', 6),
+        # Priority 7: Any executive title
+        ('%executive%', 7),
+    ],
+    'CFO': [
+        # Priority 1: CFO titles
+        ('%cfo%', 1), ('%chief financial%', 1),
+        # Priority 2: Finance directors/VPs
+        ('%finance director%', 2), ('%vp finance%', 2), ('%vp of finance%', 2),
+        # Priority 3: Controllers
+        ('%controller%', 3), ('%financial controller%', 3),
+        # Priority 4: Accounting directors
+        ('%director of accounting%', 4), ('%accounting director%', 4),
+        # Priority 5: Finance/Accounting managers
+        ('%finance manager%', 5), ('%accounting manager%', 5),
+        # Priority 6: Treasurers and analysts
+        ('%treasurer%', 6), ('%financial analyst%', 6),
+        # Priority 7: Accountants
+        ('%accountant%', 7),
+    ],
+    'HR': [
+        # Priority 1: CHRO / VP HR / Head of HR
+        ('%chro%', 1), ('%chief human%', 1), ('%chief people%', 1),
+        ('%vp human%', 1), ('%vp of human%', 1), ('%vice president of human%', 1),
+        ('%head of human%', 1), ('%head of hr%', 1),
+        # Priority 2: HR Directors
+        ('%hr director%', 2), ('%human resources director%', 2), 
+        ('%director of human%', 2), ('%director of hr%', 2),
+        # Priority 3: Senior HR (including Senior HR Manager)
+        ('%senior%human resource%', 3), ('%senior hr%', 3), ('%senior director%human%', 3),
+        ('%senior human resources manager%', 3), ('%senior hr manager%', 3),
+        # Priority 4: HR Managers
+        ('%hr manager%', 4), ('%human resources manager%', 4),
+        # Priority 5: Benefits and Payroll
+        ('%benefit%', 5), ('%payroll%', 5),
+        # Priority 6: HR Coordinators
+        ('%hr coordinator%', 6), ('%human resources coordinator%', 6),
+        # Priority 7: HR generalists and specialists (no recruiters)
+        ('%hr generalist%', 7), ('%hr specialist%', 7), 
+        ('%human resources generalist%', 7), ('%human resources specialist%', 7),
+    ],
+}
+
+def build_department_filter(slot_type):
+    """Build SQL WHERE clause filtering by DEPARTMENT or TITLE."""
+    departments = SLOT_DEPARTMENT_MAP[slot_type]
     
-    for p in patterns['title_patterns']:
-        conditions.append(f"LOWER(hc.job_title) LIKE '{p}'")
+    # For CFO and HR, use TITLE-based matching (more inclusive)
+    if slot_type in TITLE_BASED_PATTERNS:
+        title_patterns = TITLE_BASED_PATTERNS[slot_type]
+        title_conditions = [f"LOWER(hc.job_title) LIKE '{p}'" for p in title_patterns]
+        # Also include department match
+        dept_list = ", ".join(f"'{d}'" for d in departments)
+        return f"(hc.department IN ({dept_list}) OR ({' OR '.join(title_conditions)}))"
     
-    for t in patterns['exact_titles']:
-        conditions.append(f"LOWER(hc.job_title) = '{t}'")
+    # For CEO, use department-based matching
+    if len(departments) == 1:
+        return f"hc.department = '{departments[0]}'"
+    else:
+        dept_list = ", ".join(f"'{d}'" for d in departments)
+        return f"hc.department IN ({dept_list})"
+
+
+def build_title_priority_case(slot_type):
+    """Build SQL CASE statement to rank contacts by job title priority."""
+    priorities = TITLE_PRIORITY[slot_type]
     
-    for d in patterns['departments']:
-        conditions.append(f"hc.department = '{d}'")
+    # Build CASE statement for ranking
+    cases = []
+    for pattern, priority in priorities:
+        if '%' in pattern:
+            cases.append(f"WHEN LOWER(COALESCE(hc.job_title, '') || ' ' || COALESCE(hc.position_raw, '')) LIKE '{pattern}' THEN {priority}")
+        else:
+            cases.append(f"WHEN LOWER(COALESCE(hc.job_title, '') || ' ' || COALESCE(hc.position_raw, '')) = '{pattern}' THEN {priority}")
     
-    return '(' + ' OR '.join(conditions) + ')'
+    # Default priority (lowest) for contacts that don't match any pattern
+    return "CASE " + " ".join(cases) + " ELSE 99 END"
 
 
 def get_fillable_slots(cur, slot_type, limit=None):
     """
-    Get empty slots with matching Hunter contacts.
-    Returns one best contact per slot (highest confidence).
+    Get empty slots with matching Hunter contacts using DEPARTMENT-FIRST logic.
+    
+    Strategy:
+      1. Filter by Hunter department (Executive→CEO, Finance→CFO, HR→HR)
+      2. Rank contacts within department by job title priority
+      3. Pick best contact per slot (highest priority, then highest confidence)
     
     Join path:
       company_slot → company_target → outreach.outreach (domain) 
       → company.company_master (Barton ID via website_url) → hunter_contact
     """
-    title_filter = build_title_filter(slot_type)
+    dept_filter = build_department_filter(slot_type)
+    title_priority = build_title_priority_case(slot_type)
     
     limit_clause = f"LIMIT {limit}" if limit else ""
     
@@ -90,13 +197,18 @@ def get_fillable_slots(cur, slot_type, limit=None):
                 hc.last_name,
                 hc.email,
                 hc.job_title,
+                hc.position_raw,
                 hc.department,
                 hc.linkedin_url,
                 hc.phone_number,
                 hc.confidence_score,
+                {title_priority} as title_priority,
                 ROW_NUMBER() OVER (
                     PARTITION BY cs.slot_id 
-                    ORDER BY hc.confidence_score DESC NULLS LAST, hc.id
+                    ORDER BY 
+                        {title_priority} ASC,  -- Lower priority number = better match
+                        hc.confidence_score DESC NULLS LAST, 
+                        hc.id
                 ) as rn
             FROM people.company_slot cs
             JOIN outreach.company_target ct ON cs.outreach_id = ct.outreach_id
@@ -109,7 +221,7 @@ def get_fillable_slots(cur, slot_type, limit=None):
             AND hc.first_name IS NOT NULL
             AND hc.last_name IS NOT NULL
             AND cmd.company_unique_id IS NOT NULL
-            AND {title_filter}
+            AND {dept_filter}
         )
         SELECT 
             slot_id,
@@ -123,7 +235,8 @@ def get_fillable_slots(cur, slot_type, limit=None):
             department,
             linkedin_url,
             phone_number,
-            confidence_score
+            confidence_score,
+            title_priority
         FROM ranked_contacts
         WHERE rn = 1
         {limit_clause}
@@ -197,7 +310,7 @@ def fill_slots(conn, slot_type, batch_size=100, dry_run=True):
         for slot in batch:
             (slot_id, outreach_id, barton_company_id,
              domain, first_name, last_name, email, job_title, 
-             department, linkedin_url, phone_number, confidence_score) = slot
+             department, linkedin_url, phone_number, confidence_score, title_priority) = slot
             
             # Generate person ID
             person_id = generate_person_id(cur)

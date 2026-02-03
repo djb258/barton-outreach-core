@@ -264,10 +264,71 @@ WHERE csu.source_type IN ('about_page', 'press_page');
 
 ---
 
+---
+
+## Hunter.io Source URLs (Contact Discovery Sources)
+
+> **CRITICAL**: Hunter.io provides up to 30 source URLs per contact showing WHERE the contact was discovered.
+> **USE CASE**: Blog sub-hub processing, movement detection, audit trail
+
+### Table: `enrichment.hunter_contact`
+
+| Attribute | Value |
+|-----------|-------|
+| **Schema** | `enrichment` |
+| **Table** | `hunter_contact` |
+| **Total Records** | ~248,000 |
+| **Source Columns** | `source_1` through `source_30` |
+
+### Source Type Categories (v_hunter_sources_by_type)
+
+| Source Type | Pattern | Use Case |
+|-------------|---------|----------|
+| `linkedin` | `%linkedin.com%` | Movement detection |
+| `press_release` | `%prnewswire.com%`, `%businesswire.com%` | BIT signals |
+| `company_page` | `%/about%`, `%/team%`, `%/leadership%` | Content extraction |
+| `pdf` | `%.pdf%` | Document indexing |
+| `government` | `%sbir.gov%` | Grant/filing signals |
+| `google_search` | `%google.com/search%` | Discovery (skip) |
+| `other` | All others | Miscellaneous |
+
+### Views for Blog Sub-Hub
+
+| View | Purpose |
+|------|---------|
+| `enrichment.v_hunter_contact_sources` | Unpivoted sources (one row per source URL) |
+| `enrichment.v_hunter_sources_by_type` | Sources with type classification |
+| `enrichment.v_hunter_company_sources` | Unique sources per company domain |
+
+### Quick Query
+
+```sql
+-- Get all press releases for BIT scoring
+SELECT domain, source_url, first_name, last_name, job_title
+FROM enrichment.v_hunter_sources_by_type
+WHERE source_type = 'press_release'
+  AND outreach_id IS NOT NULL;
+
+-- Get LinkedIn URLs for movement detection
+SELECT DISTINCT domain, linkedin_url, first_name, last_name, job_title
+FROM enrichment.hunter_contact
+WHERE linkedin_url IS NOT NULL
+  AND outreach_id IS NOT NULL;
+```
+
+### Documentation Reference
+
+| Document | Purpose |
+|----------|---------|
+| `docs/HUNTER_SOURCE_COLUMNS_REFERENCE.md` | Full AI-ready column documentation |
+
+---
+
 ## Change Log
 
 | Date | Change |
 |------|--------|
+| 2026-02-03 | Added Hunter.io Source URLs section |
 | 2026-02-02 | Added Blog Sub-Hub URL Storage section |
 | 2026-02-02 | Created document establishing authoritative table |
 

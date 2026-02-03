@@ -333,6 +333,43 @@ doppler run -- python query_enums.py
 
 ---
 
-**Last Updated**: 2026-02-02
+## HUNTER.IO SOURCE COLUMNS (2026-02-03)
+
+### New Documentation
+
+| File | Purpose |
+|------|---------|
+| `docs/HUNTER_SOURCE_COLUMNS_REFERENCE.md` | AI-ready column documentation for 30 source URLs |
+
+### Schema Changes
+
+**Table**: `enrichment.hunter_contact`
+**Added Columns**: `source_1` through `source_30` (TEXT)
+**Added Column**: `source_file` (VARCHAR 255)
+
+### Views Created
+
+| View | Purpose |
+|------|---------|
+| `enrichment.v_hunter_contact_sources` | Unpivoted sources (one row per URL) |
+| `enrichment.v_hunter_sources_by_type` | Sources with type classification |
+| `enrichment.v_hunter_company_sources` | Unique sources per company domain |
+
+### Source Type Categories
+
+| Type | Pattern | Use Case |
+|------|---------|----------|
+| linkedin | `%linkedin.com%` | Movement detection |
+| press_release | `%prnewswire.com%` | BIT signals |
+| company_page | `%/about%`, `%/team%` | Content extraction |
+| pdf | `%.pdf%` | Document indexing |
+
+### Migration
+
+- `neon/migrations/2026-02-03-add-hunter-source-columns.sql`
+
+---
+
+**Last Updated**: 2026-02-03
 **Status**: SCHEMA INTROSPECTION COMPLETE
 **Next Action**: Apply findings to ERD diagrams
