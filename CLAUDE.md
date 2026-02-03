@@ -10,6 +10,74 @@
 
 ---
 
+## ⚠️ CRITICAL: AUTHORITATIVE TABLE REFERENCE
+
+> **ALL pipeline work MUST use `outreach.company_target` as the authoritative company list.**
+> **COUNT: 41,425 companies**
+> **PRIMARY KEY: `outreach_id`**
+
+### DO NOT USE These Tables as Company Source:
+- ❌ `company.company_master` (74,641 - too broad)
+- ❌ `people.people_master` (78,143 - people, not companies)
+- ❌ `outreach.outreach` (42,192 - different scope)
+
+### Key Documentation:
+- **[docs/AUTHORITATIVE_TABLE_REFERENCE.md](docs/AUTHORITATIVE_TABLE_REFERENCE.md)** - Complete table reference
+- **[docs/diagrams/PEOPLE_DATA_FLOW_ERD.md](docs/diagrams/PEOPLE_DATA_FLOW_ERD.md)** - People slot/enrichment flow
+
+### Current Enrichment Status (2026-02-02):
+| Metric | Count | % |
+|--------|-------|---|
+| Total companies | 41,425 | 100% |
+| Companies with ≥1 person | 18,353 | 44.3% |
+| **Companies needing people** | **23,072** | **55.7%** |
+
+---
+
+## 🔗 BLOG SUB-HUB URL STORAGE
+
+> **Need About Us or News/Press URLs?** Use `company.company_source_urls`
+
+### Table: `company.company_source_urls`
+
+| Source Type | Count | Purpose |
+|-------------|-------|---------|
+| `about_page` | 24,099 | Company About Us pages |
+| `press_page` | 14,377 | News/Press/Announcements |
+| `leadership_page` | 9,214 | Executive bios |
+| `team_page` | 7,959 | Staff listings |
+| `careers_page` | 16,262 | Job postings |
+| `contact_page` | 25,213 | Contact info |
+
+**Total URLs**: 97,124 | **Outreach Coverage**: 19,996 (47.6%)
+
+### Bridge Path to Outreach
+```
+outreach.outreach (domain) → company.company_master (website_url) → company.company_source_urls (company_unique_id)
+```
+
+### Quick Queries
+```sql
+-- About Us URLs (standalone)
+SELECT company_unique_id, source_url FROM company.company_source_urls WHERE source_type = 'about_page';
+
+-- News/Press URLs (standalone)
+SELECT company_unique_id, source_url FROM company.company_source_urls WHERE source_type = 'press_page';
+
+-- ✅ BRIDGE: Get URLs for Outreach Companies
+SELECT o.outreach_id, o.domain, csu.source_type, csu.source_url
+FROM outreach.outreach o
+JOIN company.company_master cm ON LOWER(o.domain) = LOWER(
+    REPLACE(REPLACE(REPLACE(cm.website_url, 'http://', ''), 'https://', ''), 'www.', '')
+)
+JOIN company.company_source_urls csu ON csu.company_unique_id = cm.company_unique_id
+WHERE csu.source_type IN ('about_page', 'press_page');
+```
+
+**Full Documentation**: [docs/AUTHORITATIVE_TABLE_REFERENCE.md](docs/AUTHORITATIVE_TABLE_REFERENCE.md#blog-sub-hub-url-storage)
+
+---
+
 ## v1.0 OPERATIONAL BASELINE
 
 **Status**: CERTIFIED AND FROZEN
@@ -25,6 +93,7 @@
 
 | Document | Purpose |
 |----------|---------|
+| `docs/AUTHORITATIVE_TABLE_REFERENCE.md` | **COMPANY SOURCE** - Read FIRST |
 | `docs/DATA_REGISTRY.md` | **WHERE DATA LIVES** - Check FIRST before searching |
 | `docs/GO-LIVE_STATE_v1.0.md` | What is live vs intentionally incomplete |
 | `doctrine/DO_NOT_MODIFY_REGISTRY.md` | Frozen components requiring change request |
@@ -291,8 +360,20 @@ OUTREACH                                    SALES
 | No lateral reads between hubs | Spoke contracts only |
 | No speculative execution | PASS gate blocks downstream |
 | No retry/rescue from downstream | Failures stay local |
-| Data flows FORWARD ONLY | Bound by outreach_context_id |
+| Data flows FORWARD ONLY* | Bound by outreach_context_id |
 | Sub-hubs may re-run if upstream unchanged | Idempotent design |
+
+*\*Exception: Verified Email → CT Promotion (reverse flow). See OUTREACH_WATERFALL_DOCTRINE.md v1.3*
+
+### Verification Agent Chain (v1.3)
+
+| Agent | Trigger | Action |
+|-------|---------|--------|
+| **Promotion Agent** | People verified_status = VERIFIED | Promotes email to CT, derives pattern |
+| **Verification Gate** | CT has verified email + pattern | Flips email_pattern_status GUESS → FACT |
+| **Bounce Downgrade** | Hard bounce on verified email | Unlocks pattern, resets to GUESS |
+
+**Canonical Reference**: `docs/OUTREACH_WATERFALL_DOCTRINE.md` (v1.3)
 
 ### Hub Registry (Waterfall Order)
 

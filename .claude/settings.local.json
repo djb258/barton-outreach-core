@@ -213,7 +213,16 @@
       "Bash(sort:*)",
       "Bash(git rev-parse:*)",
       "Bash(copy:*)",
-      "Bash(__NEW_LINE_222db766b1085b48__ echo \"\")"
+      "Bash(__NEW_LINE_222db766b1085b48__ echo \"\")",
+      "Bash(gh api:*)",
+      "Bash(move schema_drift_checker.py ops/schema-drift/)",
+      "Bash(move:*)",
+      "Bash(for i in 1 2 3)",
+      "Bash(Get-ChildItem \"C:\\\\Users\\\\CUSTOM PC\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-CUSTOM-PC-Desktop-Cursor-Builds-barton-outreach-core\\\\tasks\\\\*.output\")",
+      "Bash(Sort-Object LastWriteTime -Descending)",
+      "Bash(Select-Object -First 10)",
+      "Bash(ForEach-Object { $_Name })",
+      "Bash(tasklist:*)"
     ],
     "deny": []
   }

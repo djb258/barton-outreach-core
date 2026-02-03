@@ -1,0 +1,986 @@
+{
+  "cl.company_identity": {
+    "schema": "cl",
+    "table": "company_identity",
+    "description": "CL Authority Registry (HIGHEST PRIORITY)",
+    "columns": [
+      {
+        "column_name": "company_unique_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "company_name",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "company_domain",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "linkedin_company_url",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "source_system",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "company_fingerprint",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "lifecycle_run_id",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "existence_verified",
+        "data_type": "boolean",
+        "is_nullable": "YES",
+        "column_default": "false"
+      },
+      {
+        "column_name": "verification_run_id",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "verified_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "domain_status_code",
+        "data_type": "integer(32)",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "name_match_score",
+        "data_type": "integer(32)",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "state_match_result",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "canonical_name",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "state_verified",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "employee_count_band",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "identity_pass",
+        "data_type": "integer(32)",
+        "is_nullable": "YES",
+        "column_default": "0"
+      },
+      {
+        "column_name": "identity_status",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": "'PENDING'::text"
+      },
+      {
+        "column_name": "last_pass_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "eligibility_status",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "exclusion_reason",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "entity_role",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "sovereign_company_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "final_outcome",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "final_reason",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "outreach_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "sales_process_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "client_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "outreach_attached_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "sales_opened_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "client_promoted_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "normalized_domain",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      }
+    ]
+  },
+  "cl.company_domains": {
+    "schema": "cl",
+    "table": "company_domains",
+    "description": "CL Domains",
+    "columns": [
+      {
+        "column_name": "domain_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "company_unique_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "domain",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "domain_health",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "mx_present",
+        "data_type": "boolean",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "domain_name_confidence",
+        "data_type": "integer(32)",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "checked_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "now()"
+      }
+    ]
+  },
+  "outreach.manual_overrides": {
+    "schema": "outreach",
+    "table": "manual_overrides",
+    "description": "Kill Switch - Manual Overrides",
+    "columns": [
+      {
+        "column_name": "override_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "company_unique_id",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "override_type",
+        "data_type": "USER-DEFINED",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "reason",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "metadata",
+        "data_type": "jsonb",
+        "is_nullable": "YES",
+        "column_default": "'{}'::jsonb"
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "created_by",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": "CURRENT_USER"
+      },
+      {
+        "column_name": "expires_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "is_active",
+        "data_type": "boolean",
+        "is_nullable": "NO",
+        "column_default": "true"
+      },
+      {
+        "column_name": "deactivated_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "deactivated_by",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "deactivation_reason",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      }
+    ]
+  },
+  "outreach.override_audit_log": {
+    "schema": "outreach",
+    "table": "override_audit_log",
+    "description": "Kill Switch - Audit Log",
+    "columns": [
+      {
+        "column_name": "audit_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "company_unique_id",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "override_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "action",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "override_type",
+        "data_type": "USER-DEFINED",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "old_value",
+        "data_type": "jsonb",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "new_value",
+        "data_type": "jsonb",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "performed_by",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": "CURRENT_USER"
+      },
+      {
+        "column_name": "performed_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ]
+  },
+  "outreach.hub_registry": {
+    "schema": "outreach",
+    "table": "hub_registry",
+    "description": "Hub Registry",
+    "columns": [
+      {
+        "column_name": "hub_id",
+        "data_type": "character varying(50)",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "hub_name",
+        "data_type": "character varying(100)",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "doctrine_id",
+        "data_type": "character varying(20)",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "classification",
+        "data_type": "character varying(20)",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "gates_completion",
+        "data_type": "boolean",
+        "is_nullable": "NO",
+        "column_default": "false"
+      },
+      {
+        "column_name": "waterfall_order",
+        "data_type": "integer(32)",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "core_metric",
+        "data_type": "character varying(50)",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "metric_healthy_threshold",
+        "data_type": "numeric(5)",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "metric_critical_threshold",
+        "data_type": "numeric(5)",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "description",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ]
+  },
+  "outreach.outreach": {
+    "schema": "outreach",
+    "table": "outreach",
+    "description": "Outreach Operational Spine",
+    "columns": [
+      {
+        "column_name": "outreach_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "sovereign_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "domain",
+        "data_type": "character varying(255)",
+        "is_nullable": "YES",
+        "column_default": ""
+      }
+    ]
+  },
+  "outreach.outreach_excluded": {
+    "schema": "outreach",
+    "table": "outreach_excluded",
+    "description": "Outreach Excluded",
+    "columns": [
+      {
+        "column_name": "outreach_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "company_name",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "domain",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "exclusion_reason",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "excluded_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "sovereign_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "cl_status",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "excluded_by",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": "'consolidation_migration'::text"
+      }
+    ]
+  },
+  "outreach.blog": {
+    "schema": "outreach",
+    "table": "blog",
+    "description": "Outreach Blog",
+    "columns": [
+      {
+        "column_name": "blog_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "outreach_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "context_summary",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "source_type",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "source_url",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "context_timestamp",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "source_type_enum",
+        "data_type": "USER-DEFINED",
+        "is_nullable": "YES",
+        "column_default": ""
+      }
+    ]
+  },
+  "bit.authorization_log": {
+    "schema": "bit",
+    "table": "authorization_log",
+    "description": "BIT Authorization Log",
+    "columns": [
+      {
+        "column_name": "log_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "company_unique_id",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "requested_action",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "requested_band",
+        "data_type": "integer(32)",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "authorized",
+        "data_type": "boolean",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "actual_band",
+        "data_type": "integer(32)",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "denial_reason",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "proof_id",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "proof_valid",
+        "data_type": "boolean",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "requested_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "requested_by",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "correlation_id",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      }
+    ]
+  },
+  "bit.movement_events": {
+    "schema": "bit",
+    "table": "movement_events",
+    "description": "BIT Movement Events",
+    "columns": [
+      {
+        "column_name": "movement_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "company_unique_id",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "source_hub",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "source_table",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "source_fields",
+        "data_type": "ARRAY",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "movement_class",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "pressure_class",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "domain",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "direction",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "magnitude",
+        "data_type": "numeric(5)",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "detected_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "valid_from",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "valid_until",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "comparison_period",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "evidence",
+        "data_type": "jsonb",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "source_record_ids",
+        "data_type": "jsonb",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ]
+  },
+  "bit.phase_state": {
+    "schema": "bit",
+    "table": "phase_state",
+    "description": "BIT Phase State",
+    "columns": [
+      {
+        "column_name": "company_unique_id",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "current_band",
+        "data_type": "integer(32)",
+        "is_nullable": "NO",
+        "column_default": "0"
+      },
+      {
+        "column_name": "phase_status",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": "'SILENT'::text"
+      },
+      {
+        "column_name": "dol_active",
+        "data_type": "boolean",
+        "is_nullable": "NO",
+        "column_default": "false"
+      },
+      {
+        "column_name": "people_active",
+        "data_type": "boolean",
+        "is_nullable": "NO",
+        "column_default": "false"
+      },
+      {
+        "column_name": "blog_active",
+        "data_type": "boolean",
+        "is_nullable": "NO",
+        "column_default": "false"
+      },
+      {
+        "column_name": "primary_pressure",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "aligned_domains",
+        "data_type": "integer(32)",
+        "is_nullable": "NO",
+        "column_default": "0"
+      },
+      {
+        "column_name": "last_movement_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "last_band_change_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "phase_entered_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "stasis_start",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": ""
+      },
+      {
+        "column_name": "stasis_years",
+        "data_type": "numeric(3)",
+        "is_nullable": "YES",
+        "column_default": "0"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ]
+  },
+  "bit.proof_lines": {
+    "schema": "bit",
+    "table": "proof_lines",
+    "description": "BIT Proof Lines",
+    "columns": [
+      {
+        "column_name": "proof_id",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "company_unique_id",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "band",
+        "data_type": "integer(32)",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "pressure_class",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "sources",
+        "data_type": "ARRAY",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "evidence",
+        "data_type": "jsonb",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "movement_ids",
+        "data_type": "ARRAY",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "human_readable",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "generated_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "valid_until",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": ""
+      },
+      {
+        "column_name": "generated_by",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": ""
+      }
+    ]
+  }
+}

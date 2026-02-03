@@ -32,6 +32,11 @@ import uuid
 NEXT_PERSON_SEQ = 120000  # For unique_id: 04.04.02.XX.XXXXX.XXX
 NEXT_SLOT_SEQ = 120000    # For company_slot_unique_id: 04.04.05.XX.XXXXX.XXX
 
+# Thread-safe lock for stats and sequence counters
+import threading
+STATS_LOCK = threading.Lock()
+SEQ_LOCK = threading.Lock()
+
 # Stats
 STATS = {
     "companies_processed": 0,
@@ -51,10 +56,12 @@ def get_next_person_barton_id() -> str:
     """
     Generate a Barton ID in doctrine format for People Intelligence hub (people).
     Format: 04.04.02.99.{seq}.{last3}
+    Thread-safe with SEQ_LOCK.
     """
     global NEXT_PERSON_SEQ
-    seq = NEXT_PERSON_SEQ
-    NEXT_PERSON_SEQ += 1
+    with SEQ_LOCK:
+        seq = NEXT_PERSON_SEQ
+        NEXT_PERSON_SEQ += 1
     last3 = str(seq)[-3:].zfill(3)
     return f"04.04.02.99.{seq}.{last3}"
 
@@ -63,12 +70,20 @@ def get_next_slot_barton_id() -> str:
     """
     Generate a Barton ID in doctrine format for company_slot_unique_id.
     Format: 04.04.05.99.{seq}.{last3}
+    Thread-safe with SEQ_LOCK.
     """
     global NEXT_SLOT_SEQ
-    seq = NEXT_SLOT_SEQ
-    NEXT_SLOT_SEQ += 1
+    with SEQ_LOCK:
+        seq = NEXT_SLOT_SEQ
+        NEXT_SLOT_SEQ += 1
     last3 = str(seq)[-3:].zfill(3)
     return f"04.04.05.99.{seq}.{last3}"
+
+
+def increment_stat(key: str, value: int = 1):
+    """Thread-safe increment of STATS counter."""
+    with STATS_LOCK:
+        STATS[key] += value
 
 
 def init_sequence_from_db(conn):
@@ -531,7 +546,7 @@ def process_company(conn, company: dict) -> dict:
 
     # Combine URLs in priority order
     all_urls = leadership_urls + team_urls + about_urls
-    STATS['urls_available'] += len(all_urls)
+    increment_stat('urls_available', len(all_urls))
 
     result = {
         'domain': domain,
@@ -548,27 +563,27 @@ def process_company(conn, company: dict) -> dict:
     try:
         executives, content, source_url = scrape_known_urls(all_urls)
         result['scraped'] = True
-        STATS['pages_scraped'] += 1
+        increment_stat('pages_scraped')
     except Exception as e:
-        STATS['pages_failed'] += 1
+        increment_stat('pages_failed')
         return result
 
     # Update blog with content
     if content and source_url:
         updated = update_blog_content(conn, outreach_id, content, source_url)
         if updated:
-            STATS['blog_updated'] += 1
+            increment_stat('blog_updated')
 
     # Process found executives
     for exec in executives:
-        STATS['executives_found'] += 1
+        increment_stat('executives_found')
 
         if exec.slot_type == 'CEO':
-            STATS['ceo_found'] += 1
+            increment_stat('ceo_found')
         elif exec.slot_type == 'CFO':
-            STATS['cfo_found'] += 1
+            increment_stat('cfo_found')
         elif exec.slot_type == 'HR':
-            STATS['hr_found'] += 1
+            increment_stat('hr_found')
 
         # Only fill if slot is empty
         if exec.slot_type not in (empty_slots or []):
@@ -584,7 +599,7 @@ def process_company(conn, company: dict) -> dict:
         try:
             filled = create_people_and_fill_slot(conn, slot, doctrine_company_id, exec)
             if filled:
-                STATS['slots_filled'] += 1
+                increment_stat('slots_filled')
                 result['slots_filled'] += 1
         except Exception as e:
             log(f"Error filling slot: {e}", "ERROR")
@@ -621,7 +636,7 @@ def main():
         # Get companies with empty slots AND discovered URLs
         log("-" * 70)
         log("Finding companies with empty slots AND discovered URLs...")
-        companies = get_companies_with_empty_slots_and_urls(conn, limit=20000)
+        companies = get_companies_with_empty_slots_and_urls(conn, limit=50000)
         log(f"Found {len(companies):,} companies with URLs to process")
 
         if not companies:
@@ -642,7 +657,7 @@ def main():
                 for future in as_completed(futures):
                     try:
                         result = future.result()
-                        STATS['companies_processed'] += 1
+                        increment_stat('companies_processed')
                     except Exception as e:
                         log(f"Error processing company: {e}", "ERROR")
 

@@ -1,6 +1,6 @@
 # Blog Executive Scraper v2 Report
 
-**Execution Date**: 2026-02-02 16:44:47 UTC
+**Execution Date**: 2026-02-02 23:05:02 UTC
 **Cost**: $0.00 (FREE)
 **Data Source**: company.company_source_urls (97,124 URLs)
 
@@ -8,15 +8,15 @@
 
 | Metric | Count |
 |--------|------:|
-| Companies processed | 2,000 |
-| URLs available | 3,009 |
-| Pages scraped | 2,000 |
-| Blog records updated | 1,541 |
-| Executives found | 314 |
-| - CEO | 280 |
-| - CFO | 24 |
-| - HR | 10 |
-| **Slots filled** | **10** |
+| Companies processed | 4,564 |
+| URLs available | 7,112 |
+| Pages scraped | 4,564 |
+| Blog records updated | 34 |
+| Executives found | 904 |
+| - CEO | 769 |
+| - CFO | 117 |
+| - HR | 18 |
+| **Slots filled** | **0** |
 
 ## Method
 
@@ -34,4 +34,4 @@
 2. team_page (7,959 available) - Staff listings with titles
 3. about_page (24,099 available) - Company overview, sometimes leadership
 
-**Generated**: 2026-02-02T16:44:47.038132+00:00Z
+**Generated**: 2026-02-02T23:05:02.446827+00:00Z

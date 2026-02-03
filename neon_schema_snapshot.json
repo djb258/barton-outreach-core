@@ -1,0 +1,4603 @@
+{
+  "tables": [
+    {
+      "table_schema": "bit",
+      "table_name": "authorization_log"
+    },
+    {
+      "table_schema": "bit",
+      "table_name": "movement_events"
+    },
+    {
+      "table_schema": "bit",
+      "table_name": "phase_state"
+    },
+    {
+      "table_schema": "bit",
+      "table_name": "proof_lines"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "cl_err_existence"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "cl_errors_archive"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "company_candidate"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "company_domains"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "company_domains_archive"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "company_domains_excluded"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "company_identity"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "company_identity_archive"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "company_identity_bridge"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "company_identity_excluded"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "company_names"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "company_names_archive"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "company_names_excluded"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "domain_hierarchy"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "domain_hierarchy_archive"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "identity_confidence"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "identity_confidence_archive"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "identity_confidence_excluded"
+    },
+    {
+      "table_schema": "company",
+      "table_name": "company_events"
+    },
+    {
+      "table_schema": "company",
+      "table_name": "company_master"
+    },
+    {
+      "table_schema": "company",
+      "table_name": "company_sidecar"
+    },
+    {
+      "table_schema": "company",
+      "table_name": "company_slots"
+    },
+    {
+      "table_schema": "company",
+      "table_name": "company_source_urls"
+    },
+    {
+      "table_schema": "company",
+      "table_name": "contact_enrichment"
+    },
+    {
+      "table_schema": "company",
+      "table_name": "email_verification"
+    },
+    {
+      "table_schema": "company",
+      "table_name": "message_key_reference"
+    },
+    {
+      "table_schema": "company",
+      "table_name": "pipeline_errors"
+    },
+    {
+      "table_schema": "company",
+      "table_name": "pipeline_events"
+    },
+    {
+      "table_schema": "company",
+      "table_name": "url_discovery_failures"
+    },
+    {
+      "table_schema": "company",
+      "table_name": "validation_failures_log"
+    },
+    {
+      "table_schema": "dol",
+      "table_name": "column_metadata"
+    },
+    {
+      "table_schema": "dol",
+      "table_name": "ein_urls"
+    },
+    {
+      "table_schema": "dol",
+      "table_name": "form_5500"
+    },
+    {
+      "table_schema": "dol",
+      "table_name": "form_5500_icp_filtered"
+    },
+    {
+      "table_schema": "dol",
+      "table_name": "form_5500_sf"
+    },
+    {
+      "table_schema": "dol",
+      "table_name": "pressure_signals"
+    },
+    {
+      "table_schema": "dol",
+      "table_name": "renewal_calendar"
+    },
+    {
+      "table_schema": "dol",
+      "table_name": "schedule_a"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "bit_errors"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "bit_input_history"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "bit_scores"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "bit_scores_archive"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "bit_signals"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "blog"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "blog_archive"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "blog_errors"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "blog_ingress_control"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "blog_source_history"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "campaigns"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "column_registry"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "company_hub_status"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "company_target"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "company_target_archive"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "company_target_errors"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "dol"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "dol_archive"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "dol_audit_log"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "dol_errors"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "dol_url_enrichment"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "engagement_events"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "entity_resolution_queue"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "hub_registry"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "manual_overrides"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "mv_credit_usage"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "outreach"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "outreach_archive"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "outreach_errors"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "outreach_excluded"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "outreach_legacy_quarantine"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "outreach_orphan_archive"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "override_audit_log"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "people"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "people_archive"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "people_errors"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "pipeline_audit_log"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "send_log"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "sequences"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "company_resolution_log"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "company_slot"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "company_slot_archive"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "paid_enrichment_queue"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "people_candidate"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "people_errors"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "people_invalid"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "people_master"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "people_master_archive"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "people_promotion_audit"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "people_resolution_history"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "people_resolution_queue"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "people_sidecar"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "people_staging"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "person_movement_history"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "person_scores"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "pressure_signals"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "slot_assignment_history"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "slot_ingress_control"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "slot_orphan_snapshot_r0_002"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "slot_quarantine_r0_002"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "title_slot_mapping"
+    }
+  ],
+  "views": [
+    {
+      "table_schema": "bit",
+      "table_name": "vw_active_movements"
+    },
+    {
+      "table_schema": "bit",
+      "table_name": "vw_company_authorization"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "v_company_identity_eligible"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "v_company_lifecycle_status"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "v_company_promotable"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "v_identity_gate_summary"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "v_linkage_summary"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "v_orphan_detection"
+    },
+    {
+      "table_schema": "company",
+      "table_name": "next_company_urls_30d"
+    },
+    {
+      "table_schema": "company",
+      "table_name": "v_needs_enrichment"
+    },
+    {
+      "table_schema": "company",
+      "table_name": "vw_anchor_staleness"
+    },
+    {
+      "table_schema": "company",
+      "table_name": "vw_company_slots"
+    },
+    {
+      "table_schema": "company",
+      "table_name": "vw_due_renewals_ready"
+    },
+    {
+      "table_schema": "company",
+      "table_name": "vw_next_renewal"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "v_bit_hot_companies"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "v_bit_recent_signals"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "v_bit_tier_distribution"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "v_blog_ingestion_queue"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "v_blog_ready"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "v_context_current"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "v_outreach_diagnostic"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "vw_marketing_eligibility"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "vw_marketing_eligibility_with_overrides"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "vw_sovereign_completion"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "contact_enhanced_view"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "due_email_recheck_30d"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "next_profile_urls_30d"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "v_extraction_progress"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "v_paid_queue_summary"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "v_slot_coverage"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "v_slot_tenure_summary"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "v_staging_summary"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "vw_profile_monitoring"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "vw_profile_staleness"
+    }
+  ],
+  "schema_details": {
+    "outreach.outreach": [
+      {
+        "column_name": "outreach_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "sovereign_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "domain",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      }
+    ],
+    "outreach.company_target": [
+      {
+        "column_name": "target_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "company_unique_id",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "outreach_status",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": "'queued'::text"
+      },
+      {
+        "column_name": "bit_score_snapshot",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "first_targeted_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "last_targeted_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sequence_count",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": "0"
+      },
+      {
+        "column_name": "active_sequence_id",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "source",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "outreach_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "email_method",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "method_type",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "confidence_score",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "execution_status",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": "'pending'::character varying"
+      },
+      {
+        "column_name": "imo_completed_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "is_catchall",
+        "data_type": "boolean",
+        "is_nullable": "YES",
+        "column_default": "false"
+      }
+    ],
+    "outreach.dol": [
+      {
+        "column_name": "dol_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "outreach_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "ein",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "filing_present",
+        "data_type": "boolean",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "funding_type",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "broker_or_advisor",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "carrier",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "now()"
+      }
+    ],
+    "outreach.blog": [
+      {
+        "column_name": "blog_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "outreach_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "context_summary",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "source_type",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "source_url",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "context_timestamp",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "source_type_enum",
+        "data_type": "USER-DEFINED",
+        "is_nullable": "YES",
+        "column_default": null
+      }
+    ],
+    "outreach.bit_scores": [
+      {
+        "column_name": "outreach_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "score",
+        "data_type": "numeric",
+        "is_nullable": "NO",
+        "column_default": "0"
+      },
+      {
+        "column_name": "score_tier",
+        "data_type": "character varying",
+        "is_nullable": "NO",
+        "column_default": "'COLD'::character varying"
+      },
+      {
+        "column_name": "signal_count",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": "0"
+      },
+      {
+        "column_name": "people_score",
+        "data_type": "numeric",
+        "is_nullable": "NO",
+        "column_default": "0"
+      },
+      {
+        "column_name": "dol_score",
+        "data_type": "numeric",
+        "is_nullable": "NO",
+        "column_default": "0"
+      },
+      {
+        "column_name": "blog_score",
+        "data_type": "numeric",
+        "is_nullable": "NO",
+        "column_default": "0"
+      },
+      {
+        "column_name": "talent_flow_score",
+        "data_type": "numeric",
+        "is_nullable": "NO",
+        "column_default": "0"
+      },
+      {
+        "column_name": "last_signal_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "last_scored_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "outreach.people": [
+      {
+        "column_name": "person_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "target_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "company_unique_id",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "slot_type",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "email",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "email_verified",
+        "data_type": "boolean",
+        "is_nullable": "NO",
+        "column_default": "false"
+      },
+      {
+        "column_name": "email_verified_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "contact_status",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": "'active'::text"
+      },
+      {
+        "column_name": "lifecycle_state",
+        "data_type": "USER-DEFINED",
+        "is_nullable": "NO",
+        "column_default": "'SUSPECT'::outreach.lifecycle_state"
+      },
+      {
+        "column_name": "funnel_membership",
+        "data_type": "USER-DEFINED",
+        "is_nullable": "NO",
+        "column_default": "'COLD_UNIVERSE'::outreach.funnel_membership"
+      },
+      {
+        "column_name": "email_open_count",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": "0"
+      },
+      {
+        "column_name": "email_click_count",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": "0"
+      },
+      {
+        "column_name": "email_reply_count",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": "0"
+      },
+      {
+        "column_name": "current_bit_score",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": "0"
+      },
+      {
+        "column_name": "last_event_ts",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "last_state_change_ts",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "source",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "outreach_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      }
+    ],
+    "cl.company_identity": [
+      {
+        "column_name": "company_unique_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "company_name",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "company_domain",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "linkedin_company_url",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "source_system",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "company_fingerprint",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "lifecycle_run_id",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "existence_verified",
+        "data_type": "boolean",
+        "is_nullable": "YES",
+        "column_default": "false"
+      },
+      {
+        "column_name": "verification_run_id",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "verified_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "domain_status_code",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "name_match_score",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "state_match_result",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "canonical_name",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "state_verified",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "employee_count_band",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "identity_pass",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": "0"
+      },
+      {
+        "column_name": "identity_status",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": "'PENDING'::text"
+      },
+      {
+        "column_name": "last_pass_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "eligibility_status",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "exclusion_reason",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "entity_role",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sovereign_company_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "final_outcome",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "final_reason",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "outreach_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sales_process_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "client_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "outreach_attached_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sales_opened_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "client_promoted_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "normalized_domain",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      }
+    ],
+    "cl.company_domains": [
+      {
+        "column_name": "domain_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "company_unique_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "domain",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "domain_health",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "mx_present",
+        "data_type": "boolean",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "domain_name_confidence",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "checked_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "now()"
+      }
+    ],
+    "people.people_master": [
+      {
+        "column_name": "unique_id",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "company_unique_id",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "company_slot_unique_id",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "first_name",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "last_name",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "full_name",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "title",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "seniority",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "department",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "email",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "work_phone_e164",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "personal_phone_e164",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "linkedin_url",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "twitter_url",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "facebook_url",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "bio",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "skills",
+        "data_type": "ARRAY",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "education",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "certifications",
+        "data_type": "ARRAY",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "source_system",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "source_record_id",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "promoted_from_intake_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "promotion_audit_log_id",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "email_verified",
+        "data_type": "boolean",
+        "is_nullable": "YES",
+        "column_default": "false"
+      },
+      {
+        "column_name": "message_key_scheduled",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "email_verification_source",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "email_verified_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "validation_status",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "last_verified_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "last_enrichment_attempt",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      }
+    ],
+    "people.company_slot": [
+      {
+        "column_name": "slot_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "outreach_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "company_unique_id",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "slot_type",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "person_unique_id",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "is_filled",
+        "data_type": "boolean",
+        "is_nullable": "YES",
+        "column_default": "false"
+      },
+      {
+        "column_name": "filled_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "confidence_score",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "source_system",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "now()"
+      }
+    ],
+    "dol.form_5500": [
+      {
+        "column_name": "filing_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "ack_id",
+        "data_type": "character varying",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "company_unique_id",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sponsor_dfe_ein",
+        "data_type": "character varying",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "sponsor_dfe_name",
+        "data_type": "character varying",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_dba_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "plan_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "plan_number",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "plan_eff_date",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_mail_us_city",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_mail_us_state",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_mail_us_zip",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "tot_active_partcp_cnt",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "tot_partcp_boy_cnt",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sch_a_attached_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "num_sch_a_attached_cnt",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "admin_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "admin_ein",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "form_plan_year_begin_date",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "form_year",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "filing_status",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "date_received",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "form_tax_prd",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "type_plan_entity_cd",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "type_dfe_plan_entity_cd",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "initial_filing_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "amended_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "final_filing_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "short_plan_yr_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "collective_bargain_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "f5558_application_filed_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "ext_automatic_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "dfvc_program_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "ext_special_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "ext_special_text",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_pn",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_care_of_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_mail_us_address1",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_mail_us_address2",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_mail_foreign_addr1",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_mail_foreign_addr2",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_mail_foreign_city",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_mail_forgn_prov_st",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_mail_foreign_cntry",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_mail_forgn_postal_cd",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_loc_us_address1",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_loc_us_address2",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_loc_us_city",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_loc_us_state",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_loc_us_zip",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_loc_foreign_address1",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_loc_foreign_address2",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_loc_foreign_city",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_loc_forgn_prov_st",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_loc_foreign_cntry",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_loc_forgn_postal_cd",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_ein",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_phone_num",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "business_code",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "admin_care_of_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "admin_us_address1",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "admin_us_address2",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "admin_us_city",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "admin_us_state",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "admin_us_zip",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "admin_foreign_address1",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "admin_foreign_address2",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "admin_foreign_city",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "admin_foreign_prov_state",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "admin_foreign_cntry",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "admin_foreign_postal_cd",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "admin_phone_num",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "last_rpt_spons_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "last_rpt_spons_ein",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "last_rpt_plan_num",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "admin_signed_date",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "admin_signed_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_signed_date",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_signed_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "dfe_signed_date",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "dfe_signed_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "rtd_sep_partcp_rcvg_cnt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "rtd_sep_partcp_fut_cnt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "subtl_act_rtd_sep_cnt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "benef_rcvg_bnft_cnt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "tot_act_rtd_sep_benef_cnt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "partcp_account_bal_cnt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sep_partcp_partl_vstd_cnt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "contrib_emplrs_cnt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "type_pension_bnft_code",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "type_welfare_bnft_code",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "funding_insurance_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "funding_sec412_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "funding_trust_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "funding_gen_asset_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "benefit_insurance_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "benefit_sec412_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "benefit_trust_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "benefit_gen_asset_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sch_r_attached_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sch_mb_attached_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sch_sb_attached_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sch_h_attached_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sch_i_attached_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sch_c_attached_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sch_d_attached_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sch_g_attached_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "valid_admin_signature",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "valid_dfe_signature",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "valid_sponsor_signature",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "admin_phone_num_foreign",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_dfe_phone_num_foreign",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "admin_name_same_spon_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "admin_address_same_spon_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "preparer_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "preparer_firm_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "preparer_us_address1",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "preparer_us_address2",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "preparer_us_city",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "preparer_us_state",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "preparer_us_zip",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "preparer_foreign_address1",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "preparer_foreign_address2",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "preparer_foreign_city",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "preparer_foreign_prov_state",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "preparer_foreign_cntry",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "preparer_foreign_postal_cd",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "preparer_phone_num",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "preparer_phone_num_foreign",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "tot_act_partcp_boy_cnt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "subj_m1_filing_req_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "compliance_m1_filing_req_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "m1_receipt_confirmation_code",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "admin_manual_signed_date",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "admin_manual_signed_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "last_rpt_plan_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_manual_signed_date",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "spons_manual_signed_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "dfe_manual_signed_date",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "dfe_manual_signed_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "adopted_plan_perm_sec_act",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "partcp_account_bal_cnt_boy",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sch_dcg_attached_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "num_sch_dcg_attached_cnt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sch_mep_attached_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      }
+    ],
+    "dol.form_5500_sf": [
+      {
+        "column_name": "filing_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "company_unique_id",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "ack_id",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_plan_year_begin_date",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_tax_prd",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_plan_entity_cd",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_initial_filing_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_amended_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_final_filing_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_short_plan_yr_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_5558_application_filed_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_ext_automatic_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_dfvc_program_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_ext_special_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_ext_special_text",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_plan_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_plan_num",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_plan_eff_date",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_sponsor_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_sponsor_dfe_dba_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_us_address1",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_us_address2",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_us_city",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_us_state",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_us_zip",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_foreign_address1",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_foreign_address2",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_foreign_city",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_foreign_prov_state",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_foreign_cntry",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_foreign_postal_cd",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_ein",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_phone_num",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_business_code",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_admin_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_admin_care_of_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_admin_us_address1",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_admin_us_address2",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_admin_us_city",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_admin_us_state",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_admin_us_zip",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_admin_foreign_address1",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_admin_foreign_address2",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_admin_foreign_city",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_admin_foreign_prov_state",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_admin_foreign_cntry",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_admin_foreign_postal_cd",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_admin_ein",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_admin_phone_num",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_last_rpt_spons_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_last_rpt_spons_ein",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_last_rpt_plan_num",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_tot_partcp_boy_cnt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_tot_act_rtd_sep_benef_cnt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_partcp_account_bal_cnt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_eligible_assets_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_iqpa_waiver_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_tot_assets_boy_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_tot_liabilities_boy_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_net_assets_boy_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_tot_assets_eoy_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_tot_liabilities_eoy_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_net_assets_eoy_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_emplr_contrib_income_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_particip_contrib_income_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_oth_contrib_rcvd_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_other_income_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_tot_income_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_tot_distrib_bnft_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_corrective_deemed_distr_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_admin_srvc_providers_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_oth_expenses_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_tot_expenses_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_net_income_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_tot_plan_transfers_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_type_pension_bnft_code",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_type_welfare_bnft_code",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_fail_transmit_contrib_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_fail_transmit_contrib_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_party_in_int_not_rptd_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_party_in_int_not_rptd_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_plan_ins_fdlty_bond_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_plan_ins_fdlty_bond_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_loss_discv_dur_year_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_loss_discv_dur_year_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_broker_fees_paid_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_broker_fees_paid_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_fail_provide_benef_due_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_fail_provide_benef_due_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_partcp_loans_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_partcp_loans_eoy_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_plan_blackout_period_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_comply_blackout_notice_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_db_plan_funding_reqd_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_dc_plan_funding_reqd_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_ruling_letter_grant_date",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_sec_412_req_contrib_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_emplr_contrib_paid_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_funding_deficiency_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_funding_deadline_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_res_term_plan_adpt_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_res_term_plan_adpt_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_all_plan_ast_distrib_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_admin_signed_date",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_admin_signed_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_signed_date",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_signed_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "filing_status",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "date_received",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "valid_admin_signature",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "valid_sponsor_signature",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_admin_phone_num_foreign",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_care_of_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_loc_foreign_address1",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_loc_foreign_address2",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_loc_foreign_city",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_loc_foreign_cntry",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_loc_foreign_postal_cd",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_loc_foreign_prov_stat",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_loc_us_address1",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_loc_us_address2",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_loc_us_city",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_loc_us_state",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_loc_us_zip",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_phone_num_foreign",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_admin_name_same_spon_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_admin_addrss_same_spon_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_preparer_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_preparer_firm_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_preparer_us_address1",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_preparer_us_address2",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_preparer_us_city",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_preparer_us_state",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_preparer_us_zip",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_preparer_foreign_address1",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_preparer_foreign_address2",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_preparer_foreign_city",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_preparer_foreign_prov_state",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_preparer_foreign_cntry",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_preparer_foreign_postal_cd",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_preparer_phone_num",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_preparer_phone_num_foreign",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_fdcry_trust_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_fdcry_trust_ein",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_unp_min_cont_cur_yrtot_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_covered_pbgc_insurance_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_tot_act_partcp_boy_cnt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_tot_act_partcp_eoy_cnt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_sep_partcp_partl_vstd_cnt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_trus_inc_unrel_tax_inc_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_trus_inc_unrel_tax_inc_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_fdcry_truste_cust_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_fdcry_truste_cust_phone_num",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_fdcry_trus_cus_phon_numfore",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_401k_plan_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_401k_satisfy_rqmts_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_adp_acp_test_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_mthd_used_satisfy_rqmts_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_plan_satisfy_tests_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_plan_timely_amended_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_last_plan_amendment_date",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_tax_code",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_last_opin_advi_date",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_last_opin_advi_serial_num",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_fav_determ_ltr_date",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_plan_maintain_us_terri_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_in_service_distrib_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_in_service_distrib_amt",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_min_req_distrib_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_admin_manual_sign_date",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_admin_manual_signed_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_401k_design_based_safe_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_401k_prior_year_adp_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_401k_current_year_adp_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_401k_na_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_mthd_ratio_prcnt_test_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_mthd_avg_bnft_test_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_mthd_na_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_distrib_made_employe_62_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_last_rpt_plan_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_premium_filing_confirm_no",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_manual_signed_date",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_spons_manual_signed_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_pbgc_notified_cd",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_pbgc_notified_explan_text",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_adopted_plan_perm_sec_act",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "collectively_bargained",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_partcp_account_bal_cnt_boy",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_401k_design_based_safe_harbor_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_401k_prior_year_adp_test_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_401k_current_year_adp_test_ind",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_opin_letter_date",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sf_opin_letter_serial_num",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "form_year",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "now()"
+      }
+    ],
+    "dol.ein_urls": [
+      {
+        "column_name": "ein",
+        "data_type": "character varying",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "company_name",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "city",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "state",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "domain",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "url",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "discovered_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "YES",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "discovery_method",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": "'domain_construction'::text"
+      },
+      {
+        "column_name": "normalized_domain",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      }
+    ],
+    "company.company_master": [
+      {
+        "column_name": "company_unique_id",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "company_name",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "website_url",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "industry",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "employee_count",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "company_phone",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "address_street",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "address_city",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "address_state",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "address_zip",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "address_country",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "linkedin_url",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "facebook_url",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "twitter_url",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "sic_codes",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "founded_year",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "keywords",
+        "data_type": "ARRAY",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "description",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "source_system",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "source_record_id",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "promoted_from_intake_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "promotion_audit_log_id",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "state_abbrev",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "import_batch_id",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "validated_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "validated_by",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "data_quality_score",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "email_pattern",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "email_pattern_confidence",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "email_pattern_source",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "email_pattern_verified_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "ein",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "duns",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "cage_code",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      }
+    ],
+    "company.company_source_urls": [
+      {
+        "column_name": "source_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "company_unique_id",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "source_type",
+        "data_type": "character varying",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "source_url",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "page_title",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "discovered_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "discovered_from",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "last_checked_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "http_status",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "is_accessible",
+        "data_type": "boolean",
+        "is_nullable": "YES",
+        "column_default": "true"
+      },
+      {
+        "column_name": "content_checksum",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "last_content_change_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "extraction_status",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": "'pending'::character varying"
+      },
+      {
+        "column_name": "extracted_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "extraction_error",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "people_extracted",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": "0"
+      },
+      {
+        "column_name": "requires_paid_enrichment",
+        "data_type": "boolean",
+        "is_nullable": "YES",
+        "column_default": "false"
+      }
+    ]
+  },
+  "foreign_keys": [
+    {
+      "table_schema": "cl",
+      "table_name": "company_domains",
+      "column_name": "company_unique_id",
+      "foreign_table_schema": "cl",
+      "foreign_table_name": "company_identity",
+      "foreign_column_name": "company_unique_id"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "company_names",
+      "column_name": "company_unique_id",
+      "foreign_table_schema": "cl",
+      "foreign_table_name": "company_identity",
+      "foreign_column_name": "company_unique_id"
+    },
+    {
+      "table_schema": "cl",
+      "table_name": "identity_confidence",
+      "column_name": "company_unique_id",
+      "foreign_table_schema": "cl",
+      "foreign_table_name": "company_identity",
+      "foreign_column_name": "company_unique_id"
+    },
+    {
+      "table_schema": "company",
+      "table_name": "company_events",
+      "column_name": "company_unique_id",
+      "foreign_table_schema": "company",
+      "foreign_table_name": "company_master",
+      "foreign_column_name": "company_unique_id"
+    },
+    {
+      "table_schema": "company",
+      "table_name": "company_sidecar",
+      "column_name": "company_unique_id",
+      "foreign_table_schema": "company",
+      "foreign_table_name": "company_master",
+      "foreign_column_name": "company_unique_id"
+    },
+    {
+      "table_schema": "company",
+      "table_name": "company_slots",
+      "column_name": "company_unique_id",
+      "foreign_table_schema": "company",
+      "foreign_table_name": "company_master",
+      "foreign_column_name": "company_unique_id"
+    },
+    {
+      "table_schema": "company",
+      "table_name": "contact_enrichment",
+      "column_name": "company_slot_unique_id",
+      "foreign_table_schema": "company",
+      "foreign_table_name": "company_slots",
+      "foreign_column_name": "company_slot_unique_id"
+    },
+    {
+      "table_schema": "company",
+      "table_name": "email_verification",
+      "column_name": "enrichment_id",
+      "foreign_table_schema": "company",
+      "foreign_table_name": "contact_enrichment",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_schema": "dol",
+      "table_name": "renewal_calendar",
+      "column_name": "filing_id",
+      "foreign_table_schema": "dol",
+      "foreign_table_name": "form_5500",
+      "foreign_column_name": "filing_id"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "bit_errors",
+      "column_name": "outreach_id",
+      "foreign_table_schema": "outreach",
+      "foreign_table_name": "outreach",
+      "foreign_column_name": "outreach_id"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "bit_input_history",
+      "column_name": "outreach_id",
+      "foreign_table_schema": "outreach",
+      "foreign_table_name": "outreach",
+      "foreign_column_name": "outreach_id"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "bit_scores",
+      "column_name": "outreach_id",
+      "foreign_table_schema": "outreach",
+      "foreign_table_name": "outreach",
+      "foreign_column_name": "outreach_id"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "bit_signals",
+      "column_name": "outreach_id",
+      "foreign_table_schema": "outreach",
+      "foreign_table_name": "outreach",
+      "foreign_column_name": "outreach_id"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "blog",
+      "column_name": "outreach_id",
+      "foreign_table_schema": "outreach",
+      "foreign_table_name": "outreach",
+      "foreign_column_name": "outreach_id"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "blog_errors",
+      "column_name": "outreach_id",
+      "foreign_table_schema": "outreach",
+      "foreign_table_name": "outreach",
+      "foreign_column_name": "outreach_id"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "blog_source_history",
+      "column_name": "outreach_id",
+      "foreign_table_schema": "outreach",
+      "foreign_table_name": "outreach",
+      "foreign_column_name": "outreach_id"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "company_hub_status",
+      "column_name": "hub_id",
+      "foreign_table_schema": "outreach",
+      "foreign_table_name": "hub_registry",
+      "foreign_column_name": "hub_id"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "company_target",
+      "column_name": "outreach_id",
+      "foreign_table_schema": "outreach",
+      "foreign_table_name": "outreach",
+      "foreign_column_name": "outreach_id"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "company_target_errors",
+      "column_name": "outreach_id",
+      "foreign_table_schema": "outreach",
+      "foreign_table_name": "outreach",
+      "foreign_column_name": "outreach_id"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "dol",
+      "column_name": "outreach_id",
+      "foreign_table_schema": "outreach",
+      "foreign_table_name": "outreach",
+      "foreign_column_name": "outreach_id"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "dol_errors",
+      "column_name": "outreach_id",
+      "foreign_table_schema": "outreach",
+      "foreign_table_name": "outreach",
+      "foreign_column_name": "outreach_id"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "engagement_events",
+      "column_name": "outreach_id",
+      "foreign_table_schema": "outreach",
+      "foreign_table_name": "outreach",
+      "foreign_column_name": "outreach_id"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "engagement_events",
+      "column_name": "person_id",
+      "foreign_table_schema": "outreach",
+      "foreign_table_name": "people",
+      "foreign_column_name": "person_id"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "engagement_events",
+      "column_name": "target_id",
+      "foreign_table_schema": "outreach",
+      "foreign_table_name": "company_target",
+      "foreign_column_name": "target_id"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "people",
+      "column_name": "target_id",
+      "foreign_table_schema": "outreach",
+      "foreign_table_name": "company_target",
+      "foreign_column_name": "target_id"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "people",
+      "column_name": "outreach_id",
+      "foreign_table_schema": "outreach",
+      "foreign_table_name": "outreach",
+      "foreign_column_name": "outreach_id"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "people_errors",
+      "column_name": "outreach_id",
+      "foreign_table_schema": "outreach",
+      "foreign_table_name": "outreach",
+      "foreign_column_name": "outreach_id"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "send_log",
+      "column_name": "person_id",
+      "foreign_table_schema": "outreach",
+      "foreign_table_name": "people",
+      "foreign_column_name": "person_id"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "send_log",
+      "column_name": "sequence_id",
+      "foreign_table_schema": "outreach",
+      "foreign_table_name": "sequences",
+      "foreign_column_name": "sequence_id"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "send_log",
+      "column_name": "target_id",
+      "foreign_table_schema": "outreach",
+      "foreign_table_name": "company_target",
+      "foreign_column_name": "target_id"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "send_log",
+      "column_name": "campaign_id",
+      "foreign_table_schema": "outreach",
+      "foreign_table_name": "campaigns",
+      "foreign_column_name": "campaign_id"
+    },
+    {
+      "table_schema": "outreach",
+      "table_name": "sequences",
+      "column_name": "campaign_id",
+      "foreign_table_schema": "outreach",
+      "foreign_table_name": "campaigns",
+      "foreign_column_name": "campaign_id"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "company_slot",
+      "column_name": "outreach_id",
+      "foreign_table_schema": "outreach",
+      "foreign_table_name": "outreach",
+      "foreign_column_name": "outreach_id"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "people_resolution_history",
+      "column_name": "outreach_id",
+      "foreign_table_schema": "outreach",
+      "foreign_table_name": "outreach",
+      "foreign_column_name": "outreach_id"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "people_resolution_queue",
+      "column_name": "company_slot_unique_id",
+      "foreign_table_schema": "company",
+      "foreign_table_name": "company_slots",
+      "foreign_column_name": "company_slot_unique_id"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "people_resolution_queue",
+      "column_name": "company_unique_id",
+      "foreign_table_schema": "company",
+      "foreign_table_name": "company_master",
+      "foreign_column_name": "company_unique_id"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "people_sidecar",
+      "column_name": "person_unique_id",
+      "foreign_table_schema": "people",
+      "foreign_table_name": "people_master",
+      "foreign_column_name": "unique_id"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "person_movement_history",
+      "column_name": "company_from_id",
+      "foreign_table_schema": "company",
+      "foreign_table_name": "company_master",
+      "foreign_column_name": "company_unique_id"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "person_movement_history",
+      "column_name": "company_to_id",
+      "foreign_table_schema": "company",
+      "foreign_table_name": "company_master",
+      "foreign_column_name": "company_unique_id"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "person_movement_history",
+      "column_name": "person_unique_id",
+      "foreign_table_schema": "people",
+      "foreign_table_name": "people_master",
+      "foreign_column_name": "unique_id"
+    },
+    {
+      "table_schema": "people",
+      "table_name": "person_scores",
+      "column_name": "person_unique_id",
+      "foreign_table_schema": "people",
+      "foreign_table_name": "people_master",
+      "foreign_column_name": "unique_id"
+    }
+  ],
+  "primary_keys": {
+    "bit.authorization_log": [
+      "log_id"
+    ],
+    "bit.movement_events": [
+      "movement_id"
+    ],
+    "bit.phase_state": [
+      "company_unique_id"
+    ],
+    "bit.proof_lines": [
+      "proof_id"
+    ],
+    "cl.cl_err_existence": [
+      "error_id"
+    ],
+    "cl.cl_errors_archive": [
+      "error_id"
+    ],
+    "cl.company_candidate": [
+      "candidate_id"
+    ],
+    "cl.company_domains": [
+      "domain_id"
+    ],
+    "cl.company_domains_archive": [
+      "domain_id"
+    ],
+    "cl.company_domains_excluded": [
+      "domain_id"
+    ],
+    "cl.company_identity": [
+      "company_unique_id"
+    ],
+    "cl.company_identity_archive": [
+      "company_unique_id"
+    ],
+    "cl.company_identity_bridge": [
+      "bridge_id"
+    ],
+    "cl.company_identity_excluded": [
+      "company_unique_id"
+    ],
+    "cl.company_names": [
+      "name_id"
+    ],
+    "cl.company_names_archive": [
+      "name_id"
+    ],
+    "cl.company_names_excluded": [
+      "name_id"
+    ],
+    "cl.domain_hierarchy": [
+      "hierarchy_id"
+    ],
+    "cl.domain_hierarchy_archive": [
+      "hierarchy_id"
+    ],
+    "cl.identity_confidence": [
+      "company_unique_id"
+    ],
+    "cl.identity_confidence_archive": [
+      "company_unique_id"
+    ],
+    "cl.identity_confidence_excluded": [
+      "company_unique_id"
+    ],
+    "company.company_events": [
+      "id"
+    ],
+    "company.company_master": [
+      "company_unique_id",
+      "company_unique_id"
+    ],
+    "company.company_sidecar": [
+      "company_unique_id"
+    ],
+    "company.company_slots": [
+      "company_slot_unique_id"
+    ],
+    "company.company_source_urls": [
+      "source_id"
+    ],
+    "company.contact_enrichment": [
+      "id"
+    ],
+    "company.email_verification": [
+      "id"
+    ],
+    "company.message_key_reference": [
+      "message_key"
+    ],
+    "company.pipeline_errors": [
+      "id"
+    ],
+    "company.pipeline_events": [
+      "id"
+    ],
+    "company.url_discovery_failures": [
+      "failure_id"
+    ],
+    "company.validation_failures_log": [
+      "id"
+    ],
+    "dol.column_metadata": [
+      "id"
+    ],
+    "dol.ein_urls": [
+      "ein"
+    ],
+    "dol.form_5500": [
+      "filing_id"
+    ],
+    "dol.form_5500_sf": [
+      "filing_id"
+    ],
+    "dol.pressure_signals": [
+      "signal_id",
+      "signal_id",
+      "signal_id"
+    ],
+    "dol.renewal_calendar": [
+      "renewal_id"
+    ],
+    "dol.schedule_a": [
+      "schedule_id"
+    ],
+    "outreach.bit_errors": [
+      "error_id"
+    ],
+    "outreach.bit_input_history": [
+      "history_id"
+    ],
+    "outreach.bit_scores": [
+      "outreach_id"
+    ],
+    "outreach.bit_scores_archive": [
+      "outreach_id"
+    ],
+    "outreach.bit_signals": [
+      "signal_id"
+    ],
+    "outreach.blog": [
+      "blog_id"
+    ],
+    "outreach.blog_archive": [
+      "blog_id"
+    ],
+    "outreach.blog_errors": [
+      "error_id"
+    ],
+    "outreach.blog_ingress_control": [
+      "control_id"
+    ],
+    "outreach.blog_source_history": [
+      "history_id"
+    ],
+    "outreach.campaigns": [
+      "campaign_id"
+    ],
+    "outreach.column_registry": [
+      "registry_id"
+    ],
+    "outreach.company_hub_status": [
+      "company_unique_id",
+      "hub_id"
+    ],
+    "outreach.company_target": [
+      "target_id"
+    ],
+    "outreach.company_target_archive": [
+      "target_id"
+    ],
+    "outreach.company_target_errors": [
+      "error_id"
+    ],
+    "outreach.dol": [
+      "dol_id"
+    ],
+    "outreach.dol_archive": [
+      "dol_id"
+    ],
+    "outreach.dol_audit_log": [
+      "log_id"
+    ],
+    "outreach.dol_errors": [
+      "error_id"
+    ],
+    "outreach.dol_url_enrichment": [
+      "id"
+    ],
+    "outreach.engagement_events": [
+      "event_id"
+    ],
+    "outreach.entity_resolution_queue": [
+      "id"
+    ],
+    "outreach.hub_registry": [
+      "hub_id"
+    ],
+    "outreach.manual_overrides": [
+      "override_id"
+    ],
+    "outreach.mv_credit_usage": [
+      "id"
+    ],
+    "outreach.outreach": [
+      "outreach_id"
+    ],
+    "outreach.outreach_archive": [
+      "outreach_id"
+    ],
+    "outreach.outreach_errors": [
+      "error_id"
+    ],
+    "outreach.outreach_excluded": [
+      "outreach_id"
+    ],
+    "outreach.outreach_legacy_quarantine": [
+      "outreach_id"
+    ],
+    "outreach.outreach_orphan_archive": [
+      "outreach_id"
+    ],
+    "outreach.override_audit_log": [
+      "audit_id"
+    ],
+    "outreach.people": [
+      "person_id"
+    ],
+    "outreach.people_archive": [
+      "person_id"
+    ],
+    "outreach.people_errors": [
+      "error_id",
+      "error_id"
+    ],
+    "outreach.pipeline_audit_log": [
+      "log_id"
+    ],
+    "outreach.send_log": [
+      "send_id"
+    ],
+    "outreach.sequences": [
+      "sequence_id"
+    ],
+    "people.company_resolution_log": [
+      "log_id"
+    ],
+    "people.company_slot": [
+      "company_slot_id",
+      "slot_id"
+    ],
+    "people.company_slot_archive": [
+      "slot_id"
+    ],
+    "people.paid_enrichment_queue": [
+      "id"
+    ],
+    "people.people_candidate": [
+      "candidate_id"
+    ],
+    "people.people_errors": [
+      "error_id",
+      "error_id"
+    ],
+    "people.people_invalid": [
+      "id"
+    ],
+    "people.people_master": [
+      "unique_id",
+      "unique_id"
+    ],
+    "people.people_promotion_audit": [
+      "audit_id"
+    ],
+    "people.people_resolution_history": [
+      "history_id"
+    ],
+    "people.people_resolution_queue": [
+      "queue_id"
+    ],
+    "people.people_sidecar": [
+      "person_unique_id"
+    ],
+    "people.people_staging": [
+      "id"
+    ],
+    "people.person_movement_history": [
+      "id"
+    ],
+    "people.person_scores": [
+      "id"
+    ],
+    "people.pressure_signals": [
+      "signal_id",
+      "signal_id",
+      "signal_id"
+    ],
+    "people.slot_assignment_history": [
+      "history_id"
+    ],
+    "people.slot_ingress_control": [
+      "switch_id"
+    ],
+    "people.slot_orphan_snapshot_r0_002": [
+      "snapshot_id"
+    ],
+    "people.slot_quarantine_r0_002": [
+      "quarantine_id"
+    ],
+    "people.title_slot_mapping": [
+      "id"
+    ]
+  }
+}
