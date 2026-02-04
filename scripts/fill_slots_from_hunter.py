@@ -392,7 +392,7 @@ def main():
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     
     print("=" * 60)
-    print("HUNTER → SLOT FILLER")
+    print("HUNTER -> SLOT FILLER")
     print("=" * 60)
     print(f"Mode: {'DRY RUN' if dry_run else 'EXECUTE'}")
     print(f"Slot type: {args.slot_type}")

@@ -1,6 +1,6 @@
 # Authoritative Table Reference
 
-> **Last Updated:** 2026-02-02  
+> **Last Updated:** 2026-02-03
 > **Status:** CANONICAL - This document defines the single source of truth
 
 ---
@@ -277,8 +277,9 @@ WHERE csu.source_type IN ('about_page', 'press_page');
 |-----------|-------|
 | **Schema** | `enrichment` |
 | **Table** | `hunter_contact` |
-| **Total Records** | ~248,000 |
+| **Total Records** | 583,433 |
 | **Source Columns** | `source_1` through `source_30` |
+| **Companies** | 88,405 (enrichment.hunter_company) |
 
 ### Source Type Categories (v_hunter_sources_by_type)
 
@@ -324,10 +325,67 @@ WHERE linkedin_url IS NOT NULL
 
 ---
 
+---
+
+## DOL EIN URLs (EIN to Domain Mapping)
+
+> **CRITICAL**: The `dol.ein_urls` table maps EINs from DOL filings to company domains via Hunter.io enrichment.
+> **USE CASE**: Link DOL filing data to outreach companies, discover new companies
+
+### Table: `dol.ein_urls`
+
+| Attribute | Value |
+|-----------|-------|
+| **Schema** | `dol` |
+| **Table** | `ein_urls` |
+| **Total Records** | 127,909 |
+| **Hunter DOL EINs** | 58,069 |
+| **Matched to Outreach** | 830 |
+| **New Companies** | 54,166 (clean, not in outreach) |
+
+### Key Columns
+
+| Column ID | Column Name | Type | Description |
+|-----------|-------------|------|-------------|
+| `DEU.01` | `ein` | VARCHAR(20) | Employer ID Number (PK) |
+| `DEU.02` | `company_name` | TEXT | Legal name from DOL |
+| `DEU.03` | `city` | TEXT | Company city |
+| `DEU.04` | `state` | VARCHAR(10) | State code |
+| `DEU.05` | `domain` | TEXT | Discovered domain |
+| `DEU.08` | `discovery_method` | TEXT | Source (`hunter_dol_enrichment`) |
+
+### Quick Query
+
+```sql
+-- Get EINs matched to outreach
+SELECT eu.ein, eu.company_name, eu.domain, o.outreach_id
+FROM dol.ein_urls eu
+JOIN outreach.outreach o ON LOWER(eu.domain) = LOWER(o.domain)
+WHERE eu.discovery_method = 'hunter_dol_enrichment';
+
+-- Get NEW companies (not in outreach)
+SELECT eu.ein, eu.company_name, eu.domain, eu.city, eu.state
+FROM dol.ein_urls eu
+LEFT JOIN outreach.outreach o ON LOWER(eu.domain) = LOWER(o.domain)
+WHERE eu.discovery_method = 'hunter_dol_enrichment'
+  AND o.outreach_id IS NULL;
+```
+
+### Documentation Reference
+
+| Document | Purpose |
+|----------|---------|
+| `docs/schema/DOL_EIN_URLS_SCHEMA.md` | Full schema documentation |
+| `docs/diagrams/HUNTER_DOL_ERD.md` | ERD diagram |
+
+---
+
 ## Change Log
 
 | Date | Change |
 |------|--------|
+| 2026-02-03 | Added DOL EIN URLs section (58,069 Hunter EINs) |
+| 2026-02-03 | Updated Hunter contact count to 583,433 |
 | 2026-02-03 | Added Hunter.io Source URLs section |
 | 2026-02-02 | Added Blog Sub-Hub URL Storage section |
 | 2026-02-02 | Created document establishing authoritative table |

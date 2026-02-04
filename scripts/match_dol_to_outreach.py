@@ -1,103 +1,187 @@
 #!/usr/bin/env python3
 """
-Match DOL discovered URLs to outreach records via EIN
-Update outreach.blog.source_url
+Multi-strategy matching: DOL file to outreach_ids
+Tries: domain, company name, address, city+state, EIN
 """
-import psycopg2
 import csv
+import psycopg2
 import os
+import re
+from collections import defaultdict
 
+def normalize_name(name):
+    """Normalize company name for fuzzy matching."""
+    if not name:
+        return ''
+    name = name.upper()
+    # Remove common suffixes
+    for suffix in [' LLC', ' INC', ' CORP', ' CO', ' LTD', ' LP', ' PLLC', ' PC', ' PA', ',']:
+        name = name.replace(suffix, '')
+    # Remove punctuation
+    name = re.sub(r'[^\w\s]', '', name)
+    # Collapse whitespace
+    name = ' '.join(name.split())
+    return name.strip()
+
+def normalize_address(addr):
+    """Normalize street address."""
+    if not addr:
+        return ''
+    addr = addr.upper()
+    # Standardize common abbreviations
+    replacements = {
+        'STREET': 'ST', 'AVENUE': 'AVE', 'BOULEVARD': 'BLVD', 'DRIVE': 'DR',
+        'ROAD': 'RD', 'LANE': 'LN', 'COURT': 'CT', 'PLACE': 'PL',
+        'SUITE': 'STE', 'P.O. BOX': 'PO BOX', 'P.O.BOX': 'PO BOX'
+    }
+    for old, new in replacements.items():
+        addr = addr.replace(old, new)
+    addr = re.sub(r'[^\w\s]', '', addr)
+    return ' '.join(addr.split()).strip()
+
+# Read DOL file
+dol_file = r'C:\Users\CUSTOM PC\Desktop\Hunter IO\dol-match-6-2129617.csv'
+with open(dol_file, 'r', encoding='utf-8') as f:
+    reader = csv.DictReader(f)
+    dol_rows = list(reader)
+
+# Build DOL lookup structures
+dol_by_ein = {}
+dol_by_domain = {}
+dol_by_name = defaultdict(list)
+dol_by_city_state = defaultdict(list)
+dol_by_zip = defaultdict(list)
+
+for row in dol_rows:
+    ein = row.get('ein', '').strip()
+    domain = row.get('Domain name', '').strip().lower()
+    company_name = row.get('company_name', '')
+    city = row.get('city', '').upper().strip()
+    state = row.get('state', '').upper().strip()
+    zip_code = row.get('zip', '').strip()[:5]  # First 5 digits
+    address = row.get('address', '')
+    
+    if ein:
+        dol_by_ein[ein] = row
+    if domain:
+        dol_by_domain[domain] = row
+    
+    norm_name = normalize_name(company_name)
+    if norm_name:
+        dol_by_name[norm_name].append(row)
+    
+    if city and state:
+        dol_by_city_state[(city, state)].append(row)
+    
+    if zip_code:
+        dol_by_zip[zip_code].append(row)
+
+print('DOL FILE INDEXED')
+print('='*60)
+print(f'Total rows: {len(dol_rows):,}')
+print(f'Unique EINs: {len(dol_by_ein):,}')
+print(f'Unique domains: {len(dol_by_domain):,}')
+print(f'Unique normalized names: {len(dol_by_name):,}')
+print(f'Unique city+state combos: {len(dol_by_city_state):,}')
+print(f'Unique ZIP codes: {len(dol_by_zip):,}')
+
+# Connect to database
 conn = psycopg2.connect(os.environ['DATABASE_URL'])
 cur = conn.cursor()
 
-print("DOL URL → Outreach Matching")
-print("=" * 70)
+# Get all outreach records with domain - these are our 42K targets
+cur.execute('''
+    SELECT outreach_id, domain
+    FROM outreach.outreach
+    WHERE domain IS NOT NULL
+''')
+db_outreach = cur.fetchall()
+print()
+print(f'OUTREACH RECORDS WITH DOMAIN: {len(db_outreach):,}')
 
-# Load our valid DOL domains (119,469)
-with open('scripts/domain_results_VALID.csv', 'r', encoding='utf-8') as f:
-    reader = csv.DictReader(f)
-    dol_domains = {r['ein']: {'domain': r['domain'], 'url': r.get('url', ''), 'company_name': r['company_name']} 
-                   for r in reader if r.get('ein')}
+# Build domain -> outreach_id lookup
+db_domain_to_outreach = {}
+for outreach_id, domain in db_outreach:
+    if domain:
+        db_domain_to_outreach[domain.lower()] = outreach_id
+print()
+print(f'DATABASE COMPANIES WITH OUTREACH_ID: {len(db_outreach):,}')
 
-print(f"Loaded {len(dol_domains):,} valid DOL domains")
-
-# Check outreach.dol records
-cur.execute("SELECT COUNT(*) FROM outreach.dol")
-total_dol = cur.fetchone()[0]
-print(f"outreach.dol total records: {total_dol:,}")
-
-# Get outreach.dol records with EIN
-cur.execute("""
-    SELECT d.outreach_id, d.ein, o.domain as current_domain, b.source_url as blog_url
-    FROM outreach.dol d
-    JOIN outreach.outreach o ON d.outreach_id = o.outreach_id
-    LEFT JOIN outreach.blog b ON d.outreach_id = b.outreach_id
-    WHERE d.ein IS NOT NULL
-""")
-outreach_dol = cur.fetchall()
-print(f"outreach.dol with EIN: {len(outreach_dol):,}")
-
-# Match against our DOL domains
-matches = []
-already_has_blog_url = 0
-already_matches = 0
-new_url_found = 0
-no_match = 0
-
-for row in outreach_dol:
-    outreach_id, ein, current_domain, blog_url = row
-    
-    if blog_url:
-        already_has_blog_url += 1
-        continue
-    
-    # Look up EIN in our DOL domains
-    if ein in dol_domains:
-        discovered = dol_domains[ein]
-        discovered_domain = discovered['domain'].lower().replace('www.', '')
-        current_norm = (current_domain or '').lower().replace('www.', '')
-        
-        if discovered_domain == current_norm:
-            already_matches += 1
-        else:
-            new_url_found += 1
-            matches.append({
-                'outreach_id': outreach_id,
-                'ein': ein,
-                'current_domain': current_domain,
-                'discovered_domain': discovered['domain'],
-                'discovered_url': discovered['url'],
-                'company_name': discovered['company_name']
-            })
-    else:
-        no_match += 1
+# Strategy 1: Direct domain match
+domain_matches = {}
+for dol_domain, dol_row in dol_by_domain.items():
+    if dol_domain in db_domain_to_outreach:
+        outreach_id = db_domain_to_outreach[dol_domain]
+        domain_matches[outreach_id] = (dol_domain, dol_row)
 
 print()
-print("Match Results:")
-print(f"  Already has blog URL: {already_has_blog_url:,}")
-print(f"  Domain already matches: {already_matches:,}")
-print(f"  NEW URL discovered: {new_url_found:,}")
-print(f"  No EIN match in DOL: {no_match:,}")
+print('MATCH RESULTS BY STRATEGY')
+print('='*60)
+print(f'Domain match: {len(domain_matches):,} outreach_ids')
 
-# Show sample matches
+# For other matching strategies, we need to look at the DOL data
+# and see if company names in DOL match company names we can derive from domains
+# Let's try to extract company name from domain
+
+# Strategy 2: Check if hunter_contact has any of these DOL domains
+cur.execute('''
+    SELECT DISTINCT domain FROM enrichment.hunter_contact WHERE domain IS NOT NULL
+''')
+hunter_domains = set(r[0].lower() for r in cur.fetchall() if r[0])
+print(f'Hunter domains in database: {len(hunter_domains):,}')
+
+dol_domains_in_hunter = set(dol_by_domain.keys()) & hunter_domains
+print(f'DOL domains also in Hunter: {len(dol_domains_in_hunter):,}')
+
+# Cross check: DOL domains that are in Hunter but NOT in outreach
+dol_in_hunter_not_outreach = dol_domains_in_hunter - set(db_domain_to_outreach.keys())
+print(f'DOL domains in Hunter but NOT in outreach: {len(dol_in_hunter_not_outreach):,}')
+
+matches = {'domain': domain_matches}
+
+# Combine all matches
+all_matched = set()
+for match_dict in matches.values():
+    all_matched.update(match_dict.keys())
+
 print()
-print("Sample NEW matches (first 15):")
-print("-" * 70)
-for m in matches[:15]:
-    print(f"  {m['company_name'][:40]}")
-    print(f"    Current: {m['current_domain']}")
-    print(f"    Found:   {m['discovered_domain']}")
-    print()
+print('MATCH RESULTS BY STRATEGY')
+print('='*60)
+for strategy, match_dict in matches.items():
+    print(f'{strategy:20}: {len(match_dict):,} outreach_ids matched')
 
-# Save matches for review/update
-with open('scripts/blog_url_updates.csv', 'w', newline='', encoding='utf-8') as f:
-    writer = csv.writer(f)
-    writer.writerow(['outreach_id', 'ein', 'company_name', 'current_domain', 'discovered_domain', 'discovered_url'])
-    for m in matches:
-        writer.writerow([m['outreach_id'], m['ein'], m['company_name'], 
-                        m['current_domain'], m['discovered_domain'], m['discovered_url']])
+# Combine all matches (unique outreach_ids)
+all_matched = set()
+for match_dict in matches.values():
+    all_matched.update(match_dict.keys())
 
-print(f"Saved {len(matches):,} potential updates to scripts/blog_url_updates.csv")
+print()
+print('='*60)
+print(f'TOTAL UNIQUE OUTREACH_IDS MATCHED TO EINs: {len(all_matched):,}')
+if len(db_outreach) > 0:
+    print(f'Out of {len(db_outreach):,} total ({len(all_matched)*100/len(db_outreach):.1f}%)')
 
-cur.close()
+print()
+print('BREAKDOWN:')
+print(f'  DOL file has {len(dol_by_ein):,} unique EINs')
+print(f'  We matched {len(domain_matches):,} to existing outreach_ids via domain')
+
+# Sample matches
+print()
+print('SAMPLE MATCHED (outreach_id -> EIN):')
+items = list(domain_matches.items())[:10]
+for outreach_id, (domain, dol_row) in items:
+    dol_name = dol_row.get('company_name', '')[:40]
+    dol_ein = dol_row.get('ein', '')
+    print(f'  {outreach_id[:30]}... | {domain:<25} | EIN: {dol_ein} | {dol_name}')
+
+# Sample matches
+print()
+print('SAMPLE MATCHED (outreach_id -> EIN):')
+items = list(domain_matches.items())[:10]
+for outreach_id, (domain, dol_row) in items:
+    dol_name = dol_row.get('company_name', '')[:40]
+    dol_ein = dol_row.get('ein', '')
+    print(f'  {outreach_id[:30]}... | {domain:<25} | EIN: {dol_ein} | {dol_name}')
+
 conn.close()

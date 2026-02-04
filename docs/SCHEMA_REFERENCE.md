@@ -1,319 +1,263 @@
 # Neon PostgreSQL Schema Reference
 
-**Generated:** 2025-11-27
-**Database:** Marketing DB
-**Host:** ep-ancient-waterfall-a42vy0du-pooler.us-east-1.aws.neon.tech
+> **Generated:** 2026-02-03
+> **Database:** Marketing DB
+> **Host:** ep-ancient-waterfall-a42vy0du-pooler.us-east-1.aws.neon.tech
+> **Status:** AI-READY | HUMAN-READY | IMO-COMPLIANT
 
 ---
 
 ## Schema Overview
 
-| Schema | Tables | Views | Purpose |
-|--------|--------|-------|---------|
-| **intake** | 4 | 3 | Raw data ingestion from external sources (Clay, CSV) |
-| **marketing** | 23 | 11 | Core business data (companies, people, slots) |
-| **bit** | 3 | 2 | Buyer Intent Tool scoring |
-| **ple** | 3 | 2 | Perpetual Lead Engine cycles |
-| **company** | 0 | 5 | Company-focused views |
-| **people** | 0 | 5 | People/contact-focused views |
-| **public** | 3 | 3 | System tables and shared views |
-| **shq** | 1 | 0 | Audit logging |
+| Schema | Tables | Purpose | Key Metric |
+|--------|--------|---------|------------|
+| **outreach** | 30+ | Outreach operational spine | 42,192 records |
+| **enrichment** | 3 | Hunter.io enrichment data | 583,433 contacts |
+| **dol** | 8 | DOL Form 5500/5500-SF filings | 991,321 filings |
+| **cl** | 3 | Company Lifecycle authority | Sovereign IDs |
+| **people** | 5 | People/slot management | 153,444 slots |
+| **company** | 3 | Company master data | 74,641 records |
+| **bit** | 3 | Buyer Intent scoring | 13,226 scored |
 
 ---
 
-## intake Schema (Data Ingestion)
+## Critical Tables Summary
 
-### Tables
+### Operational Core
 
-#### `intake.company_raw_from_clay` (NEW - 2025-11-27)
-Enriched company data from Clay.com integration.
+| Schema.Table | Records | Purpose | Primary Key |
+|--------------|---------|---------|-------------|
+| `outreach.outreach` | 42,192 | Outreach spine | `outreach_id` |
+| `outreach.company_target` | 41,425 | Company targeting | `target_id` |
+| `outreach.dol` | 17,338 | DOL sub-hub | `dol_id` |
+| `outreach.people` | 324 | People sub-hub | `person_id` |
+| `outreach.blog` | 41,425 | Blog sub-hub | `blog_id` |
+| `outreach.bit_scores` | 13,226 | BIT scoring | `outreach_id` |
+
+### Enrichment
+
+| Schema.Table | Records | Purpose | Primary Key |
+|--------------|---------|---------|-------------|
+| `enrichment.hunter_company` | 88,405 | Hunter company data | `domain` |
+| `enrichment.hunter_contact` | 583,433 | Hunter contacts + 30 sources | `(domain, email)` |
+
+### DOL Filings
+
+| Schema.Table | Records | Purpose | Primary Key |
+|--------------|---------|---------|-------------|
+| `dol.form_5500` | 230,482 | Full Form 5500 filings | `filing_id` |
+| `dol.form_5500_sf` | 760,839 | Short Form 5500-SF | `filing_id` |
+| `dol.schedule_a` | 337,476 | Insurance schedule | `schedule_id` |
+| `dol.ein_urls` | 127,909 | EIN to domain mapping | `ein` |
+
+---
+
+## outreach Schema
+
+### `outreach.outreach` (Operational Spine)
 
 | Column | Type | Description |
 |--------|------|-------------|
-| id | SERIAL | Primary key |
-| company_unique_id | TEXT | Reference to company_master |
-| company_name | TEXT | Original company name |
-| website_original | TEXT | Original website |
-| website_enriched | TEXT | Clay-enriched website |
-| employee_count_enriched | INT | Clay-enriched employee count |
-| industry_enriched | TEXT | Clay-enriched industry |
-| linkedin_company_url | TEXT | Company LinkedIn URL |
-| clay_enriched_at | TIMESTAMPTZ | When Clay enriched |
-| clay_credits_used | INT | Credits consumed |
-| enrichment_status | TEXT | received/processing/promoted/failed |
-| created_at | TIMESTAMPTZ | Record creation |
+| `outreach_id` | UUID | Primary key (minted here) |
+| `sovereign_id` | UUID | FK to cl.company_identity |
+| `domain` | VARCHAR(255) | Company domain |
+| `ein` | VARCHAR(20) | EIN (if known) |
+| `created_at` | TIMESTAMPTZ | Record creation |
+| `updated_at` | TIMESTAMPTZ | Last update |
 
-#### `intake.people_raw_from_clay` (NEW - 2025-11-27)
-Enriched people/contact data from Clay.com integration.
+**Records:** 42,192
+
+### `outreach.dol` (DOL Sub-Hub)
 
 | Column | Type | Description |
 |--------|------|-------------|
-| id | SERIAL | Primary key |
-| person_unique_id | TEXT | Reference to people_master |
-| company_unique_id | TEXT | Reference to company_master |
-| slot_type | TEXT | CEO/CFO/HR |
-| work_email | TEXT | Enriched work email |
-| work_email_verified | BOOLEAN | Email verification status |
-| linkedin_url_enriched | TEXT | Enriched LinkedIn URL |
-| phone_direct | TEXT | Direct phone number |
-| clay_credits_used | INT | Credits consumed |
-| enrichment_status | TEXT | received/processing/promoted/failed |
+| `dol_id` | UUID | Primary key |
+| `outreach_id` | UUID | FK to outreach.outreach |
+| `ein` | TEXT | Employer ID Number |
+| `filing_present` | BOOLEAN | Has DOL filing |
+| `funding_type` | TEXT | Funding classification |
+| `broker_or_advisor` | TEXT | B/A presence |
+| `carrier` | TEXT | Insurance carrier |
 
-#### `intake.company_raw_intake`
-Raw company data from CSV uploads.
+**Records:** 17,338 (41% of outreach)
 
-#### `intake.people_raw_intake`
-Raw people data from CSV uploads.
+### `outreach.company_target` (Company Targeting)
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `target_id` | UUID | Primary key |
+| `company_unique_id` | TEXT | Legacy company ID |
+| `outreach_id` | UUID | FK to outreach |
+| `outreach_status` | TEXT | Targeting status |
+| `bit_score_snapshot` | INTEGER | BIT score at targeting |
+| `email_method` | VARCHAR | Email discovery method |
+| `confidence_score` | NUMERIC | Pattern confidence |
+
+**Records:** 41,425
+
+---
+
+## enrichment Schema
+
+### `enrichment.hunter_company`
+
+| Column ID | Column | Type | Description |
+|-----------|--------|------|-------------|
+| HCO.02 | `domain` | VARCHAR(255) | Company domain (UNIQUE) |
+| HCO.03 | `organization` | VARCHAR(500) | Company name |
+| HCO.05 | `industry` | VARCHAR(255) | Industry classification |
+| HCO.06 | `headcount` | VARCHAR(50) | Employee count range |
+| HCO.10 | `state` | VARCHAR(100) | HQ state |
+| HCO.14 | `email_pattern` | VARCHAR(100) | Email pattern |
+
+**Records:** 88,405
+
+### `enrichment.hunter_contact`
+
+| Column ID | Column | Type | Description |
+|-----------|--------|------|-------------|
+| HC.02 | `domain` | VARCHAR(255) | Company domain (FK) |
+| HC.03 | `email` | VARCHAR(255) | Contact email |
+| HC.05 | `confidence_score` | INTEGER | Hunter confidence (0-100) |
+| HC.07 | `first_name` | VARCHAR(100) | First name |
+| HC.08 | `last_name` | VARCHAR(100) | Last name |
+| HC.10 | `job_title` | VARCHAR(255) | Job title |
+| HC.13 | `linkedin_url` | VARCHAR(500) | LinkedIn URL |
+| HC.S01-S30 | `source_1..30` | TEXT | 30 discovery source URLs |
+
+**Records:** 583,433
+**Source URLs:** 231,973
 
 ### Views
 
-#### `intake.v_companies_for_clay` (NEW)
-Companies ready for Clay enrichment (not enriched in last 30 days).
-- **Row Count:** ~453 companies
-
-#### `intake.v_people_for_clay` (NEW)
-People ready for Clay enrichment (not enriched in last 30 days).
-- **Row Count:** ~1,300+ people
-
-#### `intake.v_clay_enrichment_stats` (NEW)
-Summary statistics for Clay enrichment pipeline.
+| View | Purpose | Records |
+|------|---------|---------|
+| `v_hunter_contact_sources` | Unpivoted source URLs | 231,973 |
+| `v_hunter_sources_by_type` | Classified sources | 231,973 |
+| `v_hunter_company_sources` | Sources per domain | ~88,000 |
 
 ---
 
-## marketing Schema (Core Data)
+## dol Schema
 
-### Core Tables
-
-#### `marketing.company_master`
-Master company records for the PLE pipeline.
+### `dol.form_5500`
 
 | Column | Type | Description |
 |--------|------|-------------|
-| company_unique_id | TEXT | Primary key (Barton ID) |
-| company_name | TEXT | Company name |
-| website_url | TEXT | Company website |
-| address_city | TEXT | City |
-| address_state | TEXT | State (PA/VA/MD/OH/WV/KY) |
-| employee_count | INT | Employee count (50-2000) |
-| industry | TEXT | Industry classification |
-| linkedin_url | TEXT | Company LinkedIn |
-| created_at | TIMESTAMPTZ | Record creation |
-| updated_at | TIMESTAMPTZ | Last update |
+| `filing_id` | UUID | Primary key |
+| `ack_id` | VARCHAR | DOL acknowledgment ID |
+| `sponsor_dfe_ein` | VARCHAR | Sponsor EIN |
+| `sponsor_dfe_name` | VARCHAR | Sponsor name |
+| `plan_name` | VARCHAR | Plan name |
+| `tot_active_partcp_cnt` | INTEGER | Active participants |
 
-**Row Count:** 453
+**Records:** 230,482
+**Columns:** 147
 
-#### `marketing.people_master`
-Master contact/executive records.
+### `dol.form_5500_sf`
 
 | Column | Type | Description |
 |--------|------|-------------|
-| unique_id | TEXT | Primary key (Barton ID) |
-| full_name | TEXT | Full name |
-| email | TEXT | Email address |
-| linkedin_url | TEXT | LinkedIn profile URL |
-| title | TEXT | Job title |
-| company_unique_id | TEXT | FK to company_master |
-| validation_status | TEXT | Generated validation status |
-| last_verified_at | TIMESTAMPTZ | Last verification date |
+| `filing_id` | UUID | Primary key |
+| `sf_spons_dfe_ein` | VARCHAR | Sponsor EIN |
+| `sf_spons_dfe_name` | VARCHAR | Sponsor name |
+| `sf_tot_partcp_boy_cnt` | INTEGER | Participants BOY |
 
-**Row Count:** ~1,300+
+**Records:** 760,839
+**Columns:** 196
 
-#### `marketing.company_slot`
-Executive slots (CEO/CFO/HR) per company.
+### `dol.ein_urls`
 
-| Column | Type | Description |
-|--------|------|-------------|
-| company_slot_unique_id | TEXT | Primary key |
-| company_unique_id | TEXT | FK to company_master |
-| person_unique_id | TEXT | FK to people_master |
-| slot_type | TEXT | CEO/CFO/HR |
-| is_filled | BOOLEAN | Slot filled status |
-| filled_at | TIMESTAMPTZ | When filled |
-| vacated_at | TIMESTAMPTZ | When vacated |
+| Column ID | Column | Type | Description |
+|-----------|--------|------|-------------|
+| DEU.01 | `ein` | VARCHAR(20) | EIN (PRIMARY KEY) |
+| DEU.02 | `company_name` | TEXT | Legal name from DOL |
+| DEU.04 | `state` | VARCHAR(10) | State code |
+| DEU.05 | `domain` | TEXT | Discovered domain |
+| DEU.08 | `discovery_method` | TEXT | Source method |
 
-**Row Count:** ~1,359 (3 slots per 453 companies)
-
-### Sidecar Tables (NEW - 2025-11-26)
-
-#### `marketing.person_movement_history`
-Tracks executive job changes.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | SERIAL | Primary key |
-| person_unique_id | TEXT | FK to people_master |
-| company_from_id | TEXT | Previous company |
-| company_to_id | TEXT | New company |
-| title_from | TEXT | Previous title |
-| title_to | TEXT | New title |
-| movement_type | TEXT | company_change/title_change/contact_lost |
-| detected_at | TIMESTAMPTZ | When detected |
-
-#### `marketing.person_scores`
-BIT (Buyer Intent Tool) scores per person.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | SERIAL | Primary key |
-| person_unique_id | TEXT | FK to people_master (UNIQUE) |
-| bit_score | INT | Score 0-100 |
-| confidence_score | INT | Confidence 0-100 |
-| score_factors | JSONB | Score breakdown |
-| calculated_at | TIMESTAMPTZ | When calculated |
-
-#### `marketing.company_events`
-Company news/events that impact BIT scores.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | SERIAL | Primary key |
-| company_unique_id | TEXT | FK to company_master |
-| event_type | TEXT | funding/acquisition/ipo/layoff/leadership_change |
-| event_date | DATE | Event date |
-| source_url | TEXT | News source |
-| bit_impact_score | INT | Impact on BIT (-100 to +100) |
-
-### Validation Tables
-
-#### `marketing.company_invalid`
-Companies that failed validation.
-- **Row Count:** 114 (West Virginia companies)
-
-#### `marketing.people_invalid`
-People that failed validation.
-
-#### `marketing.validation_failures_log`
-Detailed validation failure records.
-
-### Views
-
-- `marketing.v_companies_need_enrichment` - Companies needing enrichment
-- `marketing.v_company_enrichment_status` - Enrichment status by company
-- `marketing.v_phase_stats` - Pipeline phase statistics
-- `marketing.marketing_ceo` - CEO contacts view
-- `marketing.marketing_cfo` - CFO contacts view
-- `marketing.marketing_hr` - HR contacts view
+**Records:** 127,909
+**Hunter DOL EINs:** 58,069
+**Matched to Outreach:** 830
+**New (not in outreach):** 54,166
 
 ---
 
-## bit Schema (Buyer Intent Tool)
-
-### Tables
-
-#### `bit.bit_signal`
-Raw buyer intent signals.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| signal_id | TEXT | Primary key |
-| company_unique_id | TEXT | FK to company_master |
-| signal_type | TEXT | Signal category |
-| signal_value | JSONB | Signal data |
-| detected_at | TIMESTAMPTZ | Detection timestamp |
-
-#### `bit.bit_company_score`
-Aggregated BIT scores per company.
-
-#### `bit.bit_contact_score`
-BIT scores per contact.
-
-### Views
-
-- `bit.vw_hot_companies` - High-scoring companies
-- `bit.vw_engaged_contacts` - Engaged contacts
-
----
-
-## ple Schema (Perpetual Lead Engine)
-
-### Tables
-
-#### `ple.ple_cycle`
-PLE execution cycles.
-
-#### `ple.ple_step`
-Individual steps within cycles.
-
-#### `ple.ple_log`
-Cycle execution logs.
-
-### Views
-
-- `ple.vw_active_cycles` - Currently running cycles
-- `ple.vw_pending_steps` - Steps awaiting execution
-
----
-
-## Data Flow
+## Key Relationships
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                         DATA FLOW                                 │
-└──────────────────────────────────────────────────────────────────┘
-
-CSV Upload                    Clay.com
-    │                            │
-    ▼                            ▼
-intake.company_raw_intake    intake.company_raw_from_clay
-intake.people_raw_intake     intake.people_raw_from_clay
-    │                            │
-    └─────────┬──────────────────┘
-              │
-              ▼ (Validation & Promotion)
-    ┌─────────────────────┐
-    │   marketing.        │
-    │   company_master    │
-    │   people_master     │
-    │   company_slot      │
-    └─────────────────────┘
-              │
-              ▼ (Enrichment & Scoring)
-    ┌─────────────────────┐
-    │   marketing.        │
-    │   person_scores     │
-    │   company_events    │
-    │   person_movement   │
-    └─────────────────────┘
-              │
-              ▼ (BIT Processing)
-    ┌─────────────────────┐
-    │   bit.              │
-    │   bit_signal        │
-    │   bit_company_score │
-    │   bit_contact_score │
-    └─────────────────────┘
-              │
-              ▼ (PLE Execution)
-    ┌─────────────────────┐
-    │   ple.              │
-    │   ple_cycle         │
-    │   ple_step          │
-    │   ple_log           │
-    └─────────────────────┘
+cl.company_identity (sovereign_id)
+        |
+        | sovereign_id
+        v
+outreach.outreach (outreach_id, domain)
+        |
+        +---> outreach.company_target (outreach_id)
+        +---> outreach.dol (outreach_id, ein)
+        +---> outreach.people (outreach_id)
+        +---> outreach.blog (outreach_id)
+        +---> outreach.bit_scores (outreach_id)
+        |
+        | domain match
+        v
+enrichment.hunter_company (domain)
+        |
+        +---> enrichment.hunter_contact (domain)
+        |
+        | domain match
+        v
+dol.ein_urls (ein, domain)
+        |
+        | ein match
+        v
+dol.form_5500 / dol.form_5500_sf
 ```
 
 ---
 
-## Recent Changes (2025-11-27)
+## Current Metrics (2026-02-03)
 
-### New Objects Created
+### Outreach Coverage
 
-1. **Tables:**
-   - `intake.company_raw_from_clay` - Clay company enrichment intake
-   - `intake.people_raw_from_clay` - Clay people enrichment intake
+| Metric | Count | % |
+|--------|-------|---|
+| Total outreach records | 42,192 | 100% |
+| With DOL/EIN | 17,338 | 41.1% |
+| With company_target | 41,425 | 98.2% |
+| With BIT score | 13,226 | 31.3% |
+| With blog | 41,425 | 98.2% |
 
-2. **Views:**
-   - `intake.v_companies_for_clay` - Companies ready for Clay
-   - `intake.v_people_for_clay` - People ready for Clay
-   - `intake.v_clay_enrichment_stats` - Enrichment pipeline stats
+### Hunter Enrichment
 
-3. **Triggers:**
-   - `trg_clay_company_updated` - Auto-update timestamp
-   - `trg_clay_people_updated` - Auto-update timestamp
+| Metric | Count |
+|--------|-------|
+| Hunter companies | 88,405 |
+| Hunter contacts | 583,433 |
+| Contacts with sources | 124,693 |
+| Total source URLs | 231,973 |
 
-### Migration Files
+### DOL Filing Coverage
 
-- `infra/migrations/002_create_clay_intake_tables.sql` - Clay integration tables
+| Metric | Count |
+|--------|-------|
+| Form 5500 filings | 230,482 |
+| Form 5500-SF filings | 760,839 |
+| EINs with domains | 127,909 |
+| Hunter DOL EINs | 58,069 |
+| Matched to outreach | 830 |
+| New companies (clean) | 54,166 |
+
+---
+
+## Documentation Index
+
+| Document | Purpose |
+|----------|---------|
+| `docs/schema/ENRICHMENT_HUNTER_SCHEMA.md` | Hunter tables full spec |
+| `docs/schema/DOL_EIN_URLS_SCHEMA.md` | DOL EIN URLs full spec |
+| `docs/diagrams/HUNTER_DOL_ERD.md` | ERD diagram |
+| `docs/AUTHORITATIVE_TABLE_REFERENCE.md` | Key table reference |
+| `docs/HUNTER_SOURCE_COLUMNS_REFERENCE.md` | Source columns spec |
 
 ---
 
@@ -323,28 +267,22 @@ intake.people_raw_intake     intake.people_raw_from_clay
 Host:     ep-ancient-waterfall-a42vy0du-pooler.us-east-1.aws.neon.tech
 Port:     5432
 Database: Marketing DB
-User:     Marketing DB_owner
-Password: npg_OsE4Z2oPCpiT
 SSL:      require
 ```
 
-**Connection String:**
-```
-postgresql://Marketing%20DB_owner:npg_OsE4Z2oPCpiT@ep-ancient-waterfall-a42vy0du-pooler.us-east-1.aws.neon.tech:5432/Marketing%20DB?sslmode=require
-```
+---
+
+## Change Log
+
+| Date | Change |
+|------|--------|
+| 2026-02-03 | Hunter DOL import: 58,069 EINs, 283,926 contacts |
+| 2026-02-03 | Updated all metrics and counts |
+| 2026-02-02 | Hunter outreach import: 122,997 contacts |
+| 2026-01-27 | EIN migration complete |
+| 2026-01-21 | Sovereign cleanup: 23,025 archived |
 
 ---
 
-## Related Documentation
-
-- `docs/schema_map.json` - Machine-readable schema (auto-generated)
-- `infra/docs/CLAY_NEON_INTEGRATION.md` - Clay.com setup guide
-- `repo-data-diagrams/PLE_SCHEMA_ERD.md` - Visual ERD diagram
-- `repo-data-diagrams/PLE_SCHEMA_REFERENCE.md` - Detailed column reference
-- `ctb/sys/enrichment/SCHEMA_FIXES_REPORT.md` - Constraint audit results
-
----
-
-**Last Updated:** 2025-11-27
-**Total Tables:** 37 across 8 schemas
-**Total Views:** 31 across 8 schemas
+**Last Updated:** 2026-02-03
+**Total Records:** 2M+ across all schemas
