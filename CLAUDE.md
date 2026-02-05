@@ -10,18 +10,35 @@
 
 ---
 
-## ⚠️ CRITICAL: AUTHORITATIVE TABLE REFERENCE
+## OSAM: Outreach Semantic Access Map
+
+> **BEFORE RUNNING ANY DATA QUERY, READ: [docs/OSAM.md](docs/OSAM.md)**
+
+The OSAM tells you exactly where to go for any data question:
+- Company count by state? → `outreach.company_target`
+- Slot fill rates? → `people.company_slot`
+- Contact details? → `people.people_master`
+- DOL filings? → `outreach.dol`
+
+**Rule**: If your question isn't in the OSAM, **STOP and ask the user**. Do not guess.
+
+**Universal Join Key**: `outreach_id` - All sub-hubs join to the spine via this key. Never use domain as a join key.
+
+---
+
+## CRITICAL: Authoritative Table Reference
 
 > **ALL pipeline work MUST use `outreach.company_target` as the authoritative company list.**
-> **COUNT: 41,425 companies**
+> **COUNT: 94,237 companies**
 > **PRIMARY KEY: `outreach_id`**
 
 ### DO NOT USE These Tables as Company Source:
-- ❌ `company.company_master` (74,641 - too broad)
-- ❌ `people.people_master` (78,143 - people, not companies)
-- ❌ `outreach.outreach` (42,192 - different scope)
+- `company.company_master` - too broad
+- `people.people_master` - people, not companies
+- `enrichment.*` tables - source data, not for queries
 
 ### Key Documentation:
+- **[docs/OSAM.md](docs/OSAM.md)** - WHERE TO GO for any data question
 - **[docs/AUTHORITATIVE_TABLE_REFERENCE.md](docs/AUTHORITATIVE_TABLE_REFERENCE.md)** - Complete table reference
 - **[docs/diagrams/PEOPLE_DATA_FLOW_ERD.md](docs/diagrams/PEOPLE_DATA_FLOW_ERD.md)** - People slot/enrichment flow
 
