@@ -507,6 +507,171 @@ WHERE o.outreach_id = 'your-outreach-id';
 
 ---
 
+## Multi-Source BIT Scoring & Message Personalization
+
+Each sub-hub contributes signals to the BIT score. When building a personalized message, query across sources to assemble the complete picture.
+
+### BIT Signal Sources
+
+| Source | Signal | Query |
+|--------|--------|-------|
+| DOL | PEPM (broker cost per employee) | `schedule_a + form_5500` |
+| DOL | Participant count | `form_5500.tot_active_partcp_cnt` |
+| DOL | Funding type | `schedule_a` benefit flags |
+| CT | Industry | `company_target.industry` |
+| CT | Employee count | `company_target.employees` |
+| CT | State/Geography | `company_target.state` |
+| Blog | Recent news | `blog.news_url`, `blog.context_summary` |
+| Blog | About page | `blog.about_url` |
+| People | Decision maker | `people_master.is_decision_maker` |
+| People | Contact info | `people_master.email`, `linkedin_url` |
+
+### Complete Company Profile Query
+
+Pull all signals for a single company to build BIT + message:
+
+```sql
+WITH company_dol AS (
+    SELECT
+        sa.sch_a_ein as ein,
+        SUM(sa.ins_broker_comm_tot_amt) as total_broker_comm,
+        MAX(f.tot_active_partcp_cnt) as dol_participants,
+        CASE
+            WHEN MAX(f.tot_active_partcp_cnt) > 0
+            THEN (SUM(sa.ins_broker_comm_tot_amt) / MAX(f.tot_active_partcp_cnt)) / 12
+            ELSE NULL
+        END as pepm,
+        MAX(sa.ins_carrier_name) as current_carrier
+    FROM dol.schedule_a sa
+    JOIN dol.form_5500 f ON sa.sch_a_ein = f.sponsor_dfe_ein AND sa.form_year = f.form_year
+    WHERE sa.form_year = '2023'
+    GROUP BY sa.sch_a_ein
+)
+SELECT
+    -- Identity
+    o.outreach_id,
+    ci.company_name,
+    o.ein,
+
+    -- CT Signals
+    ct.industry,
+    ct.employees,
+    ct.state,
+    ct.city,
+
+    -- DOL Signals
+    cd.pepm,
+    cd.total_broker_comm,
+    cd.dol_participants,
+    cd.current_carrier,
+
+    -- Blog Signals
+    b.about_url,
+    b.news_url,
+    b.context_summary,
+
+    -- People Signals (CEO)
+    pm.full_name as ceo_name,
+    pm.email as ceo_email,
+    pm.linkedin_url as ceo_linkedin,
+    pm.is_decision_maker
+
+FROM outreach.outreach o
+JOIN cl.company_identity ci ON o.sovereign_id = ci.sovereign_company_id
+LEFT JOIN outreach.company_target ct ON ct.outreach_id = o.outreach_id
+LEFT JOIN company_dol cd ON o.ein = cd.ein
+LEFT JOIN outreach.blog b ON b.outreach_id = o.outreach_id
+LEFT JOIN people.company_slot cs ON cs.outreach_id = o.outreach_id AND cs.slot_type = 'CEO' AND cs.is_filled = true
+LEFT JOIN people.people_master pm ON pm.unique_id = cs.person_unique_id
+WHERE o.outreach_id = 'your-outreach-id';
+```
+
+### BIT Score Calculation Example
+
+```sql
+-- Calculate BIT score from multiple signals
+SELECT
+    o.outreach_id,
+    ci.company_name,
+
+    -- Individual signals (each becomes a "bit")
+    CASE WHEN cd.pepm > 5.00 THEN 20 ELSE 0 END as pepm_signal,           -- High broker cost
+    CASE WHEN ct.employees BETWEEN 50 AND 500 THEN 15 ELSE 0 END as size_signal,  -- Sweet spot size
+    CASE WHEN b.news_url IS NOT NULL THEN 10 ELSE 0 END as news_signal,   -- Has recent news
+    CASE WHEN cs.is_filled THEN 15 ELSE 0 END as contact_signal,          -- Have CEO contact
+    CASE WHEN pm.email IS NOT NULL THEN 10 ELSE 0 END as email_signal,    -- Have email
+
+    -- Combined BIT score
+    (CASE WHEN cd.pepm > 5.00 THEN 20 ELSE 0 END +
+     CASE WHEN ct.employees BETWEEN 50 AND 500 THEN 15 ELSE 0 END +
+     CASE WHEN b.news_url IS NOT NULL THEN 10 ELSE 0 END +
+     CASE WHEN cs.is_filled THEN 15 ELSE 0 END +
+     CASE WHEN pm.email IS NOT NULL THEN 10 ELSE 0 END) as bit_score
+
+FROM outreach.outreach o
+JOIN cl.company_identity ci ON o.sovereign_id = ci.sovereign_company_id
+LEFT JOIN outreach.company_target ct ON ct.outreach_id = o.outreach_id
+LEFT JOIN company_dol cd ON o.ein = cd.ein  -- From CTE above
+LEFT JOIN outreach.blog b ON b.outreach_id = o.outreach_id
+LEFT JOIN people.company_slot cs ON cs.outreach_id = o.outreach_id AND cs.slot_type = 'CEO'
+LEFT JOIN people.people_master pm ON pm.unique_id = cs.person_unique_id
+ORDER BY bit_score DESC;
+```
+
+### Message Variable Assembly
+
+Each query returns values that populate message templates:
+
+| Variable | Source | Example Value |
+|----------|--------|---------------|
+| `{{ceo_name}}` | people_master.full_name | "Liz Coker" |
+| `{{company_name}}` | cl.company_name | "3P Health, LLC" |
+| `{{pepm}}` | DOL calculation | "$3,928.53" |
+| `{{pepm_vs_median}}` | DOL calculation | "2,729x" |
+| `{{employees}}` | company_target.employees | "17" |
+| `{{industry}}` | company_target.industry | "Healthcare" |
+| `{{recent_news}}` | blog.context_summary | "expanding operations" |
+| `{{current_carrier}}` | schedule_a.ins_carrier_name | "Cigna" |
+
+### Targeting Query: High-Value Prospects
+
+Find companies with multiple positive signals:
+
+```sql
+WITH company_dol AS (
+    -- PEPM calculation (same as above)
+),
+state_median AS (
+    SELECT
+        sponsor_state,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY pepm) as median_pepm
+    FROM company_dol
+    GROUP BY sponsor_state
+)
+SELECT
+    ci.company_name,
+    ct.state,
+    cd.pepm,
+    sm.median_pepm,
+    (cd.pepm / NULLIF(sm.median_pepm, 0)) as pepm_vs_median,
+    ct.employees,
+    pm.full_name as ceo_name,
+    pm.email
+FROM outreach.outreach o
+JOIN cl.company_identity ci ON o.sovereign_id = ci.sovereign_company_id
+JOIN outreach.company_target ct ON ct.outreach_id = o.outreach_id
+JOIN company_dol cd ON o.ein = cd.ein
+JOIN state_median sm ON ct.state = sm.sponsor_state
+JOIN people.company_slot cs ON cs.outreach_id = o.outreach_id AND cs.slot_type = 'CEO' AND cs.is_filled = true
+JOIN people.people_master pm ON pm.unique_id = cs.person_unique_id
+WHERE cd.pepm > sm.median_pepm * 2  -- PEPM 2x above median
+  AND ct.employees BETWEEN 50 AND 500  -- Right size
+  AND pm.email IS NOT NULL  -- Have contact
+ORDER BY cd.pepm / sm.median_pepm DESC;
+```
+
+---
+
 ## STOP Conditions
 
 **If any of these are true, STOP and ask the user:**
