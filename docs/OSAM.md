@@ -377,28 +377,133 @@ WHERE cs.is_filled = true
 
 ---
 
-## Source Tables (Enrichment)
+## Source Tables
 
-These tables are **source data**. Most queries should use the synced sub-hub tables, but geography queries are an exception.
+### Enrichment (Sync to Sub-Hubs)
 
 | Table | Purpose | Query Directly? |
 |-------|---------|-----------------|
 | enrichment.hunter_company | Hunter.io company data | NO - synced to CT |
 | enrichment.hunter_contact | Hunter.io contact data | NO - synced to people_master |
-| dol.form_5500 | Raw DOL filings (large) | **YES for geography** |
-| dol.form_5500_sf | Raw DOL small filings | **YES for geography** |
 
-### DOL Source Table Columns (for geography)
+---
 
-**dol.form_5500** (large filers):
-- `sponsor_dfe_ein` - Company EIN
-- `spons_dfe_mail_us_state` - Filing state (2-letter)
+## DOL: Queryable System of Record
 
-**dol.form_5500_sf** (small filers):
-- `sf_spons_ein` - Company EIN
-- `sf_spons_us_state` - Filing state (2-letter)
+**DOL is the authoritative source for Form 5500 filing data.** Query these tables directly by EIN.
 
-**Join to pipeline**: `outreach.outreach.ein = dol.form_5500.sponsor_dfe_ein`
+### DOL Tables
+
+| Table | Records | Columns | Purpose |
+|-------|---------|---------|---------|
+| dol.form_5500 | 230,482 | 147 | Large filers (100+ participants) |
+| dol.form_5500_sf | 760,839 | 196 | Small filers (<100 participants) |
+| dol.schedule_a | 337,476 | 98 | Insurance carriers, brokers, commissions |
+| dol.column_metadata | 441 | 14 | Column descriptions for AI/human queries |
+
+### DOL Column Metadata
+
+Every DOL column is documented in `dol.column_metadata`:
+- `column_id` - Unique identifier (e.g., DOL_SCHA_INS_BROKER_COMM_TOT_AMT)
+- `description` - Human-readable description
+- `category` - Category (Insurance, Sponsor, Filing, etc.)
+- `data_type` - Type (EIN, CURRENCY, DATE, TEXT, FLAG)
+- `format_pattern` - Expected format
+- `search_keywords` - Keywords for natural language search
+- `is_pii` - PII flag
+- `example_values` - Sample values
+
+**To understand any DOL column:**
+```sql
+SELECT column_id, description, category, data_type, format_pattern
+FROM dol.column_metadata
+WHERE column_name = 'ins_broker_comm_tot_amt';
+```
+
+### Key DOL Columns
+
+**form_5500** (large filers):
+| Column | ID | Description |
+|--------|-----|-------------|
+| sponsor_dfe_ein | DOL_F5500_SPONSOR_DFE_EIN | Employer EIN (9 digits) |
+| sponsor_dfe_name | DOL_F5500_SPONSOR_DFE_NAME | Company legal name |
+| spons_dfe_mail_us_state | DOL_F5500_SPONS_DFE_MAIL_US_STATE | Filing state (2-letter) |
+| tot_active_partcp_cnt | DOL_F5500_TOT_ACTIVE_PARTCP_CNT | Total active participants |
+| form_year | DOL_F5500_FORM_YEAR | Filing year |
+
+**form_5500_sf** (small filers):
+| Column | ID | Description |
+|--------|-----|-------------|
+| sf_spons_ein | DOL_F5500SF_SF_SPONS_EIN | Employer EIN (9 digits) |
+| sf_sponsor_name | DOL_F5500SF_SF_SPONSOR_NAME | Company legal name |
+| sf_spons_us_state | DOL_F5500SF_SF_SPONS_US_STATE | Filing state (2-letter) |
+| sf_tot_partcp_boy_cnt | DOL_F5500SF_SF_TOT_PARTCP_BOY_CNT | Participants at beginning of year |
+
+**schedule_a** (insurance/broker):
+| Column | ID | Description |
+|--------|-----|-------------|
+| sch_a_ein | DOL_SCHA_SCH_A_EIN | Employer EIN |
+| ins_carrier_name | DOL_SCHA_INS_CARRIER_NAME | Insurance carrier name |
+| ins_carrier_ein | DOL_SCHA_INS_CARRIER_EIN | Carrier EIN |
+| ins_broker_comm_tot_amt | DOL_SCHA_INS_BROKER_COMM_TOT_AMT | Total broker commissions |
+| wlfr_bnft_health_ind | DOL_SCHA_WLFR_BNFT_HEALTH_IND | Has health benefit (Y/N) |
+| wlfr_bnft_dental_ind | DOL_SCHA_WLFR_BNFT_DENTAL_IND | Has dental benefit (Y/N) |
+
+### DOL Query Examples
+
+**Look up company by EIN:**
+```sql
+-- Large filer
+SELECT sponsor_dfe_name, spons_dfe_mail_us_state, tot_active_partcp_cnt, form_year
+FROM dol.form_5500
+WHERE sponsor_dfe_ein = '123456789'
+ORDER BY form_year DESC;
+
+-- Small filer
+SELECT sf_sponsor_name, sf_spons_us_state, sf_tot_partcp_boy_cnt, form_year
+FROM dol.form_5500_sf
+WHERE sf_spons_ein = '123456789'
+ORDER BY form_year DESC;
+```
+
+**Get insurance/broker details from Schedule A:**
+```sql
+SELECT
+    sa.sponsor_name,
+    sa.ins_carrier_name,
+    sa.ins_broker_comm_tot_amt,
+    sa.wlfr_bnft_health_ind,
+    sa.wlfr_bnft_dental_ind,
+    sa.form_year
+FROM dol.schedule_a sa
+WHERE sa.sch_a_ein = '123456789'
+ORDER BY sa.form_year DESC;
+```
+
+**Find all companies with Schedule A in a state:**
+```sql
+SELECT DISTINCT sa.sch_a_ein, sa.sponsor_name, sa.ins_carrier_name
+FROM dol.schedule_a sa
+WHERE sa.sponsor_state = 'MD'
+  AND sa.ins_broker_comm_tot_amt > 0;
+```
+
+### Join DOL to Pipeline
+
+```sql
+-- Match DOL filing to outreach company
+SELECT
+    o.outreach_id,
+    o.domain,
+    f.sponsor_dfe_name,
+    f.tot_active_partcp_cnt,
+    sa.ins_carrier_name,
+    sa.ins_broker_comm_tot_amt
+FROM outreach.outreach o
+JOIN dol.form_5500 f ON o.ein = f.sponsor_dfe_ein
+LEFT JOIN dol.schedule_a sa ON f.sponsor_dfe_ein = sa.sch_a_ein AND f.form_year = sa.form_year
+WHERE o.outreach_id = 'your-outreach-id';
+```
 
 ---
 
