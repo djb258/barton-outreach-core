@@ -14,7 +14,7 @@ twitter_handle,varchar(100),twitter_url,text,TRANSFORM,READY,Prefix https://twit
 phone_number,varchar(50),work_phone_e164,text,DIRECT,READY,Phone number
 email_verified,boolean,email_verified,boolean,DIRECT,READY,Verification status
 confidence_score,integer,email_verification_source,text,TRANSFORM,READY,Store as hunter:{score}
-is_decision_maker,boolean,is_decision_maker,boolean,DIRECT,NEED_COLUMN,Add to people_master
+is_decision_maker,boolean,is_decision_maker,boolean,DIRECT,READY,Decision maker flag from Hunter
 id,integer,source_record_id,text,CAST,READY,Hunter record ID as text
 -,-,source_system,text,CONSTANT,REQUIRED,Value: hunter
 -,-,unique_id,text,GENERATE,REQUIRED,Barton ID 04.04.02.99.XXXXX.XXX
