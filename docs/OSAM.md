@@ -34,7 +34,7 @@ SPINE (outreach.outreach)
 | Question Type | Go To | Join Via |
 |---------------|-------|----------|
 | Is company in pipeline? | `outreach.outreach` | - |
-| Company count by state/city/geography? | `outreach.company_target` | outreach_id |
+| Company count by state/city/geography? | **UNION** of CT + DOL | See Geography Query |
 | Email pattern for company? | `outreach.company_target` | outreach_id |
 | Company industry/employees/firmographics? | `outreach.company_target` | outreach_id |
 | Slot fill rates (CEO/CFO/HR)? | `people.company_slot` | outreach_id |
@@ -267,16 +267,66 @@ FK:    company_slot_unique_id → people.company_slot.slot_id
 
 ## Common Join Paths
 
-### Maryland Companies with Slot Coverage
+### Geography Queries (UNION Rule)
+
+**State/geography questions require UNION of two sources:**
+1. `outreach.company_target.state` - from Hunter (operational HQ)
+2. `dol.form_5500/form_5500_sf` - from DOL filings (filing address)
+
+A company counts as "in state X" if **either** source says so.
 
 ```sql
+-- Maryland Companies (UNION of Hunter + DOL)
+WITH dol_md AS (
+    SELECT DISTINCT sponsor_dfe_ein as ein FROM dol.form_5500
+    WHERE spons_dfe_mail_us_state = 'MD' AND sponsor_dfe_ein IS NOT NULL
+    UNION
+    SELECT DISTINCT sf_spons_ein as ein FROM dol.form_5500_sf
+    WHERE sf_spons_us_state = 'MD' AND sf_spons_ein IS NOT NULL
+),
+md_companies AS (
+    -- Hunter says MD
+    SELECT DISTINCT o.outreach_id
+    FROM outreach.outreach o
+    JOIN outreach.company_target ct ON ct.outreach_id = o.outreach_id
+    WHERE ct.state = 'MD'
+    UNION
+    -- DOL says MD
+    SELECT DISTINCT o.outreach_id
+    FROM outreach.outreach o
+    JOIN dol_md d ON o.ein = d.ein
+)
+SELECT COUNT(*) as md_companies FROM md_companies;
+```
+
+### Maryland Companies with Slot Coverage (Full Query)
+
+```sql
+WITH dol_md AS (
+    SELECT DISTINCT sponsor_dfe_ein as ein FROM dol.form_5500
+    WHERE spons_dfe_mail_us_state = 'MD' AND sponsor_dfe_ein IS NOT NULL
+    UNION
+    SELECT DISTINCT sf_spons_ein as ein FROM dol.form_5500_sf
+    WHERE sf_spons_us_state = 'MD' AND sf_spons_ein IS NOT NULL
+),
+md_companies AS (
+    SELECT DISTINCT o.outreach_id
+    FROM outreach.outreach o
+    JOIN outreach.company_target ct ON ct.outreach_id = o.outreach_id
+    WHERE ct.state = 'MD'
+    UNION
+    SELECT DISTINCT o.outreach_id
+    FROM outreach.outreach o
+    JOIN dol_md d ON o.ein = d.ein
+)
 SELECT
-    COUNT(DISTINCT o.outreach_id) as companies,
-    SUM(CASE WHEN cs.is_filled THEN 1 ELSE 0 END) as filled_slots
-FROM outreach.outreach o
-JOIN outreach.company_target ct ON ct.outreach_id = o.outreach_id
-LEFT JOIN people.company_slot cs ON cs.outreach_id = o.outreach_id
-WHERE ct.state = 'MD'
+    cs.slot_type,
+    COUNT(*) as total,
+    SUM(CASE WHEN cs.is_filled THEN 1 ELSE 0 END) as filled
+FROM md_companies mc
+JOIN people.company_slot cs ON cs.outreach_id = mc.outreach_id
+GROUP BY cs.slot_type
+ORDER BY cs.slot_type;
 ```
 
 ### Slot Fill Rates by State
@@ -327,16 +377,28 @@ WHERE cs.is_filled = true
 
 ---
 
-## Source Tables (Enrichment - NOT for Queries)
+## Source Tables (Enrichment)
 
-These tables are **source data** for ETL. Do not query these for business questions.
+These tables are **source data**. Most queries should use the synced sub-hub tables, but geography queries are an exception.
 
-| Table | Purpose | Use For Queries? |
-|-------|---------|------------------|
+| Table | Purpose | Query Directly? |
+|-------|---------|-----------------|
 | enrichment.hunter_company | Hunter.io company data | NO - synced to CT |
 | enrichment.hunter_contact | Hunter.io contact data | NO - synced to people_master |
-| dol.form_5500 | Raw DOL filings | NO - synced to outreach.dol |
-| dol.form_5500_sf | Raw DOL small filings | NO - synced to outreach.dol |
+| dol.form_5500 | Raw DOL filings (large) | **YES for geography** |
+| dol.form_5500_sf | Raw DOL small filings | **YES for geography** |
+
+### DOL Source Table Columns (for geography)
+
+**dol.form_5500** (large filers):
+- `sponsor_dfe_ein` - Company EIN
+- `spons_dfe_mail_us_state` - Filing state (2-letter)
+
+**dol.form_5500_sf** (small filers):
+- `sf_spons_ein` - Company EIN
+- `sf_spons_us_state` - Filing state (2-letter)
+
+**Join to pipeline**: `outreach.outreach.ein = dol.form_5500.sponsor_dfe_ein`
 
 ---
 
