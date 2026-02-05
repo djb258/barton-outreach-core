@@ -1,0 +1,22 @@
+hunter_column,hunter_type,people_column,people_type,transform,status,notes
+domain,varchar(255),-,-,JOIN_KEY,DONE,Used once to get outreach_id then ignored
+outreach_id,uuid,outreach_id,uuid,VIA_SLOT,REQUIRED,FK via company_slot
+email,varchar(255),email,text,DIRECT,REQUIRED,Primary contact email
+first_name,varchar(100),first_name,text,DIRECT,REQUIRED,First name
+last_name,varchar(100),last_name,text,DIRECT,REQUIRED,Last name
+full_name,varchar(200),full_name,text,DIRECT,READY,Or compute from first+last
+job_title,varchar(255),title,text,DIRECT,READY,Raw job title
+seniority_level,varchar(100),seniority,text,DIRECT,READY,C-Level/VP/Director/etc
+department,varchar(100),department,text,DIRECT,READY,Department name
+department_normalized,varchar(100),department,text,PREFER_THIS,READY,Cleaner version
+linkedin_url,varchar(500),linkedin_url,text,DIRECT,READY,Profile URL
+twitter_handle,varchar(100),twitter_url,text,TRANSFORM,READY,Prefix https://twitter.com/
+phone_number,varchar(50),work_phone_e164,text,DIRECT,READY,Phone number
+email_verified,boolean,email_verified,boolean,DIRECT,READY,Verification status
+confidence_score,integer,email_verification_source,text,TRANSFORM,READY,Store as hunter:{score}
+is_decision_maker,boolean,is_decision_maker,boolean,DIRECT,NEED_COLUMN,Add to people_master
+id,integer,source_record_id,text,CAST,READY,Hunter record ID as text
+-,-,source_system,text,CONSTANT,REQUIRED,Value: hunter
+-,-,unique_id,text,GENERATE,REQUIRED,Barton ID 04.04.02.99.XXXXX.XXX
+-,-,company_slot_unique_id,text,LOOKUP,REQUIRED,FK to company_slot
+-,-,promoted_from_intake_at,timestamptz,NOW(),REQUIRED,Promotion timestamp

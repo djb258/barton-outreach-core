@@ -1,0 +1,203 @@
+schema_name,table_name,column_name,data_type,is_nullable,column_default,description
+outreach,outreach,outreach_id,uuid,NO,gen_random_uuid(),"OUT.SPINE.PK | Primary identity for Outreach. All sub-hubs FK to this.
+Minted when company passes CL identity gate (identity_status = PASS)."
+outreach,outreach,sovereign_id,uuid,NO,,"OUT.SPINE.FK | Receipt back to cl.company_identity.company_unique_id.
+Sub-hubs do NOT see this - they only use outreach_id.
+ON DELETE RESTRICT - cannot delete CL identity if Outreach exists."
+outreach,outreach,created_at,timestamp with time zone,NO,now(),
+outreach,outreach,updated_at,timestamp with time zone,NO,now(),
+outreach,outreach,domain,character varying,YES,,"OUT.SPINE.DOMAIN | Company domain, denormalized from CL for query performance.
+        Company Target reads this - it NEVER touches CL tables directly."
+outreach,outreach,ein,character varying,YES,,
+outreach,outreach,has_appointment,boolean,YES,false,"Flag indicating we have a historical appointment/meeting with this company. TRUE = warm/lukewarm outreach, FALSE = cold outreach"
+outreach,company_target,target_id,uuid,NO,gen_random_uuid(),UUID primary key for outreach company target record
+outreach,company_target,company_unique_id,text,YES,,FK to cl.company_identity - parent hub identity
+outreach,company_target,outreach_status,text,NO,'queued'::text,"Current outreach status: not_started, active, paused, completed, do_not_contact"
+outreach,company_target,bit_score_snapshot,integer,YES,,Cached BIT score at time of targeting (0-100)
+outreach,company_target,first_targeted_at,timestamp with time zone,YES,,Timestamp when company was first added to outreach
+outreach,company_target,last_targeted_at,timestamp with time zone,YES,,Timestamp of most recent outreach activity
+outreach,company_target,sequence_count,integer,NO,0,Number of sequences this company has been through
+outreach,company_target,active_sequence_id,text,YES,,Currently active sequence identifier
+outreach,company_target,source,text,YES,,"Origin of this target record (e.g., manual, import, bit_trigger)"
+outreach,company_target,created_at,timestamp with time zone,NO,now(),Record creation timestamp
+outreach,company_target,updated_at,timestamp with time zone,NO,now(),Last modification timestamp
+outreach,company_target,outreach_id,uuid,YES,,"OUT.TARGET.FK | Foreign key to outreach.outreach.outreach_id.
+This is the ONLY FK sub-hubs use. They do NOT directly access sovereign_id."
+outreach,company_target,email_method,character varying,YES,,
+outreach,company_target,method_type,character varying,YES,,
+outreach,company_target,confidence_score,numeric,YES,,
+outreach,company_target,execution_status,character varying,YES,'pending'::character varying,
+outreach,company_target,imo_completed_at,timestamp with time zone,YES,,
+outreach,company_target,is_catchall,boolean,YES,false,
+outreach,dol,dol_id,uuid,NO,gen_random_uuid(),
+outreach,dol,outreach_id,uuid,NO,,
+outreach,dol,ein,text,YES,,
+outreach,dol,filing_present,boolean,YES,,
+outreach,dol,funding_type,text,YES,,
+outreach,dol,broker_or_advisor,text,YES,,
+outreach,dol,carrier,text,YES,,
+outreach,dol,created_at,timestamp with time zone,YES,now(),
+outreach,dol,updated_at,timestamp with time zone,YES,now(),
+outreach,blog,blog_id,uuid,NO,gen_random_uuid(),
+outreach,blog,outreach_id,uuid,NO,,
+outreach,blog,context_summary,text,YES,,
+outreach,blog,source_type,text,YES,,
+outreach,blog,source_url,text,YES,,
+outreach,blog,context_timestamp,timestamp with time zone,YES,,
+outreach,blog,created_at,timestamp with time zone,YES,now(),
+outreach,blog,source_type_enum,USER-DEFINED,YES,,"BLOG.ENUM.FK | Typed source classification. Replaces source_type TEXT.
+Valid: website, blog, press, news, filing, careers.
+FORBIDDEN: social (blocked by doctrine guard)."
+outreach,blog,about_url,text,YES,,
+outreach,blog,news_url,text,YES,,
+outreach,blog,extraction_method,text,YES,,
+outreach,blog,last_extracted_at,timestamp with time zone,YES,,
+outreach,people,person_id,uuid,NO,gen_random_uuid(),UUID primary key for person contact record
+outreach,people,target_id,uuid,NO,,FK to outreach.company_target
+outreach,people,company_unique_id,text,NO,,Denormalized FK to cl.company_identity for fast queries
+outreach,people,slot_type,text,YES,,"Executive slot assignment: CHRO, HR, Benefits, CFO, CEO"
+outreach,people,email,text,NO,,Primary email address (validated)
+outreach,people,email_verified,boolean,NO,false,Boolean flag indicating email verification status
+outreach,people,email_verified_at,timestamp with time zone,YES,,Timestamp of last successful email verification
+outreach,people,contact_status,text,NO,'active'::text,"Current contact status: active, bounced, unsubscribed, do_not_contact"
+outreach,people,lifecycle_state,USER-DEFINED,NO,'SUSPECT'::outreach.lifecycle_state,"Lifecycle stage: suspect, prospect, mql, sql, customer, churned"
+outreach,people,funnel_membership,USER-DEFINED,NO,'COLD_UNIVERSE'::outreach.funnel_membership,"Funnel position: top, middle, bottom, closed_won, closed_lost"
+outreach,people,email_open_count,integer,NO,0,Cumulative count of email opens
+outreach,people,email_click_count,integer,NO,0,Cumulative count of email link clicks
+outreach,people,email_reply_count,integer,NO,0,Cumulative count of email replies
+outreach,people,current_bit_score,integer,NO,0,Current BIT score for this person (0-100)
+outreach,people,last_event_ts,timestamp with time zone,YES,,Timestamp of most recent engagement event
+outreach,people,last_state_change_ts,timestamp with time zone,YES,,Timestamp of last lifecycle state transition
+outreach,people,source,text,YES,,"Origin of this person record (e.g., linkedin, import, enrichment)"
+outreach,people,created_at,timestamp with time zone,NO,now(),Record creation timestamp
+outreach,people,updated_at,timestamp with time zone,NO,now(),Last modification timestamp
+outreach,people,outreach_id,uuid,YES,,"OUT.PEOPLE.FK | Foreign key to outreach.outreach.outreach_id.
+Denormalized for query performance. Must match target.outreach_id."
+people,company_slot,slot_id,uuid,NO,gen_random_uuid(),
+people,company_slot,outreach_id,uuid,NO,,
+people,company_slot,company_unique_id,text,NO,,
+people,company_slot,slot_type,text,NO,,
+people,company_slot,person_unique_id,text,YES,,
+people,company_slot,is_filled,boolean,YES,false,
+people,company_slot,filled_at,timestamp with time zone,YES,,
+people,company_slot,confidence_score,numeric,YES,,
+people,company_slot,source_system,text,YES,,
+people,company_slot,created_at,timestamp with time zone,YES,now(),
+people,company_slot,updated_at,timestamp with time zone,YES,now(),
+people,people_master,unique_id,text,NO,,Barton ID format: 04.04.02.XX.XXXXX.XXX (immutable during promotion)
+people,people_master,company_unique_id,text,NO,,Reference to parent company Barton ID
+people,people_master,company_slot_unique_id,text,NO,,Reference to company slot Barton ID
+people,people_master,first_name,text,NO,,
+people,people_master,last_name,text,NO,,
+people,people_master,full_name,text,YES,,
+people,people_master,title,text,YES,,
+people,people_master,seniority,text,YES,,
+people,people_master,department,text,YES,,
+people,people_master,email,text,YES,,
+people,people_master,work_phone_e164,text,YES,,
+people,people_master,personal_phone_e164,text,YES,,
+people,people_master,linkedin_url,text,YES,,
+people,people_master,twitter_url,text,YES,,
+people,people_master,facebook_url,text,YES,,
+people,people_master,bio,text,YES,,
+people,people_master,skills,ARRAY,YES,,
+people,people_master,education,text,YES,,
+people,people_master,certifications,ARRAY,YES,,
+people,people_master,source_system,text,NO,,
+people,people_master,source_record_id,text,YES,,
+people,people_master,promoted_from_intake_at,timestamp with time zone,NO,now(),Timestamp when record was promoted from people_raw_intake
+people,people_master,promotion_audit_log_id,integer,YES,,Reference to the audit log entry for this promotion
+people,people_master,created_at,timestamp with time zone,YES,now(),
+people,people_master,updated_at,timestamp with time zone,YES,now(),
+people,people_master,email_verified,boolean,YES,false,"Tracks whether the email address has been verified (e.g., via bounce check, MX record, API validation). Default: false"
+people,people_master,message_key_scheduled,text,YES,,References message_key_reference for next scheduled message. Format: MSG.ROLE.TYPE.VERSION
+people,people_master,email_verification_source,text,YES,,"Source of email verification: apollo, millionverifier, zerobounce, manual, etc."
+people,people_master,email_verified_at,timestamp with time zone,YES,,Timestamp when email was last verified. Used for re-verification scheduling (30-day refresh).
+people,people_master,validation_status,character varying,YES,,
+people,people_master,last_verified_at,timestamp without time zone,NO,now(),
+people,people_master,last_enrichment_attempt,timestamp without time zone,YES,,
+enrichment,hunter_company,id,integer,NO,nextval('enrichment.hunter_company_id_seq'::regclass),"HC_ID: Primary key, auto-generated sequential ID. Format: auto-increment. Example: 12345"
+enrichment,hunter_company,domain,character varying,NO,,"HC_DOMAIN: Company website domain - primary identifier. Format: lowercase, no protocol. Example: acme.com"
+enrichment,hunter_company,organization,character varying,YES,,HC_ORG_NAME: Legal or common company name from Hunter. Format: title case. Example: Acme Corporation
+enrichment,hunter_company,headcount,character varying,YES,,HC_HEADCOUNT_RAW: Employee count range as string. Format: range format: X-Y. Example: 51-200
+enrichment,hunter_company,country,character varying,YES,,HC_COUNTRY: Two-letter country code. Format: ISO 3166-1 alpha-2. Example: US
+enrichment,hunter_company,state,character varying,YES,,HC_STATE: State/province/region. Format: US state abbreviation or full name. Example: PA
+enrichment,hunter_company,city,character varying,YES,,HC_CITY: City name. Format: title case. Example: Pittsburgh
+enrichment,hunter_company,postal_code,character varying,YES,,HC_POSTAL: ZIP or postal code. Format: varies by country. Example: 15213
+enrichment,hunter_company,street,character varying,YES,,HC_STREET: Street address line. Format: street address format. Example: 123 Main St
+enrichment,hunter_company,email_pattern,character varying,YES,,HC_EMAIL_PATTERN: Email pattern for generating addresses. Format: {first}.{last} format. Example: {first}.{last}
+enrichment,hunter_company,company_type,character varying,YES,,HC_COMPANY_TYPE: Company ownership type. Format: Hunter classification. Example: privately held
+enrichment,hunter_company,industry,character varying,YES,,HC_INDUSTRY: Industry classification from Hunter. Format: Hunter industry taxonomy. Example: Construction
+enrichment,hunter_company,enriched_at,timestamp without time zone,YES,now(),HC_ENRICHED_TS: When Hunter data was fetched. Format: ISO 8601. Example: 2026-02-03T12:00:00Z
+enrichment,hunter_company,created_at,timestamp without time zone,YES,now(),HC_CREATED_TS: Record creation timestamp. Format: ISO 8601. Example: 2026-02-03T12:00:00Z
+enrichment,hunter_company,updated_at,timestamp without time zone,YES,now(),HC_UPDATED_TS: Last update timestamp. Format: ISO 8601. Example: 2026-02-03T12:00:00Z
+enrichment,hunter_company,company_embedding,USER-DEFINED,YES,,"HC_EMBEDDING: Semantic embedding for similarity search. Format: OpenAI ada-002 format. Example: [0.1, 0.2, ...]"
+enrichment,hunter_company,industry_normalized,character varying,YES,,HC_INDUSTRY_NORM: Cleaned/mapped industry category. Format: standardized taxonomy. Example: Construction
+enrichment,hunter_company,headcount_min,integer,YES,,HC_HEADCOUNT_MIN: Minimum employee count from range. Format: positive integer. Example: 51
+enrichment,hunter_company,headcount_max,integer,YES,,HC_HEADCOUNT_MAX: Maximum employee count from range. Format: positive integer. Example: 200
+enrichment,hunter_company,location_full,text,YES,,"HC_LOCATION_FULL: Full address string for display. Format: concatenated address. Example: 123 Main St, Pittsburgh, PA 15213, US"
+enrichment,hunter_company,data_quality_score,numeric,YES,,HC_QUALITY: Composite data completeness score. Format: 0.00 to 1.00. Example: 0.85
+enrichment,hunter_company,tags,ARRAY,YES,,"HC_TAGS: Custom classification tags. Format: array of strings. Example: [""target"", ""priority""]"
+enrichment,hunter_company,source,character varying,YES,'hunter'::character varying,HC_SOURCE: Data source system. Format: source identifier. Example: hunter
+enrichment,hunter_company,company_unique_id,character varying,YES,,HC_CT_ID: Link to company_target.company_unique_id. Format: UUID format. Example: a1b2c3d4-...
+enrichment,hunter_company,outreach_id,uuid,YES,,HC_OUTREACH_ID: Link to outreach.outreach.outreach_id. Format: UUID format. Example: a1b2c3d4-...
+enrichment,hunter_company,source_file,character varying,YES,,
+enrichment,hunter_contact,id,integer,NO,nextval('enrichment.hunter_contact_id_seq'::regclass),"HCT_ID: Primary key, auto-generated sequential ID. Format: auto-increment. Example: 12345"
+enrichment,hunter_contact,domain,character varying,NO,,"HCT_DOMAIN: Company domain this contact belongs to. Format: lowercase, no protocol. Example: acme.com"
+enrichment,hunter_contact,email,character varying,YES,,HCT_EMAIL: Verified email address from Hunter. Format: valid email format. Example: john.smith@acme.com
+enrichment,hunter_contact,first_name,character varying,YES,,HCT_FIRST_NAME: Contact first name. Format: title case. Example: John
+enrichment,hunter_contact,last_name,character varying,YES,,HCT_LAST_NAME: Contact last name. Format: title case. Example: Smith
+enrichment,hunter_contact,department,character varying,YES,,HCT_DEPT_RAW: Department from Hunter. Format: Hunter department taxonomy. Example: Executive
+enrichment,hunter_contact,job_title,character varying,YES,,HCT_TITLE_RAW: Job title from Hunter. Format: free text. Example: Chief Executive Officer
+enrichment,hunter_contact,position_raw,character varying,YES,,HCT_POSITION_RAW: Full position description from source. Format: free text. Example: CEO and Founder
+enrichment,hunter_contact,linkedin_url,character varying,YES,,HCT_LINKEDIN: LinkedIn profile URL. Format: https://linkedin.com/in/.... Example: https://linkedin.com/in/johnsmith
+enrichment,hunter_contact,twitter_handle,character varying,YES,,HCT_TWITTER: Twitter/X handle. Format: @handle format. Example: @johnsmith
+enrichment,hunter_contact,phone_number,character varying,YES,,HCT_PHONE: Phone number if available. Format: E.164 or formatted. Example: +1-412-555-1234
+enrichment,hunter_contact,confidence_score,integer,YES,,HCT_CONFIDENCE: Hunter email confidence score. Format: 0-100. Example: 95
+enrichment,hunter_contact,email_type,character varying,YES,,HCT_EMAIL_TYPE: Whether email is personal or generic. Format: personal|generic. Example: personal
+enrichment,hunter_contact,num_sources,integer,YES,,HCT_NUM_SOURCES: Number of sources confirming this email. Format: positive integer. Example: 5
+enrichment,hunter_contact,created_at,timestamp without time zone,YES,now(),HCT_CREATED_TS: Record creation timestamp. Format: ISO 8601. Example: 2026-02-03T12:00:00Z
+enrichment,hunter_contact,contact_embedding,USER-DEFINED,YES,,"HCT_EMBEDDING: Semantic embedding for similarity search. Format: OpenAI ada-002 format. Example: [0.1, 0.2, ...]"
+enrichment,hunter_contact,title_normalized,character varying,YES,,HCT_TITLE_NORM: Normalized job title. Format: standardized title. Example: CEO
+enrichment,hunter_contact,seniority_level,character varying,YES,,HCT_SENIORITY: Seniority classification. Format: enum: C-Level/Owner|VP|Director|Manager|Senior|Junior|Individual Contributor. Example: C-Level/Owner
+enrichment,hunter_contact,department_normalized,character varying,YES,,HCT_DEPT_NORM: Normalized department. Format: standardized taxonomy. Example: Executive
+enrichment,hunter_contact,is_decision_maker,boolean,YES,false,HCT_IS_DM: Whether contact is a decision maker. Format: true/false. Example: true
+enrichment,hunter_contact,full_name,character varying,YES,,HCT_FULL_NAME: Combined full name. Format: First Last format. Example: John Smith
+enrichment,hunter_contact,email_verified,boolean,YES,true,HCT_EMAIL_VERIFIED: Hunter verification status. Format: true/false. Example: true
+enrichment,hunter_contact,data_quality_score,numeric,YES,,HCT_QUALITY: Composite data completeness score. Format: 0.00 to 1.00. Example: 0.92
+enrichment,hunter_contact,outreach_priority,integer,YES,,HCT_PRIORITY: Computed outreach priority. Format: 1-5 (5=highest). Example: 5
+enrichment,hunter_contact,tags,ARRAY,YES,,"HCT_TAGS: Custom classification tags. Format: array of strings. Example: [""hot-lead"", ""construction""]"
+enrichment,hunter_contact,source,character varying,YES,'hunter'::character varying,HCT_SOURCE: Data source system. Format: source identifier. Example: hunter
+enrichment,hunter_contact,company_unique_id,character varying,YES,,HCT_CT_ID: Link to company_target.company_unique_id. Format: UUID format. Example: a1b2c3d4-...
+enrichment,hunter_contact,outreach_id,uuid,YES,,HCT_OUTREACH_ID: Link to outreach.outreach.outreach_id. Format: UUID format. Example: a1b2c3d4-...
+enrichment,hunter_contact,source_1,text,YES,,
+enrichment,hunter_contact,source_2,text,YES,,
+enrichment,hunter_contact,source_3,text,YES,,
+enrichment,hunter_contact,source_4,text,YES,,
+enrichment,hunter_contact,source_5,text,YES,,
+enrichment,hunter_contact,source_6,text,YES,,
+enrichment,hunter_contact,source_7,text,YES,,
+enrichment,hunter_contact,source_8,text,YES,,
+enrichment,hunter_contact,source_9,text,YES,,
+enrichment,hunter_contact,source_10,text,YES,,
+enrichment,hunter_contact,source_11,text,YES,,
+enrichment,hunter_contact,source_12,text,YES,,
+enrichment,hunter_contact,source_13,text,YES,,
+enrichment,hunter_contact,source_14,text,YES,,
+enrichment,hunter_contact,source_15,text,YES,,
+enrichment,hunter_contact,source_16,text,YES,,
+enrichment,hunter_contact,source_17,text,YES,,
+enrichment,hunter_contact,source_18,text,YES,,
+enrichment,hunter_contact,source_19,text,YES,,
+enrichment,hunter_contact,source_20,text,YES,,
+enrichment,hunter_contact,source_21,text,YES,,
+enrichment,hunter_contact,source_22,text,YES,,
+enrichment,hunter_contact,source_23,text,YES,,
+enrichment,hunter_contact,source_24,text,YES,,
+enrichment,hunter_contact,source_25,text,YES,,
+enrichment,hunter_contact,source_26,text,YES,,
+enrichment,hunter_contact,source_27,text,YES,,
+enrichment,hunter_contact,source_28,text,YES,,
+enrichment,hunter_contact,source_29,text,YES,,
+enrichment,hunter_contact,source_30,text,YES,,
+enrichment,hunter_contact,source_file,character varying,YES,,

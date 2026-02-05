@@ -1,0 +1,10 @@
+schema_name,table_name,column_name,data_type,is_nullable,column_default,description
+outreach,dol,dol_id,uuid,NO,gen_random_uuid(),
+outreach,dol,outreach_id,uuid,NO,,
+outreach,dol,ein,text,YES,,
+outreach,dol,filing_present,boolean,YES,,
+outreach,dol,funding_type,text,YES,,
+outreach,dol,broker_or_advisor,text,YES,,
+outreach,dol,carrier,text,YES,,
+outreach,dol,created_at,timestamp with time zone,YES,now(),
+outreach,dol,updated_at,timestamp with time zone,YES,now(),

@@ -1,0 +1,26 @@
+pattern,slot_type,priority,case_sensitive,examples
+%ceo%,CEO,1,NO,"CEO, Chief Executive Officer"
+%chief executive%,CEO,1,NO,Chief Executive Officer
+%president%,CEO,1,NO,"President, President & CEO"
+%owner%,CEO,1,NO,"Owner, Business Owner, Co-Owner"
+%founder%,CEO,1,NO,"Founder, Co-Founder, Founding Partner"
+%managing director%,CEO,1,NO,Managing Director
+%general manager%,CEO,1,NO,General Manager
+%principal%,CEO,1,NO,"Principal, Managing Principal"
+%cfo%,CFO,2,NO,"CFO, Chief Financial Officer"
+%chief financial%,CFO,2,NO,Chief Financial Officer
+%finance director%,CFO,2,NO,Director of Finance
+%controller%,CFO,2,NO,"Controller, Financial Controller"
+%treasurer%,CFO,2,NO,Treasurer
+%vp finance%,CFO,2,NO,VP of Finance
+%vice president finance%,CFO,2,NO,Vice President of Finance
+%chro%,HR,3,NO,Chief Human Resources Officer
+%chief people%,HR,3,NO,Chief People Officer
+%chief human%,HR,3,NO,Chief Human Resources Officer
+%hr director%,HR,3,NO,HR Director
+%hr manager%,HR,3,NO,HR Manager
+%human resources%,HR,3,NO,"Human Resources Manager, VP Human Resources"
+%people operations%,HR,3,NO,People Operations Manager
+%talent%,HR,3,NO,"Talent Acquisition, VP Talent"
+%recruiting%,HR,3,NO,"Recruiting Manager, Director of Recruiting"
+%benefits%,HR,3,NO,"Benefits Manager, Benefits Administrator"

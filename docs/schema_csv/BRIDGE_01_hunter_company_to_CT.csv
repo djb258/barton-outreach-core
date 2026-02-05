@@ -1,0 +1,21 @@
+hunter_column,hunter_type,ct_column,ct_type,transform,status,notes
+domain,varchar(255),-,-,JOIN_KEY,DONE,Used once to get outreach_id then ignored
+outreach_id,uuid,outreach_id,uuid,DIRECT,REQUIRED,FK to spine - the link
+email_pattern,varchar(100),email_method,varchar,DIRECT,READY,Critical for email generation
+data_quality_score,numeric,confidence_score,numeric,DIRECT,READY,Pattern confidence 0-1
+company_type,varchar(100),method_type,varchar,DIRECT,READY,privately held / public / etc
+industry,varchar(255),industry,varchar,DIRECT,NEED_COLUMN,Add column to CT
+industry_normalized,varchar(255),industry,varchar,PREFER_THIS,NEED_COLUMN,Cleaner version
+headcount,varchar(50),headcount,varchar,DIRECT,NEED_COLUMN,Raw range string 51-200
+headcount_min,integer,headcount_min,integer,DIRECT,NEED_COLUMN,Parsed min
+headcount_max,integer,headcount_max,integer,DIRECT,NEED_COLUMN,Parsed max
+country,varchar(10),country,varchar,DIRECT,NEED_COLUMN,ISO country code
+state,varchar(50),state,varchar,DIRECT,NEED_COLUMN,State/province
+city,varchar(100),city,varchar,DIRECT,NEED_COLUMN,City name
+postal_code,varchar(20),postal_code,varchar,DIRECT,NEED_COLUMN,ZIP code
+street,varchar(255),street,varchar,DIRECT,OPTIONAL,Street address
+organization,varchar(500),-,-,SKIP,N/A,Already in CL
+-,-,target_id,uuid,GENERATE,REQUIRED,PK - gen_random_uuid()
+-,-,snapshot_date,date,GENERATE,RECOMMENDED,Track when this data was captured
+-,-,created_at,timestamptz,NOW(),REQUIRED,Record creation
+-,-,updated_at,timestamptz,NOW(),REQUIRED,Last update

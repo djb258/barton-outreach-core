@@ -1,0 +1,60 @@
+schema_name,table_name,column_name,data_type,is_nullable,column_default,description
+enrichment,hunter_contact,id,integer,NO,nextval('enrichment.hunter_contact_id_seq'::regclass),"HCT_ID: Primary key, auto-generated sequential ID. Format: auto-increment. Example: 12345"
+enrichment,hunter_contact,domain,character varying,NO,,"HCT_DOMAIN: Company domain this contact belongs to. Format: lowercase, no protocol. Example: acme.com"
+enrichment,hunter_contact,email,character varying,YES,,HCT_EMAIL: Verified email address from Hunter. Format: valid email format. Example: john.smith@acme.com
+enrichment,hunter_contact,first_name,character varying,YES,,HCT_FIRST_NAME: Contact first name. Format: title case. Example: John
+enrichment,hunter_contact,last_name,character varying,YES,,HCT_LAST_NAME: Contact last name. Format: title case. Example: Smith
+enrichment,hunter_contact,department,character varying,YES,,HCT_DEPT_RAW: Department from Hunter. Format: Hunter department taxonomy. Example: Executive
+enrichment,hunter_contact,job_title,character varying,YES,,HCT_TITLE_RAW: Job title from Hunter. Format: free text. Example: Chief Executive Officer
+enrichment,hunter_contact,position_raw,character varying,YES,,HCT_POSITION_RAW: Full position description from source. Format: free text. Example: CEO and Founder
+enrichment,hunter_contact,linkedin_url,character varying,YES,,HCT_LINKEDIN: LinkedIn profile URL. Format: https://linkedin.com/in/.... Example: https://linkedin.com/in/johnsmith
+enrichment,hunter_contact,twitter_handle,character varying,YES,,HCT_TWITTER: Twitter/X handle. Format: @handle format. Example: @johnsmith
+enrichment,hunter_contact,phone_number,character varying,YES,,HCT_PHONE: Phone number if available. Format: E.164 or formatted. Example: +1-412-555-1234
+enrichment,hunter_contact,confidence_score,integer,YES,,HCT_CONFIDENCE: Hunter email confidence score. Format: 0-100. Example: 95
+enrichment,hunter_contact,email_type,character varying,YES,,HCT_EMAIL_TYPE: Whether email is personal or generic. Format: personal|generic. Example: personal
+enrichment,hunter_contact,num_sources,integer,YES,,HCT_NUM_SOURCES: Number of sources confirming this email. Format: positive integer. Example: 5
+enrichment,hunter_contact,created_at,timestamp without time zone,YES,now(),HCT_CREATED_TS: Record creation timestamp. Format: ISO 8601. Example: 2026-02-03T12:00:00Z
+enrichment,hunter_contact,contact_embedding,USER-DEFINED,YES,,"HCT_EMBEDDING: Semantic embedding for similarity search. Format: OpenAI ada-002 format. Example: [0.1, 0.2, ...]"
+enrichment,hunter_contact,title_normalized,character varying,YES,,HCT_TITLE_NORM: Normalized job title. Format: standardized title. Example: CEO
+enrichment,hunter_contact,seniority_level,character varying,YES,,HCT_SENIORITY: Seniority classification. Format: enum: C-Level/Owner|VP|Director|Manager|Senior|Junior|Individual Contributor. Example: C-Level/Owner
+enrichment,hunter_contact,department_normalized,character varying,YES,,HCT_DEPT_NORM: Normalized department. Format: standardized taxonomy. Example: Executive
+enrichment,hunter_contact,is_decision_maker,boolean,YES,false,HCT_IS_DM: Whether contact is a decision maker. Format: true/false. Example: true
+enrichment,hunter_contact,full_name,character varying,YES,,HCT_FULL_NAME: Combined full name. Format: First Last format. Example: John Smith
+enrichment,hunter_contact,email_verified,boolean,YES,true,HCT_EMAIL_VERIFIED: Hunter verification status. Format: true/false. Example: true
+enrichment,hunter_contact,data_quality_score,numeric,YES,,HCT_QUALITY: Composite data completeness score. Format: 0.00 to 1.00. Example: 0.92
+enrichment,hunter_contact,outreach_priority,integer,YES,,HCT_PRIORITY: Computed outreach priority. Format: 1-5 (5=highest). Example: 5
+enrichment,hunter_contact,tags,ARRAY,YES,,"HCT_TAGS: Custom classification tags. Format: array of strings. Example: [""hot-lead"", ""construction""]"
+enrichment,hunter_contact,source,character varying,YES,'hunter'::character varying,HCT_SOURCE: Data source system. Format: source identifier. Example: hunter
+enrichment,hunter_contact,company_unique_id,character varying,YES,,HCT_CT_ID: Link to company_target.company_unique_id. Format: UUID format. Example: a1b2c3d4-...
+enrichment,hunter_contact,outreach_id,uuid,YES,,HCT_OUTREACH_ID: Link to outreach.outreach.outreach_id. Format: UUID format. Example: a1b2c3d4-...
+enrichment,hunter_contact,source_1,text,YES,,
+enrichment,hunter_contact,source_2,text,YES,,
+enrichment,hunter_contact,source_3,text,YES,,
+enrichment,hunter_contact,source_4,text,YES,,
+enrichment,hunter_contact,source_5,text,YES,,
+enrichment,hunter_contact,source_6,text,YES,,
+enrichment,hunter_contact,source_7,text,YES,,
+enrichment,hunter_contact,source_8,text,YES,,
+enrichment,hunter_contact,source_9,text,YES,,
+enrichment,hunter_contact,source_10,text,YES,,
+enrichment,hunter_contact,source_11,text,YES,,
+enrichment,hunter_contact,source_12,text,YES,,
+enrichment,hunter_contact,source_13,text,YES,,
+enrichment,hunter_contact,source_14,text,YES,,
+enrichment,hunter_contact,source_15,text,YES,,
+enrichment,hunter_contact,source_16,text,YES,,
+enrichment,hunter_contact,source_17,text,YES,,
+enrichment,hunter_contact,source_18,text,YES,,
+enrichment,hunter_contact,source_19,text,YES,,
+enrichment,hunter_contact,source_20,text,YES,,
+enrichment,hunter_contact,source_21,text,YES,,
+enrichment,hunter_contact,source_22,text,YES,,
+enrichment,hunter_contact,source_23,text,YES,,
+enrichment,hunter_contact,source_24,text,YES,,
+enrichment,hunter_contact,source_25,text,YES,,
+enrichment,hunter_contact,source_26,text,YES,,
+enrichment,hunter_contact,source_27,text,YES,,
+enrichment,hunter_contact,source_28,text,YES,,
+enrichment,hunter_contact,source_29,text,YES,,
+enrichment,hunter_contact,source_30,text,YES,,
+enrichment,hunter_contact,source_file,character varying,YES,,

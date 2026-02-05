@@ -1,0 +1,33 @@
+schema_name,table_name,column_name,data_type,is_nullable,column_default,description
+people,people_master,unique_id,text,NO,,Barton ID format: 04.04.02.XX.XXXXX.XXX (immutable during promotion)
+people,people_master,company_unique_id,text,NO,,Reference to parent company Barton ID
+people,people_master,company_slot_unique_id,text,NO,,Reference to company slot Barton ID
+people,people_master,first_name,text,NO,,
+people,people_master,last_name,text,NO,,
+people,people_master,full_name,text,YES,,
+people,people_master,title,text,YES,,
+people,people_master,seniority,text,YES,,
+people,people_master,department,text,YES,,
+people,people_master,email,text,YES,,
+people,people_master,work_phone_e164,text,YES,,
+people,people_master,personal_phone_e164,text,YES,,
+people,people_master,linkedin_url,text,YES,,
+people,people_master,twitter_url,text,YES,,
+people,people_master,facebook_url,text,YES,,
+people,people_master,bio,text,YES,,
+people,people_master,skills,ARRAY,YES,,
+people,people_master,education,text,YES,,
+people,people_master,certifications,ARRAY,YES,,
+people,people_master,source_system,text,NO,,
+people,people_master,source_record_id,text,YES,,
+people,people_master,promoted_from_intake_at,timestamp with time zone,NO,now(),Timestamp when record was promoted from people_raw_intake
+people,people_master,promotion_audit_log_id,integer,YES,,Reference to the audit log entry for this promotion
+people,people_master,created_at,timestamp with time zone,YES,now(),
+people,people_master,updated_at,timestamp with time zone,YES,now(),
+people,people_master,email_verified,boolean,YES,false,"Tracks whether the email address has been verified (e.g., via bounce check, MX record, API validation). Default: false"
+people,people_master,message_key_scheduled,text,YES,,References message_key_reference for next scheduled message. Format: MSG.ROLE.TYPE.VERSION
+people,people_master,email_verification_source,text,YES,,"Source of email verification: apollo, millionverifier, zerobounce, manual, etc."
+people,people_master,email_verified_at,timestamp with time zone,YES,,Timestamp when email was last verified. Used for re-verification scheduling (30-day refresh).
+people,people_master,validation_status,character varying,YES,,
+people,people_master,last_verified_at,timestamp without time zone,NO,now(),
+people,people_master,last_enrichment_attempt,timestamp without time zone,YES,,

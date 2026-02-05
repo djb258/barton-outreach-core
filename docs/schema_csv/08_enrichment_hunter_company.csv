@@ -1,0 +1,27 @@
+schema_name,table_name,column_name,data_type,is_nullable,column_default,description
+enrichment,hunter_company,id,integer,NO,nextval('enrichment.hunter_company_id_seq'::regclass),"HC_ID: Primary key, auto-generated sequential ID. Format: auto-increment. Example: 12345"
+enrichment,hunter_company,domain,character varying,NO,,"HC_DOMAIN: Company website domain - primary identifier. Format: lowercase, no protocol. Example: acme.com"
+enrichment,hunter_company,organization,character varying,YES,,HC_ORG_NAME: Legal or common company name from Hunter. Format: title case. Example: Acme Corporation
+enrichment,hunter_company,headcount,character varying,YES,,HC_HEADCOUNT_RAW: Employee count range as string. Format: range format: X-Y. Example: 51-200
+enrichment,hunter_company,country,character varying,YES,,HC_COUNTRY: Two-letter country code. Format: ISO 3166-1 alpha-2. Example: US
+enrichment,hunter_company,state,character varying,YES,,HC_STATE: State/province/region. Format: US state abbreviation or full name. Example: PA
+enrichment,hunter_company,city,character varying,YES,,HC_CITY: City name. Format: title case. Example: Pittsburgh
+enrichment,hunter_company,postal_code,character varying,YES,,HC_POSTAL: ZIP or postal code. Format: varies by country. Example: 15213
+enrichment,hunter_company,street,character varying,YES,,HC_STREET: Street address line. Format: street address format. Example: 123 Main St
+enrichment,hunter_company,email_pattern,character varying,YES,,HC_EMAIL_PATTERN: Email pattern for generating addresses. Format: {first}.{last} format. Example: {first}.{last}
+enrichment,hunter_company,company_type,character varying,YES,,HC_COMPANY_TYPE: Company ownership type. Format: Hunter classification. Example: privately held
+enrichment,hunter_company,industry,character varying,YES,,HC_INDUSTRY: Industry classification from Hunter. Format: Hunter industry taxonomy. Example: Construction
+enrichment,hunter_company,enriched_at,timestamp without time zone,YES,now(),HC_ENRICHED_TS: When Hunter data was fetched. Format: ISO 8601. Example: 2026-02-03T12:00:00Z
+enrichment,hunter_company,created_at,timestamp without time zone,YES,now(),HC_CREATED_TS: Record creation timestamp. Format: ISO 8601. Example: 2026-02-03T12:00:00Z
+enrichment,hunter_company,updated_at,timestamp without time zone,YES,now(),HC_UPDATED_TS: Last update timestamp. Format: ISO 8601. Example: 2026-02-03T12:00:00Z
+enrichment,hunter_company,company_embedding,USER-DEFINED,YES,,"HC_EMBEDDING: Semantic embedding for similarity search. Format: OpenAI ada-002 format. Example: [0.1, 0.2, ...]"
+enrichment,hunter_company,industry_normalized,character varying,YES,,HC_INDUSTRY_NORM: Cleaned/mapped industry category. Format: standardized taxonomy. Example: Construction
+enrichment,hunter_company,headcount_min,integer,YES,,HC_HEADCOUNT_MIN: Minimum employee count from range. Format: positive integer. Example: 51
+enrichment,hunter_company,headcount_max,integer,YES,,HC_HEADCOUNT_MAX: Maximum employee count from range. Format: positive integer. Example: 200
+enrichment,hunter_company,location_full,text,YES,,"HC_LOCATION_FULL: Full address string for display. Format: concatenated address. Example: 123 Main St, Pittsburgh, PA 15213, US"
+enrichment,hunter_company,data_quality_score,numeric,YES,,HC_QUALITY: Composite data completeness score. Format: 0.00 to 1.00. Example: 0.85
+enrichment,hunter_company,tags,ARRAY,YES,,"HC_TAGS: Custom classification tags. Format: array of strings. Example: [""target"", ""priority""]"
+enrichment,hunter_company,source,character varying,YES,'hunter'::character varying,HC_SOURCE: Data source system. Format: source identifier. Example: hunter
+enrichment,hunter_company,company_unique_id,character varying,YES,,HC_CT_ID: Link to company_target.company_unique_id. Format: UUID format. Example: a1b2c3d4-...
+enrichment,hunter_company,outreach_id,uuid,YES,,HC_OUTREACH_ID: Link to outreach.outreach.outreach_id. Format: UUID format. Example: a1b2c3d4-...
+enrichment,hunter_company,source_file,character varying,YES,,

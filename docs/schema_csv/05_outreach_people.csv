@@ -1,0 +1,22 @@
+schema_name,table_name,column_name,data_type,is_nullable,column_default,description
+outreach,people,person_id,uuid,NO,gen_random_uuid(),UUID primary key for person contact record
+outreach,people,target_id,uuid,NO,,FK to outreach.company_target
+outreach,people,company_unique_id,text,NO,,Denormalized FK to cl.company_identity for fast queries
+outreach,people,slot_type,text,YES,,"Executive slot assignment: CHRO, HR, Benefits, CFO, CEO"
+outreach,people,email,text,NO,,Primary email address (validated)
+outreach,people,email_verified,boolean,NO,false,Boolean flag indicating email verification status
+outreach,people,email_verified_at,timestamp with time zone,YES,,Timestamp of last successful email verification
+outreach,people,contact_status,text,NO,'active'::text,"Current contact status: active, bounced, unsubscribed, do_not_contact"
+outreach,people,lifecycle_state,USER-DEFINED,NO,'SUSPECT'::outreach.lifecycle_state,"Lifecycle stage: suspect, prospect, mql, sql, customer, churned"
+outreach,people,funnel_membership,USER-DEFINED,NO,'COLD_UNIVERSE'::outreach.funnel_membership,"Funnel position: top, middle, bottom, closed_won, closed_lost"
+outreach,people,email_open_count,integer,NO,0,Cumulative count of email opens
+outreach,people,email_click_count,integer,NO,0,Cumulative count of email link clicks
+outreach,people,email_reply_count,integer,NO,0,Cumulative count of email replies
+outreach,people,current_bit_score,integer,NO,0,Current BIT score for this person (0-100)
+outreach,people,last_event_ts,timestamp with time zone,YES,,Timestamp of most recent engagement event
+outreach,people,last_state_change_ts,timestamp with time zone,YES,,Timestamp of last lifecycle state transition
+outreach,people,source,text,YES,,"Origin of this person record (e.g., linkedin, import, enrichment)"
+outreach,people,created_at,timestamp with time zone,NO,now(),Record creation timestamp
+outreach,people,updated_at,timestamp with time zone,NO,now(),Last modification timestamp
+outreach,people,outreach_id,uuid,YES,,"OUT.PEOPLE.FK | Foreign key to outreach.outreach.outreach_id.
+Denormalized for query performance. Must match target.outreach_id."

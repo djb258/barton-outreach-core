@@ -1,0 +1,9 @@
+hunter_column,hunter_type,blog_column,blog_type,transform,status,notes
+outreach_id,uuid,outreach_id,uuid,DIRECT,REQUIRED,FK to spine
+source_1 to source_30,text,about_url,text,FILTER,READY,Match /about /team /leadership /our-team /about-us
+source_1 to source_30,text,news_url,text,FILTER,READY,Match /news /blog /press /media /announcements
+-,-,blog_id,uuid,GENERATE,REQUIRED,PK - gen_random_uuid()
+-,-,extraction_method,text,CONSTANT,REQUIRED,Value: hunter_source
+-,-,last_extracted_at,timestamptz,NOW(),REQUIRED,Extraction timestamp
+-,-,created_at,timestamptz,NOW(),REQUIRED,Record creation
+-,-,updated_at,timestamptz,NOW(),REQUIRED,Last update

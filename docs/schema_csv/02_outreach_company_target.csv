@@ -1,0 +1,20 @@
+schema_name,table_name,column_name,data_type,is_nullable,column_default,description
+outreach,company_target,target_id,uuid,NO,gen_random_uuid(),UUID primary key for outreach company target record
+outreach,company_target,company_unique_id,text,YES,,FK to cl.company_identity - parent hub identity
+outreach,company_target,outreach_status,text,NO,'queued'::text,"Current outreach status: not_started, active, paused, completed, do_not_contact"
+outreach,company_target,bit_score_snapshot,integer,YES,,Cached BIT score at time of targeting (0-100)
+outreach,company_target,first_targeted_at,timestamp with time zone,YES,,Timestamp when company was first added to outreach
+outreach,company_target,last_targeted_at,timestamp with time zone,YES,,Timestamp of most recent outreach activity
+outreach,company_target,sequence_count,integer,NO,0,Number of sequences this company has been through
+outreach,company_target,active_sequence_id,text,YES,,Currently active sequence identifier
+outreach,company_target,source,text,YES,,"Origin of this target record (e.g., manual, import, bit_trigger)"
+outreach,company_target,created_at,timestamp with time zone,NO,now(),Record creation timestamp
+outreach,company_target,updated_at,timestamp with time zone,NO,now(),Last modification timestamp
+outreach,company_target,outreach_id,uuid,YES,,"OUT.TARGET.FK | Foreign key to outreach.outreach.outreach_id.
+This is the ONLY FK sub-hubs use. They do NOT directly access sovereign_id."
+outreach,company_target,email_method,character varying,YES,,
+outreach,company_target,method_type,character varying,YES,,
+outreach,company_target,confidence_score,numeric,YES,,
+outreach,company_target,execution_status,character varying,YES,'pending'::character varying,
+outreach,company_target,imo_completed_at,timestamp with time zone,YES,,
+outreach,company_target,is_catchall,boolean,YES,false,

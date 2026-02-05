@@ -1,0 +1,12 @@
+schema_name,table_name,column_name,data_type,is_nullable,column_default,description
+people,company_slot,slot_id,uuid,NO,gen_random_uuid(),
+people,company_slot,outreach_id,uuid,NO,,
+people,company_slot,company_unique_id,text,NO,,
+people,company_slot,slot_type,text,NO,,
+people,company_slot,person_unique_id,text,YES,,
+people,company_slot,is_filled,boolean,YES,false,
+people,company_slot,filled_at,timestamp with time zone,YES,,
+people,company_slot,confidence_score,numeric,YES,,
+people,company_slot,source_system,text,YES,,
+people,company_slot,created_at,timestamp with time zone,YES,now(),
+people,company_slot,updated_at,timestamp with time zone,YES,now(),

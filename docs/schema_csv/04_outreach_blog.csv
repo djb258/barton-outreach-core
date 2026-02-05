@@ -1,0 +1,15 @@
+schema_name,table_name,column_name,data_type,is_nullable,column_default,description
+outreach,blog,blog_id,uuid,NO,gen_random_uuid(),
+outreach,blog,outreach_id,uuid,NO,,
+outreach,blog,context_summary,text,YES,,
+outreach,blog,source_type,text,YES,,
+outreach,blog,source_url,text,YES,,
+outreach,blog,context_timestamp,timestamp with time zone,YES,,
+outreach,blog,created_at,timestamp with time zone,YES,now(),
+outreach,blog,source_type_enum,USER-DEFINED,YES,,"BLOG.ENUM.FK | Typed source classification. Replaces source_type TEXT.
+Valid: website, blog, press, news, filing, careers.
+FORBIDDEN: social (blocked by doctrine guard)."
+outreach,blog,about_url,text,YES,,
+outreach,blog,news_url,text,YES,,
+outreach,blog,extraction_method,text,YES,,
+outreach,blog,last_extracted_at,timestamp with time zone,YES,,
