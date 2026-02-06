@@ -1007,9 +1007,101 @@ SELECT * FROM bit.proof_lines WHERE company_unique_id = ? AND valid_until > NOW(
 
 ---
 
-**Last Updated**: 2026-01-30
-**Architecture**: CL Parent-Child Doctrine v1.1 + BIT Authorization v2.0
-**Status**: v1.0 OPERATIONAL BASELINE + BIT v2.0 Phase 1
+**Last Updated**: 2026-02-06
+**Architecture**: CL Parent-Child Doctrine v1.1 + BIT Authorization v2.0 + CTB Registry v1.0
+**Status**: v1.0 OPERATIONAL BASELINE + BIT v2.0 Phase 1 + CTB Phase 3 LOCKED
+
+---
+
+## CTB REGISTRY (2026-02-06)
+
+**Status**: PHASE 3 COMPLETE - ENFORCEMENT LOCKED
+**Tags**: CTB_PHASE1_LOCK, CTB_PHASE2_COLUMN_HYGIENE, CTB_PHASE3_ENFORCEMENT_LOCK
+
+### What is CTB?
+
+CTB (Christmas Tree Backbone) is the hierarchical data model with ID-based paths organizing all 246 tables in the database. Every table is classified by leaf type and registered in the central registry.
+
+### CTB Schema
+
+```sql
+-- Central Registry
+ctb.table_registry   -- 246 tables registered with leaf types
+ctb.violation_log    -- Guardrail violation tracking (0 violations)
+```
+
+### Leaf Type Distribution
+
+| Leaf Type | Count | Description |
+|-----------|-------|-------------|
+| ARCHIVE | 112 | CTB archive tables |
+| CANONICAL | 50 | Primary data tables |
+| SYSTEM | 23 | System/metadata tables |
+| DEPRECATED | 21 | Legacy tables (read-only) |
+| ERROR | 14 | Error tracking tables |
+| STAGING | 12 | Intake/staging tables |
+| MV | 8 | Materialized view candidates |
+| REGISTRY | 6 | Lookup/reference tables |
+| **TOTAL** | **246** | |
+
+### Frozen Core Tables (9)
+
+These tables are marked immutable in the CTB registry:
+
+| Schema | Table |
+|--------|-------|
+| cl | company_identity |
+| outreach | outreach |
+| outreach | company_target |
+| outreach | dol |
+| outreach | blog |
+| outreach | people |
+| outreach | bit_scores |
+| people | people_master |
+| people | company_slot |
+
+### CTB Column Contracts
+
+Error tables have NOT NULL constraints on `error_type` discriminator:
+- `outreach.dol_errors.error_type` NOT NULL
+- `outreach.blog_errors.error_type` NOT NULL
+- `cl.cl_errors_archive.error_type` NOT NULL
+- `people.people_errors.error_type` NOT NULL
+
+### CTB Phase Summary
+
+| Phase | Tag | Scope |
+|-------|-----|-------|
+| Phase 1 | CTB_PHASE1_LOCK | Identity audit, orphan cleanup |
+| Phase 2 | CTB_PHASE2_COLUMN_HYGIENE | Column hygiene, error normalization |
+| Phase 3 | CTB_PHASE3_ENFORCEMENT_LOCK | Registry creation, guardrails, freeze |
+
+### CTB Documentation
+
+| Document | Purpose |
+|----------|---------|
+| `docs/audit/CTB_PHASE3_ENFORCEMENT_SUMMARY.md` | Phase 3 execution summary |
+| `docs/audit/CTB_GUARDRAIL_STATUS.md` | Guardrail status report |
+| `docs/audit/CTB_DRIFT_REPORT.md` | Drift detection (23 items) |
+| `docs/audit/CTB_GUARDRAIL_MATRIX.csv` | Full table registry (246 tables) |
+| `neon/migrations/ctb_phase3_enforcement.sql` | Enforcement DDL |
+
+### Query CTB Registry
+
+```sql
+-- View all tables by leaf type
+SELECT table_schema, table_name, leaf_type, is_frozen
+FROM ctb.table_registry
+ORDER BY leaf_type, table_schema, table_name;
+
+-- View frozen core tables
+SELECT table_schema, table_name
+FROM ctb.table_registry
+WHERE is_frozen = TRUE;
+
+-- Check violations
+SELECT * FROM ctb.violation_log;
+```
 
 ---
 

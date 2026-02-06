@@ -57,6 +57,7 @@ outreach.company_target.outreach_id (41,425 companies)
 |--------|---------|-----------|------------------------|
 | `outreach` | Outreach operational spine | `outreach_id` | **THIS IS THE SPINE** |
 | `cl` | Company Lifecycle (Authority) | `sovereign_company_id` | `outreach.outreach.sovereign_company_id` |
+| `ctb` | **CTB Registry** (governance) | `registry_id` | Tracks all 246 tables |
 | `company` | Legacy company master | `company_unique_id` | **DISCONNECTED** - domain match only |
 | `dol` | DOL Form 5500 filings | `ein` | `outreach.dol.ein` |
 | `people` | People/contacts master | `person_unique_id` | `people.company_slot.outreach_id` |
@@ -820,25 +821,98 @@ ORDER BY pi.leverage_score DESC;
 
 ---
 
-## §9 Document Control
+## §9 CTB Registry Schema
+
+**Status**: PHASE 3 LOCKED (2026-02-06)
+
+The CTB (Christmas Tree Backbone) registry tracks all 246 tables with governance metadata.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           CTB REGISTRY TABLES                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ ctb.table_registry (246 rows) - CENTRAL GOVERNANCE TABLE            │   │
+│  ├─────────────────────────────────────────────────────────────────────┤   │
+│  │ registry_id         SERIAL    PK   Auto-increment                   │   │
+│  │ table_schema        VARCHAR   REQ  Schema name                      │   │
+│  │ table_name          VARCHAR   REQ  Table name                       │   │
+│  │ leaf_type           VARCHAR   REQ  CANONICAL|ERROR|MV|REGISTRY|     │   │
+│  │                                    STAGING|ARCHIVE|SYSTEM|DEPRECATED│   │
+│  │ ctb_path            VARCHAR        CTB hierarchy path               │   │
+│  │ parent_table        VARCHAR        Parent table reference           │   │
+│  │ is_frozen           BOOLEAN        TRUE for core tables (9 frozen)  │   │
+│  │ created_at          TIMESTAMPTZ    Registration timestamp           │   │
+│  │ registered_by       VARCHAR        'ctb_phase3'                     │   │
+│  │ notes               TEXT           Registration notes               │   │
+│  │ UNIQUE (table_schema, table_name)                                   │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ ctb.violation_log (0 rows) - GUARDRAIL VIOLATIONS                   │   │
+│  ├─────────────────────────────────────────────────────────────────────┤   │
+│  │ violation_id        SERIAL    PK   Auto-increment                   │   │
+│  │ violation_type      VARCHAR   REQ  Type of violation                │   │
+│  │ table_schema        VARCHAR        Affected schema                  │   │
+│  │ table_name          VARCHAR        Affected table                   │   │
+│  │ column_name         VARCHAR        Affected column                  │   │
+│  │ violation_message   TEXT      REQ  Violation description            │   │
+│  │ severity            VARCHAR        INFO|WARNING|ERROR|CRITICAL      │   │
+│  │ detected_at         TIMESTAMPTZ    Detection timestamp              │   │
+│  │ resolved_at         TIMESTAMPTZ    Resolution timestamp             │   │
+│  │ resolution_note     TEXT           Resolution notes                 │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  LEAF TYPE DISTRIBUTION:                                                   │
+│  ├── ARCHIVE: 112 tables                                                   │
+│  ├── CANONICAL: 50 tables (core data)                                      │
+│  ├── SYSTEM: 23 tables                                                     │
+│  ├── DEPRECATED: 21 tables (read-only)                                     │
+│  ├── ERROR: 14 tables                                                      │
+│  ├── STAGING: 12 tables                                                    │
+│  ├── MV: 8 tables (materialized view candidates)                           │
+│  └── REGISTRY: 6 tables                                                    │
+│                                                                             │
+│  FROZEN CORE TABLES (9):                                                   │
+│  ├── cl.company_identity                                                   │
+│  ├── outreach.outreach                                                     │
+│  ├── outreach.company_target                                               │
+│  ├── outreach.dol                                                          │
+│  ├── outreach.blog                                                         │
+│  ├── outreach.people                                                       │
+│  ├── outreach.bit_scores                                                   │
+│  ├── people.people_master                                                  │
+│  └── people.company_slot                                                   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## §10 Document Control
 
 | Field | Value |
 |-------|-------|
 | Created | 2026-01-28 |
-| Last Modified | 2026-01-28 |
-| Version | 1.0.0 |
+| Last Modified | 2026-02-06 |
+| Version | 1.1.0 |
 | Status | CANONICAL REFERENCE |
-| Authority | Barton Doctrine v1.1 |
+| Authority | Barton Doctrine v1.1 + CTB Phase 3 |
 | Change Protocol | ADR REQUIRED |
 
 ---
 
-## §10 File References
+## §11 File References
 
 | Document | Purpose |
 |----------|---------|
 | `docs/DATA_ARCHITECTURE.md` | Outreach spine architecture |
 | `docs/DATA_REGISTRY.md` | Schema quick reference |
 | `docs/architecture/DUAL_LANE_ARCHITECTURE.md` | Lane A/B isolation rules |
+| `docs/audit/CTB_PHASE3_ENFORCEMENT_SUMMARY.md` | CTB Phase 3 execution |
+| `docs/audit/CTB_GUARDRAIL_MATRIX.csv` | Full CTB registry (246 tables) |
+| `docs/audit/CTB_DRIFT_REPORT.md` | CTB drift detection |
 | `neon/migrations/` | All schema definitions |
+| `neon/migrations/ctb_phase3_enforcement.sql` | CTB Phase 3 DDL |
 | `doctrine/DO_NOT_MODIFY_REGISTRY.md` | Frozen components |

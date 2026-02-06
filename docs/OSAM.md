@@ -684,9 +684,44 @@ ORDER BY cd.pepm / sm.median_pepm DESC;
 
 ---
 
+---
+
+## CTB Registry (Governance)
+
+For table governance and classification, query the CTB registry:
+
+```sql
+-- Find table's leaf type
+SELECT table_schema, table_name, leaf_type, is_frozen
+FROM ctb.table_registry
+WHERE table_name = 'your_table';
+
+-- All canonical tables
+SELECT table_schema, table_name
+FROM ctb.table_registry
+WHERE leaf_type = 'CANONICAL';
+
+-- Frozen core tables (immutable)
+SELECT table_schema, table_name
+FROM ctb.table_registry
+WHERE is_frozen = TRUE;
+```
+
+| Leaf Type | Count | Description |
+|-----------|-------|-------------|
+| CANONICAL | 50 | Primary data tables |
+| ARCHIVE | 112 | Archive tables |
+| ERROR | 14 | Error tracking |
+| DEPRECATED | 21 | Legacy (read-only) |
+
+**Full Registry**: See `docs/audit/CTB_GUARDRAIL_MATRIX.csv`
+
+---
+
 ## Version History
 
 | Date | Change |
 |------|--------|
+| 2026-02-06 | Added CTB Registry section |
 | 2026-02-05 | Initial OSAM creation |
 

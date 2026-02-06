@@ -1,9 +1,9 @@
 # Barton Outreach Core - Complete System ERD
 ## Hub-and-Spoke Architecture with All Tables and Pipelines
 
-**Version:** 4.3.0
-**Last Updated:** 2026-01-30
-**Architecture:** CL Authority Registry + Outreach Operational Spine
+**Version:** 4.4.0
+**Last Updated:** 2026-02-06
+**Architecture:** CL Authority Registry + Outreach Operational Spine + CTB Registry
 **ADR:** ADR-011_CL_Authority_Registry_Outreach_Spine.md
 **DOL Subhub:** EIN Resolution + Violation Discovery
 **Join Doctrine:** All DOL/Government data joins on EIN
@@ -1126,9 +1126,34 @@ erDiagram
 | `outreach` | Outreach Spine + Sub-Hubs | outreach, company_target, dol, people, blog |
 | `people` | People Intelligence | people_master, company_slot |
 | `dol` | DOL Source Data | form_5500, form_5500_sf, schedule_a |
+| `ctb` | **GOVERNANCE REGISTRY** | table_registry, violation_log |
 | `marketing` | Legacy (deprecated) | company_master (pre-spine) |
 | `shq` | Operations | error_master |
 | `intake` | Raw Data | quarantine, company_raw_intake |
+
+### CTB Registry (Governance Layer)
+
+**Status**: Phase 3 LOCKED (2026-02-06)
+**Tables Registered**: 246
+**Frozen Core**: 9 tables
+
+| Leaf Type | Count | Description |
+|-----------|-------|-------------|
+| ARCHIVE | 112 | Archive/history tables |
+| CANONICAL | 50 | Primary data tables |
+| SYSTEM | 23 | System/metadata |
+| DEPRECATED | 21 | Legacy (read-only) |
+| ERROR | 14 | Error tracking |
+| STAGING | 12 | Intake/staging |
+| MV | 8 | Materialized view candidates |
+| REGISTRY | 6 | Lookup/reference |
+
+**Frozen Core Tables**:
+- `cl.company_identity`, `outreach.outreach`, `outreach.company_target`
+- `outreach.dol`, `outreach.blog`, `outreach.people`, `outreach.bit_scores`
+- `people.people_master`, `people.company_slot`
+
+**CTB Documentation**: `docs/audit/CTB_PHASE3_ENFORCEMENT_SUMMARY.md`
 
 ---
 
@@ -1164,5 +1189,5 @@ erDiagram
 
 ---
 
-*Generated: 2026-01-30 | Barton Outreach Core v4.0 | CL Parent-Child Doctrine v1.1*
-*Current Alignment: 42,192 = 42,192 | Exclusion Consolidation: 2026-01-30*
+*Generated: 2026-02-06 | Barton Outreach Core v4.4 | CL Parent-Child Doctrine v1.1 + CTB Phase 3*
+*Current Alignment: 42,192 = 42,192 | CTB Registry: 246 tables | CTB Tags: CTB_PHASE3_ENFORCEMENT_LOCK*

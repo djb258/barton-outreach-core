@@ -149,6 +149,29 @@ ORDER BY total_assets DESC;
 
 ---
 
-**Last Updated:** 2025-11-27
-**Schema Version:** 2.0.0
+**Last Updated:** 2026-02-06
+**Schema Version:** 4.4.0
+**CTB Registry:** 246 tables registered, Phase 3 LOCKED
 **Status:** Production Ready
+
+---
+
+## CTB Registry
+
+As of 2026-02-06, all 246 tables are registered in the CTB (Christmas Tree Backbone) registry with governance metadata:
+
+```sql
+-- Query the registry
+SELECT table_schema, table_name, leaf_type, is_frozen
+FROM ctb.table_registry
+ORDER BY leaf_type, table_schema;
+```
+
+| Leaf Type | Count | Description |
+|-----------|-------|-------------|
+| CANONICAL | 50 | Core data tables |
+| ARCHIVE | 112 | History tables |
+| DEPRECATED | 21 | Legacy (read-only) |
+| FROZEN | 9 | Immutable core tables |
+
+See `docs/audit/CTB_PHASE3_ENFORCEMENT_SUMMARY.md` for full details.
