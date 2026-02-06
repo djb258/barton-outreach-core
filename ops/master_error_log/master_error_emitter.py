@@ -7,9 +7,16 @@ shq_master_error_log table per PRD_MASTER_ERROR_LOG.md.
 DOCTRINE (ENFORCED - FAIL HARD):
 - Local First: Write to local sub-hub table BEFORE calling this emitter
 - Correlation Required: All errors MUST have a valid correlation_id (UUID v4)
-- Process ID Required: All errors MUST have a valid process_id (hub.subhub.pipeline.phase)
+- Process ID Required: All errors MUST have a valid process_id
+- Unique ID Required: All errors SHOULD have a HEIR unique_id for tracing
 - Append-Only: No updates or deletes allowed
 - Immutable History: Error history is immutable. Corrections are new records, never edits.
+
+HEIR/ORBT COMPLIANCE:
+- unique_id: HEIR format (hub-id-timestamp-hex) for tracing individual operations
+- process_id: Accepts both formats:
+  * Legacy: hub.subhub.pipeline.phase (e.g., "people.lifecycle.email.phase5")
+  * ORBT: PRC-SYSTEM-TIMESTAMP (e.g., "PRC-OUTREACH-1738772400")
 
 ENFORCEMENT:
 - Missing correlation_id → ValidationError (FAIL HARD)
@@ -18,29 +25,27 @@ ENFORCEMENT:
 - Empty/whitespace values → ValidationError (FAIL HARD)
 
 Usage:
-    from utils.master_error_emitter import MasterErrorEmitter, Hub, Severity
+    from ops.master_error_log.master_error_emitter import MasterErrorEmitter, Hub, Severity
+    from shared.heir import track_operation
 
-    # Initialize emitter
-    emitter = MasterErrorEmitter(db_connection, operating_mode=OperatingMode.STEADY_STATE)
-
-    # First, write to local sub-hub table (LOCAL FIRST)
-    local_table.insert(error_record)
-
-    # Then emit to master error log
-    error_id = emitter.emit(
-        correlation_id="550e8400-e29b-41d4-a716-446655440000",
-        hub=Hub.PEOPLE,
-        sub_hub="lifecycle",
-        process_id="people.lifecycle.email.phase5",  # REQUIRED - FAIL HARD IF MISSING
-        pipeline_phase="phase5",
-        entity_type=EntityType.PERSON,
-        entity_id="04.04.02.04.20000.042",
-        severity=Severity.MEDIUM,
-        error_code="PSH-P5-001",
-        error_message="Cannot generate email - missing first_name",
-        source_tool="pattern_template",
-        retryable=False
-    )
+    # With HEIR/ORBT tracking (RECOMMENDED)
+    with track_operation("my_pipeline") as ctx:
+        emitter = MasterErrorEmitter(db_connection, operating_mode=OperatingMode.STEADY_STATE)
+        error_id = emitter.emit(
+            correlation_id="550e8400-e29b-41d4-a716-446655440000",
+            hub=Hub.PEOPLE,
+            sub_hub="lifecycle",
+            process_id=ctx.process_id,  # PRC-OUTREACH-1738772400
+            unique_id=ctx.unique_id,    # outreach-core-001-20260205143022-a1b2c3d4
+            pipeline_phase="phase5",
+            entity_type=EntityType.PERSON,
+            entity_id="04.04.02.04.20000.042",
+            severity=Severity.MEDIUM,
+            error_code="PSH-P5-001",
+            error_message="Cannot generate email - missing first_name",
+            source_tool="pattern_template",
+            retryable=False
+        )
 """
 
 import uuid
@@ -103,10 +108,14 @@ class MasterErrorEvent:
     Represents a normalized error event for the master error log.
 
     All fields match the shq_master_error_log table schema.
+
+    HEIR/ORBT Fields:
+    - unique_id: HEIR tracking ID (hub-id-timestamp-hex)
+    - process_id: ORBT process ID (PRC-SYSTEM-TIMESTAMP or hub.subhub.pipeline.phase)
     """
     correlation_id: str  # REQUIRED
     hub: Hub
-    process_id: str
+    process_id: str  # REQUIRED - ORBT format
     pipeline_phase: str
     entity_type: EntityType
     severity: Severity
@@ -114,6 +123,7 @@ class MasterErrorEvent:
     error_message: str
     operating_mode: OperatingMode
     retryable: bool
+    unique_id: Optional[str] = None  # HEIR tracking ID
     sub_hub: Optional[str] = None
     entity_id: Optional[str] = None
     source_tool: Optional[str] = None
@@ -124,6 +134,7 @@ class MasterErrorEvent:
         """Convert to dictionary for JSON serialization"""
         return {
             "correlation_id": self.correlation_id,
+            "unique_id": self.unique_id,
             "hub": self.hub.value,
             "sub_hub": self.sub_hub,
             "process_id": self.process_id,
@@ -167,14 +178,19 @@ def validate_correlation_id(correlation_id: Optional[str]) -> None:
 
 def validate_process_id(process_id: Optional[str]) -> None:
     """
-    Validate process_id format: hub.subhub.pipeline.phase
+    Validate process_id format. Accepts two formats:
+
+    1. Legacy: hub.subhub.pipeline.phase
+       Examples:
+       - company.identity.matching.phase1
+       - people.lifecycle.email.phase5
+
+    2. ORBT: PRC-SYSTEM-TIMESTAMP
+       Examples:
+       - PRC-OUTREACH-1738772400
+       - PRC-CL-1738772500
 
     DOCTRINE: process_id is MANDATORY. FAIL HARD if missing or malformed.
-
-    Examples:
-    - company.identity.matching.phase1
-    - people.lifecycle.email.phase5
-    - dol.form5500.ingest.parse
 
     Raises:
         ValidationError: If process_id is missing, empty, whitespace, or malformed.
@@ -198,32 +214,6 @@ def validate_process_id(process_id: Optional[str]) -> None:
     # Normalize (strip whitespace)
     process_id = process_id.strip()
 
-    # FAIL HARD: Must be exactly 4 dot-separated components
-    parts = process_id.split('.')
-    if len(parts) != 4:
-        raise ValidationError(
-            f"process_id must have exactly 4 components (hub.subhub.pipeline.phase). "
-            f"Got {len(parts)} components: {process_id}. "
-            f"FAIL HARD: Malformed process_id."
-        )
-
-    # FAIL HARD: Each component must be non-empty
-    for i, part in enumerate(parts):
-        if not part:
-            raise ValidationError(
-                f"process_id component {i+1} is empty: {process_id}. "
-                f"FAIL HARD: All 4 components must be non-empty."
-            )
-
-    # FAIL HARD: Must match strict pattern
-    pattern = r'^[a-z_]+\.[a-z_]+\.[a-z_]+\.[a-z0-9_]+$'
-    if not re.match(pattern, process_id):
-        raise ValidationError(
-            f"Invalid process_id format: {process_id}. "
-            f"Expected format: hub.subhub.pipeline.phase (all lowercase, underscores allowed). "
-            f"FAIL HARD: Malformed process_id."
-        )
-
     # FAIL HARD: Max length exceeded
     if len(process_id) > 100:
         raise ValidationError(
@@ -231,14 +221,92 @@ def validate_process_id(process_id: Optional[str]) -> None:
             f"FAIL HARD: process_id too long."
         )
 
-    # WARN: Validate hub component against known hubs
-    valid_hubs = {'company', 'people', 'dol', 'blog_news', 'outreach', 'platform'}
-    hub = parts[0]
-    if hub not in valid_hubs:
-        logger.warning(
-            f"process_id hub '{hub}' not in known hubs: {valid_hubs}. "
-            f"Proceeding but this may indicate a configuration issue."
-        )
+    # Check for ORBT format first: PRC-SYSTEM-TIMESTAMP
+    orbt_pattern = r'^PRC-[A-Z_]+-\d+$'
+    if re.match(orbt_pattern, process_id):
+        # Valid ORBT format
+        logger.debug(f"process_id uses ORBT format: {process_id}")
+        return
+
+    # Check for legacy format: hub.subhub.pipeline.phase
+    parts = process_id.split('.')
+    if len(parts) == 4:
+        # FAIL HARD: Each component must be non-empty
+        for i, part in enumerate(parts):
+            if not part:
+                raise ValidationError(
+                    f"process_id component {i+1} is empty: {process_id}. "
+                    f"FAIL HARD: All 4 components must be non-empty."
+                )
+
+        # FAIL HARD: Must match strict pattern
+        legacy_pattern = r'^[a-z_]+\.[a-z_]+\.[a-z_]+\.[a-z0-9_]+$'
+        if re.match(legacy_pattern, process_id):
+            # Valid legacy format
+            logger.debug(f"process_id uses legacy format: {process_id}")
+
+            # WARN: Validate hub component against known hubs
+            valid_hubs = {'company', 'people', 'dol', 'blog_news', 'outreach', 'platform'}
+            hub = parts[0]
+            if hub not in valid_hubs:
+                logger.warning(
+                    f"process_id hub '{hub}' not in known hubs: {valid_hubs}. "
+                    f"Proceeding but this may indicate a configuration issue."
+                )
+            return
+
+    # Neither format matched
+    raise ValidationError(
+        f"Invalid process_id format: {process_id}. "
+        f"Expected either:\n"
+        f"  - Legacy: hub.subhub.pipeline.phase (e.g., people.lifecycle.email.phase5)\n"
+        f"  - ORBT: PRC-SYSTEM-TIMESTAMP (e.g., PRC-OUTREACH-1738772400)\n"
+        f"FAIL HARD: Malformed process_id."
+    )
+
+
+def validate_unique_id(unique_id: Optional[str]) -> None:
+    """
+    Validate HEIR unique_id format (optional but recommended).
+
+    Formats:
+    1. Standard: hub-id-YYYYMMDDHHMMSS-random_hex
+       Example: outreach-core-001-20260205143022-a1b2c3d4
+
+    2. Formal: HEIR-YYYY-MM-SYSTEM-MODE-VN-random_hex
+       Example: HEIR-2026-02-OUTREACH-PROD-V1-a1b2c3d4
+
+    Does NOT fail hard if missing (backwards compatibility).
+    Logs warning if format is invalid.
+    """
+    if unique_id is None:
+        # Optional field - no error
+        return
+
+    unique_id = unique_id.strip()
+    if not unique_id:
+        return
+
+    # Max length check
+    if len(unique_id) > 100:
+        logger.warning(f"unique_id exceeds recommended max length: {len(unique_id)}")
+        return
+
+    # Check for standard format
+    standard_pattern = r'^[a-z0-9-]+-\d{14}-[a-f0-9]{8}$'
+    if re.match(standard_pattern, unique_id):
+        return
+
+    # Check for formal HEIR format
+    formal_pattern = r'^HEIR-\d{4}-\d{2}-[A-Z]+-[A-Z]+-V\d+-[a-f0-9]{8}$'
+    if re.match(formal_pattern, unique_id):
+        return
+
+    # Warn but don't fail (backwards compatibility)
+    logger.warning(
+        f"unique_id format may be non-standard: {unique_id}. "
+        f"Expected HEIR format but proceeding anyway."
+    )
 
 
 def validate_error_code(error_code: str) -> None:
@@ -318,6 +386,7 @@ class MasterErrorEmitter:
         severity: Severity,
         error_code: str,
         error_message: str,
+        unique_id: Optional[str] = None,  # HEIR tracking ID (recommended)
         sub_hub: Optional[str] = None,
         entity_id: Optional[str] = None,
         source_tool: Optional[str] = None,
@@ -377,11 +446,25 @@ class MasterErrorEmitter:
         # FAIL HARD: error_code is MANDATORY
         validate_error_code(error_code)
 
+        # OPTIONAL: unique_id validation (warn if malformed)
+        validate_unique_id(unique_id)
+
+        # Auto-generate unique_id if not provided (HEIR compliance)
+        if unique_id is None:
+            try:
+                from shared.heir import generate_unique_id
+                unique_id = generate_unique_id()
+                logger.debug(f"Auto-generated HEIR unique_id: {unique_id}")
+            except ImportError:
+                # HEIR module not available - continue without unique_id
+                logger.debug("HEIR module not available, skipping unique_id generation")
+
         logger.debug(
             f"Validation passed for error emission",
             extra={
                 "correlation_id": correlation_id,
                 "process_id": process_id,
+                "unique_id": unique_id,
                 "error_code": error_code
             }
         )
@@ -389,17 +472,17 @@ class MasterErrorEmitter:
         # Generate error_id
         error_id = str(uuid.uuid4())
 
-        # Build insert query
+        # Build insert query (includes unique_id for HEIR compliance)
         query = """
             INSERT INTO public.shq_master_error_log (
-                error_id, timestamp_utc, correlation_id,
+                error_id, timestamp_utc, correlation_id, unique_id,
                 hub, sub_hub, process_id, pipeline_phase,
                 entity_type, entity_id,
                 severity, error_code, error_message,
                 source_tool, operating_mode, retryable,
                 cost_impact_usd, metadata
             ) VALUES (
-                %s, %s, %s,
+                %s, %s, %s, %s,
                 %s, %s, %s, %s,
                 %s, %s,
                 %s, %s, %s,
@@ -412,6 +495,7 @@ class MasterErrorEmitter:
             error_id,
             datetime.utcnow(),
             correlation_id,
+            unique_id,  # HEIR tracking ID
             hub.value,
             sub_hub,
             process_id,
@@ -473,6 +557,7 @@ class MasterErrorEmitter:
             severity=event.severity,
             error_code=event.error_code,
             error_message=event.error_message,
+            unique_id=event.unique_id,  # HEIR tracking ID
             sub_hub=event.sub_hub,
             entity_id=event.entity_id,
             source_tool=event.source_tool,

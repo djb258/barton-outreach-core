@@ -12,6 +12,11 @@ Functions:
 
 Status: ✅ Production Ready
 Date: 2025-11-17
+
+SCHEMA GUARD ENFORCEMENT:
+All connections returned by get_db_connection() are GUARDED.
+Queries accessing forbidden schemas (e.g., cl.* from outreach context)
+will raise ForbiddenSchemaAccessError.
 """
 
 import os
@@ -28,25 +33,69 @@ load_dotenv()
 # Configure logging
 logger = logging.getLogger(__name__)
 
+# Schema Guard Integration
+try:
+    from shared.db.guarded_connection import (
+        get_guarded_connection,
+        wrap_connection,
+        GuardedConnection,
+    )
+    from ops.enforcement.schema_guard import ForbiddenSchemaAccessError
+    SCHEMA_GUARD_ENABLED = True
+except ImportError:
+    SCHEMA_GUARD_ENABLED = False
+    logger.warning("Schema guard not available - running WITHOUT protection")
+
 # ============================================================================
 # DATABASE CONNECTION
 # ============================================================================
 
-def get_db_connection():
+def get_db_connection(guarded: bool = True):
     """
     Get PostgreSQL database connection to Neon
 
+    Args:
+        guarded: If True (default), returns a GuardedConnection that
+                 validates all queries against schema access rules.
+                 If False, returns raw psycopg2 connection (USE WITH CAUTION).
+
     Returns:
-        psycopg2 connection object
+        GuardedConnection or psycopg2 connection object
 
     Raises:
         psycopg2.OperationalError: If connection fails
+        ForbiddenSchemaAccessError: If query accesses forbidden schema (guarded mode)
+
+    DOCTRINE: All production code should use guarded=True (the default).
+    Queries that attempt to access cl.* schema will be BLOCKED.
     """
     connection_string = os.getenv("NEON_CONNECTION_STRING")
 
     if not connection_string:
         raise ValueError("NEON_CONNECTION_STRING environment variable not set")
 
+    if guarded and SCHEMA_GUARD_ENABLED:
+        return get_guarded_connection(connection_string)
+    else:
+        if guarded and not SCHEMA_GUARD_ENABLED:
+            logger.warning("Schema guard requested but not available - using unguarded connection")
+        return psycopg2.connect(connection_string)
+
+
+def get_raw_connection():
+    """
+    Get an UNGUARDED database connection.
+
+    WARNING: This bypasses schema protection. Only use for:
+    - Migrations
+    - Admin scripts that need cross-schema access
+    - Emergency operations
+
+    For normal operations, use get_db_connection() instead.
+    """
+    connection_string = os.getenv("NEON_CONNECTION_STRING")
+    if not connection_string:
+        raise ValueError("NEON_CONNECTION_STRING environment variable not set")
     return psycopg2.connect(connection_string)
 
 

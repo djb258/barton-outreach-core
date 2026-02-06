@@ -27,6 +27,18 @@ from .error_enforcement import (
     error_metrics,
     ErrorMetrics,
 )
+from .schema_guard import (
+    SchemaGuard,
+    SchemaGuardError,
+    ForbiddenSchemaAccessError,
+    ReadOnlySchemaWriteError,
+    RepoContext,
+    validate_query,
+    guarded_query,
+    schema_guard_context,
+    get_guard,
+    SCHEMA_ACCESS_RULES,
+)
 
 __all__ = [
     # Correlation ID
@@ -59,4 +71,15 @@ __all__ = [
     "require_hub_gate",
     "error_metrics",
     "ErrorMetrics",
+    # Schema Guard (Cross-Repo Protection)
+    "SchemaGuard",
+    "SchemaGuardError",
+    "ForbiddenSchemaAccessError",
+    "ReadOnlySchemaWriteError",
+    "RepoContext",
+    "validate_query",
+    "guarded_query",
+    "schema_guard_context",
+    "get_guard",
+    "SCHEMA_ACCESS_RULES",
 ]
