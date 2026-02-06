@@ -688,6 +688,8 @@ ORDER BY cd.pepm / sm.median_pepm DESC;
 
 ## CTB Registry (Governance)
 
+> **Full CTB governance documentation**: [CTB_GOVERNANCE.md](CTB_GOVERNANCE.md)
+
 For table governance and classification, query the CTB registry:
 
 ```sql

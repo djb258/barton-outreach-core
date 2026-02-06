@@ -1153,6 +1153,7 @@ erDiagram
 - `outreach.dol`, `outreach.blog`, `outreach.people`, `outreach.bit_scores`
 - `people.people_master`, `people.company_slot`
 
+**CTB Governance**: [CTB_GOVERNANCE.md](CTB_GOVERNANCE.md)
 **CTB Documentation**: `docs/audit/CTB_PHASE3_ENFORCEMENT_SUMMARY.md`
 
 ---

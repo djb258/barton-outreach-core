@@ -10,10 +10,11 @@
 
 | Field | Value |
 |-------|-------|
-| **Doctrine Version** | IMO-Creator v1.0 |
+| **Doctrine Version** | IMO-Creator v1.7.0 |
 | **Domain Spec Reference** | `doctrine/REPO_DOMAIN_SPEC.md` |
 | **CC Layer** | CC-02 |
 | **PRD Constitution** | `templates/doctrine/PRD_CONSTITUTION.md` |
+| **CTB Governance** | `docs/CTB_GOVERNANCE.md` |
 
 ---
 

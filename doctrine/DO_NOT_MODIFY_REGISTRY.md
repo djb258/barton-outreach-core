@@ -1,10 +1,11 @@
 # DO NOT MODIFY REGISTRY
 ## v1.0 Operational Baseline + BIT v2.0 Distributed Signals - Frozen Components
 
-**Version**: 1.2.0
+**Version**: 1.2.1
 **Freeze Date**: 2026-01-26
 **Status**: FROZEN
 **Reference**: docs/GO-LIVE_STATE_v1.0.md, docs/adr/ADR-017_BIT_Authorization_System_Migration.md
+**CTB Governance**: [docs/CTB_GOVERNANCE.md](../docs/CTB_GOVERNANCE.md)
 
 ---
 

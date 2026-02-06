@@ -824,6 +824,7 @@ ORDER BY pi.leverage_score DESC;
 ## §9 CTB Registry Schema
 
 **Status**: PHASE 3 LOCKED (2026-02-06)
+**Full Governance**: [CTB_GOVERNANCE.md](CTB_GOVERNANCE.md)
 
 The CTB (Christmas Tree Backbone) registry tracks all 246 tables with governance metadata.
 
@@ -907,6 +908,7 @@ The CTB (Christmas Tree Backbone) registry tracks all 246 tables with governance
 
 | Document | Purpose |
 |----------|---------|
+| **`docs/CTB_GOVERNANCE.md`** | **CTB governance rules, leaf types, frozen tables** |
 | `docs/DATA_ARCHITECTURE.md` | Outreach spine architecture |
 | `docs/DATA_REGISTRY.md` | Schema quick reference |
 | `docs/architecture/DUAL_LANE_ARCHITECTURE.md` | Lane A/B isolation rules |

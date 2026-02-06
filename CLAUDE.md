@@ -1080,6 +1080,7 @@ Error tables have NOT NULL constraints on `error_type` discriminator:
 
 | Document | Purpose |
 |----------|---------|
+| **[docs/CTB_GOVERNANCE.md](docs/CTB_GOVERNANCE.md)** | **START HERE** - CTB governance rules, leaf types, frozen tables |
 | `docs/audit/CTB_PHASE3_ENFORCEMENT_SUMMARY.md` | Phase 3 execution summary |
 | `docs/audit/CTB_GUARDRAIL_STATUS.md` | Guardrail status report |
 | `docs/audit/CTB_DRIFT_REPORT.md` | Drift detection (23 items) |

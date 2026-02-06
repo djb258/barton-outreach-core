@@ -8,6 +8,7 @@
 | **Domain Spec Reference** | `doctrine/REPO_DOMAIN_SPEC.md` |
 | **CC Layer** | CC-02 |
 | **PRD Constitution** | `templates/doctrine/PRD_CONSTITUTION.md` |
+| **CTB Governance** | `docs/CTB_GOVERNANCE.md` |
 
 ---
 

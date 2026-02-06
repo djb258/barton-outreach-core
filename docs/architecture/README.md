@@ -158,6 +158,8 @@ ORDER BY total_assets DESC;
 
 ## CTB Registry
 
+> **Full CTB governance documentation**: [../CTB_GOVERNANCE.md](../CTB_GOVERNANCE.md)
+
 As of 2026-02-06, all 246 tables are registered in the CTB (Christmas Tree Backbone) registry with governance metadata:
 
 ```sql
@@ -174,4 +176,4 @@ ORDER BY leaf_type, table_schema;
 | DEPRECATED | 21 | Legacy (read-only) |
 | FROZEN | 9 | Immutable core tables |
 
-See `docs/audit/CTB_PHASE3_ENFORCEMENT_SUMMARY.md` for full details.
+See [../CTB_GOVERNANCE.md](../CTB_GOVERNANCE.md) for governance rules and `docs/audit/CTB_PHASE3_ENFORCEMENT_SUMMARY.md` for execution details.
