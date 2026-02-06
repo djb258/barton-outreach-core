@@ -1,0 +1,13 @@
+schema,table,column,role,status,actual_type,actual_nullable,notes
+cl,company_identity,sovereign_company_id,PK,VIOLATION,uuid,YES,nullable mismatch
+cl,company_identity,outreach_id,FK_OUTREACH,OK,uuid,YES,OK
+cl,company_identity,created_at,AUDIT,OK,timestamptz,NO,OK
+outreach,outreach,outreach_id,PK,OK,uuid,NO,OK
+outreach,outreach,sovereign_id,FK_CL,OK,uuid,NO,OK
+outreach,outreach,created_at,AUDIT,OK,timestamptz,NO,OK
+outreach,company_target,target_id,PK,OK,uuid,NO,OK
+outreach,company_target,outreach_id,FK_OUTREACH,OK,uuid,YES,OK
+outreach,company_target,created_at,AUDIT,OK,timestamptz,NO,OK
+people,company_slot,slot_id,PK,OK,uuid,NO,OK
+people,company_slot,outreach_id,FK_OUTREACH,OK,uuid,NO,OK
+people,company_slot,slot_type,DATA,OK,text,NO,OK

@@ -1,0 +1,13 @@
+gap_type,schema,table_or_column,row_count,recommendation
+MISSING_ERROR_TYPE,cl,cl_errors_archive,16103,Add error_type discriminator
+MISSING_ERROR_TYPE,marketing,failed_company_match,32,Add error_type discriminator
+MISSING_ERROR_TYPE,marketing,failed_email_verification,310,Add error_type discriminator
+MISSING_ERROR_TYPE,marketing,failed_low_confidence,5,Add error_type discriminator
+MISSING_ERROR_TYPE,marketing,failed_no_pattern,6,Add error_type discriminator
+MISSING_ERROR_TYPE,marketing,failed_slot_assignment,222,Add error_type discriminator
+MISSING_ERROR_TYPE,outreach,blog_errors,2,Add error_type discriminator
+MISSING_ERROR_TYPE,outreach,dol_errors,29740,Add error_type discriminator
+ORPHAN_COLUMN,company,message_key_reference.vibeos_template_id,0,Consider removing deprecated column
+ORPHAN_COLUMN,dol,schedule_a.wlfr_bnft_temp_disab_ind,0,Consider removing deprecated column
+ORPHAN_COLUMN,outreach,sequences.body_template,0,Consider removing deprecated column
+ORPHAN_COLUMN,outreach,sequences.subject_template,0,Consider removing deprecated column

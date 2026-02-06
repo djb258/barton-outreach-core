@@ -1,0 +1,6 @@
+schema,table,mv_type,storage_type,notes
+outreach,company_hub_status,RECLASSIFIED_MV,BASE_TABLE,"68,908 rows"
+bit,movement_events,RECLASSIFIED_MV,BASE_TABLE,0 rows
+outreach,engagement_events,RECLASSIFIED_MV,BASE_TABLE,0 rows
+outreach,bit_signals,RECLASSIFIED_MV,BASE_TABLE,0 rows
+dol,form_5500_icp_filtered,CANDIDATE_MV,BASE_TABLE,"24,892 rows"

@@ -1,0 +1,23 @@
+schema,table,row_count,has_pk,has_error_type,has_error_message,has_created_at,status
+cl,cl_err_existence,9328,True,True,False,True,MISSING error_message
+cl,cl_errors_archive,16103,True,False,False,True,MISSING error_type; MISSING error_message
+company,pipeline_errors,0,True,False,True,True,MISSING error_type
+marketing,failed_company_match,32,True,False,False,True,MISSING error_type; MISSING error_message
+marketing,failed_email_verification,310,True,False,False,True,MISSING error_type; MISSING error_message
+marketing,failed_low_confidence,5,True,False,False,True,MISSING error_type; MISSING error_message
+marketing,failed_no_pattern,6,True,False,False,True,MISSING error_type; MISSING error_message
+marketing,failed_slot_assignment,222,True,False,False,True,MISSING error_type; MISSING error_message
+outreach,bit_errors,0,True,False,False,True,MISSING error_type; MISSING error_message
+outreach,blog_errors,2,True,False,False,True,MISSING error_type; MISSING error_message
+outreach,company_target_errors,4404,True,True,False,True,MISSING error_message
+outreach,company_target_errors_archive,0,True,False,False,True,MISSING error_type; MISSING error_message
+outreach,dol_errors,29740,True,False,False,True,MISSING error_type; MISSING error_message
+outreach,dol_errors_archive,0,True,False,False,True,MISSING error_type; MISSING error_message
+outreach,manual_overrides,0,True,False,False,True,MISSING error_type; MISSING error_message
+outreach,outreach_errors,0,True,False,False,True,MISSING error_type; MISSING error_message
+outreach,override_audit_log,0,True,False,False,False,MISSING error_type; MISSING error_message; MISSING created_at
+outreach,people_errors,0,True,False,False,True,MISSING error_type; MISSING error_message
+people,people_errors,1053,True,True,True,True,OK
+people,people_errors_archive,0,True,True,True,True,OK
+shq,error_master,86411,True,True,False,True,MISSING error_message
+shq,error_master_archive,0,True,True,False,True,MISSING error_message

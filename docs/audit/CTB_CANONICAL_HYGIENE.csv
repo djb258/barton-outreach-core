@@ -1,0 +1,19 @@
+schema,table,pk_status,fk_status,audit_columns,column_count,overall_status
+cl,company_identity,OK,N/A,"created_at:OK, updated_at:MISSING",33,ISSUES
+cl,lifecycle_state,MISSING,-,-,-,TABLE DOES NOT EXIST
+outreach,outreach,OK,MISSING,"created_at:OK, updated_at:OK",7,ISSUES
+outreach,company_target,OK,OK,"created_at:OK, updated_at:OK",25,OK
+outreach,dol,OK,OK,"created_at:OK, updated_at:OK",10,OK
+dol,form_5500,MISSING,N/A,N/A,147,ISSUES
+dol,form_5500_sf,MISSING,N/A,N/A,196,ISSUES
+dol,schedule_a,OK,OK,N/A,98,OK
+dol,ein_urls,MISSING,N/A,N/A,9,ISSUES
+dol,renewal_calendar,MISSING,N/A,N/A,13,ISSUES
+outreach,blog,OK,OK,"created_at:OK, updated_at:MISSING",12,ISSUES
+outreach,people,MISSING,OK,created_at:OK,20,ISSUES
+people,people_master,MISSING,N/A,"created_at:OK, updated_at:OK",33,ISSUES
+people,company_slot,OK,OK,"created_at:OK, updated_at:OK",11,OK
+outreach,bit_scores,MISSING,OK,created_at:OK,12,ISSUES
+outreach,appointments,OK,OK,created_at:OK,22,OK
+outreach,campaigns,OK,N/A,created_at:OK,18,OK
+outreach,sequences,OK,OK,created_at:OK,13,OK
