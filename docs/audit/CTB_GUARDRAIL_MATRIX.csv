@@ -1,0 +1,247 @@
+schema,table,leaf_type,ctb_path,is_frozen
+archive,archive_log,ARCHIVE,archive (non-CTB),False
+archive,bit_authorization_log_ctb,ARCHIVE,archive (non-CTB),False
+archive,bit_phase_state_ctb,ARCHIVE,archive (non-CTB),False
+archive,bit_proof_lines_ctb,ARCHIVE,archive (non-CTB),False
+archive,bit_signal_752056,ARCHIVE,archive (non-CTB),False
+archive,blog_pressure_signals_ctb,ARCHIVE,archive (non-CTB),False
+archive,company_company_752287,ARCHIVE,archive (non-CTB),False
+archive,company_company_events_ctb,ARCHIVE,archive (non-CTB),False
+archive,company_company_master_ctb,ARCHIVE,archive (non-CTB),False
+archive,company_company_sidecar_ctb,ARCHIVE,archive (non-CTB),False
+archive,company_company_slot_752509,ARCHIVE,archive (non-CTB),False
+archive,company_company_slots_ctb,ARCHIVE,archive (non-CTB),False
+archive,company_contact_enrichment_ctb,ARCHIVE,archive (non-CTB),False
+archive,company_email_verification_ctb,ARCHIVE,archive (non-CTB),False
+archive,company_marketing_company_752726,ARCHIVE,archive (non-CTB),False
+archive,company_message_key_reference_ctb,ARCHIVE,archive (non-CTB),False
+archive,company_pipeline_errors_ctb,ARCHIVE,archive (non-CTB),False
+archive,company_target_orphaned_archive_ctb,ARCHIVE,archive (non-CTB),False
+archive,company_url_discovery_failures_ctb,ARCHIVE,archive (non-CTB),False
+archive,company_validation_failures_log_ctb,ARCHIVE,archive (non-CTB),False
+archive,dol_pressure_signals_ctb,ARCHIVE,archive (non-CTB),False
+archive,intake_enrichment_handler_registry_752947,ARCHIVE,archive (non-CTB),False
+archive,intake_human_firebreak_queue_753152,ARCHIVE,archive (non-CTB),False
+archive,intake_validation_audit_log_753371,ARCHIVE,archive (non-CTB),False
+archive,intake_validation_failed_753634,ARCHIVE,archive (non-CTB),False
+archive,marketing_ac_handoff_753855,ARCHIVE,archive (non-CTB),False
+archive,marketing_booking_event_754073,ARCHIVE,archive (non-CTB),False
+archive,marketing_campaign_754289,ARCHIVE,archive (non-CTB),False
+archive,marketing_campaign_contact_754523,ARCHIVE,archive (non-CTB),False
+archive,marketing_company_master_ctb,ARCHIVE,archive (non-CTB),False
+archive,marketing_company_raw_intake_754739,ARCHIVE,archive (non-CTB),False
+archive,marketing_company_slot_v2_820258,ARCHIVE,archive (non-CTB),False
+archive,marketing_failed_company_match_ctb,ARCHIVE,archive (non-CTB),False
+archive,marketing_failed_email_verification_ctb,ARCHIVE,archive (non-CTB),False
+archive,marketing_failed_low_confidence_ctb,ARCHIVE,archive (non-CTB),False
+archive,marketing_failed_no_pattern_ctb,ARCHIVE,archive (non-CTB),False
+archive,marketing_failed_slot_assignment_ctb,ARCHIVE,archive (non-CTB),False
+archive,marketing_marketing_apollo_raw_755096,ARCHIVE,archive (non-CTB),False
+archive,marketing_marketing_company_column_metadata_755327,ARCHIVE,archive (non-CTB),False
+archive,marketing_marketing_david_barton_command_log_755566,ARCHIVE,archive (non-CTB),False
+archive,marketing_marketing_david_barton_company_755768,ARCHIVE,archive (non-CTB),False
+archive,marketing_marketing_david_barton_people_755966,ARCHIVE,archive (non-CTB),False
+archive,marketing_marketing_david_barton_prep_table_756181,ARCHIVE,archive (non-CTB),False
+archive,marketing_marketing_shq_command_log_756382,ARCHIVE,archive (non-CTB),False
+archive,marketing_marketing_shq_error_log_756603,ARCHIVE,archive (non-CTB),False
+archive,marketing_marketing_shq_prep_table_756813,ARCHIVE,archive (non-CTB),False
+archive,marketing_message_log_757035,ARCHIVE,archive (non-CTB),False
+archive,marketing_people_master_ctb,ARCHIVE,archive (non-CTB),False
+archive,outreach_bit_input_history_ctb,ARCHIVE,archive (non-CTB),False
+archive,outreach_blog_source_history_ctb,ARCHIVE,archive (non-CTB),False
+archive,outreach_dol_audit_log_ctb,ARCHIVE,archive (non-CTB),False
+archive,outreach_dol_url_enrichment_ctb,ARCHIVE,archive (non-CTB),False
+archive,outreach_orphan_archive_ctb,ARCHIVE,archive (non-CTB),False
+archive,outreach_send_log_ctb,ARCHIVE,archive (non-CTB),False
+archive,people_company_resolution_log_ctb,ARCHIVE,archive (non-CTB),False
+archive,people_company_role_slots_757270,ARCHIVE,archive (non-CTB),False
+archive,people_contact_757489,ARCHIVE,archive (non-CTB),False
+archive,people_contact_history_757738,ARCHIVE,archive (non-CTB),False
+archive,people_contact_verification_757966,ARCHIVE,archive (non-CTB),False
+archive,people_marketing_people_758180,ARCHIVE,archive (non-CTB),False
+archive,people_paid_enrichment_queue_ctb,ARCHIVE,archive (non-CTB),False
+archive,people_people_candidate_ctb,ARCHIVE,archive (non-CTB),False
+archive,people_people_invalid_ctb,ARCHIVE,archive (non-CTB),False
+archive,people_people_promotion_audit_ctb,ARCHIVE,archive (non-CTB),False
+archive,people_people_resolution_history_ctb,ARCHIVE,archive (non-CTB),False
+archive,people_people_resolution_queue_ctb,ARCHIVE,archive (non-CTB),False
+archive,people_people_sidecar_ctb,ARCHIVE,archive (non-CTB),False
+archive,people_people_staging_ctb,ARCHIVE,archive (non-CTB),False
+archive,people_person_movement_history_ctb,ARCHIVE,archive (non-CTB),False
+archive,people_person_scores_ctb,ARCHIVE,archive (non-CTB),False
+archive,people_pressure_signals_ctb,ARCHIVE,archive (non-CTB),False
+archive,people_slot_assignment_history_ctb,ARCHIVE,archive (non-CTB),False
+archive,people_slot_history_758429,ARCHIVE,archive (non-CTB),False
+archive,people_slot_orphan_snapshot_ctb,ARCHIVE,archive (non-CTB),False
+archive,people_slot_quarantine_ctb,ARCHIVE,archive (non-CTB),False
+archive,people_validation_status_758649,ARCHIVE,archive (non-CTB),False
+archive,public_company_758855,ARCHIVE,archive (non-CTB),False
+archive,public_company_old_1761317863663,ARCHIVE,archive (non-CTB),False
+archive,public_contact_1761317864059,ARCHIVE,archive (non-CTB),False
+archive,public_contact_verification_v2_821030,ARCHIVE,archive (non-CTB),False
+archive,public_marketing_company_759486,ARCHIVE,archive (non-CTB),False
+archive,public_marketing_company_intake_759695,ARCHIVE,archive (non-CTB),False
+archive,public_shq_error_log_759910,ARCHIVE,archive (non-CTB),False
+archive,public_sn_meeting_ctb,ARCHIVE,archive (non-CTB),False
+archive,public_sn_meeting_outcome_ctb,ARCHIVE,archive (non-CTB),False
+archive,public_sn_prospect_ctb,ARCHIVE,archive (non-CTB),False
+archive,public_sn_sales_process_ctb,ARCHIVE,archive (non-CTB),False
+archive,public_storage_evaluation_focus_states_760118,ARCHIVE,archive (non-CTB),False
+archive,public_storage_evaluation_state_county_zip_v2_760346,ARCHIVE,archive (non-CTB),False
+archive,public_test_table_760607,ARCHIVE,archive (non-CTB),False
+archive,shq_schema_audit_log_760790,ARCHIVE,archive (non-CTB),False
+archive,shq_schema_registry_761013,ARCHIVE,archive (non-CTB),False
+archive,shq_table_relationships_761234,ARCHIVE,archive (non-CTB),False
+archive,talent_flow_movement_history_ctb,ARCHIVE,archive (non-CTB),False
+archive,talent_flow_movements_ctb,ARCHIVE,archive (non-CTB),False
+archive,vault_contact_promotions_761442,ARCHIVE,archive (non-CTB),False
+bit,authorization_log,CANONICAL,bit -> bit_scores,False
+bit,movement_events,MV,bit -> bit_scores,False
+bit,phase_state,CANONICAL,bit -> bit_scores,False
+bit,proof_lines,CANONICAL,bit -> bit_scores,False
+blog,pressure_signals,MV,blog (non-CTB),False
+catalog,columns,SYSTEM,catalog (non-CTB),False
+catalog,relationships,SYSTEM,catalog (non-CTB),False
+catalog,schemas,SYSTEM,catalog (non-CTB),False
+catalog,tables,SYSTEM,catalog (non-CTB),False
+cl,cl_err_existence,ERROR,cl -> company_identity,False
+cl,cl_errors_archive,ERROR,cl -> company_identity,False
+cl,company_candidate,STAGING,cl -> company_identity,False
+cl,company_domains,CANONICAL,cl -> company_identity,False
+cl,company_domains_archive,ARCHIVE,cl -> company_identity,False
+cl,company_domains_excluded,CANONICAL,cl -> company_identity,False
+cl,company_identity,CANONICAL,cl -> company_identity,True
+cl,company_identity_archive,ARCHIVE,cl -> company_identity,False
+cl,company_identity_bridge,CANONICAL,cl -> company_identity,False
+cl,company_identity_excluded,CANONICAL,cl -> company_identity,False
+cl,company_names,CANONICAL,cl -> company_identity,False
+cl,company_names_archive,ARCHIVE,cl -> company_identity,False
+cl,company_names_excluded,CANONICAL,cl -> company_identity,False
+cl,domain_hierarchy,CANONICAL,cl -> company_identity,False
+cl,domain_hierarchy_archive,ARCHIVE,cl -> company_identity,False
+cl,identity_confidence,CANONICAL,cl -> company_identity,False
+cl,identity_confidence_archive,ARCHIVE,cl -> company_identity,False
+cl,identity_confidence_excluded,CANONICAL,cl -> company_identity,False
+company,company_events,DEPRECATED,company (non-CTB),False
+company,company_master,DEPRECATED,company (non-CTB),False
+company,company_sidecar,DEPRECATED,company (non-CTB),False
+company,company_slots,DEPRECATED,company (non-CTB),False
+company,company_source_urls,DEPRECATED,company (non-CTB),False
+company,contact_enrichment,DEPRECATED,company (non-CTB),False
+company,email_verification,DEPRECATED,company (non-CTB),False
+company,message_key_reference,DEPRECATED,company (non-CTB),False
+company,pipeline_errors,DEPRECATED,company (non-CTB),False
+company,pipeline_events,DEPRECATED,company (non-CTB),False
+company,validation_failures_log,DEPRECATED,company (non-CTB),False
+dol,column_metadata,REGISTRY,dol -> form_5500,False
+dol,ein_urls,CANONICAL,dol -> form_5500,False
+dol,form_5500,CANONICAL,dol -> form_5500,False
+dol,form_5500_icp_filtered,MV,dol -> form_5500,False
+dol,form_5500_sf,CANONICAL,dol -> form_5500,False
+dol,pressure_signals,MV,dol -> form_5500,False
+dol,renewal_calendar,CANONICAL,dol -> form_5500,False
+dol,schedule_a,CANONICAL,dol -> form_5500,False
+enrichment,column_registry,SYSTEM,enrichment (non-CTB),False
+enrichment,hunter_company,SYSTEM,enrichment (non-CTB),False
+enrichment,hunter_contact,SYSTEM,enrichment (non-CTB),False
+intake,company_raw_intake,STAGING,intake (non-CTB),False
+intake,company_raw_wv,STAGING,intake (non-CTB),False
+intake,people_candidate,STAGING,intake (non-CTB),False
+intake,people_raw_intake,STAGING,intake (non-CTB),False
+intake,people_raw_wv,STAGING,intake (non-CTB),False
+intake,people_staging,STAGING,intake (non-CTB),False
+intake,quarantine,STAGING,intake (non-CTB),False
+marketing,company_master,DEPRECATED,marketing (non-CTB),False
+marketing,failed_company_match,DEPRECATED,marketing (non-CTB),False
+marketing,failed_email_verification,DEPRECATED,marketing (non-CTB),False
+marketing,failed_low_confidence,DEPRECATED,marketing (non-CTB),False
+marketing,failed_no_pattern,DEPRECATED,marketing (non-CTB),False
+marketing,failed_slot_assignment,DEPRECATED,marketing (non-CTB),False
+marketing,people_master,DEPRECATED,marketing (non-CTB),False
+marketing,review_queue,DEPRECATED,marketing (non-CTB),False
+outreach,appointments,CANONICAL,outreach -> outreach_id,False
+outreach,bit_errors,ERROR,outreach -> outreach_id,False
+outreach,bit_input_history,CANONICAL,outreach -> outreach_id,False
+outreach,bit_scores,CANONICAL,outreach -> outreach_id,True
+outreach,bit_scores_archive,ARCHIVE,outreach -> outreach_id,False
+outreach,bit_signals,MV,outreach -> outreach_id,False
+outreach,blog,CANONICAL,outreach -> outreach_id,True
+outreach,blog_archive,ARCHIVE,outreach -> outreach_id,False
+outreach,blog_errors,ERROR,outreach -> outreach_id,False
+outreach,blog_ingress_control,REGISTRY,outreach -> outreach_id,False
+outreach,blog_source_history,CANONICAL,outreach -> outreach_id,False
+outreach,campaigns,CANONICAL,outreach -> outreach_id,False
+outreach,column_registry,REGISTRY,outreach -> outreach_id,False
+outreach,company_hub_status,MV,outreach -> outreach_id,False
+outreach,company_target,CANONICAL,outreach -> outreach_id,True
+outreach,company_target_archive,ARCHIVE,outreach -> outreach_id,False
+outreach,company_target_errors,ERROR,outreach -> outreach_id,False
+outreach,company_target_errors_archive,ERROR,outreach -> outreach_id,False
+outreach,company_target_orphaned_archive,ARCHIVE,outreach -> outreach_id,False
+outreach,ctb_audit_log,CANONICAL,outreach -> outreach_id,False
+outreach,ctb_queue,STAGING,outreach -> outreach_id,False
+outreach,dol,CANONICAL,outreach -> outreach_id,True
+outreach,dol_archive,ARCHIVE,outreach -> outreach_id,False
+outreach,dol_audit_log,CANONICAL,outreach -> outreach_id,False
+outreach,dol_errors,ERROR,outreach -> outreach_id,False
+outreach,dol_errors_archive,ERROR,outreach -> outreach_id,False
+outreach,dol_url_enrichment,CANONICAL,outreach -> outreach_id,False
+outreach,engagement_events,MV,outreach -> outreach_id,False
+outreach,entity_resolution_queue,STAGING,outreach -> outreach_id,False
+outreach,hub_registry,REGISTRY,outreach -> outreach_id,False
+outreach,manual_overrides,ERROR,outreach -> outreach_id,False
+outreach,mv_credit_usage,CANONICAL,outreach -> outreach_id,False
+outreach,outreach,CANONICAL,outreach -> outreach_id,True
+outreach,outreach_archive,ARCHIVE,outreach -> outreach_id,False
+outreach,outreach_errors,ERROR,outreach -> outreach_id,False
+outreach,outreach_excluded,CANONICAL,outreach -> outreach_id,False
+outreach,outreach_legacy_quarantine,CANONICAL,outreach -> outreach_id,False
+outreach,outreach_orphan_archive,ARCHIVE,outreach -> outreach_id,False
+outreach,override_audit_log,ERROR,outreach -> outreach_id,False
+outreach,people,CANONICAL,outreach -> outreach_id,True
+outreach,people_archive,ARCHIVE,outreach -> outreach_id,False
+outreach,people_errors,ERROR,outreach -> outreach_id,False
+outreach,pipeline_audit_log,CANONICAL,outreach -> outreach_id,False
+outreach,send_log,CANONICAL,outreach -> outreach_id,False
+outreach,sequences,CANONICAL,outreach -> outreach_id,False
+outreach,url_discovery_failures,CANONICAL,outreach -> outreach_id,False
+outreach,url_discovery_failures_archive,ARCHIVE,outreach -> outreach_id,False
+outreach_ctx,context,SYSTEM,outreach_ctx (non-CTB),False
+outreach_ctx,spend_log,SYSTEM,outreach_ctx (non-CTB),False
+outreach_ctx,tool_attempts,SYSTEM,outreach_ctx (non-CTB),False
+people,company_resolution_log,CANONICAL,people -> people_master,False
+people,company_slot,CANONICAL,people -> people_master,True
+people,company_slot_archive,ARCHIVE,people -> people_master,False
+people,paid_enrichment_queue,STAGING,people -> people_master,False
+people,people_errors,ERROR,people -> people_master,False
+people,people_errors_archive,ERROR,people -> people_master,False
+people,people_invalid,CANONICAL,people -> people_master,False
+people,people_master,CANONICAL,people -> people_master,True
+people,people_master_archive,ARCHIVE,people -> people_master,False
+people,people_promotion_audit,CANONICAL,people -> people_master,False
+people,people_resolution_history,CANONICAL,people -> people_master,False
+people,people_resolution_queue,STAGING,people -> people_master,False
+people,people_sidecar,CANONICAL,people -> people_master,False
+people,person_movement_history,CANONICAL,people -> people_master,False
+people,person_scores,CANONICAL,people -> people_master,False
+people,pressure_signals,MV,people -> people_master,False
+people,slot_assignment_history,CANONICAL,people -> people_master,False
+people,slot_ingress_control,REGISTRY,people -> people_master,False
+people,slot_orphan_snapshot_r0_002,CANONICAL,people -> people_master,False
+people,slot_quarantine_r0_002,CANONICAL,people -> people_master,False
+people,title_slot_mapping,REGISTRY,people -> people_master,False
+public,agent_routing_log,SYSTEM,public (non-CTB),False
+public,garage_runs,SYSTEM,public (non-CTB),False
+public,migration_log,SYSTEM,public (non-CTB),False
+public,shq_validation_log,SYSTEM,public (non-CTB),False
+public,sn_meeting,SYSTEM,public (non-CTB),False
+public,sn_meeting_outcome,SYSTEM,public (non-CTB),False
+public,sn_prospect,SYSTEM,public (non-CTB),False
+public,sn_sales_process,SYSTEM,public (non-CTB),False
+ref,county_fips,SYSTEM,ref (non-CTB),False
+ref,zip_county_map,SYSTEM,ref (non-CTB),False
+shq,audit_log,SYSTEM,shq (non-CTB),False
+shq,error_master,SYSTEM,shq (non-CTB),False
+shq,error_master_archive,SYSTEM,shq (non-CTB),False
+talent_flow,movement_history,DEPRECATED,talent_flow (non-CTB),False
+talent_flow,movements,DEPRECATED,talent_flow (non-CTB),False
