@@ -43,6 +43,14 @@ SPINE (outreach.outreach)
 | LinkedIn URL for person? | `people.people_master` | company_slot_unique_id |
 | DOL filing status? | `outreach.dol` | outreach_id |
 | EIN for company? | `outreach.outreach` or `outreach.dol` | outreach_id |
+| Form 5500 filing details? | `dol.form_5500` / `dol.form_5500_sf` | Query by EIN or ack_id |
+| Insurance/broker data? | `dol.schedule_a` | Join via ack_id to form_5500 |
+| Service provider compensation? | `dol.schedule_c` + sub-tables | Join via ack_id |
+| DFE participation? | `dol.schedule_d` + sub-tables | Join via ack_id |
+| Financial transactions? | `dol.schedule_g` + sub-tables | Join via ack_id |
+| Large plan financials? | `dol.schedule_h` + sub-tables | Join via ack_id |
+| Small plan financials? | `dol.schedule_i` + sub-tables | Join via ack_id |
+| DOL column meaning? | `dol.column_metadata` | Direct (1,081 entries) |
 | Company news/blog URLs? | `outreach.blog` | outreach_id |
 | Company name/domain? | `cl.company_identity` | sovereign_company_id |
 
@@ -166,6 +174,8 @@ FK:    outreach_id → outreach.outreach
 - "What carrier do they use?"
 
 **Note**: DOL can have multiple records per outreach_id (multiple filing years).
+
+**Reference Tables**: 26 DOL filing tables in `dol.*` schema (see DOL section below).
 
 ---
 
@@ -390,18 +400,51 @@ WHERE cs.is_filled = true
 
 ## DOL: Queryable System of Record
 
-**DOL is the authoritative source for Form 5500 filing data.** Query these tables directly by EIN.
+**DOL is the authoritative source for Form 5500 filing data.** Query these tables directly by EIN or ACK_ID.
+**Data Coverage**: 2023, 2024, 2025 — **10,970,626 total rows** across 26 filing tables.
+**Join Key**: `ack_id` (universal DOL join key linking all schedules to form_5500).
+**Year Key**: `form_year` (VARCHAR, filter all tables by year).
+**Metadata**: 100% column comments (1,081 columns), all documented in `dol.column_metadata`.
 
-### DOL Tables
+### DOL Filing Tables (26 tables)
 
-| Table | Records | Columns | Purpose |
-|-------|---------|---------|---------|
-| dol.form_5500 | 230,482 | 147 | Large filers (100+ participants) |
-| dol.form_5500_sf | 760,839 | 196 | Small filers (<100 participants) |
-| dol.schedule_a | 337,476 | 98 | Insurance carriers, brokers, commissions |
-| dol.column_metadata | 441 | 14 | Column descriptions for AI/human queries |
+| Table | Records | Purpose |
+|-------|---------|---------|
+| **Core Filing** | | |
+| dol.form_5500 | 432,582 | Full Form 5500 filings (large plans, 100+ participants) |
+| dol.form_5500_sf | 1,535,999 | Short Form 5500-SF (small plans, <100 participants) |
+| dol.form_5500_sf_part7 | 10,613 | SF Part 7 compliance questions |
+| **Schedule A: Insurance** | | |
+| dol.schedule_a | 625,520 | Insurance carriers, brokers, commissions, policy dates |
+| dol.schedule_a_part1 | 380,509 | Schedule A Part 1 detail |
+| **Schedule C: Service Provider Comp** | | |
+| dol.schedule_c | ~100K | Schedule C header |
+| dol.schedule_c_part1_item1 | ~1.3M | Direct compensation to service providers |
+| dol.schedule_c_part1_item2 | ~500K | Indirect compensation |
+| dol.schedule_c_part1_item3 | ~16K | Terminated service providers |
+| dol.schedule_c_part1_item4 | ~10K | Providers who failed to provide info |
+| dol.schedule_c_part2 | ~600K | Other service provider compensation |
+| dol.schedule_c_part1_item1_ele | ~1.4M | P1I1 compensation elements |
+| dol.schedule_c_part1_item2_ele | ~280K | P1I2 compensation elements |
+| dol.schedule_c_part1_item4_ele | ~6K | P1I4 failure elements |
+| **Schedule D: DFE Participation** | | |
+| dol.schedule_d | ~125K | Schedule D header (DFE participation) |
+| dol.schedule_d_part1 | ~1.5M | DFE investment details |
+| dol.schedule_d_part2 | ~1.5M | DFE filing details |
+| dol.schedule_dcg | ~130K | D/C/G cross-reference |
+| **Schedule G: Financial Transactions** | | |
+| dol.schedule_g | ~600 | Schedule G header |
+| dol.schedule_g_part1 | ~500 | Large loans/fixed income defaults |
+| dol.schedule_g_part2 | ~200 | Fixed income obligations |
+| dol.schedule_g_part3 | ~600 | Non-exempt transactions |
+| **Schedule H: Large Plan Financial** | | |
+| dol.schedule_h | ~95K | Large plan financial information |
+| dol.schedule_h_part1 | ~95K | H Part 1 detail |
+| **Schedule I: Small Plan Financial** | | |
+| dol.schedule_i | ~59K | Small plan financial information |
+| dol.schedule_i_part1 | ~59K | I Part 1 detail |
 
-### DOL Column Metadata
+### DOL Column Metadata (1,081 entries)
 
 Every DOL column is documented in `dol.column_metadata`:
 - `column_id` - Unique identifier (e.g., DOL_SCHA_INS_BROKER_COMM_TOT_AMT)
@@ -451,15 +494,15 @@ WHERE column_name = 'ins_broker_comm_tot_amt';
 
 ### DOL Query Examples
 
-**Look up company by EIN:**
+**Look up company by EIN (cross-year):**
 ```sql
--- Large filer
+-- Large filer (all years)
 SELECT sponsor_dfe_name, spons_dfe_mail_us_state, tot_active_partcp_cnt, form_year
 FROM dol.form_5500
 WHERE sponsor_dfe_ein = '123456789'
 ORDER BY form_year DESC;
 
--- Small filer
+-- Small filer (all years)
 SELECT sf_sponsor_name, sf_spons_us_state, sf_tot_partcp_boy_cnt, form_year
 FROM dol.form_5500_sf
 WHERE sf_spons_ein = '123456789'
@@ -478,6 +521,27 @@ SELECT
 FROM dol.schedule_a sa
 WHERE sa.sch_a_ein = '123456789'
 ORDER BY sa.form_year DESC;
+```
+
+**Get service provider compensation from Schedule C:**
+```sql
+SELECT
+    c.sponsor_dfe_ein,
+    ci.provider_name,
+    ci.direct_compensation_amt,
+    c.form_year
+FROM dol.schedule_c c
+JOIN dol.schedule_c_part1_item1 ci ON c.ack_id = ci.ack_id AND c.form_year = ci.form_year
+WHERE c.sponsor_dfe_ein = '123456789'
+ORDER BY c.form_year DESC;
+```
+
+**Cross-year join pattern (any schedule to form_5500):**
+```sql
+SELECT f.sponsor_dfe_name, s.ins_carrier_name, f.form_year
+FROM dol.form_5500 f
+JOIN dol.schedule_a s ON f.ack_id = s.ack_id AND f.form_year = s.form_year
+WHERE f.form_year IN ('2023', '2024', '2025');
 ```
 
 **Find all companies with Schedule A in a state:**
@@ -724,6 +788,7 @@ WHERE is_frozen = TRUE;
 
 | Date | Change |
 |------|--------|
+| 2026-02-06 | Added all 26 DOL filing tables (schedules A/C/D/G/H/I), updated row counts to 10.97M across 3 years, added cross-year and Schedule C query examples |
 | 2026-02-06 | Added CTB Registry section |
 | 2026-02-05 | Initial OSAM creation |
 

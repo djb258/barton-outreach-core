@@ -7,8 +7,8 @@
 **ADR:** ADR-011_CL_Authority_Registry_Outreach_Spine.md
 **DOL Subhub:** EIN Resolution + Violation Discovery
 **Join Doctrine:** All DOL/Government data joins on EIN
-**Sovereign Cleanup:** 2026-01-21 (23,025 records archived)
-**Cascade Cleanup:** 2026-01-30 (alignment: 42,192 = 42,192)
+**Sovereign Eligible:** 95,004 (101,503 total - 6,499 excluded)
+**Outreach Claimed:** 95,004 = 95,004 ✓ ALIGNED
 **FREE Extraction:** 2026-01-30 COMPLETE - 77,256 people, 9 states
 
 ---
@@ -22,8 +22,8 @@
 │                                                                              │
 │  cl.company_identity                                                         │
 │  ────────────────────                                                        │
-│  sovereign_company_id   PK, IMMUTABLE (minted by CL)         47,348 total   │
-│  outreach_id            WRITE-ONCE (minted by Outreach)      42,192 claimed │
+│  sovereign_company_id   PK, IMMUTABLE (minted by CL)        101,503 total   │
+│  outreach_id            WRITE-ONCE (minted by Outreach)      95,004 claimed │
 │  sales_process_id       WRITE-ONCE (minted by Sales)         —              │
 │  client_id              WRITE-ONCE (minted by Client)        —              │
 │                                                                              │
@@ -47,7 +47,7 @@
 │              OUTREACH OPERATIONAL SPINE (Workflow State)                     │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  outreach.outreach: 42,192 rows                                              │
+│  outreach.outreach: 95,004 rows                                              │
 │  ─────────────────────────────────────────────────────────────────────────── │
 │  outreach_id            PK (minted here, registered in CL)                   │
 │  sovereign_company_id   FK → cl.company_identity                             │
@@ -69,7 +69,7 @@
 │    ┌─────────────────────────────────────────────────────────────────────┐ │
 │    │  SUBHUB 1: COMPANY TARGET (04.04.01)                    [ACTIVE]    │ │
 │    │  ───────────────────────────────────────────────────────────────    │ │
-│    │  Records: 41,425 | 91.4% with email_method | 5,539 errors           │ │
+│    │  Records: 95,004 | 91.4% with email_method | 5,539 errors           │ │
 │    │  • Domain resolution                                                │ │
 │    │  • Email pattern discovery                                          │ │
 │    │  • company_target (FK: outreach_id)                                 │ │
@@ -105,7 +105,7 @@
 │    ┌─────────────────────────────────────────────────────────────────────┐ │
 │    │  SUBHUB 4: BLOG CONTENT (04.04.05)                      [ACTIVE]    │ │
 │    │  ───────────────────────────────────────────────────────────────    │ │
-│    │  Records: 41,425 | 98% coverage                                     │ │
+│    │  Records: 95,004 | 98% coverage                                     │ │
 │    │  • Content signals, news monitoring                                 │ │
 │    │  • blog (FK: outreach_id)                                           │ │
 │    │  • EMITS: content_signals, bit_impact_scores                        │ │
@@ -1046,7 +1046,7 @@ erDiagram
 |--------|-------|------|---------|-------------------|
 | **cl** | company_identity | 47,348 | **AUTHORITY REGISTRY** | PK: sovereign_company_id |
 | | | | Stores identity pointers: | outreach_id (WRITE-ONCE) |
-| | | | - outreach_id: 42,192 claimed | sales_process_id (WRITE-ONCE) |
+| | | | - outreach_id: 95,004 claimed | sales_process_id (WRITE-ONCE) |
 | | | | - sales_process_id: — | client_id (WRITE-ONCE) |
 | | | | - client_id: — | |
 | **cl** | company_identity_archive | 22,263 | Archived identities | Archive from cleanup |
@@ -1057,20 +1057,20 @@ erDiagram
 
 | Schema | Table | Rows | Purpose | Key Relationships |
 |--------|-------|------|---------|-------------------|
-| **outreach** | outreach | 42,192 | **MASTER SPINE** - ALIGNED WITH CL | FK: sovereign_id → cl.company_identity |
+| **outreach** | outreach | 95,004 | **MASTER SPINE** - ALIGNED WITH CL | FK: sovereign_id → cl.company_identity |
 | **outreach** | outreach_archive | 23,025 | Archived records | Sovereign cleanup 2026-01-21 |
 
 ### Sub-Hub Tables
 
 | Schema | Table | Rows | Purpose | Key Relationships |
 |--------|-------|------|---------|-------------------|
-| **outreach** | company_target | 41,425 | Company targeting | FK: outreach_id |
+| **outreach** | company_target | 95,004 | Company targeting | FK: outreach_id |
 | **outreach** | company_target_errors | 5,539 | CT errors | FK: outreach_id |
 | **outreach** | dol | 16,860 | DOL filing facts (40% coverage) | FK: outreach_id |
 | **outreach** | dol_errors | 37,319 | DOL errors | FK: outreach_id |
 | **outreach** | people | 324 | Contact records | FK: outreach_id |
 | **outreach** | people_errors | — | People errors | FK: outreach_id |
-| **outreach** | blog | 41,425 | Blog content (98% coverage) | FK: outreach_id |
+| **outreach** | blog | 95,004 | Blog content (98% coverage) | FK: outreach_id |
 | **outreach** | blog_errors | — | Blog errors | FK: outreach_id |
 
 ### People Intelligence Tables
@@ -1173,7 +1173,7 @@ erDiagram
 │                                                                             │
 │   ALIGNMENT RULE:                                                          │
 │   outreach.outreach count = cl.company_identity (PASS) count               │
-│   Current: 42,192 = 42,192 ✓ ALIGNED                                       │
+│   Current: 95,004 = 95,004 ✓ ALIGNED                                       │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -1191,4 +1191,4 @@ erDiagram
 ---
 
 *Generated: 2026-02-06 | Barton Outreach Core v4.4 | CL Parent-Child Doctrine v1.1 + CTB Phase 3*
-*Current Alignment: 42,192 = 42,192 | CTB Registry: 246 tables | CTB Tags: CTB_PHASE3_ENFORCEMENT_LOCK*
+*Current Alignment: 95,004 = 95,004 | CTB Registry: 246 tables | CTB Tags: CTB_PHASE3_ENFORCEMENT_LOCK*

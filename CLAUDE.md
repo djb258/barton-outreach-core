@@ -29,7 +29,8 @@ The OSAM tells you exactly where to go for any data question:
 ## CRITICAL: Authoritative Table Reference
 
 > **ALL pipeline work MUST use `outreach.company_target` as the authoritative company list.**
-> **COUNT: 94,237 companies**
+> **SOVEREIGN ELIGIBLE: 95,004 companies** (101,503 total - 6,499 excluded)
+> **OUTREACH CLAIMED: 95,004 = 95,004 ✓ ALIGNED**
 > **PRIMARY KEY: `outreach_id`**
 
 ### DO NOT USE These Tables as Company Source:
@@ -42,12 +43,16 @@ The OSAM tells you exactly where to go for any data question:
 - **[docs/AUTHORITATIVE_TABLE_REFERENCE.md](docs/AUTHORITATIVE_TABLE_REFERENCE.md)** - Complete table reference
 - **[docs/diagrams/PEOPLE_DATA_FLOW_ERD.md](docs/diagrams/PEOPLE_DATA_FLOW_ERD.md)** - People slot/enrichment flow
 
-### Current Enrichment Status (2026-02-02):
+### Current Enrichment Status (2026-02-06):
 | Metric | Count | % |
 |--------|-------|---|
-| Total companies | 41,425 | 100% |
-| Companies with ≥1 person | 18,353 | 44.3% |
-| **Companies needing people** | **23,072** | **55.7%** |
+| **Sovereign eligible** | **95,004** | 100% |
+| Excluded (non-commercial) | 6,499 | — |
+| With email_method | 82,074 | 86.4% |
+| Slot fill (CEO) | 62,006 | 65.3% |
+| Slot fill (CFO) | 57,164 | 60.2% |
+| Slot fill (HR) | 57,991 | 61.0% |
+| **Overall slot fill** | **177,161 / 285,012** | **62.2%** |
 
 ---
 
@@ -103,7 +108,7 @@ WHERE csu.source_type IN ('about_page', 'press_page');
 **Sovereign Cleanup**: 2026-01-21 (23,025 records archived)
 **Commercial Eligibility Cleanup**: 2026-01-29 (5,259 excluded + 4,577 phantoms + 2,709 orphans)
 **Exclusion Consolidation**: 2026-01-30 (2,432 total excluded records)
-**CL-Outreach Alignment**: 42,192 = 42,192 ✓
+**Sovereign Eligible**: 95,004 | **Outreach Claimed**: 95,004 = 95,004 ✓
 **Safe to Enable Live Marketing**: YES
 
 ### Key Documentation
@@ -216,7 +221,8 @@ IF outreach_id IS NULL:
 
 ALIGNMENT RULE:
 outreach.outreach count = cl.company_identity (outreach_id NOT NULL) count
-Current: 42,192 = 42,192 ✓ ALIGNED
+Sovereign Eligible: 95,004 (101,503 total - 6,499 excluded)
+Outreach Claimed: 95,004 = 95,004 ✓ ALIGNED
 ```
 
 ### CL Authority Registry (LOCKED)
@@ -769,7 +775,7 @@ DOCTRINE_VERSION=04
 **Last Updated**: 2026-01-30
 **Architecture**: CL Parent-Child Doctrine v1.1
 **Status**: v1.0 OPERATIONAL BASELINE (CERTIFIED + FROZEN)
-**CL-Outreach Alignment**: 42,192 = 42,192 ✓
+**Sovereign Eligible**: 95,004 | **Outreach Claimed**: 95,004 = 95,004 ✓
 
 ---
 
@@ -824,28 +830,26 @@ See `infra/MIGRATION_ORDER.md` for execution order.
 - 2,709 unfixable orphans archived and deleted
 - 10,846 total cascade deletions across sub-hubs
 
-**Alignment at 2026-01-21**: 42,833 = 42,833 (subsequently refined to 42,192 via exclusion consolidation)
-
 **Archive Tables Created/Updated**:
-- `outreach.outreach_archive`
+- `outreach.outreach_archive` (27,416 records)
 - `outreach.company_target_archive`
 - `outreach.dol_archive`
 - `outreach.blog_archive`
 - `outreach.bit_scores_archive`
-- `outreach.outreach_orphan_archive` (NEW)
+- `cl.company_identity_archive` (22,263 records)
 - `people.company_slot_archive`
 
-**Post-Cleanup State (as of 2026-01-30)**:
+**Current State (as of 2026-02-06)**:
 | Sub-Hub | Table | Records | Notes |
 |---------|-------|---------|-------|
-| Spine | outreach.outreach | 42,192 | ALIGNED WITH CL |
-| Excluded | outreach.outreach_excluded | 2,432 | All non-commercial/invalid |
-| CT | outreach.company_target | 41,425 | 98.2% coverage |
-| DOL | outreach.dol | 16,860 | 40.0% coverage |
-| People | outreach.people | 324 | |
-| People | people.company_slot | 126,576 | 3.0 avg slots/company |
-| Blog | outreach.blog | 41,425 | 98.2% coverage |
-| BIT | outreach.bit_scores | 13,226 | 31.4% coverage |
+| **Sovereign** | cl.company_identity | 95,004 eligible | 101,503 total - 6,499 excluded |
+| Spine | outreach.outreach | 95,004 | **ALIGNED** |
+| CT | outreach.company_target | 95,004 | 100% coverage |
+| DOL | outreach.dol | 70,150 | 73.8% coverage |
+| People | outreach.people | 336,395 | Hunter promoted |
+| People | people.company_slot | 285,012 | 62.2% fill rate |
+| Blog | outreach.blog | 95,004 | 100% coverage |
+| BIT | outreach.bit_scores | 13,226 | 13.9% coverage |
 
 ---
 
@@ -1130,6 +1134,6 @@ SELECT * FROM ctb.violation_log;
 - All invalid sovereign_ids
 - Full audit trail preserved
 
-**Final Alignment**: 42,192 = 42,192 ✓
+**Sovereign Eligible**: 95,004 | **Outreach Claimed**: 95,004 = 95,004 ✓
 
 **Q1 2026 Audit Status**: COMPLIANT (0 CRITICAL, 0 HIGH violations)

@@ -1,6 +1,6 @@
 # Authoritative Table Reference
 
-> **Last Updated:** 2026-02-03
+> **Last Updated:** 2026-02-06
 > **Status:** CANONICAL - This document defines the single source of truth
 
 ---
@@ -9,9 +9,12 @@
 
 **ALL WORK in this repository MUST use `outreach.company_target` as the authoritative company list.**
 
+**Sovereign Eligible:** 95,004 companies (101,503 total - 6,499 excluded)
+**Outreach Claimed:** 95,004 = 95,004 ✓ ALIGNED
+
 Do NOT use:
-- ❌ `company.company_master` (74,641 records) - Too broad
-- ❌ `people.people_master` (78,143 records) - People table, not companies
+- ❌ `company.company_master` - Too broad
+- ❌ `people.people_master` - People table, not companies
 - ❌ Any other company table
 
 ---
@@ -24,7 +27,8 @@ Do NOT use:
 |-----------|-------|
 | **Schema** | `outreach` |
 | **Table** | `company_target` |
-| **Record Count** | 41,425 |
+| **Sovereign Eligible** | 95,004 |
+| **Record Count** | 95,004 ✓ ALIGNED |
 | **Source** | Clay (CL) exports |
 | **Primary Key** | `outreach_id` |
 
@@ -35,18 +39,21 @@ This table represents the **curated, qualified companies** that we are actively 
 ## Key Relationships
 
 ```
-outreach.company_target (41,425)
-    ├── outreach_id (PRIMARY KEY)
+cl.company_identity (95,004 eligible) ← SOVEREIGN AUTHORITY
+    │                (101,503 total - 6,499 excluded)
     │
-    ├──→ people.company_slot (JOIN on outreach_id)
-    │       └── Slot assignments: CEO, CFO, HR
-    │       └── Links to person_unique_id when filled
-    │
-    ├──→ outreach.people (JOIN on outreach_id)
-    │       └── People promoted for outreach
-    │
-    └──→ outreach.outreach (JOIN on outreach_id)
-            └── Outreach activity records
+    └──→ outreach.company_target (95,004) ← 100% ALIGNED
+            ├── outreach_id (PRIMARY KEY)
+            │
+            ├──→ people.company_slot (285,012 slots, 62.2% fill rate)
+            │       └── Slot assignments: CEO, CFO, HR
+            │       └── Links to person_unique_id when filled
+            │
+            ├──→ outreach.people (336,395 contacts)
+            │       └── People promoted for outreach
+            │
+            └──→ outreach.outreach (95,004)
+                    └── Outreach activity records
 ```
 
 ---
@@ -56,7 +63,7 @@ outreach.company_target (41,425)
 ### ✅ Get company count
 ```sql
 SELECT COUNT(*) FROM outreach.company_target;
--- Returns: 41,425
+-- Returns: 95,004
 ```
 
 ### ✅ Get slot coverage
@@ -91,27 +98,28 @@ SELECT * FROM people.people_master;
 ## Data Flow
 
 ```
-Clay (CL) Workflows
+cl.company_identity (95,004 eligible)
         ↓
-outreach.company_target (41,425 companies)
+outreach.company_target (95,004 aligned)
         ↓
-people.company_slot (slot assignments via outreach_id)
+people.company_slot (285,012 slots, 62.2% fill)
         ↓
-outreach.people (promoted people for outreach)
+outreach.people (336,395 contacts)
         ↓
-outreach.outreach (outreach activities)
+outreach.outreach (95,004 spine records)
 ```
 
 ---
 
-## Current State (as of 2026-02-02)
+## Current State (as of 2026-02-06)
 
 | Table | Count | Status |
 |-------|-------|--------|
-| `outreach.company_target` | 41,425 | ✅ Authoritative |
-| `people.company_slot` (filled) | 26,553 | ✅ Linked via outreach_id |
-| `people.people_master` (matched) | 26,443 | ✅ People data |
-| `people.people_master` (with email) | 21,751 | ✅ Ready for outreach |
+| `cl.company_identity` (eligible) | 95,004 | ✅ Sovereign authority |
+| `outreach.company_target` | 95,004 | ✅ Authoritative (aligned) |
+| `people.company_slot` (total) | 285,012 | ✅ 62.2% fill rate |
+| `outreach.people` | 336,395 | ✅ Hunter promoted |
+| `people.people_master` | 179,363 | ✅ People data |
 
 ---
 
@@ -119,21 +127,22 @@ outreach.outreach (outreach activities)
 
 ### Slot Coverage Against Authoritative Table
 
-| Slot | Total | Filled | Has Person | Has Email | Needs Email | Empty Slot |
-|------|-------|--------|------------|-----------|-------------|------------|
-| CEO | 41,425 | 15,171 (36.6%) | 15,171 | 12,061 (29.1%) | 3,110 | 26,254 (63.4%) |
-| CFO | 41,425 | 4,807 (11.6%) | 4,805 | 3,723 (9.0%) | 1,082 | 36,618 (88.4%) |
-| HR | 41,425 | 6,575 (15.9%) | 6,533 | 6,030 (14.6%) | 503 | 34,850 (84.1%) |
+| Slot | Total | Filled | Fill Rate |
+|------|-------|--------|-----------|
+| CEO | 95,004 | 62,006 | 65.3% |
+| CFO | 95,004 | 57,164 | 60.2% |
+| HR | 95,004 | 57,991 | 61.0% |
+| **TOTAL** | **285,012** | **177,161** | **62.2%** |
 
 ### Company-Level Summary
 
 | Metric | Count | % of Total |
 |--------|-------|------------|
-| Total companies | 41,425 | 100% |
-| Companies with at least 1 slot filled | 18,353 | 44.3% |
-| Companies with at least 1 person WITH email | 15,401 | 37.2% |
-| Companies with all 3 slots filled | 1,760 | 4.2% |
-| **Companies with NO people found** | **23,072** | **55.7%** |
+| **Sovereign eligible** | **95,004** | 100% |
+| With email_method | 82,074 | 86.4% |
+| With DOL data | 70,150 | 73.8% |
+| With Blog data | 95,004 | 100% |
+| With BIT scores | 13,226 | 13.9% |
 
 ### What Needs Enrichment
 
@@ -199,7 +208,7 @@ outreach.outreach (outreach activities)
 The `company.company_source_urls` table uses `company_unique_id` in `04.04.01.xx` format, while `outreach.outreach` uses `domain`. **Bridge via domain matching through `company.company_master`**:
 
 ```
-outreach.outreach (42,192)
+outreach.outreach (95,004)
     │
     │ JOIN ON: domain → website_url (normalized)
     ▼

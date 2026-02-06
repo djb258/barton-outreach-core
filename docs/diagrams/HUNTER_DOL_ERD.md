@@ -136,7 +136,7 @@ erDiagram
 | `dol` | `ein_urls` | 127,909 | EIN to domain mapping |
 | `dol` | `form_5500` | 230,482 | Full DOL 5500 filings |
 | `dol` | `form_5500_sf` | 760,839 | Short form 5500-SF filings |
-| `outreach` | `outreach` | 42,192 | Outreach spine |
+| `outreach` | `outreach` | 95,004 | Outreach spine |
 | `outreach` | `dol` | 17,338 | Outreach DOL sub-hub |
 
 ---
@@ -165,7 +165,7 @@ erDiagram
                              v
                    +------------------+
                    | outreach.outreach|
-                   | (42,192)         |
+                   | (95,004)         |
                    +--------+---------+
                             |
                             | outreach_id
@@ -258,7 +258,7 @@ LEFT JOIN enrichment.hunter_contact hc ON LOWER(o.domain) = LOWER(hc.domain);
 | Hunter contacts | 583,433 |
 | Hunter source URLs | 231,973 |
 | DOL EINs with domains | 58,069 |
-| Outreach records | 42,192 |
+| Outreach records | 95,004 |
 | Outreach with DOL/EIN | 17,338 |
 | EINs matched to outreach | 830 |
 | New companies from Hunter DOL | 54,166 |

@@ -24,7 +24,7 @@
 
 | What | Table | Count | Primary Key |
 |------|-------|-------|-------------|
-| **Companies (Authoritative)** | `outreach.company_target` | 41,425 | `outreach_id` |
+| **Companies (Authoritative)** | `outreach.company_target` | 95,004 | `outreach_id` |
 | **People Slots** | `people.company_slot` | 124,275 (3 per company) | `slot_id` |
 | **People Data** | `people.people_master` | 78,143 | `unique_id` |
 | **Outreach People** | `outreach.people` | 324 | `person_id` |
@@ -32,7 +32,7 @@
 ### Key Linkages
 
 ```
-outreach.company_target.outreach_id (41,425 companies)
+outreach.company_target.outreach_id (95,004 companies)
     │
     ├── people.company_slot.outreach_id (CEO, CFO, HR slots)
     │       └── person_unique_id → people.people_master.unique_id
@@ -44,7 +44,7 @@ outreach.company_target.outreach_id (41,425 companies)
 
 | Metric | Count | % |
 |--------|-------|---|
-| Total companies | 41,425 | 100% |
+| Total companies | 95,004 | 100% |
 | Companies with ≥1 person | 18,353 | 44.3% |
 | Companies with ≥1 email | 15,401 | 37.2% |
 | **Companies needing people** | **23,072** | **55.7%** |
@@ -88,7 +88,7 @@ erDiagram
     }
 
     %% ═══════════════════════════════════════════════════════════════
-    %% OUTREACH SPINE (Primary Pipeline) - 42,192 commercial companies
+    %% OUTREACH SPINE (Primary Pipeline) - 95,004 commercial companies
     %% Cleaned 2026-01-30: Exclusion consolidation + orphan cleanup
     %% ═══════════════════════════════════════════════════════════════
 
@@ -677,10 +677,10 @@ WHERE cm.ein IS NOT NULL;
 
 | Table | Records | Notes |
 |-------|---------|-------|
-| `outreach.outreach` | 42,192 | **THE SPINE** |
-| `outreach.company_target` | 41,425 | 91% email_method |
+| `outreach.outreach` | 95,004 | **THE SPINE** |
+| `outreach.company_target` | 95,004 | 91% email_method |
 | `outreach.dol` | 16,860 | 40% coverage |
-| `outreach.blog` | 41,425 | 98% coverage |
+| `outreach.blog` | 95,004 | 98% coverage |
 | `outreach.people` | 324 | Active contacts |
 | `outreach.bit_scores` | 13,226 | Scored companies |
 | `dol.form_5500` | 230,482 | Large filers |

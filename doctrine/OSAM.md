@@ -3,7 +3,7 @@
 **Repository**: barton-outreach-core
 **Status**: LOCKED
 **Authority**: CONSTITUTIONAL
-**Version**: 1.0.0
+**Version**: 1.1.0
 **Change Protocol**: ADR + HUMAN APPROVAL REQUIRED
 
 ---
@@ -109,7 +109,16 @@ The Query Routing Table declares which table answers which question.
 | Company identity | `outreach.outreach` | Direct | Spine table |
 | Domain resolution | `outreach.company_target` | `outreach.outreach` → `outreach.company_target` | |
 | Email pattern | `outreach.company_target` | `outreach.outreach` → `outreach.company_target` | |
-| EIN/DOL filings | `outreach.dol` | `outreach.outreach` → `outreach.dol` | |
+| EIN/DOL filing status | `outreach.dol` | `outreach.outreach` → `outreach.dol` | Spine-level DOL match |
+| Form 5500 filing details | `dol.form_5500` | Query by EIN or ack_id | Reference table (26 tables) |
+| Short form filing details | `dol.form_5500_sf` | Query by EIN or ack_id | Reference table |
+| Insurance/broker data | `dol.schedule_a` | Join via ack_id to form_5500 | Broker commissions, carriers |
+| Service provider comp | `dol.schedule_c` + sub-tables | Join via ack_id to form_5500 | 9 sub-tables |
+| DFE participation | `dol.schedule_d` + sub-tables | Join via ack_id to form_5500 | 4 sub-tables |
+| Financial transactions | `dol.schedule_g` + sub-tables | Join via ack_id to form_5500 | 4 sub-tables |
+| Large plan financials | `dol.schedule_h` + sub-tables | Join via ack_id to form_5500 | 2 tables |
+| Small plan financials | `dol.schedule_i` + sub-tables | Join via ack_id to form_5500 | 2 tables |
+| DOL column descriptions | `dol.column_metadata` | Direct | 1,081 entries, AI-ready |
 | People/executives | `outreach.people` | `outreach.outreach` → `outreach.people` | |
 | Slot assignments | `people.company_slot` | `outreach.outreach` → `people.company_slot` | |
 | BIT scores | `outreach.bit_scores` | `outreach.outreach` → `outreach.bit_scores` | |
@@ -203,10 +212,52 @@ sub_hubs:
   - name: "DOL Filings"
     doctrine_id: "04.04.03"
     cc_layer: CC-03
-    purpose: "EIN resolution and Form 5500 processing"
+    purpose: "EIN resolution, Form 5500/5500-SF processing, Schedule A/C/D/G/H/I filing data across 2023/2024/2025"
     joins_to_spine_via: "outreach_id"
     tables:
       - "outreach.dol"
+    reference_tables:
+      # Core Filing Tables (3)
+      - "dol.form_5500"           # Full Form 5500 filings (432K rows)
+      - "dol.form_5500_sf"        # Short Form 5500-SF (1.5M rows)
+      - "dol.form_5500_sf_part7"  # SF Part 7 compliance (10K rows)
+      # Schedule A: Insurance Contracts (2)
+      - "dol.schedule_a"          # Insurance contracts & broker commissions (625K rows)
+      - "dol.schedule_a_part1"    # Schedule A Part 1 detail (380K rows)
+      # Schedule C: Service Provider Compensation (9)
+      - "dol.schedule_c"          # Schedule C header
+      - "dol.schedule_c_part1_item1"   # Direct compensation
+      - "dol.schedule_c_part1_item2"   # Indirect compensation
+      - "dol.schedule_c_part1_item3"   # Terminated service providers
+      - "dol.schedule_c_part1_item4"   # Provider failures to disclose
+      - "dol.schedule_c_part2"         # Other compensation
+      - "dol.schedule_c_part1_item1_ele"  # P1I1 compensation elements
+      - "dol.schedule_c_part1_item2_ele"  # P1I2 compensation elements
+      - "dol.schedule_c_part1_item4_ele"  # P1I4 failure elements
+      # Schedule D: DFE Participation (4)
+      - "dol.schedule_d"          # Schedule D header
+      - "dol.schedule_d_part1"    # DFE investment details
+      - "dol.schedule_d_part2"    # DFE filing details
+      - "dol.schedule_dcg"        # D/C/G cross-reference
+      # Schedule G: Financial Transactions (4)
+      - "dol.schedule_g"          # Schedule G header
+      - "dol.schedule_g_part1"    # Large loans/defaults
+      - "dol.schedule_g_part2"    # Fixed income obligations
+      - "dol.schedule_g_part3"    # Non-exempt transactions
+      # Schedule H: Large Plan Financial (2)
+      - "dol.schedule_h"          # Schedule H header
+      - "dol.schedule_h_part1"    # H Part 1 detail
+      # Schedule I: Small Plan Financial (2)
+      - "dol.schedule_i"          # Schedule I header
+      - "dol.schedule_i_part1"    # I Part 1 detail
+    metadata_tables:
+      - "dol.column_metadata"     # 1,081 column descriptions (100% coverage)
+    data_coverage:
+      years: [2023, 2024, 2025]
+      total_rows: 10970626
+      column_comments: 1081
+      join_key: "ack_id"          # Universal join key within DOL tables
+      year_key: "form_year"       # Year partitioning column
 
   - name: "People Intelligence"
     doctrine_id: "04.04.02"
@@ -256,6 +307,22 @@ Only joins declared in this section are permitted. All other joins are INVALID.
 | `outreach.outreach` | `cl.company_identity` | `sovereign_company_id` | N:1 | CL identity lookup |
 | `outreach.people` | `people.people_master` | `people_id` | N:1 | Person details |
 | `people.company_slot` | `people.people_master` | `people_id` | N:1 | Slotted person details |
+| **DOL Internal Joins (via ACK_ID — universal DOL join key)** | | | | |
+| `dol.form_5500` | `dol.form_5500_sf` | `ack_id` | 1:N | Short form variant |
+| `dol.form_5500` | `dol.schedule_a` | `ack_id` | 1:N | Insurance contracts |
+| `dol.form_5500` | `dol.schedule_a_part1` | `ack_id` | 1:N | Schedule A Part 1 |
+| `dol.form_5500` | `dol.schedule_c` | `ack_id` | 1:N | Service provider comp |
+| `dol.schedule_c` | `dol.schedule_c_part1_item*` | `ack_id` | 1:N | C sub-table details |
+| `dol.form_5500` | `dol.schedule_d` | `ack_id` | 1:N | DFE participation |
+| `dol.schedule_d` | `dol.schedule_d_part*` | `ack_id` | 1:N | D sub-table details |
+| `dol.form_5500` | `dol.schedule_dcg` | `ack_id` | 1:N | D/C/G cross-reference |
+| `dol.form_5500` | `dol.schedule_g` | `ack_id` | 1:N | Financial transactions |
+| `dol.schedule_g` | `dol.schedule_g_part*` | `ack_id` | 1:N | G sub-table details |
+| `dol.form_5500` | `dol.schedule_h` | `ack_id` | 1:N | Large plan financials |
+| `dol.schedule_h` | `dol.schedule_h_part1` | `ack_id` | 1:N | H Part 1 detail |
+| `dol.form_5500` | `dol.schedule_i` | `ack_id` | 1:N | Small plan financials |
+| `dol.schedule_i` | `dol.schedule_i_part1` | `ack_id` | 1:N | I Part 1 detail |
+| `outreach.outreach` | `dol.form_5500` | `ein = sponsor_dfe_ein` | N:N | EIN-based DOL lookup |
 
 ### Join Rules
 
@@ -298,7 +365,7 @@ Only joins declared in this section are permitted. All other joins are INVALID.
 |------------|----------------|---------------|-------|
 | `outreach.outreach` | QUERY | YES | Spine table |
 | `outreach.company_target` | QUERY | YES | Domain/email facts |
-| `outreach.dol` | QUERY | YES | DOL filing facts |
+| `outreach.dol` | QUERY | YES | DOL filing facts (spine-level) |
 | `outreach.people` | QUERY | YES | People facts |
 | `outreach.blog` | QUERY | YES | Blog signal facts |
 | `outreach.bit_scores` | QUERY | YES | BIT scores |
@@ -307,6 +374,18 @@ Only joins declared in this section are permitted. All other joins are INVALID.
 | `outreach.vw_marketing_eligibility_with_overrides` | VIEW | YES | Eligibility view |
 | `outreach.vw_sovereign_completion` | VIEW | YES | Completion view |
 | `outreach.manual_overrides` | QUERY | YES | Kill switch |
+| **DOL Reference Tables (26 filing tables — queryable by EIN/ACK_ID)** | | | |
+| `dol.form_5500` | REFERENCE | YES | Full Form 5500 (432K rows, 3 years) |
+| `dol.form_5500_sf` | REFERENCE | YES | Short Form 5500-SF (1.5M rows) |
+| `dol.form_5500_sf_part7` | REFERENCE | YES | SF Part 7 compliance |
+| `dol.schedule_a` | REFERENCE | YES | Insurance contracts & broker commissions |
+| `dol.schedule_a_part1` | REFERENCE | YES | Schedule A Part 1 detail |
+| `dol.schedule_c` (+ 8 sub-tables) | REFERENCE | YES | Service provider compensation |
+| `dol.schedule_d` (+ 3 sub-tables) | REFERENCE | YES | DFE participation |
+| `dol.schedule_g` (+ 3 sub-tables) | REFERENCE | YES | Financial transactions |
+| `dol.schedule_h` (+ 1 sub-table) | REFERENCE | YES | Large plan financials |
+| `dol.schedule_i` (+ 1 sub-table) | REFERENCE | YES | Small plan financials |
+| `dol.column_metadata` | REFERENCE | YES | 1,081 column descriptions (AI-ready) |
 | `hunter_company` | SOURCE | **NO** | Raw Hunter import |
 | `hunter_contact` | SOURCE | **NO** | Raw Hunter contacts |
 | `intake.company_raw_intake` | SOURCE | **NO** | CSV staging |
@@ -319,7 +398,8 @@ Only joins declared in this section are permitted. All other joins are INVALID.
 |------|-------------|
 | SOURCE tables are NEVER query surfaces | Agent MUST HALT if asked to query SOURCE |
 | ENRICHMENT tables are joined, not queried | Never the "FROM" table |
-| QUERY tables are the only valid query surfaces | All questions route to QUERY tables |
+| REFERENCE tables are queryable by their own keys | DOL tables queried by EIN, ack_id, form_year |
+| QUERY tables are the primary query surfaces | All questions route to QUERY tables first |
 | Misclassified queries are INVALID | Agent rejects and escalates |
 
 ---
@@ -372,8 +452,7 @@ Agent is HALTED. Awaiting resolution.
 ## Version History
 
 | Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 1.0.0 | 2026-02-05 | Claude | Initial OSAM declaration for Outreach hub |
+|---------|------|--------|---------|| 1.1.0 | 2026-02-06 | Claude | Added 26 DOL filing tables (form_5500, schedules A/C/D/G/H/I), DOL internal join paths via ACK_ID, REFERENCE classification, 3-year data coverage (10.97M rows) || 1.0.0 | 2026-02-05 | Claude | Initial OSAM declaration for Outreach hub |
 
 ---
 
@@ -412,8 +491,8 @@ Before OSAM is considered valid:
 | Field | Value |
 |-------|-------|
 | Created | 2026-02-05 |
-| Last Modified | 2026-02-05 |
-| Version | 1.0.0 |
+| Last Modified | 2026-02-06 |
+| Version | 1.1.0 |
 | Status | LOCKED |
 | Authority | CONSTITUTIONAL |
 | Derives From | REPO_DOMAIN_SPEC.md, OSAM Template |

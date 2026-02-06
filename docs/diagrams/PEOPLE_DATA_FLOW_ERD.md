@@ -112,7 +112,7 @@ erDiagram
 │   │  outreach_id (UUID) ← PRIMARY KEY - Use this for all joins         │   │
 │   │  company_name, domain, email_pattern, outreach_status               │   │
 │   │                                                                     │   │
-│   │  COUNT: 41,425 companies                                            │   │
+│   │  COUNT: 95,004 companies                                            │   │
 │   └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                              │
 │   ⚠️  THIS IS THE AUTHORITATIVE COMPANY LIST                               │
@@ -248,7 +248,7 @@ SELECT * FROM outreach.outreach;  -- Different record count
 
 | Metric | Value |
 |--------|-------|
-| Total Companies (Authoritative) | 41,425 |
+| Total Companies (Authoritative) | 95,004 |
 | Companies with ≥1 Person | 18,353 (44.3%) |
 | Companies with ≥1 Email | 15,401 (37.2%) |
 | **Companies Needing People** | **23,072 (55.7%)** |

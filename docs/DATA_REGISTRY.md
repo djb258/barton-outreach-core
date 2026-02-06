@@ -13,14 +13,14 @@
 
 | What | Table | Count | Primary Key |
 |------|-------|-------|-------------|
-| **AUTHORITATIVE Companies** | `outreach.company_target` | **41,425** | `outreach_id` |
+| **AUTHORITATIVE Companies** | `outreach.company_target` | **95,004** | `outreach_id` |
 | Slots | `people.company_slot` | 124,275 | `slot_id` |
 | People | `people.people_master` | 78,143 | `unique_id` |
 
 ### DO NOT USE These as Company Source:
 - ❌ `company.company_master` (74,641 - too broad)
 - ❌ `people.people_master` (78,143 - people, not companies)
-- ❌ `outreach.outreach` (42,192 - different scope)
+- ❌ `outreach.outreach` (95,004 - different scope)
 
 ---
 
@@ -29,7 +29,7 @@
 ### URLs / Domains
 | Location | Column | Records | Coverage | Notes |
 |----------|--------|---------|----------|-------|
-| `outreach.outreach` | `domain` | **42,192** | **100%** | Master domain list (commercial only) |
+| `outreach.outreach` | `domain` | **95,004** | **100%** | Master domain list (commercial only) |
 | `outreach.blog` | `source_url` | ~41K | **0%** ❌ | NEEDS POPULATION |
 | `company.company_master` | `website_url` | 74,641 | ~98% | Full URLs |
 | `company.company_source_urls` | `source_url` | 97,124 | 100% | ✅ **About Us & News URLs** |
@@ -97,8 +97,8 @@ WHERE csu.source_type IN ('about_page', 'press_page');
 ### Company Identifiers
 | Location | Column | Records | Notes |
 |----------|--------|---------|-------|
-| **`outreach.company_target`** | `outreach_id` | **41,425** | ⭐ **AUTHORITATIVE COMPANY LIST** |
-| `outreach.outreach` | `outreach_id` | 42,192 | Outreach spine |
+| **`outreach.company_target`** | `outreach_id` | **95,004** | ⭐ **AUTHORITATIVE COMPANY LIST** |
+| `outreach.outreach` | `outreach_id` | 95,004 | Outreach spine |
 | `outreach.outreach_excluded` | `outreach_id` | 2,432 | Non-commercial exclusions |
 | `cl.company_identity` | `sovereign_company_id` | 47,348 | Authority registry |
 | `company.company_master` | `company_unique_id` | 74,641 | Company master ID |
@@ -143,14 +143,14 @@ WHERE csu.source_type IN ('about_page', 'press_page');
 ## ID Relationships (How Tables Connect)
 
 ```
-outreach.company_target.outreach_id (AUTHORITATIVE - 41,425)
+outreach.company_target.outreach_id (AUTHORITATIVE - 95,004)
     │
     ├── people.company_slot.outreach_id (CEO, CFO, HR slots)
     │       └── person_unique_id → people.people_master.unique_id
     │
     └── outreach.people.outreach_id (promoted for outreach)
 
-outreach.outreach.outreach_id (SPINE - 42,192 commercial)
+outreach.outreach.outreach_id (SPINE - 95,004 commercial)
     │
     ├── outreach.blog.outreach_id
     ├── outreach.dol.outreach_id  
@@ -185,10 +185,10 @@ dol.form_5500.sponsor_dfe_ein (DOL SOURCE - 1M+)
 
 | Table | Rows | Key Columns | Enrichment Status |
 |-------|------|-------------|-------------------|
-| `outreach` | **42,192** | outreach_id, sovereign_id, domain | ✅ domain 100% (commercial only) |
+| `outreach` | **95,004** | outreach_id, sovereign_id, domain | ✅ domain 100% (commercial only) |
 | `outreach_excluded` | 2,432 | outreach_id, domain, exclusion_reason | Non-commercial (gov/edu/church/etc) |
 | `blog` | ~41K | outreach_id, source_url, context_summary | ❌ source_url 0% |
-| `company_target` | **41,425** | outreach_id, outreach_status, email_method | ✅ email_method 91% |
+| `company_target` | **95,004** | outreach_id, outreach_status, email_method | ✅ email_method 91% |
 | `dol` | 16,860 | outreach_id, ein, filing_present | ✅ ein 100% |
 | `people` | 324 | person_id, email, email_verified | ✅ email 100% |
 | `bit_scores` | 13,226 | outreach_id, score, score_tier | Active scoring |
@@ -321,7 +321,7 @@ dol.form_5500.sponsor_dfe_ein (DOL SOURCE - 1M+)
 ### Outreach Sub-Hub
 | Enrichment | Date | Source | Records | Status |
 |------------|------|--------|---------|--------|
-| Domain extraction | Prior | CL pipeline | 42,192 | ✅ Complete |
+| Domain extraction | Prior | CL pipeline | 95,004 | ✅ Complete |
 | Blog source_url | - | - | 0 | ❌ PENDING |
 | DOL EIN matching | 2026-01 | DOL files | 13,829 | ✅ Complete |
 
@@ -429,5 +429,5 @@ FROM schema.table;
 - **Moved 1,210 non-commercial entities** to `outreach.outreach_excluded`:
   - TLD exclusions: .gov (14), .edu (84), .org (675), .church (17), .coop (40)
   - Keyword exclusions: government, school, church, insurance, etc. (380)
-- **Net result**: 42,192 clean, commercial companies in outreach spine
-- Sub-hub cascades: dol (16,860), company_target (41,425)
+- **Net result**: 95,004 clean, commercial companies in outreach spine
+- Sub-hub cascades: dol (16,860), company_target (95,004)

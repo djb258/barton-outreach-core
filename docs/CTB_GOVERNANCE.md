@@ -34,7 +34,8 @@ Tables:
 | Total Tables Registered | 246 |
 | Frozen Core Tables | 9 |
 | Current Violations | 0 |
-| Join Key Integrity | 95,004 = 95,004 |
+| **Sovereign Eligible** | 95,004 (101,503 - 6,499 excluded) |
+| **Outreach Claimed** | 95,004 = 95,004 ✓ ALIGNED |
 
 ---
 

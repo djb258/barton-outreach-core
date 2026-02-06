@@ -9,7 +9,7 @@
 
 ## ⚠️ CRITICAL: Authoritative Table Reference
 
-> **ALL work MUST use `outreach.company_target` as the company source (41,425 companies).**
+> **ALL work MUST use `outreach.company_target` as the company source (95,004 companies).**
 > **See [AUTHORITATIVE_TABLE_REFERENCE.md](AUTHORITATIVE_TABLE_REFERENCE.md) for complete details.**
 
 ---
@@ -45,7 +45,7 @@
 **Location**: `docs/diagrams/PEOPLE_DATA_FLOW_ERD.md`
 **Purpose**: Complete people data flow from company_target through slots to outreach
 **Key Tables**:
-- `outreach.company_target` → AUTHORITATIVE (41,425)
+- `outreach.company_target` → AUTHORITATIVE (95,004)
 - `people.company_slot` → Slot assignments (CEO, CFO, HR)
 - `people.people_master` → People data
 - `outreach.people` → Promoted for outreach

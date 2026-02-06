@@ -41,7 +41,7 @@ AND imo_completed_at IS NOT NULL
 - `confidence_score IS NOT NULL` → Confidence in discovered pattern (0.0 to 1.0)
 - `imo_completed_at IS NOT NULL` → IMO waterfall timestamp recorded
 
-**Current State**: 37,878 / 41,425 records (91.4%) are DONE
+**Current State**: 37,878 / 95,004 records (91.4%) are DONE
 
 **Failure States**:
 - `execution_status = 'pending'` → Still processing (2,692 records)
@@ -94,7 +94,7 @@ AND contact_status NOT IN ('bounced', 'unsubscribed')
 - `email_verified = TRUE` → Email address verified via sub-wheel
 - `contact_status` → Active contact status (not bounced/unsubscribed)
 
-**Current State**: 324 people records / 42,192 companies (0.8% coverage)
+**Current State**: 324 people records / 95,004 companies (0.8% coverage)
 
 **Recommended Approach**: Use **Slot-Level DONE** for determining if a company has sufficient people intelligence. Use **Person-Level DONE** for campaign send eligibility.
 
@@ -119,9 +119,9 @@ AND filing_present = TRUE
 - `broker_or_advisor` → Broker/advisor name
 - `carrier` → Insurance carrier name
 
-**Current State**: 11,685 / 42,192 records (27.7%) are DONE
+**Current State**: 11,685 / 95,004 records (27.7%) are DONE
 
-**Coverage**: 16,860 / 42,192 (40.0%) have DOL records, but only 69.3% of those have verified filings
+**Coverage**: 16,860 / 95,004 (40.0%) have DOL records, but only 69.3% of those have verified filings
 
 **Verification Query**:
 ```sql
@@ -151,7 +151,7 @@ outreach_id IS NOT NULL
 - `source_url` → Source URL
 - `context_timestamp` → Content publication date
 
-**Current State**: 41,425 / 42,192 records (98.2%) are DONE
+**Current State**: 95,004 / 95,004 records (98.2%) are DONE
 
 **Note**: Blog content appears to be auto-generated or default-populated for nearly all companies. This sub-hub has the highest completion rate.
 
@@ -183,7 +183,7 @@ AND signal_count > 0
 - `blog_score` → Contribution from Blog Content
 - `talent_flow_score` → Contribution from Talent Flow (movement engine)
 
-**Current State**: 13,226 / 42,192 records (31.3%) are DONE
+**Current State**: 13,226 / 95,004 records (31.3%) are DONE
 
 **Note**: BIT Scores require signals from multiple sub-hubs. Low coverage (31.3%) indicates many companies lack sufficient signals for scoring.
 
@@ -320,7 +320,7 @@ SELECT
   END AS status;
 ```
 
-**Current Status**: 42,192 = 42,192 ✓ ALIGNED
+**Current Status**: 95,004 = 95,004 ✓ ALIGNED
 
 ---
 
@@ -329,7 +329,7 @@ SELECT
 | Sub-Hub | DONE Field(s) | DONE Status | Current DONE Count | Coverage |
 |---------|---------------|-------------|---------------------|----------|
 | **Company Target** | `execution_status='ready'` AND `email_method IS NOT NULL` | Ready to emit | 37,878 | 91.4% |
-| **Blog Content** | `outreach_id IS NOT NULL` | Auto-populated | 41,425 | 98.2% |
+| **Blog Content** | `outreach_id IS NOT NULL` | Auto-populated | 95,004 | 98.2% |
 | **DOL Filings** | `ein IS NOT NULL` AND `filing_present=TRUE` | Verified | 11,685 | 27.7% |
 | **BIT Scores** | `score IS NOT NULL` AND `signal_count > 0` | Scored | 13,226 | 31.3% |
 | **People (Slots)** | `is_filled=TRUE` (3+ slots) | Assigned | 27,303 slots | 21.6% |
