@@ -29,7 +29,7 @@
 | **Hub ID** | HUB-DOL-001 |
 | **Doctrine ID** | 04.04.03 |
 | **Owner** | Outreach Team |
-| **Version** | 1.0.0 |
+| **Version** | 2.0.0 |
 
 ---
 
@@ -45,8 +45,31 @@
 
 ## 4. Purpose
 
-Attach regulatory filings (Form 5500, Schedule A) to **existing companies**.
-Source of truth for plan renewal dates and broker relationships.
+Attach regulatory filings (Form 5500, 5500-SF, Schedule A/C/D/G/H/I) to **existing companies**.
+Source of truth for plan renewal dates, broker relationships, service provider compensation, DFE participation, and financial information.
+
+### Data Coverage (as of 2026-02-10)
+
+| Metric | Value |
+|--------|-------|
+| **Filing Tables** | 26 (dol schema) |
+| **Years Loaded** | 2023, 2024, 2025 |
+| **Total Rows** | 10,970,626 |
+| **Column Comments** | 1,081 (100% coverage) |
+| **Column Metadata Catalog** | 1,081 entries in dol.column_metadata |
+
+### Filing Table Inventory
+
+| Group | Tables | Purpose |
+|-------|--------|---------|
+| Form 5500 | form_5500, form_5500_sf, form_5500_sf_part7 | Core filing data (full + short form) |
+| Schedule A | schedule_a, schedule_a_part1 | Insurance contracts & broker commissions |
+| Schedule C | schedule_c + 8 sub-tables | Service provider compensation |
+| Schedule D | schedule_d + 3 sub-tables | DFE/pooled investment participation |
+| Schedule DCG | schedule_dcg | D/C/G cross-reference |
+| Schedule G | schedule_g + 3 sub-tables | Financial transactions (loans, non-exempt) |
+| Schedule H | schedule_h + 1 sub-table | Large plan financial information |
+| Schedule I | schedule_i + 1 sub-table | Small plan financial information |
 
 ---
 
@@ -138,9 +161,17 @@ Source of truth for plan renewal dates and broker relationships.
 ## 6. Pipeline
 
 ```
-Load DOL CSV (Form 5500, 5500-SF, Schedule A)
+Load DOL CSV ZIPs (26 table types per year)
  ↓
-Parse and validate records
+import_dol_year.py --year YYYY --load
+ ↓
+Parse and validate records (handle schema variations per year)
+ ↓
+Column deduplication + VARCHAR width enforcement
+ ↓
+Batch COPY into Neon (import_mode session variable)
+ ↓
+Verify ACK_ID cross-table integrity
  ↓
 EIN Matching (exact match only, no fuzzy)
  ↓
@@ -148,6 +179,15 @@ Match found?
   ├─ YES → Attach filing to company → Emit signals
   └─ NO → STOP (no retries on mismatch)
 ```
+
+### Multi-Year Load Summary
+
+| Year | Tables | Rows | Notes |
+|------|--------|------|-------|
+| 2023 | 24 | ~6,012,077 | Full year, all schedules |
+| 2024 | 26 | 4,951,258 | Full year, all 26 table types |
+| 2025 | 26 | 7,291 | Partial (early filings) |
+| **Total** | **26 unique** | **10,970,626** | **All tables have form_year index** |
 
 ---
 
@@ -251,6 +291,8 @@ Healthy Threshold: >= 90%
 
 ---
 
-**Last Updated**: 2026-01-02
+**Last Updated**: 2026-02-10
 **Hub**: DOL Filings (04.04.03)
 **Doctrine**: External CL + Outreach Program v1.0
+**ERD Reference**: docs/diagrams/erd/DOL_SUBHUB.mmd
+**Schema Reference**: hubs/dol-filings/SCHEMA.md

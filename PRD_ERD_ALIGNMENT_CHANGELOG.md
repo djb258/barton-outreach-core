@@ -1,6 +1,6 @@
 # PRD ↔ ERD Alignment Changelog
 
-**Alignment Date**: 2026-02-02
+**Alignment Date**: 2026-02-10
 **Source of Truth**: Neon PostgreSQL (Production) via ERD Documentation
 **Reference**: `hubs/*/SCHEMA.md`, `NEON_SCHEMA_REFERENCE_FOR_ERD.md`
 
@@ -13,13 +13,69 @@ PRD documentation aligned with ERD documentation. ERD is authoritative (Neon > E
 | Metric | Value |
 |--------|-------|
 | PRDs Scanned | 29 |
-| PRDs Updated | 4 |
+| PRDs Updated | 5 |
 | Stale References Fixed | 12 |
-| ERD Citations Added | 4 |
+| ERD Citations Added | 5 |
 
 ---
 
-## Critical Fixes
+## 2026-02-10 DOL Filing Tables Expansion
+
+### DOL Sub-Hub PRD Major Update (v1.0 → v2.0)
+
+**Issue**: PRD referenced only Form 5500, 5500-SF, and Schedule A. Missing 21 schedule tables loaded from DOL FOIA data.
+**Fix**: Updated PRD to reflect full 26-table schema across 3 years (2023/2024/2025).
+
+**File Updated**: `hubs/dol-filings/PRD.md`
+
+**Key Changes**:
+- Purpose section: "Form 5500, Schedule A" → "Form 5500, 5500-SF, Schedule A/C/D/G/H/I (26 tables)"
+- Added Data Coverage table (10,970,626 rows, 1,081 column comments)
+- Added Filing Table Inventory (all 26 tables by schedule group)
+- Updated pipeline to reflect `import_dol_year.py` multi-year workflow
+- Added Multi-Year Load Summary (2023: ~6M, 2024: ~5M, 2025: ~7K)
+- Version bumped to 2.0.0
+- Added ERD and Schema references
+
+### DOL SCHEMA.md Major Update
+
+**Issue**: Schema only documented form_5500, form_5500_sf, schedule_a, renewal_calendar, ein_urls, pressure_signals.
+**Fix**: Added all 26 filing tables with per-group documentation.
+
+**File Updated**: `hubs/dol-filings/SCHEMA.md`
+
+**Key Changes**:
+- Overview: Added coverage summary (26 tables, 3 years, 10.97M rows)
+- Primary Tables: Expanded from 10 to 32 table entries (grouped by schedule)
+- Foreign Key Relationships: Added all 25 ACK_ID-based join relationships
+- Data Import Sources: Updated with per-year row counts and import script references
+- What Is NOT Deleted: Expanded to include all 26 filing tables
+
+### DOL ERD Diagrams Updated
+
+**Files Updated**:
+- `docs/diagrams/erd/DOL_SUBHUB.mmd` — Complete rewrite (8 entities → 32 entities)
+- `docs/diagrams/erd/CORE_SCHEMA.mmd` — Added 7 DOL schedule entity groups
+- `repo-data-diagrams/PLE_SCHEMA_ERD.md` — Added 7 DOL schedule entities, updated Hub Ownership
+
+### DOL UI PRD Updated
+
+**File Updated**: `docs/ui/UI_PRD_DOL.md`
+
+**Key Changes**:
+- Added 7 new views (Form 5500-SF, Schedule C/D/G/H/I, Cross-Year Compare)
+- Updated Canonical Outputs Consumed with all schedule table sources
+- Added dol.column_metadata as consumed output
+
+### DOL Quick Reference & Schema Reference Updated
+
+**Files Updated**:
+- `ERD_QUICK_REFERENCE.md` — Added complete DOL section with all 26 tables
+- `NEON_SCHEMA_REFERENCE_FOR_ERD.md` — Added Section 7 with all DOL filing tables
+
+---
+
+## Critical Fixes (2026-02-02)
 
 ### 1. Marketing Schema Removal (DROPPED)
 

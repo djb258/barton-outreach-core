@@ -288,3 +288,86 @@ SELECT COUNT(*) FROM cl.company_identity WHERE outreach_id IS NOT NULL;
 **Corrections**: See ERD_SCHEMA_AUDIT_FINDINGS.md
 **ENUMs**: See NEON_ENUM_TYPES_REFERENCE.md
 **Summary**: See SCHEMA_INTROSPECTION_SUMMARY.md
+
+---
+
+## DOL FILING TABLES (26 tables, 10,970,626 rows)
+
+**Updated**: 2026-02-10
+**Join Key**: ACK_ID (universal across all schedule tables)
+**Years**: 2023, 2024, 2025
+**Metadata**: 100% column comments (1,081 columns), dol.column_metadata catalog
+
+### Core Filing Tables
+
+| Table | PK | Join Key | Key Columns | Rows |
+|-------|----|---------:|-------------|------|
+| `dol.form_5500` | id (bigint) | ack_id (UK) | sponsor_dfe_ein, plan_name, form_year | 432,582 |
+| `dol.form_5500_sf` | id (bigint) | ack_id (UK) | sf_spons_ein, sf_plan_name, form_year | 1,535,999 |
+| `dol.form_5500_sf_part7` | id (bigint) | ack_id (FK) | form_year | 10,613 |
+
+### Schedule A: Insurance Contracts
+
+| Table | PK | Join Key | Key Columns | Rows |
+|-------|----|---------:|-------------|------|
+| `dol.schedule_a` | id (bigint) | ack_id (FK) | ins_carrier_name, ins_carrier_ein, ins_broker_comm_tot_amt, form_year | 625,520 |
+| `dol.schedule_a_part1` | id (bigint) | ack_id (FK) | form_year | 380,509 |
+
+### Schedule C: Service Provider Compensation (9 tables)
+
+| Table | PK | Join Key | Parent |
+|-------|----|----------|--------|
+| `dol.schedule_c` | id (bigint) | ack_id (FK→form_5500) | form_5500 |
+| `dol.schedule_c_part1_item1` | id (bigint) | ack_id (FK→schedule_c) | schedule_c |
+| `dol.schedule_c_part1_item2` | id (bigint) | ack_id (FK→schedule_c) | schedule_c |
+| `dol.schedule_c_part1_item3` | id (bigint) | ack_id (FK→schedule_c) | schedule_c |
+| `dol.schedule_c_part1_item4` | id (bigint) | ack_id (FK→schedule_c) | schedule_c |
+| `dol.schedule_c_part2` | id (bigint) | ack_id (FK→schedule_c) | schedule_c |
+| `dol.schedule_c_part1_item1_ele` | id (bigint) | ack_id (FK→form_5500) | form_5500 |
+| `dol.schedule_c_part1_item2_ele` | id (bigint) | ack_id (FK→form_5500) | form_5500 |
+| `dol.schedule_c_part1_item4_ele` | id (bigint) | ack_id (FK→form_5500) | form_5500 |
+
+### Schedule D: DFE Participation (4 tables)
+
+| Table | PK | Join Key | Parent |
+|-------|----|----------|--------|
+| `dol.schedule_d` | id (bigint) | ack_id (FK→form_5500) | form_5500 |
+| `dol.schedule_d_part1` | id (bigint) | ack_id (FK→schedule_d) | schedule_d |
+| `dol.schedule_d_part2` | id (bigint) | ack_id (FK→schedule_d) | schedule_d |
+| `dol.schedule_dcg` | id (bigint) | ack_id (FK→form_5500) | form_5500 |
+
+### Schedule G: Financial Transactions (4 tables)
+
+| Table | PK | Join Key | Parent |
+|-------|----|----------|--------|
+| `dol.schedule_g` | id (bigint) | ack_id (FK→form_5500) | form_5500 |
+| `dol.schedule_g_part1` | id (bigint) | ack_id (FK→schedule_g) | schedule_g |
+| `dol.schedule_g_part2` | id (bigint) | ack_id (FK→schedule_g) | schedule_g |
+| `dol.schedule_g_part3` | id (bigint) | ack_id (FK→schedule_g) | schedule_g |
+
+### Schedule H & I: Plan Financial Information (4 tables)
+
+| Table | PK | Join Key | Parent |
+|-------|----|----------|--------|
+| `dol.schedule_h` | id (bigint) | ack_id (FK→form_5500) | form_5500 |
+| `dol.schedule_h_part1` | id (bigint) | ack_id (FK→schedule_h) | schedule_h |
+| `dol.schedule_i` | id (bigint) | ack_id (FK→form_5500) | form_5500 |
+| `dol.schedule_i_part1` | id (bigint) | ack_id (FK→schedule_i) | schedule_i |
+
+### DOL Index Strategy
+
+| Index Type | Count | Purpose |
+|-----------|-------|---------|
+| form_year | 23 | Year-based filtering |
+| (ack_id, form_year) composite | 18 | Cross-year joins |
+| sponsor_dfe_ein | 8 | EIN-based company lookup |
+
+### DOL Cross-Year Query Pattern
+
+```sql
+-- Join form_5500 to any schedule across years
+SELECT f.sponsor_dfe_name, s.ins_carrier_name, f.form_year
+FROM dol.form_5500 f
+JOIN dol.schedule_a s ON f.ack_id = s.ack_id AND f.form_year = s.form_year
+WHERE f.form_year IN ('2023', '2024', '2025');
+```

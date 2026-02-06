@@ -1,6 +1,6 @@
 # ERD Sync Changelog
 
-**Sync Date**: 2026-02-02
+**Sync Date**: 2026-02-10
 **Source of Truth**: Neon PostgreSQL (Production)
 **Reference**: `NEON_SCHEMA_REFERENCE_FOR_ERD.md`
 
@@ -12,14 +12,68 @@ ERD documentation synchronized with live Neon schema. Neon is authoritative.
 
 | Metric | Before | After |
 |--------|--------|-------|
-| Tables Documented | 50 | 62 |
+| Tables Documented | 62 | 82 |
 | Stale References Removed | - | 10 |
-| Critical Fixes | - | 4 |
-| Files Updated | - | 6 |
+| Critical Fixes | - | 5 |
+| Files Updated | - | 9 |
 
 ---
 
-## Critical Fixes
+## 2026-02-10 DOL Filing Tables Expansion (20 tables added)
+
+### DOL Schedule Tables Added to ERDs
+
+**Issue**: Only 3 DOL filing tables (form_5500, form_5500_sf, schedule_a) were documented. 21 additional schedule tables loaded from DOL FOIA data were missing from all ERDs.
+
+**Fix**: Added all 26 DOL filing tables to ERD documentation with full relationship mapping.
+
+**Tables Added (grouped by schedule)**:
+
+| Table Group | Tables Added | Total in Group |
+|------------|-------------|----------------|
+| Form 5500 | form_5500_sf_part7 | 3 |
+| Schedule A | schedule_a_part1 | 2 |
+| Schedule C | schedule_c, schedule_c_part1_item1, schedule_c_part1_item2, schedule_c_part1_item3, schedule_c_part1_item4, schedule_c_part2, schedule_c_part1_item1_ele, schedule_c_part1_item2_ele, schedule_c_part1_item4_ele | 9 |
+| Schedule D | schedule_d, schedule_d_part1, schedule_d_part2, schedule_dcg | 4 |
+| Schedule G | schedule_g, schedule_g_part1, schedule_g_part2, schedule_g_part3 | 4 |
+| Schedule H | schedule_h, schedule_h_part1 | 2 |
+| Schedule I | schedule_i, schedule_i_part1 | 2 |
+| **Total** | **20 new + 6 existing** | **26** |
+
+**Files Updated**:
+- `docs/diagrams/erd/DOL_SUBHUB.mmd` — Complete rewrite (8 → 32 entities)
+- `docs/diagrams/erd/CORE_SCHEMA.mmd` — Added 7 DOL schedule entity groups
+- `repo-data-diagrams/PLE_SCHEMA_ERD.md` — Added 7 DOL schedule entities
+- `hubs/dol-filings/SCHEMA.md` — Added all 26 filing tables with documentation
+- `hubs/dol-filings/PRD.md` — Major update v1.0 → v2.0
+- `ERD_QUICK_REFERENCE.md` — Added DOL filing tables section
+- `NEON_SCHEMA_REFERENCE_FOR_ERD.md` — Added Section 7 (DOL tables)
+- `docs/ui/UI_PRD_DOL.md` — Added schedule views
+- `PRD_ERD_ALIGNMENT_CHANGELOG.md` — Added 2026-02-10 entry
+
+### DOL Data Coverage
+
+| Year | Tables | Rows |
+|------|--------|------|
+| 2023 | 24 | ~6,012,077 |
+| 2024 | 26 | 4,951,258 |
+| 2025 | 26 | 7,291 |
+| **Total** | **26 unique** | **10,970,626** |
+
+### DOL Metadata Coverage
+
+| Metadata Type | Count | Coverage |
+|--------------|-------|---------|
+| Table comments (COMMENT ON TABLE) | 26 | 100% |
+| Column comments (COMMENT ON COLUMN) | 1,081 | 100% |
+| form_year indexes | 23 | All tables with form_year |
+| Composite (ack_id, form_year) indexes | 18 | All schedule tables |
+| EIN indexes | 8 | Header tables with sponsor_dfe_ein |
+| dol.column_metadata catalog entries | 1,081 | 100% |
+
+---
+
+## Critical Fixes (2026-02-02)
 
 ### 1. CL Authority Registry PK Correction
 
@@ -219,8 +273,11 @@ python ops/schema-drift/analyze_schema_drift.py
 
 | Field | Value |
 |-------|-------|
-| Sync Date | 2026-02-02 |
+| Sync Date | 2026-02-10 |
 | Performed By | claude-code |
 | Reference | NEON_SCHEMA_REFERENCE_FOR_ERD.md |
 | Source of Truth | Neon PostgreSQL (Production) |
 | CL-Outreach Alignment | 42,192 = 42,192 (ALIGNED) |
+| DOL Filing Tables | 26 (10,970,626 rows) |
+| DOL Years | 2023, 2024, 2025 |
+| DOL Column Metadata | 1,081 entries (100% coverage) |

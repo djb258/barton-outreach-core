@@ -1,18 +1,83 @@
 %% DOL_SUBHUB.mmd
 %% DOL Filings Sub-Hub (04.04.03)
-%% Source: Neon PostgreSQL dol + outreach.dol (queried 2026-01-28)
-%% Tables: 8 (dol schema) + 3 (outreach.dol*) | Rows: 568,337 (dol schema)
-%% Purpose: EIN resolution, Form 5500 + Schedule A matching
+%% Source: Neon PostgreSQL dol + outreach.dol (queried 2026-02-10)
+%% Tables: 26 (dol filing tables) + 6 (support/outreach) | Rows: 10,970,626 (dol filing tables)
+%% Years: 2023, 2024, 2025 (multi-year FOIA data)
+%% Purpose: EIN resolution, Form 5500 + all Schedule matching (A/C/D/G/H/I)
 %% Waterfall Position: #2 (PASS REQUIRED before People Intelligence)
+%% Metadata: 100% column comments (1,081 columns), form_year indexes, ACK_ID composite indexes
 
 erDiagram
+    %% ═══════════════════════════════════════════════════════════════
+    %% OUTREACH SPINE INTEGRATION
+    %% ═══════════════════════════════════════════════════════════════
     OUTREACH_OUTREACH ||--o| OUTREACH_DOL : "has DOL data"
     OUTREACH_DOL ||--o{ OUTREACH_DOL_ERRORS : "has errors"
     OUTREACH_DOL }o--|| DOL_FORM_5500 : "references filing"
+
+    %% ═══════════════════════════════════════════════════════════════
+    %% CORE FILING TABLES (ACK_ID is the universal join key)
+    %% ═══════════════════════════════════════════════════════════════
+    DOL_FORM_5500 ||--o{ DOL_FORM_5500_SF : "short form variant"
+    DOL_FORM_5500 ||--o{ DOL_FORM_5500_SF_PART7 : "SF part 7 data"
     DOL_FORM_5500 ||--o{ DOL_SCHEDULE_A : "has schedule A"
+    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_A_PART1 : "has schedule A part 1"
+
+    %% ═══════════════════════════════════════════════════════════════
+    %% SCHEDULE C: Service Provider Compensation (9 sub-tables)
+    %% ═══════════════════════════════════════════════════════════════
+    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_C : "has schedule C"
+    DOL_SCHEDULE_C ||--o{ DOL_SCHEDULE_C_PART1_ITEM1 : "direct comp"
+    DOL_SCHEDULE_C ||--o{ DOL_SCHEDULE_C_PART1_ITEM2 : "indirect comp"
+    DOL_SCHEDULE_C ||--o{ DOL_SCHEDULE_C_PART1_ITEM3 : "terminated providers"
+    DOL_SCHEDULE_C ||--o{ DOL_SCHEDULE_C_PART1_ITEM4 : "provider failures"
+    DOL_SCHEDULE_C ||--o{ DOL_SCHEDULE_C_PART2 : "other comp"
+    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_C_PART1_ITEM1_ELE : "C P1I1 elements"
+    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_C_PART1_ITEM2_ELE : "C P1I2 elements"
+    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_C_PART1_ITEM4_ELE : "C P1I4 elements"
+
+    %% ═══════════════════════════════════════════════════════════════
+    %% SCHEDULE D: DFE Participation (4 sub-tables)
+    %% ═══════════════════════════════════════════════════════════════
+    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_D : "has schedule D"
+    DOL_SCHEDULE_D ||--o{ DOL_SCHEDULE_D_PART1 : "DFE investments"
+    DOL_SCHEDULE_D ||--o{ DOL_SCHEDULE_D_PART2 : "DFE filings"
+
+    %% ═══════════════════════════════════════════════════════════════
+    %% SCHEDULE DCG: D/C/G Cross-Reference
+    %% ═══════════════════════════════════════════════════════════════
+    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_DCG : "has schedule DCG"
+
+    %% ═══════════════════════════════════════════════════════════════
+    %% SCHEDULE G: Financial Transactions (4 sub-tables)
+    %% ═══════════════════════════════════════════════════════════════
+    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_G : "has schedule G"
+    DOL_SCHEDULE_G ||--o{ DOL_SCHEDULE_G_PART1 : "large loans"
+    DOL_SCHEDULE_G ||--o{ DOL_SCHEDULE_G_PART2 : "fixed income"
+    DOL_SCHEDULE_G ||--o{ DOL_SCHEDULE_G_PART3 : "non-exempt transactions"
+
+    %% ═══════════════════════════════════════════════════════════════
+    %% SCHEDULE H: Financial Information (2 tables)
+    %% ═══════════════════════════════════════════════════════════════
+    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_H : "has schedule H"
+    DOL_SCHEDULE_H ||--o{ DOL_SCHEDULE_H_PART1 : "H part 1 detail"
+
+    %% ═══════════════════════════════════════════════════════════════
+    %% SCHEDULE I: Small Plan Financial (2 tables)
+    %% ═══════════════════════════════════════════════════════════════
+    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_I : "has schedule I"
+    DOL_SCHEDULE_I ||--o{ DOL_SCHEDULE_I_PART1 : "I part 1 detail"
+
+    %% ═══════════════════════════════════════════════════════════════
+    %% SUPPORT TABLES
+    %% ═══════════════════════════════════════════════════════════════
+    DOL_EIN_URLS ||--o{ DOL_FORM_5500 : "EIN lookup"
     DOL_FORM_5500 ||--o{ DOL_RENEWAL_CALENDAR : "has renewal dates"
-    DOL_EIN_URLS ||--o{ DOL_FORM_5500 : "files"
     DOL_FORM_5500 ||--o{ DOL_PRESSURE_SIGNALS : "triggers signals"
+
+    %% ═══════════════════════════════════════════════════════════════
+    %% ENTITY DEFINITIONS
+    %% ═══════════════════════════════════════════════════════════════
 
     OUTREACH_OUTREACH {
         uuid outreach_id PK "Spine PK"
@@ -24,94 +89,242 @@ erDiagram
         uuid dol_id PK "DOL sub-hub record ID"
         uuid outreach_id FK "Spine FK (REQUIRED)"
         text ein "Employer Identification Number"
-        text filing_id FK "FK to dol.form_5500"
-        boolean form_5500_matched "Form 5500 match found"
-        boolean schedule_a_matched "Schedule A match found"
-        numeric match_confidence "Match confidence 0.00-1.00"
-        text match_method "EXACT|FUZZY|EIN_ONLY|NONE"
-        jsonb match_details "Match algorithm details"
-        timestamptz matched_at "Match timestamp"
+        boolean filing_present "Form 5500 match found"
+        text funding_type "Plan funding type"
+        text broker_or_advisor "Broker/advisor info"
+        text carrier "Insurance carrier"
         timestamptz created_at "Record creation time"
         timestamptz updated_at "Last update time"
     }
 
     OUTREACH_DOL_ERRORS {
-        uuid error_id PK
+        uuid error_id PK "Error record ID"
         uuid outreach_id FK "Spine FK"
-        text error_type "Error classification"
-        text error_message "Error details"
-        text ein "EIN that failed"
-        jsonb error_context "Additional context"
+        varchar pipeline_stage "Pipeline stage"
+        varchar failure_code "Error classification"
+        text blocking_reason "Error details"
+        varchar severity "Error severity"
+        boolean retry_allowed "Can retry?"
+        jsonb raw_input "Additional context"
         timestamptz created_at "Error timestamp"
     }
 
     DOL_FORM_5500 {
-        text filing_id PK "DOL filing ID"
-        text ein "Employer Identification Number"
-        text plan_name "Benefit plan name"
-        text sponsor_name "Plan sponsor name"
-        text sponsor_state "Sponsor state"
-        integer plan_year "Plan year (YYYY)"
-        integer plan_year_end_month "Plan year end month"
-        integer total_participants "Total plan participants"
-        numeric total_assets "Total plan assets"
-        date filing_date "Filing date"
-        text form_type "Form type"
-        text plan_type "Plan type"
-        boolean is_large_plan "Is large plan (100+ participants)"
-        timestamptz created_at "Record creation time"
+        bigint id PK "Surrogate PK"
+        varchar ack_id UK "DOL acknowledgment ID (universal join key)"
+        varchar sponsor_dfe_ein "Plan sponsor EIN"
+        varchar sponsor_dfe_name "Plan sponsor name"
+        varchar spons_dfe_dba_name "DBA name"
+        varchar plan_name "Benefit plan name"
+        varchar plan_number "Plan number"
+        varchar spons_dfe_mail_us_state "Sponsor state"
+        integer tot_active_partcp_cnt "Total active participants"
+        varchar form_year "Filing year (2023/2024/2025)"
+        varchar filing_status "Filing status"
+        timestamptz created_at "Record creation"
+    }
+
+    DOL_FORM_5500_SF {
+        bigint id PK "Surrogate PK"
+        varchar ack_id UK "DOL acknowledgment ID"
+        varchar sf_sponsor_name "Sponsor name"
+        varchar sf_spons_ein "Sponsor EIN"
+        varchar sf_plan_name "Plan name"
+        numeric sf_tot_partcp_boy_cnt "Participants BOY"
+        numeric sf_tot_assets_eoy_amt "Total assets EOY"
+        varchar form_year "Filing year"
+    }
+
+    DOL_FORM_5500_SF_PART7 {
+        bigint id PK "Surrogate PK"
+        varchar ack_id FK "Links to form_5500_sf"
+        varchar form_year "Filing year"
     }
 
     DOL_SCHEDULE_A {
-        uuid schedule_id PK
-        text filing_id FK "FK to form_5500"
-        text ein "Employer Identification Number"
-        text insurance_carrier_name "Insurance carrier name"
-        text insurance_carrier_ein "Carrier EIN"
-        numeric commission_amount "Commission paid"
-        numeric premium_amount "Premium amount"
-        text policy_number "Policy number"
-        text coverage_type "Coverage type"
-        date coverage_start_date "Coverage start"
-        date coverage_end_date "Coverage end"
-        timestamptz created_at "Record creation time"
+        bigint id PK "Surrogate PK"
+        varchar ack_id FK "Links to form_5500"
+        varchar ins_carrier_name "Insurance carrier name"
+        varchar ins_carrier_ein "Carrier EIN"
+        numeric ins_prsn_covered_eoy_cnt "Persons covered EOY"
+        varchar ins_policy_from_date "Policy start date"
+        varchar ins_policy_to_date "Policy end date"
+        numeric ins_broker_comm_tot_amt "Broker commissions"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_A_PART1 {
+        bigint id PK "Surrogate PK"
+        varchar ack_id FK "Links to form_5500"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_C {
+        bigint id PK "Surrogate PK"
+        varchar ack_id FK "Links to form_5500"
+        varchar sponsor_dfe_ein "Sponsor EIN"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_C_PART1_ITEM1 {
+        bigint id PK "Surrogate PK"
+        varchar ack_id FK "Links to schedule_c"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_C_PART1_ITEM2 {
+        bigint id PK "Surrogate PK"
+        varchar ack_id FK "Links to schedule_c"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_C_PART1_ITEM3 {
+        bigint id PK "Surrogate PK"
+        varchar ack_id FK "Links to schedule_c"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_C_PART1_ITEM4 {
+        bigint id PK "Surrogate PK"
+        varchar ack_id FK "Links to schedule_c"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_C_PART2 {
+        bigint id PK "Surrogate PK"
+        varchar ack_id FK "Links to schedule_c"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_C_PART1_ITEM1_ELE {
+        bigint id PK "Surrogate PK"
+        varchar ack_id FK "Links to form_5500"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_C_PART1_ITEM2_ELE {
+        bigint id PK "Surrogate PK"
+        varchar ack_id FK "Links to form_5500"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_C_PART1_ITEM4_ELE {
+        bigint id PK "Surrogate PK"
+        varchar ack_id FK "Links to form_5500"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_D {
+        bigint id PK "Surrogate PK"
+        varchar ack_id FK "Links to form_5500"
+        varchar sponsor_dfe_ein "Sponsor EIN"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_D_PART1 {
+        bigint id PK "Surrogate PK"
+        varchar ack_id FK "Links to schedule_d"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_D_PART2 {
+        bigint id PK "Surrogate PK"
+        varchar ack_id FK "Links to schedule_d"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_DCG {
+        bigint id PK "Surrogate PK"
+        varchar ack_id FK "Links to form_5500"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_G {
+        bigint id PK "Surrogate PK"
+        varchar ack_id FK "Links to form_5500"
+        varchar sponsor_dfe_ein "Sponsor EIN"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_G_PART1 {
+        bigint id PK "Surrogate PK"
+        varchar ack_id FK "Links to schedule_g"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_G_PART2 {
+        bigint id PK "Surrogate PK"
+        varchar ack_id FK "Links to schedule_g"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_G_PART3 {
+        bigint id PK "Surrogate PK"
+        varchar ack_id FK "Links to schedule_g"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_H {
+        bigint id PK "Surrogate PK"
+        varchar ack_id FK "Links to form_5500"
+        varchar sponsor_dfe_ein "Sponsor EIN"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_H_PART1 {
+        bigint id PK "Surrogate PK"
+        varchar ack_id FK "Links to schedule_h"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_I {
+        bigint id PK "Surrogate PK"
+        varchar ack_id FK "Links to form_5500"
+        varchar sponsor_dfe_ein "Sponsor EIN"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_I_PART1 {
+        bigint id PK "Surrogate PK"
+        varchar ack_id FK "Links to schedule_i"
+        varchar form_year "Filing year"
     }
 
     DOL_RENEWAL_CALENDAR {
-        uuid renewal_id PK
-        text filing_id FK "FK to form_5500"
-        text ein "Employer Identification Number"
+        uuid renewal_id PK "Renewal record ID"
+        text company_unique_id FK "Company reference"
+        uuid filing_id FK "FK to form_5500"
         date renewal_date "Renewal date"
         integer days_until_renewal "Days until renewal"
-        boolean reminder_sent "Reminder sent flag"
-        text reminder_type "Reminder type"
+        boolean is_upcoming "Is future renewal"
         timestamptz created_at "Record creation time"
     }
 
     DOL_EIN_URLS {
-        text ein PK "Employer Identification Number"
+        varchar ein PK "Employer Identification Number"
         text company_name "Company name from DOL"
-        text url "Company website URL"
-        text source "URL source"
-        numeric confidence "URL confidence"
-        timestamptz verified_at "URL verification time"
-        timestamptz created_at "Record creation time"
+        text domain "Discovered domain"
+        text url "Full URL"
+        text discovery_method "Discovery method"
+        timestamptz discovered_at "Discovery timestamp"
     }
 
     DOL_PRESSURE_SIGNALS {
-        uuid signal_id PK
-        text filing_id FK "FK to form_5500"
-        text ein "Employer Identification Number"
-        text signal_type "RENEWAL_30D|RENEWAL_60D|RENEWAL_90D|LARGE_PLAN"
-        integer signal_strength "Signal strength 1-10"
-        timestamptz signal_date "Signal date"
-        timestamptz created_at "Record creation time"
+        uuid signal_id PK "Signal ID"
+        text company_unique_id FK "Company reference"
+        varchar signal_type "RENEWAL_PROXIMITY|COST_INCREASE|BROKER_CHANGE"
+        enum pressure_domain "STRUCTURAL_PRESSURE"
+        integer magnitude "Impact score 0-100"
+        timestamptz detected_at "Signal detection time"
+        timestamptz expires_at "Signal expiration"
     }
 
-    DOL_FORM_5500_ICP_FILTERED {
-        text filing_id PK
-        text ein "Employer Identification Number"
-        text sponsor_name "Plan sponsor name"
-        boolean icp_match "ICP match flag"
-        text icp_reason "ICP match reason"
+    DOL_COLUMN_METADATA {
+        int id PK "Catalog entry ID"
+        varchar table_name "Table name"
+        varchar column_name "Column name"
+        text description "AI-ready column description"
+        varchar category "Column category"
+        boolean is_pii "PII flag"
+        boolean is_searchable "Search index flag"
     }

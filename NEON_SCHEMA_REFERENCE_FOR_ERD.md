@@ -366,6 +366,152 @@ bit.authorization_log (company_unique_id) [N:1]
 
 ---
 
-**Last Updated**: 2026-02-02
+## 7. DOL FILING TABLES (26 tables, 10,970,626 rows)
+
+**Updated**: 2026-02-10
+**Schema**: `dol`
+**Years**: 2023, 2024, 2025
+**Universal Join Key**: `ack_id` (links all schedule tables to form_5500)
+**Metadata**: 100% column comments (1,081 columns), dol.column_metadata catalog
+
+### dol.form_5500 (~432K rows)
+
+**Purpose**: Full Form 5500 filings from DOL FOIA data
+
+| Column Name | Data Type | Nullable | Default | Notes |
+|------------|-----------|----------|---------|-------|
+| id | bigint | NO | generated | Surrogate PK |
+| ack_id | varchar | NO | | DOL acknowledgment ID (universal join key) |
+| sponsor_dfe_ein | varchar | NO | | Plan sponsor EIN |
+| sponsor_dfe_name | varchar | NO | | Plan sponsor name |
+| spons_dfe_dba_name | varchar | YES | | DBA name |
+| plan_name | varchar | YES | | Plan name |
+| plan_number | varchar | YES | | Plan number |
+| spons_dfe_mail_us_state | varchar | YES | | Sponsor state |
+| tot_active_partcp_cnt | integer | YES | | Active participants |
+| form_year | varchar | YES | | Filing year (2023/2024/2025) |
+| filing_status | varchar | YES | | Filing status |
+
+### dol.form_5500_sf (~1.5M rows)
+
+**Purpose**: Short Form 5500-SF filings
+
+| Column Name | Data Type | Nullable | Notes |
+|------------|-----------|----------|-------|
+| id | bigint | NO | Surrogate PK |
+| ack_id | varchar | NO | DOL acknowledgment ID |
+| sf_sponsor_name | varchar | YES | Sponsor name |
+| sf_spons_ein | varchar | YES | Sponsor EIN |
+| sf_plan_name | varchar | YES | Plan name |
+| sf_tot_partcp_boy_cnt | numeric | YES | Participants BOY |
+| sf_tot_assets_eoy_amt | numeric | YES | Total assets EOY |
+| form_year | varchar | YES | Filing year |
+
+### dol.schedule_a (~625K rows)
+
+**Purpose**: Schedule A insurance contracts and broker commissions
+
+| Column Name | Data Type | Nullable | Notes |
+|------------|-----------|----------|-------|
+| id | bigint | NO | Surrogate PK |
+| ack_id | varchar | YES | Links to form_5500 |
+| ins_carrier_name | varchar | YES | Insurance carrier name |
+| ins_carrier_ein | varchar | YES | Carrier EIN |
+| ins_prsn_covered_eoy_cnt | numeric | YES | Persons covered EOY |
+| ins_policy_from_date | varchar | YES | Policy start date |
+| ins_policy_to_date | varchar | YES | Policy end date |
+| ins_broker_comm_tot_amt | numeric | YES | Broker commissions |
+| ins_broker_fees_tot_amt | numeric | YES | Broker fees |
+| form_year | varchar | YES | Filing year |
+
+### dol.schedule_c + 8 sub-tables (~4.3M rows total)
+
+**Purpose**: Service provider compensation disclosure
+
+All Schedule C tables share: `id` (bigint PK), `ack_id` (varchar FK), `form_year` (varchar)
+
+| Table | Additional Key Columns |
+|-------|----------------------|
+| schedule_c | sponsor_dfe_ein |
+| schedule_c_part1_item1 | Direct compensation to service providers |
+| schedule_c_part1_item2 | Indirect compensation |
+| schedule_c_part1_item3 | Terminated service provider info |
+| schedule_c_part1_item4 | Failures to provide required info |
+| schedule_c_part2 | Other compensation arrangements |
+| schedule_c_part1_item1_ele | P1I1 compensation elements |
+| schedule_c_part1_item2_ele | P1I2 compensation elements |
+| schedule_c_part1_item4_ele | P1I4 failure elements |
+
+### dol.schedule_d + 3 sub-tables (~3.3M rows total)
+
+**Purpose**: Direct Filing Entity (DFE) participation
+
+All Schedule D tables share: `id` (bigint PK), `ack_id` (varchar FK), `form_year` (varchar)
+
+| Table | Additional Key Columns |
+|-------|----------------------|
+| schedule_d | sponsor_dfe_ein |
+| schedule_d_part1 | DFE investment participation detail |
+| schedule_d_part2 | DFE filing participation detail |
+| schedule_dcg | D/C/G cross-reference data |
+
+### dol.schedule_g + 3 sub-tables (~1.9K rows total)
+
+**Purpose**: Financial transactions requiring disclosure
+
+All Schedule G tables share: `id` (bigint PK), `ack_id` (varchar FK), `form_year` (varchar)
+
+| Table | Additional Key Columns |
+|-------|----------------------|
+| schedule_g | sponsor_dfe_ein |
+| schedule_g_part1 | Loans/fixed income in default |
+| schedule_g_part2 | Fixed income obligations in default |
+| schedule_g_part3 | Non-exempt transactions |
+
+### dol.schedule_h + 1 sub-table (~189K rows total)
+
+**Purpose**: Large plan financial information
+
+| Table | Key Columns |
+|-------|-------------|
+| schedule_h | id, ack_id, sponsor_dfe_ein, form_year |
+| schedule_h_part1 | id, ack_id, form_year |
+
+### dol.schedule_i + 1 sub-table (~117K rows total)
+
+**Purpose**: Small plan financial information
+
+| Table | Key Columns |
+|-------|-------------|
+| schedule_i | id, ack_id, sponsor_dfe_ein, form_year |
+| schedule_i_part1 | id, ack_id, form_year |
+
+### DOL Indexes
+
+| Index Type | Tables Covered | Purpose |
+|-----------|---------------|---------|
+| form_year | 23 of 26 | Year-based partition filtering |
+| (ack_id, form_year) composite | 18 | Cross-table joins with year filter |
+| sponsor_dfe_ein | 8 (schedule_c, d, g, h, i headers) | EIN-based company lookup |
+
+### DOL Column Metadata Catalog
+
+`dol.column_metadata` contains 1,081 entries describing every column across all 26 filing tables:
+
+| Column Name | Data Type | Purpose |
+|------------|-----------|---------|
+| id | int (PK) | Catalog entry ID |
+| table_name | varchar | Table name (without schema) |
+| column_name | varchar | Column name |
+| description | text | AI-ready column description |
+| category | varchar | Category (identifier, attribute, metric, etc.) |
+| data_type | varchar | PostgreSQL data type |
+| is_pii | boolean | PII flag |
+| is_searchable | boolean | Search index candidate |
+
+---
+
+**Last Updated**: 2026-02-10
 **CL-Outreach Alignment**: 51,148 = 51,148 ✓
+**DOL Filing Tables**: 26 | Total DOL Rows: 10,970,626 | Years: 2023, 2024, 2025
 **Safe for Live Marketing**: YES (v1.0 CERTIFIED)

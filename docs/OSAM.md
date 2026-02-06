@@ -41,16 +41,18 @@ SPINE (outreach.outreach)
 | Who is in a slot? | `people.company_slot` → `people.people_master` | slot_id |
 | Contact details (name/email/phone)? | `people.people_master` | company_slot_unique_id |
 | LinkedIn URL for person? | `people.people_master` | company_slot_unique_id |
-| DOL filing status? | `outreach.dol` | outreach_id |
-| EIN for company? | `outreach.outreach` or `outreach.dol` | outreach_id |
-| Form 5500 filing details? | `dol.form_5500` / `dol.form_5500_sf` | Query by EIN or ack_id |
-| Insurance/broker data? | `dol.schedule_a` | Join via ack_id to form_5500 |
-| Service provider compensation? | `dol.schedule_c` + sub-tables | Join via ack_id |
-| DFE participation? | `dol.schedule_d` + sub-tables | Join via ack_id |
-| Financial transactions? | `dol.schedule_g` + sub-tables | Join via ack_id |
-| Large plan financials? | `dol.schedule_h` + sub-tables | Join via ack_id |
-| Small plan financials? | `dol.schedule_i` + sub-tables | Join via ack_id |
-| DOL column meaning? | `dol.column_metadata` | Direct (1,081 entries) |
+| DOL filing status/carrier/broker/funding? | `outreach.dol` | outreach_id |
+| EIN for company? | `outreach.outreach` (72% coverage, 69,233 EINs) | - |
+| ICP-filtered filings? | `dol.form_5500_icp_filtered` | Direct (MV, 24,892 rows) |
+| Form 5500 filing details? | `dol.form_5500` / `dol.form_5500_sf` | EIN direct (no intermediate join needed) |
+| Insurance carrier data? | `dol.schedule_a` | EIN → form_5500.ack_id → schedule_a.ack_id |
+| Service provider compensation? | `dol.schedule_c` + sub-tables | EIN → form_5500.ack_id → schedule_c.ack_id |
+| DFE participation? | `dol.schedule_d` + sub-tables | EIN → form_5500.ack_id → schedule_d.ack_id |
+| Financial transactions? | `dol.schedule_g` + sub-tables | EIN → form_5500.ack_id → schedule_g.ack_id |
+| Large plan financials? | `dol.schedule_h` + sub-tables | EIN → form_5500.ack_id → schedule_h.ack_id |
+| Small plan financials? | `dol.schedule_i` + sub-tables | EIN → form_5500.ack_id → schedule_i.ack_id |
+| DOL column meaning? | `dol.column_metadata` | Direct (registry, 1,081 entries) |
+| EIN → URL/domain lookup? | `dol.ein_urls` | EIN direct (127,909 rows) |
 | Company news/blog URLs? | `outreach.blog` | outreach_id |
 | Company name/domain? | `cl.company_identity` | sovereign_company_id |
 
@@ -150,32 +152,48 @@ FK:    outreach_id → outreach.outreach
 
 ### SUB-HUB: DOL Filings - 04.04.03
 
+The DOL sub-hub has **4 core tables** per CTB Leaf Lock:
+
+| Role | Table | Purpose |
+|------|-------|---------|
+| CANONICAL | `outreach.dol` | DOL filing facts per outreach_id |
+| ERRORS | `outreach.dol_errors` | DOL pipeline errors |
+| MV | `dol.form_5500_icp_filtered` | ICP-filtered filing view |
+| REGISTRY | `dol.column_metadata` | Column descriptions (1,081 entries) |
+
 ```
-Table: outreach.dol
+Canonical Table: outreach.dol
 PK:    dol_id (uuid)
 FK:    outreach_id → outreach.outreach
 ```
 
 **Owns (Form 5500 + Benefits Data)**:
-| Column | Type | Description |
-|--------|------|-------------|
-| dol_id | uuid | DOL record ID |
-| outreach_id | uuid | **Join to spine** |
-| ein | text | Federal EIN |
-| filing_present | boolean | Has Form 5500 filing |
-| funding_type | text | Fully insured/self-funded |
-| broker_or_advisor | text | Current broker name |
-| carrier | text | Insurance carrier |
+| Column | Type | Description | Fill Rate |
+|--------|------|-------------|----------|
+| dol_id | uuid | DOL record ID | 100% |
+| outreach_id | uuid | **Join to spine** | 100% |
+| ein | text | Federal EIN (9-digit, no dashes) | 100% (70,150) |
+| filing_present | boolean | Has Form 5500 filing | 92% (64,975) |
+| funding_type | text | `fully_insured` / `self_funded` / `pension_only` | 100% (70,150) |
+| broker_or_advisor | text | Current broker/advisor name (from Schedule C) | 10% (6,995) |
+| carrier | text | Insurance carrier name (from Schedule A) | 14.6% (10,233) |
+
+**Funding Type Breakdown**:
+| Type | Count | Meaning |
+|------|-------|---------|
+| `pension_only` | 55,405 | Retirement plan only — no health insurance |
+| `fully_insured` | 11,735 | Has health carrier on Schedule A |
+| `self_funded` | 3,002 | Files health plan but no carrier — self-insured |
 
 **Ask DOL**:
-- "Does this company have a DOL filing?"
-- "What's the funding type (self-funded vs fully insured)?"
-- "Who is the current broker?"
-- "What carrier do they use?"
+- "Does this company have a DOL filing?" → `filing_present`
+- "What's the funding type?" → `funding_type`
+- "Who is the current broker?" → `broker_or_advisor` (10% fill — large filers only)
+- "What carrier do they use?" → `carrier` (14.6% fill — large filers with Schedule A)
 
-**Note**: DOL can have multiple records per outreach_id (multiple filing years).
+**Note**: DOL can have multiple records per outreach_id (multiple filing years). Carrier/broker fill rates are lower because 79% of matched companies are pension-only filers without Schedule A/C data.
 
-**Reference Tables**: 26 DOL filing tables in `dol.*` schema (see DOL section below).
+**Supportive Reference Data**: 27 DOL filing/utility tables in `dol.*` schema are ALL queryable via EIN or ack_id. They are NOT sub-hub members. See DOL section below.
 
 ---
 
@@ -398,15 +416,47 @@ WHERE cs.is_filled = true
 
 ---
 
-## DOL: Queryable System of Record
+## DOL: Queryable Filing & Reference Data
 
-**DOL is the authoritative source for Form 5500 filing data.** Query these tables directly by EIN or ACK_ID.
-**Data Coverage**: 2023, 2024, 2025 — **10,970,626 total rows** across 26 filing tables.
-**Join Key**: `ack_id` (universal DOL join key linking all schedules to form_5500).
-**Year Key**: `form_year` (VARCHAR, filter all tables by year).
+> **These tables are NOT part of the DOL sub-hub.** They are queryable reference data that feeds INTO `outreach.dol` (the canonical table). The DOL sub-hub owns 4 tables: `outreach.dol`, `outreach.dol_errors`, `dol.form_5500_icp_filtered`, `dol.column_metadata`.
+
+**Data Coverage**: 2023, 2024, 2025 — **11,124,508 total rows** across 27 data-bearing tables (+2 empty staging tables).
+**Pipeline Reach**: 69,233 of 95,004 pipeline companies have EINs (72%). All 27 data-bearing tables are LIVE.
+**EIN Format**: All EINs are 9-digit, no dashes (e.g., `832809723`). Matches across `outreach.outreach.ein`, `outreach.dol.ein`, and all `dol.*` tables.
+
+### Join Paths (all working)
+
+```
+Path A (direct, preferred for ad-hoc):
+  outreach.outreach.ein → dol.form_5500.sponsor_dfe_ein → any_schedule.ack_id
+  outreach.outreach.ein → dol.form_5500_sf.sf_spons_ein → any_schedule.ack_id
+
+Path B (via bridge, preferred for enriched data):
+  outreach.outreach → outreach.dol (outreach_id) → dol.form_5500 (EIN) → schedules (ack_id)
+
+Path C (URL lookup):
+  outreach.outreach.ein → dol.ein_urls.ein
+```
+
+**Join Keys**:
+- `ein` — Links pipeline to form_5500/form_5500_sf (9-digit, no dashes)
+- `ack_id` — Links form_5500 to ALL schedule tables (universal DOL key)
+- `form_year` — VARCHAR, filter any table by year ('2023', '2024', '2025')
+
 **Metadata**: 100% column comments (1,081 columns), all documented in `dol.column_metadata`.
 
-### DOL Filing Tables (26 tables)
+### Pipeline Reach by Entry Point
+
+| Entry Point | Pipeline Companies Reachable |
+|-------------|-----------------------------|
+| `dol.form_5500` (large filers) | 14,763 |
+| `dol.form_5500_sf` (small filers) | 57,290 |
+| `dol.schedule_a` (insurance) | 9,987 |
+| `dol.schedule_c` (service providers) | 9,312 |
+| `dol.schedule_h` (large plan financials) | 8,860 |
+| `dol.ein_urls` (EIN→URL lookup) | 55,798 |
+
+### DOL Supportive Tables (27 data-bearing + 2 staging)
 
 | Table | Records | Purpose |
 |-------|---------|---------|
@@ -417,32 +467,37 @@ WHERE cs.is_filled = true
 | **Schedule A: Insurance** | | |
 | dol.schedule_a | 625,520 | Insurance carriers, brokers, commissions, policy dates |
 | dol.schedule_a_part1 | 380,509 | Schedule A Part 1 detail |
-| **Schedule C: Service Provider Comp** | | |
-| dol.schedule_c | ~100K | Schedule C header |
-| dol.schedule_c_part1_item1 | ~1.3M | Direct compensation to service providers |
-| dol.schedule_c_part1_item2 | ~500K | Indirect compensation |
-| dol.schedule_c_part1_item3 | ~16K | Terminated service providers |
-| dol.schedule_c_part1_item4 | ~10K | Providers who failed to provide info |
-| dol.schedule_c_part2 | ~600K | Other service provider compensation |
-| dol.schedule_c_part1_item1_ele | ~1.4M | P1I1 compensation elements |
-| dol.schedule_c_part1_item2_ele | ~280K | P1I2 compensation elements |
-| dol.schedule_c_part1_item4_ele | ~6K | P1I4 failure elements |
+| **Schedule C: Service Provider Comp (10 tables)** | | |
+| dol.schedule_c | 241,556 | Schedule C header |
+| dol.schedule_c_part1_item1 | 396,838 | Direct compensation to service providers |
+| dol.schedule_c_part1_item2 | 754,802 | Indirect compensation |
+| dol.schedule_c_part1_item2_codes | 1,848,202 | Item 2 service type codes (code 28 = insurance broker) |
+| dol.schedule_c_part1_item3 | 383,338 | Terminated service providers |
+| dol.schedule_c_part1_item3_codes | 707,007 | Item 3 service type codes |
+| dol.schedule_c_part2 | 4,593 | Other service provider compensation |
+| dol.schedule_c_part2_codes | 2,352 | Part 2 service type codes |
+| dol.schedule_c_part3 | 15,514 | Schedule C Part 3 (terminated providers detail) |
 | **Schedule D: DFE Participation** | | |
-| dol.schedule_d | ~125K | Schedule D header (DFE participation) |
-| dol.schedule_d_part1 | ~1.5M | DFE investment details |
-| dol.schedule_d_part2 | ~1.5M | DFE filing details |
-| dol.schedule_dcg | ~130K | D/C/G cross-reference |
+| dol.schedule_d | 121,813 | Schedule D header (DFE participation) |
+| dol.schedule_d_part1 | 808,051 | DFE investment details |
+| dol.schedule_d_part2 | 2,392,112 | DFE filing details |
+| dol.schedule_dcg | 235 | D/C/G cross-reference |
 | **Schedule G: Financial Transactions** | | |
-| dol.schedule_g | ~600 | Schedule G header |
-| dol.schedule_g_part1 | ~500 | Large loans/fixed income defaults |
-| dol.schedule_g_part2 | ~200 | Fixed income obligations |
-| dol.schedule_g_part3 | ~600 | Non-exempt transactions |
+| dol.schedule_g | 568 | Schedule G header |
+| dol.schedule_g_part1 | 784 | Large loans/fixed income defaults |
+| dol.schedule_g_part2 | 97 | Fixed income obligations |
+| dol.schedule_g_part3 | 469 | Non-exempt transactions |
 | **Schedule H: Large Plan Financial** | | |
-| dol.schedule_h | ~95K | Large plan financial information |
-| dol.schedule_h_part1 | ~95K | H Part 1 detail |
+| dol.schedule_h | 169,276 | Large plan financial information |
+| dol.schedule_h_part1 | 20,359 | H Part 1 detail |
 | **Schedule I: Small Plan Financial** | | |
-| dol.schedule_i | ~59K | Small plan financial information |
-| dol.schedule_i_part1 | ~59K | I Part 1 detail |
+| dol.schedule_i | 116,493 | Small plan financial information |
+| dol.schedule_i_part1 | 944 | I Part 1 detail |
+| **Utility** | | |
+| dol.ein_urls | 127,909 | EIN → URL/domain lookup |
+| **Staging (empty, future use)** | | |
+| dol.pressure_signals | 0 | Renewal pressure signal staging |
+| dol.renewal_calendar | 0 | Renewal calendar staging |
 
 ### DOL Column Metadata (1,081 entries)
 
@@ -788,7 +843,9 @@ WHERE is_frozen = TRUE;
 
 | Date | Change |
 |------|--------|
-| 2026-02-06 | Added all 26 DOL filing tables (schedules A/C/D/G/H/I), updated row counts to 10.97M across 3 years, added cross-year and Schedule C query examples |
+| 2026-02-06 | DOL bridge enrichment: normalized EINs (stripped dashes), populated carrier/broker_or_advisor/funding_type in outreach.dol. Synced EINs to outreach.outreach. Corrected filing table list (removed non-existent _ele tables, added actual _codes tables). Updated all row counts to match DB. Total: 27 data-bearing + 2 staging tables, 11.1M rows |
+| 2026-02-06 | Corrected DOL sub-hub to 4 core tables (canonical/errors/MV/registry per CTB Leaf Lock). Reclassified filing tables as supportive reference data |
+| 2026-02-06 | Added DOL filing table references, cross-year query examples, Schedule C examples |
 | 2026-02-06 | Added CTB Registry section |
 | 2026-02-05 | Initial OSAM creation |
 

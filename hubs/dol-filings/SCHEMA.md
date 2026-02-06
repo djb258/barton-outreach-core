@@ -9,18 +9,91 @@
 
 ## Schema Overview
 
-The DOL Filings hub manages Department of Labor Form 5500 data, Schedule A insurance information, and renewal calendar tracking. It provides EIN resolution and filing signals to downstream hubs.
+The DOL Filings hub manages Department of Labor Form 5500 FOIA data across **26 filing tables** spanning **3 years** (2023, 2024, 2025). It provides EIN resolution, filing signals, service provider compensation data, DFE participation, and financial information to downstream hubs.
+
+### Coverage Summary
+
+| Metric | Value |
+|--------|-------|
+| Filing Tables | 26 |
+| Years Loaded | 2023, 2024, 2025 |
+| Total Rows | 10,970,626 |
+| Column Comments | 1,081 (100% coverage) |
+| Column Metadata Catalog | 1,081 entries |
+| form_year Indexes | 23 |
+| Composite (ack_id, form_year) Indexes | 18 |
+| EIN Indexes | 8 |
 
 ## Primary Tables
 
+### Core Filing Tables
+
+| Schema | Table | Purpose | Rows (approx) |
+|--------|-------|---------|----------------|
+| `dol` | `form_5500` | Full Form 5500 filings | 432,582 |
+| `dol` | `form_5500_sf` | Short Form 5500-SF filings | 1,535,999 |
+| `dol` | `form_5500_sf_part7` | 5500-SF Part 7 compliance | 10,613 |
+
+### Schedule A: Insurance Contracts
+
+| Schema | Table | Purpose | Rows (approx) |
+|--------|-------|---------|----------------|
+| `dol` | `schedule_a` | Insurance contracts & broker commissions | 625,520 |
+| `dol` | `schedule_a_part1` | Schedule A Part 1 detail | 380,509 |
+
+### Schedule C: Service Provider Compensation (9 tables)
+
 | Schema | Table | Purpose |
 |--------|-------|---------|
-| `dol` | `form_5500` | Full Form 5500 filings |
-| `dol` | `form_5500_sf` | Short Form 5500-SF filings |
-| `dol` | `schedule_a` | Schedule A insurance contracts |
+| `dol` | `schedule_c` | Schedule C header | 
+| `dol` | `schedule_c_part1_item1` | Direct compensation |
+| `dol` | `schedule_c_part1_item2` | Indirect compensation |
+| `dol` | `schedule_c_part1_item3` | Terminated service providers |
+| `dol` | `schedule_c_part1_item4` | Service provider failures to provide info |
+| `dol` | `schedule_c_part2` | Other service provider compensation |
+| `dol` | `schedule_c_part1_item1_ele` | P1I1 compensation elements |
+| `dol` | `schedule_c_part1_item2_ele` | P1I2 compensation elements |
+| `dol` | `schedule_c_part1_item4_ele` | P1I4 failure elements |
+
+### Schedule D: DFE Participation (4 tables)
+
+| Schema | Table | Purpose |
+|--------|-------|---------|
+| `dol` | `schedule_d` | Schedule D header |
+| `dol` | `schedule_d_part1` | DFE investment details |
+| `dol` | `schedule_d_part2` | DFE filing details |
+| `dol` | `schedule_dcg` | D/C/G cross-reference |
+
+### Schedule G: Financial Transactions (4 tables)
+
+| Schema | Table | Purpose |
+|--------|-------|---------|
+| `dol` | `schedule_g` | Schedule G header |
+| `dol` | `schedule_g_part1` | Large loans/fixed income defaults |
+| `dol` | `schedule_g_part2` | Fixed income obligations |
+| `dol` | `schedule_g_part3` | Non-exempt transactions |
+
+### Schedule H: Large Plan Financial (2 tables)
+
+| Schema | Table | Purpose |
+|--------|-------|---------|
+| `dol` | `schedule_h` | Schedule H header (large plan financials) |
+| `dol` | `schedule_h_part1` | Schedule H Part 1 detail |
+
+### Schedule I: Small Plan Financial (2 tables)
+
+| Schema | Table | Purpose |
+|--------|-------|---------|
+| `dol` | `schedule_i` | Schedule I header (small plan financials) |
+| `dol` | `schedule_i_part1` | Schedule I Part 1 detail |
+
+### Support & Derived Tables
+
+| Schema | Table | Purpose |
+|--------|-------|---------|
 | `dol` | `renewal_calendar` | Upcoming renewal tracking |
 | `dol` | `ein_urls` | EIN to URL mappings (domain discovery) |
-| `dol` | `column_metadata` | Field documentation |
+| `dol` | `column_metadata` | Field documentation catalog (1,081 entries) |
 | `dol` | `pressure_signals` | **BIT v2.0** STRUCTURAL_PRESSURE signals |
 | `outreach` | `dol` | Outreach-scoped DOL data |
 | `outreach` | `dol_audit_log` | DOL processing audit trail |
@@ -30,12 +103,20 @@ The DOL Filings hub manages Department of Labor Form 5500 data, Schedule A insur
 
 ## Entity Relationship Diagram
 
+> **See**: `docs/diagrams/erd/DOL_SUBHUB.mmd` for the full 26-table Mermaid ERD
+
 ```mermaid
 erDiagram
     OUTREACH_OUTREACH ||--o{ OUTREACH_DOL : "outreach_id"
     OUTREACH_OUTREACH ||--o{ OUTREACH_DOL_ERRORS : "outreach_id"
 
-    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_A : "filing_id"
+    DOL_FORM_5500 ||--o{ DOL_FORM_5500_SF : "ack_id"
+    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_A : "ack_id"
+    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_C : "ack_id (9 sub-tables)"
+    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_D : "ack_id (4 sub-tables)"
+    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_G : "ack_id (4 sub-tables)"
+    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_H : "ack_id (2 tables)"
+    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_I : "ack_id (2 tables)"
     DOL_FORM_5500 ||--o{ DOL_RENEWAL_CALENDAR : "filing_id"
     DOL_FORM_5500 ||--o| DOL_EIN_URLS : "sponsor_dfe_ein"
     DOL_RENEWAL_CALENDAR ||--o{ DOL_PRESSURE_SIGNALS : "source_record_id"
@@ -73,73 +154,64 @@ erDiagram
     }
 
     DOL_FORM_5500 {
-        uuid filing_id PK
+        bigint id PK
         varchar ack_id UK
-        text company_unique_id
         varchar sponsor_dfe_ein
         varchar sponsor_dfe_name
-        varchar spons_dfe_dba_name
         varchar plan_name
-        varchar plan_number
-        varchar spons_dfe_mail_us_city
-        varchar spons_dfe_mail_us_state
-        varchar spons_dfe_mail_us_zip
-        int tot_active_partcp_cnt
-        varchar sch_a_attached_ind
-        int num_sch_a_attached_cnt
-        varchar admin_name
-        varchar admin_ein
         varchar form_year
         varchar filing_status
     }
 
     DOL_FORM_5500_SF {
-        uuid filing_id PK
-        text company_unique_id
-        varchar ack_id
-        varchar sf_sponsor_name
+        bigint id PK
+        varchar ack_id UK
         varchar sf_spons_ein
         varchar sf_plan_name
-        varchar sf_spons_us_city
-        varchar sf_spons_us_state
-        varchar sf_spons_us_zip
-        numeric sf_tot_partcp_boy_cnt
-        numeric sf_tot_assets_eoy_amt
         varchar form_year
-        varchar filing_status
     }
 
     DOL_SCHEDULE_A {
-        uuid schedule_id PK
-        uuid filing_id FK
-        text company_unique_id
-        varchar sponsor_state
-        varchar sponsor_name
-        varchar ack_id
+        bigint id PK
+        varchar ack_id FK
         varchar ins_carrier_name
         varchar ins_carrier_ein
-        varchar ins_carrier_naic_code
-        varchar ins_contract_num
-        numeric ins_prsn_covered_eoy_cnt
-        varchar ins_policy_from_date
-        varchar ins_policy_to_date
-        numeric ins_broker_comm_tot_amt
-        numeric ins_broker_fees_tot_amt
         varchar form_year
     }
 
-    DOL_RENEWAL_CALENDAR {
-        uuid renewal_id PK
-        text company_unique_id
-        uuid schedule_id FK
-        uuid filing_id FK
-        int renewal_month
-        int renewal_year
-        date renewal_date
-        varchar plan_name
-        varchar carrier_name
-        boolean is_upcoming
-        int days_until_renewal
+    DOL_SCHEDULE_C {
+        bigint id PK
+        varchar ack_id FK
+        varchar sponsor_dfe_ein
+        varchar form_year
+    }
+
+    DOL_SCHEDULE_D {
+        bigint id PK
+        varchar ack_id FK
+        varchar sponsor_dfe_ein
+        varchar form_year
+    }
+
+    DOL_SCHEDULE_G {
+        bigint id PK
+        varchar ack_id FK
+        varchar sponsor_dfe_ein
+        varchar form_year
+    }
+
+    DOL_SCHEDULE_H {
+        bigint id PK
+        varchar ack_id FK
+        varchar sponsor_dfe_ein
+        varchar form_year
+    }
+
+    DOL_SCHEDULE_I {
+        bigint id PK
+        varchar ack_id FK
+        varchar sponsor_dfe_ein
+        varchar form_year
     }
 
     DOL_COLUMN_METADATA {
@@ -427,10 +499,41 @@ Outreach-scoped DOL summary data.
 
 ## Foreign Key Relationships
 
+### Core Filing Relationships (via ACK_ID)
+
+| Source Table | Join Column | Target Table | Relationship |
+|--------------|-------------|--------------|--------------|
+| dol.form_5500_sf | ack_id | dol.form_5500 | Short form variant |
+| dol.form_5500_sf_part7 | ack_id | dol.form_5500_sf | SF Part 7 data |
+| dol.schedule_a | ack_id | dol.form_5500 | Insurance contracts |
+| dol.schedule_a_part1 | ack_id | dol.form_5500 | Sch A Part 1 |
+| dol.schedule_c | ack_id | dol.form_5500 | Service provider comp |
+| dol.schedule_c_part1_item1 | ack_id | dol.schedule_c | Direct compensation |
+| dol.schedule_c_part1_item2 | ack_id | dol.schedule_c | Indirect compensation |
+| dol.schedule_c_part1_item3 | ack_id | dol.schedule_c | Terminated providers |
+| dol.schedule_c_part1_item4 | ack_id | dol.schedule_c | Provider failures |
+| dol.schedule_c_part2 | ack_id | dol.schedule_c | Other comp |
+| dol.schedule_c_part1_item1_ele | ack_id | dol.form_5500 | P1I1 elements |
+| dol.schedule_c_part1_item2_ele | ack_id | dol.form_5500 | P1I2 elements |
+| dol.schedule_c_part1_item4_ele | ack_id | dol.form_5500 | P1I4 elements |
+| dol.schedule_d | ack_id | dol.form_5500 | DFE participation |
+| dol.schedule_d_part1 | ack_id | dol.schedule_d | DFE investments |
+| dol.schedule_d_part2 | ack_id | dol.schedule_d | DFE filings |
+| dol.schedule_dcg | ack_id | dol.form_5500 | D/C/G cross-ref |
+| dol.schedule_g | ack_id | dol.form_5500 | Financial transactions |
+| dol.schedule_g_part1 | ack_id | dol.schedule_g | Large loans |
+| dol.schedule_g_part2 | ack_id | dol.schedule_g | Fixed income |
+| dol.schedule_g_part3 | ack_id | dol.schedule_g | Non-exempt transactions |
+| dol.schedule_h | ack_id | dol.form_5500 | Large plan financials |
+| dol.schedule_h_part1 | ack_id | dol.schedule_h | H Part 1 detail |
+| dol.schedule_i | ack_id | dol.form_5500 | Small plan financials |
+| dol.schedule_i_part1 | ack_id | dol.schedule_i | I Part 1 detail |
+
+### Support Table Relationships
+
 | Source Table | Source Column | Target Table | Target Column |
 |--------------|---------------|--------------|---------------|
 | dol.renewal_calendar | filing_id | dol.form_5500 | filing_id |
-| dol.schedule_a | filing_id | dol.form_5500 | filing_id |
 | dol.ein_urls | ein | dol.form_5500 | sponsor_dfe_ein |
 | outreach.dol | outreach_id | outreach.outreach | outreach_id |
 | outreach.dol_errors | outreach_id | outreach.outreach | outreach_id |
@@ -464,11 +567,37 @@ Outreach-scoped DOL summary data.
 
 ## Data Import Sources
 
-| Year | Form Type | Table | Status |
-|------|-----------|-------|--------|
-| 2023 | 5500 | dol.form_5500 | Active |
-| 2023 | 5500-SF | dol.form_5500_sf | Active |
-| 2023 | Schedule A | dol.schedule_a | Active |
+| Year | Tables Loaded | Total Rows | Source |
+|------|--------------|------------|--------|
+| 2023 | 24 | ~6,012,077 | DOL FOIA ZIPs (C:\Users\CUSTOM PC\Desktop\DOl List) |
+| 2024 | 26 | 4,951,258 | DOL FOIA ZIPs (C:\Users\CUSTOM PC\Desktop\Dol 2024) |
+| 2025 | 26 | 7,291 | DOL FOIA ZIPs (C:\Users\CUSTOM PC\Desktop\Dol 2025) |
+| **Grand Total** | **26 unique** | **10,970,626** | |
+
+### Key Filing Tables by Year
+
+| Table | 2023 | 2024 | 2025 | Total |
+|-------|------|------|------|-------|
+| form_5500 | 230,482 | 201,575 | 525 | 432,582 |
+| form_5500_sf | 760,839 | 772,588 | 2,572 | 1,535,999 |
+| schedule_a | 337,476 | 287,585 | 459 | 625,520 |
+| schedule_a_part1 | — | 380,007 | 502 | 380,509 |
+| form_5500_sf_part7 | — | 10,291 | 322 | 10,613 |
+
+### Import Script
+
+**Script**: `hubs/dol-filings/imo/middle/importers/import_dol_year.py`
+**Usage**: `doppler run -- python import_dol_year.py --year YYYY --load`
+**Flags**: `--load` (import), `--verify` (check counts), `--create-new-tables` (DDL)
+
+### Metadata Migration
+
+**Script**: `hubs/dol-filings/imo/middle/importers/migrate_add_metadata.py`
+**Applied**: 26 table comments, 1,081 column comments, 23 form_year indexes, 18 composite indexes, 8 EIN indexes, 1,081 catalog entries
+
+### Join Key
+
+**ACK_ID** is the universal join key linking ALL schedule tables to `dol.form_5500`. Every schedule table has `ack_id` and `form_year` columns with a composite index for efficient cross-year queries.
 
 ---
 
@@ -526,19 +655,31 @@ WHERE outreach_id IN (SELECT outreach_id FROM orphan_list);
 The following DOL reference tables are **NEVER** deleted during cascade cleanup:
 - `dol.form_5500` — Government filing data (immutable)
 - `dol.form_5500_sf` — Short form filings (immutable)
+- `dol.form_5500_sf_part7` — SF Part 7 data (immutable)
 - `dol.schedule_a` — Insurance contract data (immutable)
+- `dol.schedule_a_part1` — Schedule A Part 1 (immutable)
+- `dol.schedule_c` + 8 sub-tables — Service provider compensation (immutable)
+- `dol.schedule_d` + 3 sub-tables — DFE participation (immutable)
+- `dol.schedule_dcg` — D/C/G cross-reference (immutable)
+- `dol.schedule_g` + 3 sub-tables — Financial transactions (immutable)
+- `dol.schedule_h` + 1 sub-table — Large plan financials (immutable)
+- `dol.schedule_i` + 1 sub-table — Small plan financials (immutable)
 - `dol.renewal_calendar` — Derived renewal data (may be refreshed)
 - `dol.ein_urls` — EIN→URL mappings (FREE tier data)
 - `dol.pressure_signals` — May expire naturally via `expires_at`
 
-### Post-Cleanup State (2026-01-29)
+> **Total: 26 filing tables + 3 support tables = 29 DOL tables (all immutable reference data)**
+
+### Post-Cleanup State (2026-02-10)
 
 | Table | Records | Notes |
 |-------|---------|-------|
 | outreach.dol | ~13,000 | 27% coverage of outreach spine |
-| dol.form_5500 | ~250,000 | Unchanged (reference data) |
-| dol.schedule_a | ~400,000 | Unchanged (reference data) |
+| dol.form_5500 | 432,582 | Unchanged (reference data, 3 years) |
+| dol.form_5500_sf | 1,535,999 | Unchanged (reference data, 3 years) |
+| dol.schedule_a | 625,520 | Unchanged (reference data, 3 years) |
 | dol.ein_urls | 119,409 | Unchanged (FREE tier) |
+| **All 26 filing tables** | **10,970,626** | **Immutable FOIA reference data** |
 
 ### Cleanup Trigger
 
@@ -557,4 +698,5 @@ After cascade cleanup, companies may lose their DOL match. To re-match:
 ---
 
 *Generated from Neon PostgreSQL via READ-ONLY connection*
-*Last verified: 2026-01-29*
+*Last verified: 2026-02-10*
+*26 filing tables, 10,970,626 rows, 1,081 column comments (100% coverage)*

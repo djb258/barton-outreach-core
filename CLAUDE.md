@@ -24,6 +24,24 @@ The OSAM tells you exactly where to go for any data question:
 
 **Universal Join Key**: `outreach_id` - All sub-hubs join to the spine via this key. Never use domain as a join key.
 
+### ⛔ BEFORE EDITING ANY SUB-HUB DEFINITION (OSAM, PRD, ERD, SCHEMA):
+
+> **READ `docs/audit/CTB_REMEDIATION_SUMMARY.md` → Phase 2: Leaf Lock table FIRST.**
+>
+> Each sub-hub has exactly **4 core tables** (CANONICAL / ERRORS / MV / REGISTRY).
+> Everything else is supportive reference data — queryable, but **NOT a sub-hub member**.
+>
+> | Sub-Hub | CANONICAL | ERRORS | MV | REGISTRY |
+> |---------|-----------|--------|----|----------|
+> | company_target | company_target | company_target_errors | company_hub_status | - |
+> | dol | dol | dol_errors | form_5500_icp_filtered | column_metadata |
+> | blog | blog | blog_errors | - | blog_ingress_control |
+> | people | people_master, company_slot | people_errors | - | slot_ingress_control, title_slot_mapping |
+> | bit | bit_scores | bit_errors | bit_signals, movement_events | - |
+> | execution | appointments, campaigns, sequences | - | engagement_events | - |
+>
+> **Do NOT elevate supportive/reference tables to sub-hub members.** The `dol.*` schema has 27 data-bearing filing tables (+ 2 empty staging tables) — they feed INTO `outreach.dol`, they are not part of the sub-hub. Total: 11,124,508 rows across 3 years (2023–2025).
+
 ---
 
 ## CRITICAL: Authoritative Table Reference

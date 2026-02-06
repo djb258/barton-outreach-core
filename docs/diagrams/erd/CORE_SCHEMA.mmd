@@ -1,7 +1,8 @@
 %% CORE_SCHEMA.mmd
 %% Complete System Entity Relationship Diagram
-%% Source: Neon PostgreSQL (queried 2026-01-28)
+%% Source: Neon PostgreSQL (queried 2026-02-10)
 %% Doctrine: DOCUMENTATION_ERD_DOCTRINE.md v1.0.0
+%% DOL: 26 filing tables, 10,970,626 rows, 3 years (2023/2024/2025)
 
 erDiagram
     CL_COMPANY_IDENTITY ||--o| OUTREACH_OUTREACH : "registers outreach_id (WRITE-ONCE)"
@@ -21,9 +22,16 @@ erDiagram
     MARKETING_COMPANY_MASTER ||--o{ PEOPLE_COMPANY_SLOT : "has slots"
     PEOPLE_PEOPLE_MASTER ||--o{ PEOPLE_COMPANY_SLOT : "fills slot"
 
-    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_A : "has schedule"
+    %% DOL Filing Relationships (ACK_ID is universal join key)
+    DOL_FORM_5500 ||--o{ DOL_FORM_5500_SF : "short form variant"
+    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_A : "has schedule A"
+    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_C : "has schedule C (9 sub-tables)"
+    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_D : "has schedule D (4 sub-tables)"
+    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_G : "has schedule G (4 sub-tables)"
+    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_H : "has schedule H (2 tables)"
+    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_I : "has schedule I (2 tables)"
     DOL_FORM_5500 ||--o{ DOL_RENEWAL_CALENDAR : "has renewal"
-    DOL_EIN_URLS ||--o{ DOL_FORM_5500 : "files"
+    DOL_EIN_URLS ||--o{ DOL_FORM_5500 : "EIN lookup"
 
     OUTREACH_DOL }o--|| DOL_FORM_5500 : "references filing"
     OUTREACH_PEOPLE }o--|| PEOPLE_PEOPLE_MASTER : "references person"
@@ -140,29 +148,76 @@ erDiagram
     }
 
     DOL_FORM_5500 {
-        text filing_id PK
-        text ein
-        text sponsor_name
-        integer plan_year
-        numeric total_assets
+        bigint id PK "Surrogate PK"
+        varchar ack_id UK "Universal join key"
+        varchar sponsor_dfe_ein "Sponsor EIN"
+        varchar sponsor_dfe_name "Sponsor name"
+        varchar plan_name "Plan name"
+        varchar form_year "Filing year (2023/2024/2025)"
+        integer tot_active_partcp_cnt "Active participants"
+    }
+
+    DOL_FORM_5500_SF {
+        bigint id PK "Surrogate PK"
+        varchar ack_id UK "Links to form_5500"
+        varchar sf_spons_ein "Sponsor EIN"
+        varchar sf_plan_name "Plan name"
+        varchar form_year "Filing year"
     }
 
     DOL_SCHEDULE_A {
-        uuid schedule_id PK
-        text filing_id FK
-        text ein
-        text insurance_carrier_name
+        bigint id PK "Surrogate PK"
+        varchar ack_id FK "Links to form_5500"
+        varchar ins_carrier_name "Insurance carrier"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_C {
+        bigint id PK "Surrogate PK (9 sub-tables)"
+        varchar ack_id FK "Links to form_5500"
+        varchar sponsor_dfe_ein "Sponsor EIN"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_D {
+        bigint id PK "Surrogate PK (4 sub-tables)"
+        varchar ack_id FK "Links to form_5500"
+        varchar sponsor_dfe_ein "Sponsor EIN"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_G {
+        bigint id PK "Surrogate PK (4 sub-tables)"
+        varchar ack_id FK "Links to form_5500"
+        varchar sponsor_dfe_ein "Sponsor EIN"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_H {
+        bigint id PK "Surrogate PK (2 tables)"
+        varchar ack_id FK "Links to form_5500"
+        varchar sponsor_dfe_ein "Sponsor EIN"
+        varchar form_year "Filing year"
+    }
+
+    DOL_SCHEDULE_I {
+        bigint id PK "Surrogate PK (2 tables)"
+        varchar ack_id FK "Links to form_5500"
+        varchar sponsor_dfe_ein "Sponsor EIN"
+        varchar form_year "Filing year"
     }
 
     DOL_RENEWAL_CALENDAR {
         uuid renewal_id PK
-        text filing_id FK
+        uuid filing_id FK
         date renewal_date
+        integer days_until_renewal
     }
 
     DOL_EIN_URLS {
-        text ein PK
+        varchar ein PK
         text company_name
+        text domain
         text url
     }
 
