@@ -177,6 +177,8 @@ FK:    outreach_id → outreach.outreach
 | funding_type | text | `fully_insured` / `self_funded` / `pension_only` | 100% (70,150) |
 | broker_or_advisor | text | Current broker/advisor name (from Schedule C) | 10% (6,995) |
 | carrier | text | Insurance carrier name (from Schedule A) | 14.6% (10,233) |
+| renewal_month | integer | Plan year begin month (1-12). Derived from most recent filing | 100% (70,142) |
+| outreach_start_month | integer | 5 months before renewal (1-12). Communication trigger month | 100% (70,142) |
 
 **Funding Type Breakdown**:
 | Type | Count | Meaning |
@@ -190,6 +192,18 @@ FK:    outreach_id → outreach.outreach
 - "What's the funding type?" → `funding_type`
 - "Who is the current broker?" → `broker_or_advisor` (10% fill — large filers only)
 - "What carrier do they use?" → `carrier` (14.6% fill — large filers with Schedule A)
+- "When does this company renew?" → `renewal_month` (1=Jan, 12=Dec)
+- "Who should I start reaching out to THIS month?" → `outreach_start_month`
+
+**Renewal Month Distribution** (plan year begin month, most recent filing):
+| Month | EINs | Outreach Start |
+|-------|------|----------------|
+| Jan (1) | 60,777 | Aug (8) |
+| May (5) | 2,369 | Dec (12) |
+| Jun (6) | 1,773 | Jan (1) |
+| Jul (7) | 1,686 | Feb (2) |
+| All others | 3,537 | Various |
+| **Total** | **70,142** | **100% filled** |
 
 **Note**: DOL can have multiple records per outreach_id (multiple filing years). Carrier/broker fill rates are lower because 79% of matched companies are pension-only filers without Schedule A/C data.
 
@@ -843,6 +857,7 @@ WHERE is_frozen = TRUE;
 
 | Date | Change |
 |------|--------|
+| 2026-02-06 | Added renewal_month + outreach_start_month to outreach.dol (70,142/70,150 = 100%). Outreach start = 5 months before renewal. 86.6% renew in January → outreach starts in August |
 | 2026-02-06 | DOL bridge enrichment: normalized EINs (stripped dashes), populated carrier/broker_or_advisor/funding_type in outreach.dol. Synced EINs to outreach.outreach. Corrected filing table list (removed non-existent _ele tables, added actual _codes tables). Updated all row counts to match DB. Total: 27 data-bearing + 2 staging tables, 11.1M rows |
 | 2026-02-06 | Corrected DOL sub-hub to 4 core tables (canonical/errors/MV/registry per CTB Leaf Lock). Reclassified filing tables as supportive reference data |
 | 2026-02-06 | Added DOL filing table references, cross-year query examples, Schedule C examples |

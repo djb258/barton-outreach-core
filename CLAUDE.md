@@ -72,6 +72,17 @@ The OSAM tells you exactly where to go for any data question:
 | Slot fill (HR) | 57,991 | 61.0% |
 | **Overall slot fill** | **177,161 / 285,012** | **62.2%** |
 
+### DOL Bridge Enrichment Status (2026-02-06):
+| Column | Fill | Notes |
+|--------|------|-------|
+| ein | 70,150 (100%) | 9-digit, no dashes |
+| filing_present | 64,975 (92%) | Has Form 5500 |
+| funding_type | 70,150 (100%) | pension_only / fully_insured / self_funded |
+| carrier | 10,233 (14.6%) | From Schedule A health |
+| broker_or_advisor | 6,995 (10%) | From Schedule C code 28 |
+| **renewal_month** | **70,142 (100%)** | **Plan year begin month (1-12)** |
+| **outreach_start_month** | **70,142 (100%)** | **5 months before renewal (1-12)** |
+
 ---
 
 ## 🔗 BLOG SUB-HUB URL STORAGE
