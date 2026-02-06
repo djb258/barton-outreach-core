@@ -141,6 +141,32 @@ If this statement cannot be completed, the hub is invalid.
 ## PRD Compliance (Behavioral Proof) {#section-a2}
 <!-- §A.2 -->
 
+### HSS — Hub-and-Spoke Set Up (MANDATORY)
+
+| Priority | Check |
+|----------|-------|
+| CRITICAL | [ ] HSS section exists at top of PRD |
+| CRITICAL | [ ] Idea/Need field is completed |
+| CRITICAL | [ ] Hub Justification (CONST → VAR) is completed |
+| CRITICAL | [ ] Hub-Spoke Decision is explicitly IMPLEMENTED or DECLINED |
+| CRITICAL | [ ] Candidate Constants are listed |
+| CRITICAL | [ ] Candidate Variables are listed |
+| CRITICAL | [ ] Candidate Tools reference SNAP-ON TOOLBOX only |
+
+**PRD without completed HSS section = INVALID**
+
+### HSS Validator (HARD FAIL)
+
+```
+IF PRD exists AND HSS section missing → FAIL
+IF PRD exists AND HSS section incomplete → FAIL
+
+There is no "PRD exists, skip HSS" path.
+This validator has no exceptions.
+```
+
+### PRD Body (Authoritative)
+
 | Priority | Check |
 |----------|-------|
 | CRITICAL | [ ] PRD exists for this hub |
@@ -149,6 +175,8 @@ If this statement cannot be completed, the hub is invalid.
 | CRITICAL | [ ] PRD declares constants (inputs) |
 | CRITICAL | [ ] PRD declares variables (outputs) |
 | CRITICAL | [ ] PRD declares pass structure (CAPTURE / COMPUTE / GOVERN) |
+| CRITICAL | [ ] PRD §6 Hub-Spoke Status matches HSS section |
+| CRITICAL | [ ] PRD §§1-15 restate all HSS decisions (no deferrals) |
 | HIGH | [ ] PRD explicitly states what is IN scope |
 | HIGH | [ ] PRD explicitly states what is OUT of scope |
 
@@ -158,6 +186,7 @@ If this statement cannot be completed, the hub is invalid.
 |-------|-------|
 | PRD Location | |
 | PRD Version | |
+| Governing ERD | |
 
 ---
 
@@ -172,6 +201,7 @@ If this statement cannot be completed, the hub is invalid.
 | CRITICAL | [ ] Each table has a producing pass (CAPTURE / COMPUTE / GOVERN) |
 | CRITICAL | [ ] Lineage to constants is enforced |
 | CRITICAL | [ ] No orphan tables (not referenced in PRD) |
+| CRITICAL | [ ] ERD aligns with OSAM (all joins declared) |
 | HIGH | [ ] No speculative tables (for future use) |
 | HIGH | [ ] No convenience tables (not serving transformation) |
 
@@ -179,6 +209,7 @@ If this statement cannot be completed, the hub is invalid.
 |-------|-------|
 | ERD Location | |
 | ERD Version | |
+| Governing OSAM | |
 
 ---
 
@@ -220,8 +251,59 @@ For **each table**, all four questions must pass:
 
 ---
 
-## Process Compliance (Execution Declaration) {#section-a6}
+## OSAM Compliance (Semantic Access Map) {#section-a6}
 <!-- §A.6 -->
+
+**OSAM is the authoritative query-routing contract. Violations are BLOCKING.**
+
+| Priority | Check |
+|----------|-------|
+| CRITICAL | [ ] OSAM exists for this hub (`doctrine/OSAM.md`) |
+| CRITICAL | [ ] OSAM declares universal join key |
+| CRITICAL | [ ] OSAM declares spine table |
+| CRITICAL | [ ] All ERD joins are declared in OSAM |
+| CRITICAL | [ ] No queries target SOURCE tables |
+| CRITICAL | [ ] No queries target ENRICHMENT tables as primary query surface |
+| CRITICAL | [ ] PRD questions are routable via OSAM |
+| HIGH | [ ] All tables classified (QUERY/SOURCE/ENRICHMENT/AUDIT) |
+| HIGH | [ ] Query routing table is complete |
+
+### OSAM Alignment Verification
+
+| Check | Result |
+|-------|--------|
+| ERD joins in OSAM | ______ / ______ aligned |
+| Undeclared joins | ______ (must be 0) |
+| SOURCE table queries | ______ (must be 0) |
+| Unroutable PRD questions | ______ (must be 0) |
+
+### OSAM Violation Detection
+
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                         OSAM VIOLATIONS ARE BLOCKING                          ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                               ║
+║  IF OSAM is missing                        → FAIL (constitutional violation)  ║
+║  IF ERD contains joins not in OSAM         → FAIL (alignment violation)       ║
+║  IF PRD requires unanswered questions      → FAIL (routing violation)         ║
+║  IF agent references undocumented paths    → FAIL (agent violation)           ║
+║  IF queries touch SOURCE/ENRICHMENT tables → FAIL (surface violation)         ║
+║                                                                               ║
+║  OSAM violations BLOCK compliance. There are no warnings.                     ║
+║                                                                               ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+```
+
+| Field | Value |
+|-------|-------|
+| OSAM Location | |
+| OSAM Version | |
+
+---
+
+## Process Compliance (Execution Declaration) {#section-a7}
+<!-- §A.7 -->
 
 | Priority | Check |
 |----------|-------|
@@ -287,6 +369,7 @@ Items marked CRITICAL define minimum operational safety, not architectural purit
 | CRITICAL | [ ] CTB path defined (Trunk / Branch / Leaf) |
 | CRITICAL | [ ] No forbidden folders (utils, helpers, common, shared, lib, misc) |
 | HIGH | [ ] Branch level specified (sys / ui / ai / data / app) |
+| HIGH | [ ] CTB Governance document exists (`docs/CTB_GOVERNANCE.md`) |
 | MEDIUM | [ ] Parent hub identified (if nested hub) |
 
 ---
@@ -553,9 +636,10 @@ Alerts: [count]
 |------|---------|----------------|------------|
 | A | Constitutional Validity | 4 | ___ / 4 |
 | A | PRD Compliance | 8 | ___ / 8 |
-| A | ERD Compliance | 6 | ___ / 6 |
+| A | ERD Compliance | 7 | ___ / 7 |
 | A | Pressure Test | 4 | ___ / 4 |
 | A | Upstream Flow Test | 5 | ___ / 5 |
+| A | **OSAM Compliance** | 7 | ___ / 7 |
 | A | Process Compliance | 6 | ___ / 6 |
 | B | All Operational Sections | varies | ___ / ___ |
 
@@ -645,14 +729,50 @@ If CRITICAL > 0 or HIGH > 0 and I selected COMPLIANT, this audit is INVALID.
 
 ---
 
+## CTB Hardening Migration Verification (v2.0.0) {#section-migration}
+<!-- §MIGRATION -->
+
+**Added 2026-02-06**: This section verifies compliance with CTB Hardening v2.0.0
+
+| Priority | Check |
+|----------|-------|
+| HIGH | [ ] DOCTRINE.md references ARCHITECTURE.md (not old files) |
+| HIGH | [ ] CLAUDE.md locked files table references ARCHITECTURE.md |
+| HIGH | [ ] No MD files reference old section numbers (e.g., "CANONICAL §3") |
+| MEDIUM | [ ] Reading order documentation references ARCHITECTURE.md |
+| MEDIUM | [ ] Any PRD/ADR traceability sections updated |
+
+**Section Reference Mapping:**
+
+| Old Reference | New Reference |
+|---------------|---------------|
+| CANONICAL_ARCHITECTURE_DOCTRINE.md | ARCHITECTURE.md |
+| CANONICAL §1 (CTB) | ARCHITECTURE.md Part II |
+| CANONICAL §2 (CC) | ARCHITECTURE.md Part III |
+| CANONICAL §3 (Hub-Spoke) | ARCHITECTURE.md Part IV |
+| CANONICAL §3.5 (IMO) | ARCHITECTURE.md Part V |
+| HUB_SPOKE_ARCHITECTURE.md | ARCHITECTURE.md Part IV |
+| ALTITUDE_DESCENT_MODEL.md | ARCHITECTURE.md Part VI |
+
+**Note**: Old files exist as REDIRECTs for backward compatibility. Migration recommended within 30 days.
+
+---
+
 ## Traceability Reference
 
 | Artifact | Reference |
 |----------|-----------|
 | Constitution | CONSTITUTION.md |
+| **Architecture Doctrine** | templates/doctrine/ARCHITECTURE.md |
+| CTB Topology | ARCHITECTURE.md Part II |
+| CC Hierarchy | ARCHITECTURE.md Part III |
+| Hub/Spoke Geometry | ARCHITECTURE.md Part IV |
+| IMO Flow | ARCHITECTURE.md Part V |
+| Descent Gates | ARCHITECTURE.md Part VI |
 | PRD Constitution | templates/doctrine/PRD_CONSTITUTION.md |
 | ERD Constitution | templates/doctrine/ERD_CONSTITUTION.md |
 | Process Doctrine | templates/doctrine/PROCESS_DOCTRINE.md |
 | ERD Doctrine | templates/doctrine/ERD_DOCTRINE.md |
-| Canonical Doctrine | CANONICAL_ARCHITECTURE_DOCTRINE.md |
-| Hub/Spoke Doctrine | CANONICAL_ARCHITECTURE_DOCTRINE.md §3 |
+| **OSAM (Semantic Access Map)** | templates/semantic/OSAM.md |
+
+**Note**: CANONICAL_ARCHITECTURE_DOCTRINE.md, HUB_SPOKE_ARCHITECTURE.md, and ALTITUDE_DESCENT_MODEL.md are now redirects to ARCHITECTURE.md.

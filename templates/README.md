@@ -22,9 +22,10 @@ If you are an AI agent operating in any repository governed by IMO-Creator:
 1. IMO_SYSTEM_SPEC.md — compiled system index (FIRST READ)
 2. AI_EMPLOYEE_OPERATING_CONTRACT.md — agent constraints and permissions
 3. SNAP_ON_TOOLBOX.yaml — tool registry
-4. doctrine/CANONICAL_ARCHITECTURE_DOCTRINE.md — root law
+4. doctrine/ARCHITECTURE.md — CTB constitutional law (root doctrine)
 5. doctrine/TEMPLATE_IMMUTABILITY.md — what you cannot do
-6. The specific prompt for your current task (in claude/)
+6. semantic/OSAM.md — query-routing contract (REQUIRED for any data work)
+7. The specific prompt for your current task (in claude/)
 ```
 
 > **WARNING**: No prompt in `claude/` is valid unless IMO_SYSTEM_SPEC.md has been loaded first.
@@ -43,7 +44,7 @@ When rules conflict, higher levels win. No exceptions.
 ├─────────────────────────────────────────┤
 │  4. AI_EMPLOYEE_OPERATING_CONTRACT.md   │  ← Agent constraints
 ├─────────────────────────────────────────┤
-│  5. CANONICAL_ARCHITECTURE_DOCTRINE.md  │  ← Root doctrine (all others derive)
+│  5. ARCHITECTURE.md                     │  ← CTB Constitutional Law (root doctrine)
 ├─────────────────────────────────────────┤
 │  6. Other doctrine/ files               │  ← Specialized rules
 ├─────────────────────────────────────────┤
@@ -86,6 +87,7 @@ Stop immediately and report if:
 | Folder | Purpose | Status | AI Can Modify |
 |--------|---------|--------|---------------|
 | `doctrine/` | Constitutional law — the rules | LOCKED | NO |
+| `semantic/` | Semantic access contracts (OSAM) | LOCKED | NO |
 | `claude/` | System prompts — how to execute | LOCKED | NO |
 | `prd/` | PRD template — copy and fill in | TEMPLATE | NO (copy only) |
 | `adr/` | ADR template — copy and fill in | TEMPLATE | NO (copy only) |
@@ -116,20 +118,28 @@ Stop immediately and report if:
 
 **Root doctrine (read first):**
 
-> [`doctrine/CANONICAL_ARCHITECTURE_DOCTRINE.md`](doctrine/CANONICAL_ARCHITECTURE_DOCTRINE.md)
+> [`doctrine/ARCHITECTURE.md`](doctrine/ARCHITECTURE.md)
 
-Defines CTB (Christmas Tree Backbone) and CC (Canonical Chain). All other documents derive from this. Covers authorization matrix, PID doctrine, lifecycle states, and master error log.
+CTB Constitutional Law (v2.0.0). Consolidates all architectural doctrine:
+- CTB topology, CC hierarchy, Hub-Spoke geometry, IMO flow
+- Descent gates, Constants vs Variables, PID doctrine
+- Authorization matrix, violation enforcement, ownership constraints
 
 **Derived doctrine (read after root):**
 
 | Doctrine | Purpose |
 |----------|---------|
-| [`HUB_SPOKE_ARCHITECTURE.md`](doctrine/HUB_SPOKE_ARCHITECTURE.md) | Hub/Spoke geometry, IMO model, required identifiers |
-| [`ALTITUDE_DESCENT_MODEL.md`](doctrine/ALTITUDE_DESCENT_MODEL.md) | CC descent sequence, gate conditions |
 | [`REPO_REFACTOR_PROTOCOL.md`](doctrine/REPO_REFACTOR_PROTOCOL.md) | Repo structure requirements, file placement |
 | [`DBA_ENFORCEMENT_DOCTRINE.md`](doctrine/DBA_ENFORCEMENT_DOCTRINE.md) | Database change rules, Type A/B classification |
 | [`TEMPLATE_IMMUTABILITY.md`](doctrine/TEMPLATE_IMMUTABILITY.md) | Immutability rules, AI prohibition clause |
+| [`PRD_CONSTITUTION.md`](doctrine/PRD_CONSTITUTION.md) | PRD governance rules |
+| [`ERD_CONSTITUTION.md`](doctrine/ERD_CONSTITUTION.md) | ERD governance rules |
 | [`DOCUMENTATION_ERD_DOCTRINE.md`](doctrine/DOCUMENTATION_ERD_DOCTRINE.md) | ERD standard, column dictionary requirements |
+
+**Redirected files (point to ARCHITECTURE.md):**
+- `CANONICAL_ARCHITECTURE_DOCTRINE.md` → See ARCHITECTURE.md
+- `HUB_SPOKE_ARCHITECTURE.md` → See ARCHITECTURE.md Part IV
+- `ALTITUDE_DESCENT_MODEL.md` → See ARCHITECTURE.md Part VI
 
 **Key topics covered:**
 - Canonical Chain (CC) layers: CC-01 (Sovereign), CC-02 (Hub), CC-03 (Context), CC-04 (Process)
@@ -143,7 +153,7 @@ Defines CTB (Christmas Tree Backbone) and CC (Canonical Chain). All other docume
 - Constants vs Variables
 - Required identifiers (Sovereign ID, Hub ID, Process ID)
 
-If any instruction conflicts with other guidance, **CANONICAL_ARCHITECTURE_DOCTRINE.md wins**.
+If any instruction conflicts with other guidance, **doctrine/ARCHITECTURE.md wins**.
 
 ---
 
@@ -205,10 +215,13 @@ templates/
 ├── SNAP_ON_TOOLBOX.yaml                # Tool registry (approved tools only)
 │
 ├── doctrine/                           # LOCKED — AI CANNOT MODIFY
-│   ├── CANONICAL_ARCHITECTURE_DOCTRINE.md  # Root doctrine — READ FIRST
-│   ├── HUB_SPOKE_ARCHITECTURE.md       # Hub/Spoke geometry
-│   ├── ALTITUDE_DESCENT_MODEL.md       # Descent gates
+│   ├── ARCHITECTURE.md                 # CTB Constitutional Law — READ FIRST
+│   ├── CANONICAL_ARCHITECTURE_DOCTRINE.md  # REDIRECT → ARCHITECTURE.md
+│   ├── HUB_SPOKE_ARCHITECTURE.md       # REDIRECT → ARCHITECTURE.md Part IV
+│   ├── ALTITUDE_DESCENT_MODEL.md       # REDIRECT → ARCHITECTURE.md Part VI
 │   ├── REPO_REFACTOR_PROTOCOL.md       # Structure requirements
+│   ├── PRD_CONSTITUTION.md             # PRD governance rules
+│   ├── ERD_CONSTITUTION.md             # ERD governance rules
 │   ├── DBA_ENFORCEMENT_DOCTRINE.md     # DBA rules
 │   ├── TEMPLATE_IMMUTABILITY.md        # Immutability rules
 │   └── DOCUMENTATION_ERD_DOCTRINE.md   # ERD standard
@@ -238,6 +251,14 @@ templates/
 ├── audit/                              # TEMPLATE — Copy to derived repos
 │   └── CONSTITUTIONAL_AUDIT_ATTESTATION.md
 │
+├── semantic/                           # LOCKED — AI CANNOT MODIFY
+│   └── OSAM.md                         # Operational Semantic Access Map
+│
+├── config/                             # TEMPLATE — Copy to derived repos
+│   ├── CTB_DOCTRINE.md                 # CTB quick reference (pointer doc)
+│   ├── CTB_GOVERNANCE.md               # CTB governance template
+│   └── QUICK_REFERENCE.md              # Quick reference guide
+│
 ├── integrations/                       # GUIDANCE — Reference only
 │   ├── COMPOSIO.md
 │   ├── DOPPLER.md
@@ -260,6 +281,7 @@ Before a hub can ship, it must have:
 | Artifact | Template | CC Layer | Purpose |
 |----------|----------|----------|---------|
 | **PRD** | `prd/PRD_HUB.md` | CC-02 | Defines structure, IMO, CTB, spokes |
+| **OSAM** | `semantic/OSAM.md` | CC-02 | Query-routing contract (REQUIRED before ERD) |
 | **ADR(s)** | `adr/ADR.md` | CC-03 | Documents decisions (why, not what) |
 | **Checklist** | `checklists/HUB_COMPLIANCE.md` | CC-02 | Binary ship gate |
 | **PR** | `pr/PULL_REQUEST_TEMPLATE_HUB.md` | CC-04 | Implements approved structure |
