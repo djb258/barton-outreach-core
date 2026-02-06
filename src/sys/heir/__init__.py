@@ -5,7 +5,7 @@
 # 2. process_id (ORBT) - For process lifecycle
 #
 # Usage:
-#     from shared.heir import track_operation, generate_unique_id, generate_process_id
+#     from src.sys.heir import track_operation, generate_unique_id, generate_process_id
 #
 #     # Full tracking
 #     with track_operation("my_pipeline") as ctx:

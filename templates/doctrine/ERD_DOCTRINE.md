@@ -120,6 +120,8 @@ PROCESS (Execution Declaration)
 
 **ERD cannot exist without PRD. PRD defines; ERD proves.**
 
+**A PRD is considered valid only if its HSS (Hub-and-Spoke Set Up) section is present and complete.** ERD validation fails if the governing PRD lacks a completed HSS section.
+
 ---
 
 ## What This Doctrine Does NOT Govern
@@ -152,6 +154,32 @@ This doctrine governs structural proof only. The following are explicitly out of
 
 ---
 
+## OSAM Alignment (MANDATORY)
+
+**ERDs exist to IMPLEMENT OSAM, not extend it.**
+
+Every ERD must align with its governing OSAM:
+
+| Requirement | Enforcement |
+|-------------|-------------|
+| Every relationship in ERD is declared in OSAM | CRITICAL — ERD fails if join not in OSAM |
+| No exploratory or undocumented joins | CRITICAL — Discovery is not permitted |
+| ERD table classifications match OSAM | CRITICAL — QUERY/SOURCE/ENRICHMENT must align |
+| Universal join key is consistent | CRITICAL — Must match OSAM declaration |
+
+### OSAM Alignment Validation
+
+```
+For each join in ERD:
+  IF join NOT declared in OSAM → ERD INVALID
+  IF join targets SOURCE table as query surface → ERD INVALID
+  IF join targets ENRICHMENT table as query surface → ERD INVALID
+```
+
+**ERDs may only contain joins declared in OSAM. No exceptions.**
+
+---
+
 ## Validation Criteria
 
 Before an ERD is approved, verify:
@@ -159,12 +187,14 @@ Before an ERD is approved, verify:
 | # | Check | Pass Condition |
 |---|-------|----------------|
 | 1 | PRD reference exists | Governing PRD is approved |
-| 2 | Every table traces to constant | Pressure Test Q1 passes |
-| 3 | Every table produces variable | Pressure Test Q2 passes |
-| 4 | Every table has pass ownership | Pressure Test Q3 passes |
-| 5 | Every table has lineage mechanism | Pressure Test Q4 passes |
-| 6 | Upstream flow is provable | Upstream Flow Test passes |
-| 7 | Format compliance | Per DOCUMENTATION_ERD_DOCTRINE.md |
+| 2 | OSAM reference exists | Governing OSAM is approved |
+| 3 | Every table traces to constant | Pressure Test Q1 passes |
+| 4 | Every table produces variable | Pressure Test Q2 passes |
+| 5 | Every table has pass ownership | Pressure Test Q3 passes |
+| 6 | Every table has lineage mechanism | Pressure Test Q4 passes |
+| 7 | Upstream flow is provable | Upstream Flow Test passes |
+| 8 | All joins declared in OSAM | OSAM Alignment passes |
+| 9 | Format compliance | Per DOCUMENTATION_ERD_DOCTRINE.md |
 
 **Any failure = ERD INVALID = Tables may not be instantiated**
 

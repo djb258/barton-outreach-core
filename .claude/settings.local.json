@@ -222,7 +222,27 @@
       "Bash(Sort-Object LastWriteTime -Descending)",
       "Bash(Select-Object -First 10)",
       "Bash(ForEach-Object { $_Name })",
-      "Bash(tasklist:*)"
+      "Bash(tasklist:*)",
+      "Bash(/c/Python314/python:*)",
+      "Bash(tee:*)",
+      "Bash(env)",
+      "Bash(test:*)",
+      "Bash(for folder in utils helpers common lib misc)",
+      "Bash(then echo \"[FAIL] Forbidden folder exists: $folder\")",
+      "Bash(else echo \"[PASS] No forbidden folder: $folder\")",
+      "Bash(for file in \"IMO_CONTROL.json\" \"REGISTRY.yaml\" \"DOCTRINE.md\" \"README.md\")",
+      "Bash(then echo \"[PASS] $file exists\")",
+      "Bash(else echo \"[FAIL] $file MISSING\")",
+      "Bash(for file in \"IMO_CONTROL.json\" \"REGISTRY.yaml\" \"DOCTRINE.md\" \"README.md\" \"doctrine/REPO_DOMAIN_SPEC.md\" \"doctrine/OSAM.md\")",
+      "Bash(for file in \"IMO_CONTROL.json\" \"REGISTRY.yaml\" \"DOCTRINE.md\" \"README.md\" \"doctrine/REPO_DOMAIN_SPEC.md\" \"doctrine/OSAM.md\" \"heir.doctrine.yaml\")",
+      "Bash(for file in \"doctrine/CL_AUTHORITY_DOCTRINE.md\" \"doctrine/OUTREACH_SPINE_DOCTRINE.md\" \"doctrine/CL_COMMERCIAL_ELIGIBILITY_DOCTRINE.md\" \"doctrine/REPO_DOMAIN_SPEC.md\" \"doctrine/DO_NOT_MODIFY_REGISTRY.md\" \"docs/audits/AUDIT_PROCEDURE.md\" \"templates/checklists\")",
+      "Bash(then echo \"EXISTS: $file\")",
+      "Bash(else echo \"MISSING: $file\")",
+      "Bash(for file in \"doctrine/CL_AUTHORITY_DOCTRINE.md\" \"doctrine/OUTREACH_SPINE_DOCTRINE.md\" \"doctrine/CL_COMMERCIAL_ELIGIBILITY_DOCTRINE.md\" \"doctrine/REPO_DOMAIN_SPEC.md\" \"doctrine/DO_NOT_MODIFY_REGISTRY.md\" \"IMO_CONTROL.json\" \"REGISTRY.yaml\" \"DOCTRINE.md\" \"doctrine/DOCTRINE.md\")",
+      "Bash(git tag:*)",
+      "Bash(set)",
+      "Bash(if [ -f \"C:\\\\Users\\\\CUSTOM PC\\\\Desktop\\\\Cursor Builds\\\\imo-creator\\\\templates\\\\config\\\\QUICK_REFERENCE.md\" ])",
+      "Bash(then cp \"C:\\\\Users\\\\CUSTOM PC\\\\Desktop\\\\Cursor Builds\\\\imo-creator\\\\templates\\\\config\\\\QUICK_REFERENCE.md\" \"C:\\\\Users\\\\CUSTOM PC\\\\Desktop\\\\Cursor Builds\\\\barton-outreach-core\\\\templates\\\\config\\\\QUICK_REFERENCE.md\")"
     ],
     "deny": []
   }

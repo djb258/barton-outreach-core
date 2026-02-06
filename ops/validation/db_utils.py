@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 # Schema Guard Integration
 try:
-    from shared.db.guarded_connection import (
+    from src.sys.db.guarded_connection import (
         get_guarded_connection,
         wrap_connection,
         GuardedConnection,

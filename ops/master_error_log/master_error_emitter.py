@@ -26,7 +26,7 @@ ENFORCEMENT:
 
 Usage:
     from ops.master_error_log.master_error_emitter import MasterErrorEmitter, Hub, Severity
-    from shared.heir import track_operation
+    from src.sys.heir import track_operation
 
     # With HEIR/ORBT tracking (RECOMMENDED)
     with track_operation("my_pipeline") as ctx:
@@ -452,7 +452,7 @@ class MasterErrorEmitter:
         # Auto-generate unique_id if not provided (HEIR compliance)
         if unique_id is None:
             try:
-                from shared.heir import generate_unique_id
+                from src.sys.heir import generate_unique_id
                 unique_id = generate_unique_id()
                 logger.debug(f"Auto-generated HEIR unique_id: {unique_id}")
             except ImportError:

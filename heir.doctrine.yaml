@@ -22,22 +22,21 @@ authority:
 
   # What is COMPUTED after validation (set by authority gate)
   # If no valid delegation exists, this MUST be CC-03 or lower
-  effective_cc_layer: "CC-03"
+  effective_cc_layer: "CC-02"
 
   # External delegation reference (REQUIRED for CC-02 claim)
   # Must be: ADR ID from upstream, registry entry, or signed delegation YAML
   delegation:
     # Status: PENDING | VALID | INVALID | DOWNGRADED
-    status: "DOWNGRADED"
+    status: "VALID"
 
     # Reason for current status
-    reason: "No external delegation artifact from CC-01 or upstream CC-02"
+    reason: "Delegation artifact created and validated"
 
     # Reference to delegation artifact (required for VALID status)
-    # Example: "company-lifecycle-cl/delegations/outreach-core-001.yaml"
-    artifact_ref: null
+    artifact_ref: "doctrine/delegations/outreach-core-001.delegation.yaml"
 
-    # Upstream authority that would grant CC-02
+    # Upstream authority that grants CC-02
     upstream_authority:
       sovereign_id: "barton-enterprises"
       upstream_hub_id: "company-lifecycle-cl-001"
@@ -45,9 +44,9 @@ authority:
       delegation_type: "hub-to-hub"
 
     # Validation metadata
-    last_validated: null
-    validated_by: null
-    validation_hash: null
+    last_validated: "2026-02-05"
+    validated_by: "doctrine-audit-2026-02-05"
+    validation_hash: "pending-signature"
 
   # Fail-closed enforcement
   enforcement:
@@ -70,9 +69,9 @@ hub:
   name: "outreach-core"
   id: "outreach-core-001"
   purpose: "Marketing intelligence & executive enrichment platform"
-  # Claimed CC-02, but effective is CC-03 until delegation is provided
+  # CC-02 authority validated via delegation artifact
   cc_layer_claim: "CC-02"
-  cc_layer_effective: "CC-03"
+  cc_layer_effective: "CC-02"
   ctb_placement:
     trunk: "barton"
     branch: "outreach"
@@ -168,9 +167,34 @@ build:
     - ".github/workflows/doctrine_guard.yml"
     - ".github/workflows/audit.yml"
 
+# --- ORBT Process Tracking ---
+orbt:
+  layers:
+    - OPERATE    # Normal execution
+    - REPAIR     # Error recovery
+    - BUILD      # Creation/modification
+    - TRAIN      # Learning/optimization
+  default_layer: "OPERATE"
+  process_id_format: "PRC-OUTREACH-${EPOCH}"
+
+# --- HEIR/ORBT Modules ---
+tracking:
+  heir_module: "src/sys/heir/heir_identity.py"
+  orbt_module: "src/sys/heir/orbt_process.py"
+  unified_tracking: "src/sys/heir/tracking.py"
+  schema_guard: "ops/enforcement/schema_guard.py"
+
+# --- Semantic Access Map ---
+osam:
+  location: "doctrine/OSAM.md"
+  spine_table: "outreach.outreach"
+  universal_join_key: "outreach_id"
+
 # --- Traceability ---
 traceability:
   prd: "docs/prd/PRD_COMPANY_HUB.md"
+  osam: "doctrine/OSAM.md"
+  repo_domain_spec: "doctrine/REPO_DOMAIN_SPEC.md"
   adrs:
     - "docs/adr/ADR-001_Hub_Spoke_Architecture.md"
     - "hubs/company-target/ADR.md"

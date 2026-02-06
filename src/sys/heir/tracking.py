@@ -10,7 +10,7 @@ This module provides a unified interface for tracking operations
 with both HEIR and ORBT compliance.
 
 Usage:
-    from shared.heir import Tracker, track_operation
+    from src.sys.heir import Tracker, track_operation
 
     # Simple usage
     with track_operation("process_companies") as ctx:

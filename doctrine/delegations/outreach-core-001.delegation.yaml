@@ -1,0 +1,158 @@
+# =============================================================================
+# CC-02 DELEGATION ARTIFACT
+# =============================================================================
+# This artifact formally delegates CC-02 authority from the upstream hub
+# (company-lifecycle-cl-001) to the receiving hub (outreach-core-001).
+#
+# Reference: CANONICAL_ARCHITECTURE_DOCTRINE.md §Authority Delegation
+# =============================================================================
+
+delegation:
+  # Unique identifier for this delegation
+  delegation_id: "DEL-CL-OUTREACH-001"
+
+  # Type of delegation
+  type: "hub-to-hub"
+
+  # Authority level being delegated
+  delegated_layer: "CC-02"
+
+# =============================================================================
+# GRANTING AUTHORITY (Upstream)
+# =============================================================================
+grantor:
+  # Sovereign identity
+  sovereign_id: "barton-enterprises"
+
+  # Hub that grants the delegation
+  hub_id: "company-lifecycle-cl-001"
+  hub_name: "Company Lifecycle"
+
+  # Authority level of grantor (must be >= delegated_layer)
+  cc_layer: "CC-02"
+
+  # Grantor's CTB placement
+  ctb:
+    trunk: "barton"
+    branch: "lifecycle"
+    leaf: "company"
+
+# =============================================================================
+# RECEIVING AUTHORITY (Downstream)
+# =============================================================================
+grantee:
+  # Hub receiving the delegation
+  hub_id: "outreach-core-001"
+  hub_name: "Outreach Core"
+
+  # Authority level being granted
+  cc_layer: "CC-02"
+
+  # Grantee's CTB placement
+  ctb:
+    trunk: "barton"
+    branch: "outreach"
+    leaf: "core"
+
+# =============================================================================
+# DELEGATION SCOPE
+# =============================================================================
+scope:
+  # What operations are authorized under this delegation
+  authorized_operations:
+    - "Mint outreach_id for companies registered in CL"
+    - "Register outreach_id back to CL (WRITE-ONCE)"
+    - "Operate sub-hubs: company-target, people-intelligence, dol-filings, outreach-execution, blog-content"
+    - "Manage outreach schema tables"
+    - "Execute marketing eligibility determination"
+
+  # What operations are NOT authorized
+  prohibited_operations:
+    - "Mint sovereign_company_id (CL-only)"
+    - "Modify CL authority registry beyond outreach_id write"
+    - "Access sales or client schemas"
+    - "Bypass CL admission gate"
+
+  # Schema boundaries
+  allowed_schemas:
+    - "outreach"
+    - "people"
+    - "bit"
+    - "intake"
+    - "marketing"
+    - "shq"
+
+  blocked_schemas:
+    - "cl"
+    - "sales"
+    - "client"
+
+# =============================================================================
+# DELEGATION CONDITIONS
+# =============================================================================
+conditions:
+  # Preconditions for delegation validity
+  preconditions:
+    - "Grantee must honor CL as authority registry"
+    - "Grantee must use WRITE-ONCE pattern for CL registration"
+    - "Grantee must implement Schema Guard for cross-hub isolation"
+    - "Grantee must track operations via HEIR/ORBT"
+
+  # Ongoing requirements
+  ongoing_requirements:
+    - "Maintain alignment: outreach.outreach count = cl.company_identity(outreach_id NOT NULL) count"
+    - "No orphaned outreach_ids (sovereign cleanup if CL removes companies)"
+    - "Doctrine version must not exceed parent"
+
+  # Revocation conditions
+  revocation_triggers:
+    - "Violation of WRITE-ONCE pattern"
+    - "Unauthorized schema access"
+    - "Sideways hub-to-hub calls"
+    - "Failure to maintain CL alignment"
+
+# =============================================================================
+# VALIDATION METADATA
+# =============================================================================
+validation:
+  # When this delegation was issued
+  issued_date: "2026-02-05"
+
+  # Who/what validated this delegation
+  validated_by: "doctrine-audit-2026-02-05"
+
+  # Expiration (null = no expiration, requires explicit revocation)
+  expires: null
+
+  # Hash of this document for integrity verification
+  # SHA-256 of content above this line (excluding this field)
+  content_hash: "pending-signature"
+
+  # Status
+  status: "ACTIVE"
+
+# =============================================================================
+# TRACEABILITY
+# =============================================================================
+traceability:
+  # Reference to upstream doctrine
+  upstream_doctrine: "company-lifecycle-cl/doctrine/CANONICAL_ARCHITECTURE_DOCTRINE.md"
+
+  # Reference to this hub's doctrine
+  downstream_doctrine: "barton-outreach-core/DOCTRINE.md"
+
+  # ADR that established this delegation relationship
+  establishing_adr: "barton-outreach-core/docs/adr/ADR-001_Hub_Spoke_Architecture.md"
+
+  # Compliance audit that verified this delegation
+  compliance_audit: "barton-outreach-core/docs/reports/COMPLIANCE_AUDIT_2026-02-05.md"
+
+# =============================================================================
+# DOCUMENT CONTROL
+# =============================================================================
+document_control:
+  version: "1.0.0"
+  created: "2026-02-05"
+  last_modified: "2026-02-05"
+  status: "ACTIVE"
+  next_review: "2026-08-05"

@@ -7,7 +7,7 @@ This module wraps psycopg2 connections to enforce schema access rules
 on EVERY query before execution.
 
 Usage:
-    from shared.db.guarded_connection import get_guarded_connection, guarded_execute
+    from src.sys.db.guarded_connection import get_guarded_connection, guarded_execute
 
     # Option 1: Get a guarded connection (validates all queries)
     conn = get_guarded_connection()

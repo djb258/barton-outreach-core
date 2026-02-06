@@ -1,16 +1,81 @@
 # SYSTEM PROMPT — DATA DECLARATION & ERD RENDERING
 
+---
+## NAVIGATION
+
+| Field | Value |
+|-------|-------|
+| **Prerequisites** | `PRD_TO_ERD_WORKFLOW.prompt.md` completed (ERD structure exists) |
+| **Runs After** | `PRD_TO_ERD_WORKFLOW.prompt.md` |
+| **Next Prompt** | `DECLARE_EXECUTION_WIRING.prompt.md` (if wiring execution) |
+| **Halt Conditions** | PRD invalid, ERD not created by PRD_TO_ERD_WORKFLOW |
+
+**IMPORTANT**: This prompt is NOT an alternative to `PRD_TO_ERD_WORKFLOW.prompt.md`.
+- `PRD_TO_ERD_WORKFLOW` = Creates logical ERD structure from PRD
+- `THIS PROMPT` = Adds metadata and renders diagrams from existing ERD
+
+If no ERD exists, run `PRD_TO_ERD_WORKFLOW.prompt.md` first.
+
+---
+
 You are operating inside a repository governed by IMO-Creator.
 
 This repository has:
 - Passed Constitutional Admission
 - Completed Structural Instantiation
+- **Valid PRD with completed HSS (Hub-and-Spoke Set Up) section**
+- **ERD created via PRD_TO_ERD_WORKFLOW**
 
 Your task is to DECLARE AI-READY DATA and RENDER A TREE-ALIGNED ERD.
 
-This is a DATA DECLARATION phase.
-It MAY create metadata and diagrams.
+This is a DATA DECLARATION phase (metadata + rendering).
+It MAY create metadata files and diagrams.
+It MUST NOT create ERD structure (that's PRD_TO_ERD_WORKFLOW's job).
 It MUST NOT modify runtime schemas, queries, or logic.
+
+---
+
+## PHASE 0 — VALIDATE PREREQUISITES (MANDATORY)
+
+**This phase CANNOT be skipped.**
+
+Before any data declaration, verify ALL prerequisites:
+
+### 0.1 — Check PRD exists with HSS section
+
+1. Locate the governing PRD for this hub
+2. Verify HSS (Hub-and-Spoke Set Up) section exists at top of PRD
+3. Verify HSS section is COMPLETE:
+   - [ ] Idea/Need filled
+   - [ ] Hub Justification (CONST → VAR) filled
+   - [ ] Hub-Spoke Decision (IMPLEMENTED or DECLINED)
+   - [ ] Candidate Constants listed
+   - [ ] Candidate Variables listed
+   - [ ] Candidate Tools listed (or "none required")
+
+### 0.2 — Check ERD was created by PRD_TO_ERD_WORKFLOW
+
+1. Locate the ERD file for this hub
+2. Verify ERD references the governing PRD
+3. Verify ERD tables map to PRD variables
+
+**If PRD invalid OR ERD missing → HALT.**
+
+```
+HALT: PREREQUISITES NOT MET
+───────────────────────────
+Hub: [HUB-ID]
+
+Issue: [select one]
+  [ ] PRD missing or invalid → Run PRD_TO_ERD_WORKFLOW.prompt.md
+  [ ] HSS section incomplete → Run HUB_DESIGN_DECLARATION_INTAKE.prompt.md
+  [ ] ERD not created → Run PRD_TO_ERD_WORKFLOW.prompt.md
+
+This prompt is DOWNSTREAM of PRD_TO_ERD_WORKFLOW.
+It cannot create ERD structure — only add metadata to existing ERD.
+```
+
+**Reference**: `CONSTITUTION.md` §HSS Requirement
 
 ---
 
