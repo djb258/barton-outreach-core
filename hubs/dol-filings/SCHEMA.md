@@ -9,15 +9,16 @@
 
 ## Schema Overview
 
-The DOL Filings hub manages Department of Labor Form 5500 FOIA data across **26 filing tables** spanning **3 years** (2023, 2024, 2025). It provides EIN resolution, filing signals, service provider compensation data, DFE participation, and financial information to downstream hubs.
+The DOL Filings hub manages Department of Labor Form 5500 FOIA data across **27 data-bearing tables** (+ 2 empty staging) spanning **3 years** (2023, 2024, 2025). It provides EIN resolution, filing signals, service provider compensation data, DFE participation, renewal timing, and financial information to downstream hubs.
 
 ### Coverage Summary
 
 | Metric | Value |
 |--------|-------|
-| Filing Tables | 26 |
+| Data-Bearing Tables | 27 |
+| Staging Tables | 2 (pressure_signals, renewal_calendar) |
 | Years Loaded | 2023, 2024, 2025 |
-| Total Rows | 10,970,626 |
+| Total Rows | 11,124,508 |
 | Column Comments | 1,081 (100% coverage) |
 | Column Metadata Catalog | 1,081 entries |
 | form_year Indexes | 23 |
@@ -41,19 +42,19 @@ The DOL Filings hub manages Department of Labor Form 5500 FOIA data across **26 
 | `dol` | `schedule_a` | Insurance contracts & broker commissions | 625,520 |
 | `dol` | `schedule_a_part1` | Schedule A Part 1 detail | 380,509 |
 
-### Schedule C: Service Provider Compensation (9 tables)
+### Schedule C: Service Provider Compensation (10 tables)
 
-| Schema | Table | Purpose |
-|--------|-------|---------|
-| `dol` | `schedule_c` | Schedule C header | 
-| `dol` | `schedule_c_part1_item1` | Direct compensation |
-| `dol` | `schedule_c_part1_item2` | Indirect compensation |
-| `dol` | `schedule_c_part1_item3` | Terminated service providers |
-| `dol` | `schedule_c_part1_item4` | Service provider failures to provide info |
-| `dol` | `schedule_c_part2` | Other service provider compensation |
-| `dol` | `schedule_c_part1_item1_ele` | P1I1 compensation elements |
-| `dol` | `schedule_c_part1_item2_ele` | P1I2 compensation elements |
-| `dol` | `schedule_c_part1_item4_ele` | P1I4 failure elements |
+| Schema | Table | Rows | Purpose |
+|--------|-------|------|---------|
+| `dol` | `schedule_c` | 241,556 | Schedule C header |
+| `dol` | `schedule_c_part1_item1` | 396,838 | Direct compensation |
+| `dol` | `schedule_c_part1_item2` | 754,802 | Indirect compensation |
+| `dol` | `schedule_c_part1_item2_codes` | 1,848,202 | Item 2 service type codes (code 28 = insurance broker) |
+| `dol` | `schedule_c_part1_item3` | 383,338 | Terminated service providers |
+| `dol` | `schedule_c_part1_item3_codes` | 707,007 | Item 3 service type codes |
+| `dol` | `schedule_c_part2` | 4,593 | Other service provider compensation |
+| `dol` | `schedule_c_part2_codes` | 2,352 | Part 2 service type codes |
+| `dol` | `schedule_c_part3` | 15,514 | Terminated providers detail |
 
 ### Schedule D: DFE Participation (4 tables)
 
@@ -103,7 +104,7 @@ The DOL Filings hub manages Department of Labor Form 5500 FOIA data across **26 
 
 ## Entity Relationship Diagram
 
-> **See**: `docs/diagrams/erd/DOL_SUBHUB.mmd` for the full 26-table Mermaid ERD
+> **See**: `docs/diagrams/erd/DOL_SUBHUB.mmd` for the full 27-table Mermaid ERD
 
 ```mermaid
 erDiagram
@@ -112,7 +113,7 @@ erDiagram
 
     DOL_FORM_5500 ||--o{ DOL_FORM_5500_SF : "ack_id"
     DOL_FORM_5500 ||--o{ DOL_SCHEDULE_A : "ack_id"
-    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_C : "ack_id (9 sub-tables)"
+    DOL_FORM_5500 ||--o{ DOL_SCHEDULE_C : "ack_id (10 sub-tables)"
     DOL_FORM_5500 ||--o{ DOL_SCHEDULE_D : "ack_id (4 sub-tables)"
     DOL_FORM_5500 ||--o{ DOL_SCHEDULE_G : "ack_id (4 sub-tables)"
     DOL_FORM_5500 ||--o{ DOL_SCHEDULE_H : "ack_id (2 tables)"
@@ -234,6 +235,8 @@ erDiagram
         text funding_type
         text broker_or_advisor
         text carrier
+        integer renewal_month
+        integer outreach_start_month
     }
 
     OUTREACH_DOL_AUDIT_LOG {
@@ -492,6 +495,8 @@ Outreach-scoped DOL summary data.
 | `funding_type` | text | NULL | - | Plan funding type |
 | `broker_or_advisor` | text | NULL | - | Broker/advisor info |
 | `carrier` | text | NULL | - | Insurance carrier |
+| `renewal_month` | integer | NULL | - | Plan year begin month (1-12). Derived from most recent filing |
+| `outreach_start_month` | integer | NULL | - | Communication trigger month (renewal_month - 5, wrap-around 1-12) |
 | `created_at` | timestamptz | NULL | now() | Record creation time |
 | `updated_at` | timestamptz | NULL | now() | Last update time |
 
@@ -511,11 +516,11 @@ Outreach-scoped DOL summary data.
 | dol.schedule_c_part1_item1 | ack_id | dol.schedule_c | Direct compensation |
 | dol.schedule_c_part1_item2 | ack_id | dol.schedule_c | Indirect compensation |
 | dol.schedule_c_part1_item3 | ack_id | dol.schedule_c | Terminated providers |
-| dol.schedule_c_part1_item4 | ack_id | dol.schedule_c | Provider failures |
+| dol.schedule_c_part1_item2_codes | ack_id | dol.schedule_c_part1_item2 | Item 2 service codes |
+| dol.schedule_c_part1_item3_codes | ack_id | dol.schedule_c_part1_item3 | Item 3 service codes |
 | dol.schedule_c_part2 | ack_id | dol.schedule_c | Other comp |
-| dol.schedule_c_part1_item1_ele | ack_id | dol.form_5500 | P1I1 elements |
-| dol.schedule_c_part1_item2_ele | ack_id | dol.form_5500 | P1I2 elements |
-| dol.schedule_c_part1_item4_ele | ack_id | dol.form_5500 | P1I4 elements |
+| dol.schedule_c_part2_codes | ack_id | dol.schedule_c_part2 | Part 2 service codes |
+| dol.schedule_c_part3 | ack_id | dol.schedule_c | Terminated providers detail |
 | dol.schedule_d | ack_id | dol.form_5500 | DFE participation |
 | dol.schedule_d_part1 | ack_id | dol.schedule_d | DFE investments |
 | dol.schedule_d_part2 | ack_id | dol.schedule_d | DFE filings |
@@ -553,9 +558,10 @@ Outreach-scoped DOL summary data.
 - Use before Clay/ZoomInfo/Clearbit to minimize enrichment spend
 
 ### Renewal Intelligence
-- `ins_policy_to_date` - Policy expiration date
-- `renewal_month` / `renewal_year` - Calculated renewal window
-- `days_until_renewal` - Time-sensitive targeting
+- `outreach.dol.renewal_month` - Plan year begin month (integer 1-12), derived from most recent filing
+- `outreach.dol.outreach_start_month` - Communication start month (renewal_month - 5, integer 1-12)
+- `ins_policy_to_date` (schedule_a) - Policy expiration date
+- 86.6% of matched companies renew in January → outreach starts August
 
 ### Benefit Types
 - `wlfr_bnft_health_ind` - Health coverage
@@ -572,7 +578,7 @@ Outreach-scoped DOL summary data.
 | 2023 | 24 | ~6,012,077 | DOL FOIA ZIPs (C:\Users\CUSTOM PC\Desktop\DOl List) |
 | 2024 | 26 | 4,951,258 | DOL FOIA ZIPs (C:\Users\CUSTOM PC\Desktop\Dol 2024) |
 | 2025 | 26 | 7,291 | DOL FOIA ZIPs (C:\Users\CUSTOM PC\Desktop\Dol 2025) |
-| **Grand Total** | **26 unique** | **10,970,626** | |
+| **Grand Total** | **27 data-bearing** | **11,124,508** | |
 
 ### Key Filing Tables by Year
 
@@ -658,7 +664,7 @@ The following DOL reference tables are **NEVER** deleted during cascade cleanup:
 - `dol.form_5500_sf_part7` — SF Part 7 data (immutable)
 - `dol.schedule_a` — Insurance contract data (immutable)
 - `dol.schedule_a_part1` — Schedule A Part 1 (immutable)
-- `dol.schedule_c` + 8 sub-tables — Service provider compensation (immutable)
+- `dol.schedule_c` + 9 sub-tables (incl. 3 codes tables) — Service provider compensation (immutable)
 - `dol.schedule_d` + 3 sub-tables — DFE participation (immutable)
 - `dol.schedule_dcg` — D/C/G cross-reference (immutable)
 - `dol.schedule_g` + 3 sub-tables — Financial transactions (immutable)
@@ -668,7 +674,7 @@ The following DOL reference tables are **NEVER** deleted during cascade cleanup:
 - `dol.ein_urls` — EIN→URL mappings (FREE tier data)
 - `dol.pressure_signals` — May expire naturally via `expires_at`
 
-> **Total: 26 filing tables + 3 support tables = 29 DOL tables (all immutable reference data)**
+> **Total: 27 data-bearing filing tables + 2 staging tables + sub-hub tables (all reference data immutable)**
 
 ### Post-Cleanup State (2026-02-10)
 
@@ -679,7 +685,7 @@ The following DOL reference tables are **NEVER** deleted during cascade cleanup:
 | dol.form_5500_sf | 1,535,999 | Unchanged (reference data, 3 years) |
 | dol.schedule_a | 625,520 | Unchanged (reference data, 3 years) |
 | dol.ein_urls | 119,409 | Unchanged (FREE tier) |
-| **All 26 filing tables** | **10,970,626** | **Immutable FOIA reference data** |
+| **All 27 data-bearing tables** | **11,124,508** | **Immutable FOIA reference data** |
 
 ### Cleanup Trigger
 
@@ -699,4 +705,4 @@ After cascade cleanup, companies may lose their DOL match. To re-match:
 
 *Generated from Neon PostgreSQL via READ-ONLY connection*
 *Last verified: 2026-02-10*
-*26 filing tables, 10,970,626 rows, 1,081 column comments (100% coverage)*
+*27 data-bearing tables, 11,124,508 rows, 1,081 column comments (100% coverage)*

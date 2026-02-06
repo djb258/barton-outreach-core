@@ -46,15 +46,16 @@
 ## 4. Purpose
 
 Attach regulatory filings (Form 5500, 5500-SF, Schedule A/C/D/G/H/I) to **existing companies**.
-Source of truth for plan renewal dates, broker relationships, service provider compensation, DFE participation, and financial information.
+Source of truth for plan renewal dates, renewal timing signals, broker relationships, service provider compensation, DFE participation, and financial information.
 
-### Data Coverage (as of 2026-02-10)
+### Data Coverage (as of 2026-02-06)
 
 | Metric | Value |
 |--------|-------|
-| **Filing Tables** | 26 (dol schema) |
+| **Data-Bearing Tables** | 27 (dol schema) |
+| **Staging Tables** | 2 (pressure_signals, renewal_calendar) |
 | **Years Loaded** | 2023, 2024, 2025 |
-| **Total Rows** | 10,970,626 |
+| **Total Rows** | 11,124,508 |
 | **Column Comments** | 1,081 (100% coverage) |
 | **Column Metadata Catalog** | 1,081 entries in dol.column_metadata |
 
@@ -64,7 +65,7 @@ Source of truth for plan renewal dates, broker relationships, service provider c
 |-------|--------|---------|
 | Form 5500 | form_5500, form_5500_sf, form_5500_sf_part7 | Core filing data (full + short form) |
 | Schedule A | schedule_a, schedule_a_part1 | Insurance contracts & broker commissions |
-| Schedule C | schedule_c + 8 sub-tables | Service provider compensation |
+| Schedule C | schedule_c + 6 sub-tables + 3 codes tables | Service provider compensation |
 | Schedule D | schedule_d + 3 sub-tables | DFE/pooled investment participation |
 | Schedule DCG | schedule_dcg | D/C/G cross-reference |
 | Schedule G | schedule_g + 3 sub-tables | Financial transactions (loans, non-exempt) |
