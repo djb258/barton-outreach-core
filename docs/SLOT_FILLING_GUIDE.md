@@ -7,7 +7,18 @@ Each company in `people.company_slot` has 3 slots to fill:
 - **CFO** - Chief Financial Officer, Controller, Finance Director
 - **HR** - Human Resources Director, Manager, Benefits, Payroll
 
-Total: 42,192 companies × 3 slots = **126,576 slots**
+Total: **95,004 companies** x 3 slots = **285,012 slots**
+
+## Current Fill Status (2026-02-07 - VERIFIED)
+
+| Slot | Filled | Total | Fill Rate |
+|------|--------|-------|-----------|
+| CEO | 62,289 | 95,004 | 65.6% |
+| CFO | 57,327 | 95,004 | 60.3% |
+| HR | 58,141 | 95,004 | 61.2% |
+| **TOTAL** | **177,757** | **285,012** | **62.4%** |
+
+**People in `people.people_master`:** 182,661
 
 ## Data Source: Hunter Enrichment
 
@@ -37,11 +48,13 @@ HR:                    6,638
 
 ### Join Path
 ```
-people.company_slot.outreach_id 
-→ outreach.company_target.outreach_id 
-→ outreach.outreach.domain 
+people.company_slot.outreach_id
+→ outreach.company_target.outreach_id
+→ outreach.outreach.domain
 → enrichment.hunter_contact.domain
 ```
+
+**Universal Join Key:** `outreach_id`
 
 ### CEO Slots
 **Departments searched:** Executive, Management
@@ -98,10 +111,10 @@ people.company_slot.outreach_id
 7. HR Generalist, HR Specialist
 
 ### What We EXCLUDE from HR
-- ❌ Recruiters
-- ❌ Talent Acquisition
-- ❌ Staffing
-- ❌ Recruiting/Recruitment
+- Recruiters
+- Talent Acquisition
+- Staffing
+- Recruiting/Recruitment
 
 **Reason:** Recruiters don't make benefits decisions. We want people who handle employee relations, benefits, and payroll.
 
@@ -109,20 +122,19 @@ people.company_slot.outreach_id
 
 ### Script Location
 ```
-scripts/fill_slots_from_hunter.py
+hubs/people-intelligence/imo/middle/phases/fill_slots_from_hunter.py
 ```
 
 ### Commands
 ```bash
 # Dry run (see what would be filled)
-python scripts/fill_slots_from_hunter.py --slot-type CEO --dry-run
-python scripts/fill_slots_from_hunter.py --slot-type CFO --dry-run
-python scripts/fill_slots_from_hunter.py --slot-type HR --dry-run
+doppler run -- python hubs/people-intelligence/imo/middle/phases/fill_slots_from_hunter.py <csv_path> --dry-run
 
 # Execute fills
-python scripts/fill_slots_from_hunter.py --slot-type CEO --execute
-python scripts/fill_slots_from_hunter.py --slot-type CFO --execute
-python scripts/fill_slots_from_hunter.py --slot-type HR --execute
+doppler run -- python hubs/people-intelligence/imo/middle/phases/fill_slots_from_hunter.py <csv_path>
+
+# Specify slot type
+doppler run -- python hubs/people-intelligence/imo/middle/phases/fill_slots_from_hunter.py <csv_path> --slot-type HR
 ```
 
 ### What the Script Does
@@ -130,23 +142,16 @@ python scripts/fill_slots_from_hunter.py --slot-type HR --execute
 2. Joins to company domain via outreach tables
 3. Finds matching Hunter contacts by department + title
 4. Prioritizes by title (best titles first)
-5. Creates `people_master` record for the person
-6. Updates `company_slot` with `people_id` and `is_filled = true`
+5. Creates `people_master` record for the person with Barton ID
+6. Updates `company_slot` with `barton_id` and `is_filled = true`
+7. Adds phone number to `slot_phone` if present
 
-## Current Fill Status (2026-02-03)
-
-| Slot | Filled | Total | % |
-|------|--------|-------|---|
-| CEO | 26,190 | 42,192 | 62.1% |
-| CFO | 21,596 | 42,192 | 51.2% |
-| HR | 22,416 | 42,192 | 53.1% |
-| **TOTAL** | **70,202** | **126,576** | **55.5%** |
-
-## Why ~45% Remain Unfilled
+## Why ~38% Remain Unfilled
 
 Hunter simply doesn't have contacts for those company domains. To fill more:
 1. Add another data source (Apollo, ZoomInfo, LinkedIn)
 2. Run the same pattern-matching approach against new data
+3. Use FREE extraction from company websites
 
 ## Key Learnings
 
@@ -156,7 +161,7 @@ Initially we filtered by department THEN by title, which was too restrictive. Ex
 - An "HR Director" might be in Management department, not HR
 
 **Solution:** For CFO and HR, we now use:
-- Department-based matching (Finance, HR, Executive, Management, Ops) 
+- Department-based matching (Finance, HR, Executive, Management, Ops)
 - **OR** Title-based matching (catches contacts in NULL/other departments)
 
 ### NULL Department Has Good Data
@@ -169,22 +174,23 @@ The title-based patterns catch these.
 ## Database Tables Involved
 
 ```sql
--- Slots to fill
-people.company_slot (slot_id, company_id, slot_type, people_id, is_filled)
+-- Slots to fill (AUTHORITATIVE)
+people.company_slot (slot_id, outreach_id, slot_type, barton_id, is_filled)
 
 -- People we create
-people.people_master (people_id, first_name, last_name, email, ...)
+people.people_master (barton_id, first_name, last_name, email, ...)
 
--- Company info
-company.company_master (company_id, domain, ...)
+-- Company info (AUTHORITATIVE)
+outreach.company_target (outreach_id, domain, ...)
 
--- Outreach linkage
+-- Outreach spine
 outreach.outreach (outreach_id, domain, ...)
-outreach.company_target (outreach_id, ...)
 
 -- Source data
 enrichment.hunter_contact (domain, email, job_title, department, ...)
 ```
+
+**Note:** Use `outreach.company_target` as the authoritative company source, NOT `company.company_master`.
 
 ## Maintenance
 
@@ -193,4 +199,9 @@ If you need to update the matching patterns, edit:
 - `TITLE_BASED_PATTERNS` - title patterns for CFO/HR (ignores department)
 - `TITLE_PRIORITY` - ranking within each slot type
 
-All in `scripts/fill_slots_from_hunter.py`.
+All in `hubs/people-intelligence/imo/middle/phases/fill_slots_from_hunter.py`.
+
+---
+
+**Last Updated:** 2026-02-07
+**Source:** `scripts/full_numbers_audit.py`

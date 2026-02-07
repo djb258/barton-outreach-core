@@ -1,12 +1,85 @@
-# ADR-001: Hub-and-Spoke Architecture
+# ADR-001: Hub-and-Spoke Architecture → CTB Evolution
 
-> **Status:** [x] Accepted
-> **Date:** 2025-12-17
-> **Updated:** 2025-12-19
+> **Status:** [x] Superseded by CTB
+> **Original Date:** 2025-12-17
+> **Updated:** 2026-02-07
+> **Superseded By:** CTB Registry (2026-02-06)
 
 ---
 
-## Context
+## Current Architecture: CTB (Christmas Tree Backbone)
+
+As of 2026-02-06, the system uses **CTB (Christmas Tree Backbone)** as the authoritative data model. The original Hub-and-Spoke pattern is preserved below for historical reference.
+
+### CTB Overview
+
+| Property | Value |
+|----------|-------|
+| **Total Tables** | 246 |
+| **Spine Table** | `outreach.outreach` |
+| **Universal Join Key** | `outreach_id` |
+| **Sovereign Eligible** | 95,004 |
+| **CL-Spine Alignment** | 95,004 = 95,004 (ALIGNED) |
+
+### Three Audiences
+
+All messaging targets exactly one of three slot types:
+
+| Slot | Filled | Total | Fill Rate |
+|------|--------|-------|-----------|
+| CEO | 62,289 | 95,004 | 65.6% |
+| CFO | 57,327 | 95,004 | 60.3% |
+| HR | 58,141 | 95,004 | 61.2% |
+| **Total** | **177,757** | **285,012** | **62.4%** |
+
+### CTB Leaf Types
+
+| Leaf Type | Count | Description |
+|-----------|-------|-------------|
+| CANONICAL | 50 | Primary data tables |
+| ARCHIVE | 112 | Archive/backup tables |
+| SYSTEM | 23 | System/metadata |
+| DEPRECATED | 21 | Legacy (read-only) |
+| ERROR | 14 | Error tracking |
+| STAGING | 12 | Intake/staging |
+| MV | 8 | Materialized views |
+| REGISTRY | 6 | Lookup/reference |
+
+### CTB Sub-Hub Coverage
+
+| Sub-Hub | Table | Records | Coverage |
+|---------|-------|---------|----------|
+| Spine | `outreach.outreach` | 95,004 | 100% |
+| Company Target | `outreach.company_target` | 95,004 | 100% |
+| DOL | `outreach.dol` | 70,150 | 73.8% |
+| Blog | `outreach.blog` | 95,004 | 100% |
+| BIT Scores | `outreach.bit_scores` | 13,226 | 13.9% |
+| People | `people.people_master` | 182,661 | — |
+| Slots | `people.company_slot` | 285,012 | — |
+
+### CTB Golden Rule
+
+```
+IF outreach_id IS NULL:
+    STOP. DO NOT PROCEED.
+    1. Mint outreach_id in outreach.outreach (operational spine)
+    2. Write outreach_id ONCE to cl.company_identity (authority registry)
+    3. If CL write fails (already claimed) → HARD FAIL
+```
+
+### CTB Documentation
+
+- **[CTB_GOVERNANCE.md](../CTB_GOVERNANCE.md)** - Governance rules
+- **[CTB_REMEDIATION_SUMMARY.md](../audit/CTB_REMEDIATION_SUMMARY.md)** - Phase history
+- **[OSAM.md](../OSAM.md)** - Semantic access map
+
+---
+
+## Historical: Hub-and-Spoke Architecture (2025-12-17)
+
+The following describes the original Hub-and-Spoke pattern that was superseded by CTB.
+
+### Original Context
 
 The Barton Outreach Core system needed a scalable architecture to handle multiple data enrichment sources, signal processing, and outreach coordination. Key challenges:
 
@@ -16,9 +89,7 @@ The Barton Outreach Core system needed a scalable architecture to handle multipl
 4. **Failure Isolation**: One failing data source shouldn't block the entire pipeline
 5. **Traceability**: Every action must be traceable back to its origin
 
----
-
-## Decision
+### Original Decision
 
 | Field | Value |
 |-------|-------|
@@ -27,7 +98,7 @@ The Barton Outreach Core system needed a scalable architecture to handle multipl
 | **Central Hub** | Company Hub (company_master) |
 | **Source** | Barton Doctrine v1.1 |
 
-### Architecture Pattern
+### Original Architecture Diagram
 
 ```
                          ┌─────────────────┐
@@ -52,7 +123,7 @@ The Barton Outreach Core system needed a scalable architecture to handle multipl
                          └─────────────────┘
 ```
 
-### The Golden Rule
+### Original Golden Rule
 
 ```
 IF company_id IS NULL OR domain IS NULL OR email_pattern IS NULL:
@@ -60,9 +131,20 @@ IF company_id IS NULL OR domain IS NULL OR email_pattern IS NULL:
     → Route to Company Identity Pipeline first.
 ```
 
+**Note:** This rule evolved into the CTB Golden Rule which uses `outreach_id` instead of `company_id`.
+
+### Why Hub-and-Spoke Was Superseded
+
+| Issue | Hub-and-Spoke | CTB Solution |
+|-------|---------------|--------------|
+| Join key fragmentation | Multiple keys (company_id, domain) | Single key (outreach_id) |
+| Schema sprawl | Ad-hoc table creation | 246 registered tables with leaf types |
+| Orphan records | Possible without enforcement | Prevented by registry |
+| Audit trail | Manual | Automated via ctb.table_registry |
+
 ---
 
-## Alternatives Considered
+## Alternatives Considered (Historical)
 
 | Option | Why Not Chosen |
 |--------|----------------|
@@ -73,68 +155,13 @@ IF company_id IS NULL OR domain IS NULL OR email_pattern IS NULL:
 
 ---
 
-## Consequences
-
-### Enables
-
-- **Clear ownership**: Each spoke owns specific data and operations
-- **Failure isolation**: DOL spoke failure doesn't block People spoke
-- **Easy extension**: New spokes plug into existing hub
-- **Unified tracing**: correlation_id flows from hub through all spokes
-- **Signal aggregation**: BIT Engine receives from all spokes uniformly
-- **Clear processing order**: Company first, then spokes, then BIT, then outreach
-
-### Prevents
-
-- **Orphan records**: No data exists without company anchor
-- **Duplicate signals**: Signal deduplication enforced at hub level
-- **Untraced errors**: Every operation has correlation_id
-- **Processing chaos**: Clear phase ordering (1→4, then spokes)
-
----
-
-## Guard Rails
-
-| Type | Value |
-|------|-------|
-| Rate Limit | 500 signals/day per spoke |
-| Timeout | 30 seconds per operation |
-| Kill Switch | `signal_flood_per_source`, `daily_cost_ceiling` |
-
----
-
-## Implementation
-
-### Hub Components
-- `hub/company/company_hub.py` - Central hub with cache and fuzzy matching
-- `hub/company/company_pipeline.py` - Phase 1-4 execution
-- `hub/company/bit_engine.py` - Signal aggregation and scoring
-- `hub/company/neon_writer.py` - Persistence layer
-
-### Spoke Components
-- `spokes/people/people_spoke.py` - Email generation, slot assignment
-- `spokes/dol/dol_spoke.py` - Form 5500 processing
-- `spokes/blog/blog_spoke.py` - News/RSS processing
-- `spokes/talent_flow/talent_flow_spoke.py` - Movement detection
-- `spokes/outreach/outreach_spoke.py` - Output/campaign management
-
-### Enforcement Components
-- `ops/enforcement/correlation_id.py` - ID validation and generation
-- `ops/enforcement/signal_dedup.py` - Deduplication logic
-- `ops/enforcement/hub_gate.py` - Anchor validation
-- `ops/enforcement/error_codes.py` - Standardized error codes
-
----
-
 ## Rollback
 
-If the hub-and-spoke architecture fails:
-1. Revert to direct database writes (legacy `outreach_core/` modules)
-2. Disable BIT Engine signal aggregation
-3. Process spokes independently without hub coordination
-4. Archive `hub/` and `spokes/` directories
-
-Note: `.archive/` contains original implementation for reference.
+If CTB architecture needs rollback:
+1. Restore Hub-and-Spoke spoke files from `.archive/`
+2. Re-enable direct company_master writes
+3. Disable ctb.table_registry enforcement
+4. Update CLAUDE.md to reflect rollback
 
 ---
 
@@ -144,13 +171,14 @@ Note: `.archive/` contains original implementation for reference.
 |------|------|------|
 | Hub Owner | Barton Doctrine | 2025-12-17 |
 | Reviewer | Claude Code | 2025-12-19 |
-| Implementation | Claude Code | 2025-12-19 |
+| CTB Migration | Claude Code | 2026-02-06 |
+| Documentation Update | Claude Code | 2026-02-07 |
 
 ---
 
 ## References
 
-- `CLAUDE.md` - Bootstrap guide with architecture overview
-- `docs/COMPLETE_SYSTEM_ERD.md` - Entity relationship diagram
-- `docs/COMPLETE_DATA_FLOW.md` - Data flow documentation
+- `CLAUDE.md` - Bootstrap guide with CTB architecture
+- `docs/CTB_GOVERNANCE.md` - CTB governance rules
+- `docs/OSAM.md` - Semantic access map
 - `docs/prd/` - Individual component PRDs

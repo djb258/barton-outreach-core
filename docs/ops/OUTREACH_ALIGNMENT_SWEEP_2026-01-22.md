@@ -35,7 +35,7 @@
 | outreach.bit_signals | 0 | 0 |
 | outreach.bit_input_history | 0 | 0 |
 | outreach.blog_source_history | 0 | 0 |
-| people.company_slot | 153,444 | 0 |
+| people.company_slot | 285,012 | 0 |
 | **people.people_master** | **30,808** | **5,675** |
 | outreach.company_hub_status | 68,908 | 0 |
 
@@ -75,7 +75,7 @@
 | outreach.bit_signals | 0 | 0 | OK |
 | outreach.bit_input_history | 0 | 0 | OK |
 | outreach.blog_source_history | 0 | 0 | OK |
-| people.company_slot | 153,444 | 0 | OK |
+| people.company_slot | 285,012 | 0 | OK |
 | **people.people_master** | **25,133** | **0** | **OK** |
 | outreach.company_hub_status | 68,908 | 0 | OK |
 

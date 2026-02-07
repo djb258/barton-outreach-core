@@ -6,7 +6,7 @@
 **Architecture**: CL Parent-Child Doctrine
 **Primary Purpose**: Marketing intelligence & executive enrichment platform
 **Database**: Neon PostgreSQL (serverless)
-**Last Refactored**: 2025-12-26
+**Last Refactored**: 2026-02-07
 
 ---
 
@@ -61,16 +61,17 @@ The OSAM tells you exactly where to go for any data question:
 - **[docs/AUTHORITATIVE_TABLE_REFERENCE.md](docs/AUTHORITATIVE_TABLE_REFERENCE.md)** - Complete table reference
 - **[docs/diagrams/PEOPLE_DATA_FLOW_ERD.md](docs/diagrams/PEOPLE_DATA_FLOW_ERD.md)** - People slot/enrichment flow
 
-### Current Enrichment Status (2026-02-06):
+### Current Enrichment Status (2026-02-07 VERIFIED):
 | Metric | Count | % |
 |--------|-------|---|
 | **Sovereign eligible** | **95,004** | 100% |
 | Excluded (non-commercial) | 6,499 | — |
 | With email_method | 82,074 | 86.4% |
-| Slot fill (CEO) | 62,006 | 65.3% |
-| Slot fill (CFO) | 57,164 | 60.2% |
-| Slot fill (HR) | 57,991 | 61.0% |
-| **Overall slot fill** | **177,161 / 285,012** | **62.2%** |
+| Slot fill (CEO) | 62,289 | 65.6% |
+| Slot fill (CFO) | 57,327 | 60.3% |
+| Slot fill (HR) | 58,141 | 61.2% |
+| **Overall slot fill** | **177,757 / 285,012** | **62.4%** |
+| **People count** | **182,661** | — |
 
 ### DOL Bridge Enrichment Status (2026-02-06):
 | Column | Fill | Notes |
@@ -877,10 +878,11 @@ Aggregates signals from all hubs to compute intent scores.
 
 ---
 
-**Last Updated**: 2026-01-30
-**Architecture**: CL Parent-Child Doctrine v1.1
+**Last Updated**: 2026-02-07
+**Architecture**: CL Parent-Child Doctrine v1.1 + CTB Registry v1.0
 **Status**: v1.0 OPERATIONAL BASELINE (CERTIFIED + FROZEN)
 **Sovereign Eligible**: 95,004 | **Outreach Claimed**: 95,004 = 95,004 ✓
+**Verified By**: `scripts/full_numbers_audit.py`
 
 ---
 
@@ -944,15 +946,15 @@ See `infra/MIGRATION_ORDER.md` for execution order.
 - `cl.company_identity_archive` (22,263 records)
 - `people.company_slot_archive`
 
-**Current State (as of 2026-02-06)**:
+**Current State (2026-02-07 VERIFIED)**:
 | Sub-Hub | Table | Records | Notes |
 |---------|-------|---------|-------|
-| **Sovereign** | cl.company_identity | 95,004 eligible | 101,503 total - 6,499 excluded |
+| **Sovereign** | cl.company_identity | 95,004 eligible | 102,426 total - 5,327 excluded |
 | Spine | outreach.outreach | 95,004 | **ALIGNED** |
 | CT | outreach.company_target | 95,004 | 100% coverage |
 | DOL | outreach.dol | 70,150 | 73.8% coverage |
-| People | outreach.people | 336,395 | Hunter promoted |
-| People | people.company_slot | 285,012 | 62.2% fill rate |
+| People | people.people_master | 182,661 | Enriched contacts |
+| People | people.company_slot | 285,012 | 62.4% fill rate (177,757 filled) |
 | Blog | outreach.blog | 95,004 | 100% coverage |
 | BIT | outreach.bit_scores | 13,226 | 13.9% coverage |
 
@@ -1116,9 +1118,10 @@ SELECT * FROM bit.proof_lines WHERE company_unique_id = ? AND valid_until > NOW(
 
 ---
 
-**Last Updated**: 2026-02-06
+**Last Updated**: 2026-02-07
 **Architecture**: CL Parent-Child Doctrine v1.1 + BIT Authorization v2.0 + CTB Registry v1.0
 **Status**: v1.0 OPERATIONAL BASELINE + BIT v2.0 Phase 1 + CTB Phase 3 LOCKED
+**Verified By**: `scripts/full_numbers_audit.py`
 
 ---
 

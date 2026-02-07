@@ -9,30 +9,30 @@
 
 ---
 
-## ⚠️ AUTHORITATIVE TABLE REFERENCE
+## AUTHORITATIVE TABLE REFERENCE
 
 > **CRITICAL: All People Sub-Hub operations MUST use `outreach.company_target` as the company source.**
 > **See [AUTHORITATIVE_TABLE_REFERENCE.md](../AUTHORITATIVE_TABLE_REFERENCE.md) for complete details.**
 
-### The Single Source of Truth
+### The Single Source of Truth (2026-02-07 VERIFIED)
 
 | Table | Schema | Count | Purpose |
 |-------|--------|-------|---------|
-| `company_target` | `outreach` | **41,425** | **AUTHORITATIVE company list** |
-| `company_slot` | `people` | 124,275 | Slot assignments (3 per company) |
-| `people_master` | `people` | 78,143 | People data (name, email, etc.) |
-| `people` | `outreach` | 324 | People promoted for outreach |
+| `company_target` | `outreach` | **95,004** | **AUTHORITATIVE company list** |
+| `company_slot` | `people` | 285,012 | Slot assignments (3 per company) |
+| `people_master` | `people` | 182,661 | People data (name, email, etc.) |
+| `people` | `outreach` | 336,395 | People promoted for outreach |
 
 ### Data Flow
 
 ```
-Clay (CL) Exports
+CL (Company Lifecycle) Registry
        ↓
-outreach.company_target (41,425) ← AUTHORITATIVE SOURCE
+outreach.company_target (95,004) ← AUTHORITATIVE SOURCE
        ↓ outreach_id
-people.company_slot (CEO, CFO, HR slots)
-       ↓ person_unique_id → unique_id
-people.people_master (enriched people data)
+people.company_slot (CEO, CFO, HR slots - 285,012 total)
+       ↓ barton_id
+people.people_master (enriched people data - 182,661)
        ↓ promotion
 outreach.people (ready for outreach)
 ```
@@ -47,45 +47,41 @@ outreach.people (ready for outreach)
 
 ---
 
-## 📊 LIVE ENRICHMENT STATUS (2026-02-02)
+## LIVE ENRICHMENT STATUS (2026-02-07 VERIFIED)
 
 ### Company-Level Coverage
 
-| Metric | Count | % of 41,425 |
+| Metric | Count | % of 95,004 |
 |--------|-------|-------------|
-| Total companies | 41,425 | 100% |
-| Companies with ≥1 filled slot | 18,353 | **44.3%** |
-| Companies with ≥1 person WITH email | 15,401 | **37.2%** |
-| Companies with all 3 slots filled | 1,760 | 4.2% |
-| **Companies needing people** | **23,072** | **55.7%** |
+| Total companies | 95,004 | 100% |
+| Total slots | 285,012 | 3 per company |
+| Total filled slots | 177,757 | **62.4%** |
+| Total people | 182,661 | — |
 
 ### Slot-Level Coverage
 
-| Slot | Total | Filled | Has Person | Has Email | Needs Email | Empty |
-|------|-------|--------|------------|-----------|-------------|-------|
-| **CEO** | 41,425 | 15,171 (36.6%) | 15,171 | 12,061 (29.1%) | 3,110 | 26,254 (63.4%) |
-| **CFO** | 41,425 | 4,807 (11.6%) | 4,805 | 3,723 (9.0%) | 1,082 | 36,618 (88.4%) |
-| **HR** | 41,425 | 6,575 (15.9%) | 6,533 | 6,030 (14.6%) | 503 | 34,850 (84.1%) |
+| Slot | Total | Filled | Fill Rate |
+|------|-------|--------|-----------|
+| **CEO** | 95,004 | 62,289 | **65.6%** |
+| **CFO** | 95,004 | 57,327 | **60.3%** |
+| **HR** | 95,004 | 58,141 | **61.2%** |
+| **TOTAL** | **285,012** | **177,757** | **62.4%** |
 
-### Enrichment Priorities
+### Remaining Work
 
-| Priority | Action | Count | Impact |
-|----------|--------|-------|--------|
-| 1 | Find CEOs for empty slots | 26,254 | HIGH - Primary contact |
-| 2 | Get emails for existing CEOs | 3,110 | HIGH - Enable outreach |
-| 3 | Find HR contacts | 34,850 | MEDIUM - Benefits decision maker |
-| 4 | Find CFOs | 36,618 | MEDIUM - Financial decision maker |
-| 5 | Get emails for people missing them | 4,695 | LOW - Complete records |
+| Slot | Empty | Priority |
+|------|-------|----------|
+| CEO | 32,715 | HIGH - Primary contact |
+| CFO | 37,677 | MEDIUM - Financial decision maker |
+| HR | 36,863 | MEDIUM - Benefits decision maker |
 
-### Source of Current People
+### Primary Data Source
 
-| Source System | Filled Slots |
-|---------------|-------------|
-| `intake_promotion` | 21,909 |
-| `free_extraction` | 3,820 |
-| `people_master_bridge` | 322 |
-| `people_master_match` | 174 |
-| `wv_executive_import` | 153 |
+| Source | Records |
+|--------|---------|
+| Hunter enrichment | Primary |
+| FREE extraction | Secondary |
+| Clay imports | Historical |
 
 ---
 
@@ -1438,7 +1434,8 @@ doppler run -- python scripts/correct_status.py
 
 ---
 
-*Document Version: 3.0*
-*Last Updated: 2026-01-30*
+*Document Version: 3.1*
+*Last Updated: 2026-02-07*
 *Owner: People Sub-Hub*
-*Doctrine: Bicycle Wheel v1.1 / Barton Doctrine*
+*Doctrine: CTB v1.0 / Barton Doctrine*
+*Source: scripts/full_numbers_audit.py*

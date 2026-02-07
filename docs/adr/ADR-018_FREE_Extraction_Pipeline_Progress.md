@@ -98,13 +98,15 @@ The FREE extraction pipeline extracts leadership contact information (CEO, CFO, 
 | **People in Staging (promoted)** | 47,706 |
 | **Paid Enrichment Queue** | ~19,930 |
 
-### Slot Coverage (Updated 2026-01-28)
+### Slot Coverage (Updated 2026-02-07 VERIFIED)
 
 | Slot Type | Filled | Total | Coverage |
 |-----------|--------|-------|----------|
-| CEO | 18,004 | 49,924 | 36.1% |
-| CFO | 5,840 | 49,924 | 11.7% |
-| HR | 7,256 | 49,924 | 14.5% |
+| CEO | 62,289 | 95,004 | 65.6% |
+| CFO | 57,327 | 95,004 | 60.3% |
+| HR | 58,141 | 95,004 | 61.2% |
+
+**Note:** Previous counts used incorrect denominator (49,924). Correct denominator is 95,004 sovereign eligible companies.
 
 ### Extraction Status Distribution
 
@@ -265,3 +267,4 @@ doppler run -- python scripts/state_extraction_pipeline.py --state ALL --batch-s
 | 2026-01-28 | Added connection stability fix for SSL timeouts |
 | 2026-01-28 | Fixed Barton ID sequence limit (was 99,999, now 999,999) |
 | 2026-01-28 | Parallel extraction completed WV, KY, DE, OK |
+| 2026-02-07 | Updated slot coverage with correct denominators (95,004 vs 49,924) |

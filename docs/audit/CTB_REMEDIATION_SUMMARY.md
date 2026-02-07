@@ -212,6 +212,48 @@ All `pressure_signals` merge into `outreach.bit_signals` with `signal_source` di
 
 ---
 
+## Phase 2C: Data Quality Issues (2026-02-07)
+
+### Audit Results
+
+Full audit run via `scripts/full_numbers_audit.py`:
+
+| Issue | Count | Status |
+|-------|-------|--------|
+| NULL domains on spine | 0 | CLEAN |
+| Duplicate domains on spine | 488 | LOGGED for manual merge |
+| Orphan slots (no spine match) | 0 | CLEAN |
+| Duplicate emails in people_master | 42,928 | LOGGED for dedup |
+| Orphan people (no slot) | N/A | Schema check needed |
+
+### Cleanup Script
+
+`hubs/dol-filings/imo/middle/importers/audit_cleanup.py` addresses:
+1. NULL domains → backfill from CL
+2. Duplicate domains → export for manual merge
+3. Orphan people → email domain match
+4. Duplicate emails → dedupe + slot reassign
+5. Orphan slots → archive and remove
+
+### Post-Cleanup Counts (2026-02-07 VERIFIED)
+
+| Table | Count |
+|-------|-------|
+| cl.company_identity | 102,426 |
+| cl.company_identity (with outreach_id) | 95,004 |
+| cl.company_identity_excluded | 5,327 |
+| outreach.outreach (spine) | 95,004 |
+| outreach.company_target | 95,004 |
+| outreach.dol | 70,150 |
+| outreach.blog | 95,004 |
+| outreach.bit_scores | 13,226 |
+| people.company_slot | 285,012 |
+| people.people_master | 182,661 |
+
+**Alignment Check:** CL claimed (95,004) = Spine (95,004) **ALIGNED**
+
+---
+
 ## Phase 2: Leaf Lock
 
 After Phase 1 completion, each sub-hub should have:

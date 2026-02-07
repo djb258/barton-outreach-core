@@ -133,7 +133,7 @@ IF outreach_id IS NULL:
 
 ALIGNMENT RULE:
 outreach.outreach count = cl.company_identity (outreach_id NOT NULL) count
-Current: 42,192 = 42,192 ✓ ALIGNED
+Current: 95,004 = 95,004 ✓ ALIGNED
 ```
 
 ---
@@ -144,7 +144,7 @@ Current: 42,192 = 42,192 ✓ ALIGNED
 
 | Schema | Table | Purpose | Records |
 |--------|-------|---------|---------|
-| `outreach` | `outreach` | **THE SPINE** - Root records | 42,192 |
+| `outreach` | `outreach` | **THE SPINE** - Root records | 95,004 |
 | `outreach` | `outreach_archive` | Archived spine records | — |
 | `outreach` | `outreach_orphan_archive` | Unfixable orphans | 2,709 |
 | `outreach` | `campaigns` | Campaign definitions | — |

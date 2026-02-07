@@ -204,7 +204,7 @@ Hub waterfall order is FROZEN:
 | 2026-01-20 | v1.0 Baseline Freeze | ACTIVE |
 | 2026-01-21 | CL Sovereign Cleanup | **PASS** |
 | 2026-01-21 | Outreach Cascade Cleanup | **PASS** |
-| 2026-01-22 | CL-Outreach Alignment Verified | **51,148 = 51,148** |
+| 2026-01-22 | CL-Outreach Alignment Verified | **95,004 = 95,004** |
 
 ---
 
@@ -234,4 +234,4 @@ Any modification to FROZEN components requires:
 **Document Classification**: OPERATIONAL BASELINE
 **Modification Authority**: CHANGE REQUEST REQUIRED
 **Last Certified**: 2026-01-22
-**CL-Outreach Alignment**: 51,148 = 51,148 ✓
+**CL-Outreach Alignment**: 95,004 = 95,004 ✓
