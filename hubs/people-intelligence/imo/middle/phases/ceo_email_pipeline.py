@@ -93,11 +93,13 @@ class CEOCandidate:
     full_name: str
     job_title: str
     linkedin_url: Optional[str] = None
+    phone_number: Optional[str] = None
 
     # Company data
     company_name: str = ""
     company_domain: str = ""
     email_pattern: Optional[str] = None
+    outreach_id: Optional[str] = None  # For CSV imports with outreach_id
 
     # Phase 5: Email Generation
     generated_email: Optional[str] = None
@@ -370,12 +372,32 @@ def phase6_assign_slots(
         'founder & ceo', 'ceo & founder', 'co-ceo'
     }
 
+    # PRE-LOAD: Build outreach_id -> company_unique_id lookup for CSV imports
+    outreach_ids = [c.outreach_id for c in candidates if c.outreach_id and not c.company_unique_id]
+    outreach_to_company = {}
+    if outreach_ids:
+        print(f"  Looking up company_unique_id for {len(outreach_ids)} outreach_ids...")
+        # Query people.company_slot to get company_unique_id from outreach_id
+        cursor.execute("""
+            SELECT DISTINCT outreach_id, company_unique_id
+            FROM people.company_slot
+            WHERE outreach_id = ANY(%s) AND company_unique_id IS NOT NULL
+        """, (outreach_ids,))
+        outreach_to_company = {row[0]: row[1] for row in cursor.fetchall()}
+        print(f"  Found {len(outreach_to_company)} mappings from outreach_id -> company_unique_id")
+
     for candidate in candidates:
         # Skip if no email generated
         if not candidate.generated_email:
             continue
 
-        # For CSV imports without company_unique_id, mark as assigned but skip DB operations
+        # LOOKUP: If no company_unique_id but has outreach_id, try to resolve it
+        if not candidate.company_unique_id and candidate.outreach_id:
+            resolved_company_id = outreach_to_company.get(candidate.outreach_id)
+            if resolved_company_id:
+                candidate.company_unique_id = resolved_company_id
+
+        # For CSV imports without company_unique_id (even after lookup), mark as assigned but skip DB operations
         if not candidate.company_unique_id:
             candidate.slot_assigned = True
             candidate.slot_resolution_reason = "csv_import_no_company"
@@ -407,33 +429,62 @@ def phase6_assign_slots(
         else:
             resolution_reason = SlotResolutionReason.SENIORITY_WIN.value
 
-        # Check existing slot
-        cursor.execute("""
-            SELECT company_slot_unique_id, person_unique_id, confidence_score, is_filled
-            FROM people.company_slot
-            WHERE company_unique_id = %s AND slot_type = %s
-        """, (candidate.company_unique_id, candidate.slot_type))
+        # Check existing slot - try by outreach_id first (more reliable for CSV imports), then by company_unique_id
+        existing_slot = None
+        if candidate.outreach_id:
+            cursor.execute("""
+                SELECT company_slot_unique_id, person_unique_id, confidence_score, is_filled, company_unique_id
+                FROM people.company_slot
+                WHERE outreach_id = %s AND slot_type = %s
+            """, (candidate.outreach_id, candidate.slot_type))
+            existing_slot = cursor.fetchone()
+            # If found and we didn't have company_unique_id, populate it
+            if existing_slot and not candidate.company_unique_id and existing_slot[4]:
+                candidate.company_unique_id = existing_slot[4]
 
-        existing_slot = cursor.fetchone()
+        if not existing_slot and candidate.company_unique_id:
+            cursor.execute("""
+                SELECT company_slot_unique_id, person_unique_id, confidence_score, is_filled, company_unique_id
+                FROM people.company_slot
+                WHERE company_unique_id = %s AND slot_type = %s
+            """, (candidate.company_unique_id, candidate.slot_type))
+            existing_slot = cursor.fetchone()
 
         if existing_slot:
-            slot_id, current_person, current_score, is_filled = existing_slot
+            slot_id, current_person, current_score, is_filled, _ = existing_slot
             current_score = float(current_score) if current_score else 0.0
 
             # Seniority competition - higher score wins
             if candidate.seniority_score > current_score or not is_filled:
                 # Update slot (triggers history via trg_slot_assignment_history)
-                cursor.execute("""
-                    UPDATE people.company_slot
-                    SET person_unique_id = %s,
-                        confidence_score = %s,
-                        is_filled = TRUE,
-                        filled_at = NOW(),
-                        source_system = %s,
-                        slot_status = 'filled'
-                    WHERE company_slot_unique_id = %s
-                """, (candidate.person_unique_id, candidate.seniority_score,
-                      'executive_pipeline', slot_id))
+                # Also update slot_phone if candidate has phone number
+                if candidate.phone_number:
+                    cursor.execute("""
+                        UPDATE people.company_slot
+                        SET person_unique_id = %s,
+                            confidence_score = %s,
+                            is_filled = TRUE,
+                            filled_at = NOW(),
+                            source_system = %s,
+                            slot_status = 'filled',
+                            slot_phone = %s,
+                            slot_phone_source = 'hunter',
+                            slot_phone_updated_at = NOW()
+                        WHERE company_slot_unique_id = %s
+                    """, (candidate.person_unique_id, candidate.seniority_score,
+                          'executive_pipeline', candidate.phone_number, slot_id))
+                else:
+                    cursor.execute("""
+                        UPDATE people.company_slot
+                        SET person_unique_id = %s,
+                            confidence_score = %s,
+                            is_filled = TRUE,
+                            filled_at = NOW(),
+                            source_system = %s,
+                            slot_status = 'filled'
+                        WHERE company_slot_unique_id = %s
+                    """, (candidate.person_unique_id, candidate.seniority_score,
+                          'executive_pipeline', slot_id))
 
                 candidate.slot_assigned = True
                 candidate.slot_resolution_reason = resolution_reason
@@ -448,7 +499,15 @@ def phase6_assign_slots(
                 candidate.slot_resolution_reason = "lost_seniority_competition"
                 stats.slots_skipped += 1
         else:
-            # Create new slot
+            # No existing slot found
+            # For CSV imports (has outreach_id), skip slot creation - only fill existing slots
+            if candidate.outreach_id:
+                candidate.slot_assigned = False
+                candidate.slot_resolution_reason = "no_slot_for_outreach_id"
+                stats.slots_skipped += 1
+                continue
+
+            # Create new slot (only for Neon-sourced candidates)
             slot_unique_id = f"04.04.05.99.{candidate.row_id:05d}.{candidate.row_id % 1000:03d}"
 
             cursor.execute("""
@@ -945,23 +1004,46 @@ def phase8_persist(
 # =============================================================================
 
 def load_candidates_from_csv(csv_path: str, slot_type: str = "CEO") -> List[CEOCandidate]:
-    """Load candidates from CSV file."""
+    """
+    Load candidates from CSV file.
+
+    Supports multiple CSV formats:
+    - Standard format: First Name, Last Name, Company Name, Company Domain, etc.
+    - Hunter format: outreach_id, domain, company_name, First name, Last name, Job title, Email address, Phone number, LinkedIn URL
+    """
     candidates = []
 
-    with open(csv_path, 'r', encoding='utf-8') as f:
+    with open(csv_path, 'r', encoding='utf-8', errors='replace') as f:
         reader = csv.DictReader(f)
         for i, row in enumerate(reader):
+            # Handle multiple CSV column naming conventions
+            first_name = (row.get('First name') or row.get('First Name') or row.get('first_name') or '').strip()
+            last_name = (row.get('Last name') or row.get('Last Name') or row.get('last_name') or '').strip()
+            full_name = (row.get('Full Name') or row.get('full_name') or f"{first_name} {last_name}").strip()
+            job_title = (row.get('Job title') or row.get('Job Title') or row.get('job_title') or row.get('Position raw') or '').strip()
+            linkedin_url = (row.get('LinkedIn URL') or row.get('LinkedIn Profile') or row.get('linkedin_url') or '').strip()
+            phone_number = (row.get('Phone number') or row.get('phone_number') or row.get('Phone') or '').strip()
+            company_name = (row.get('company_name') or row.get('Company Name') or row.get('Organization') or '').strip()
+            company_domain = (row.get('domain') or row.get('Domain name') or row.get('Company Domain') or row.get('company_domain') or '').strip()
+            outreach_id = (row.get('outreach_id') or row.get('Outreach ID') or '').strip()
+
+            # Skip rows without names
+            if not first_name and not last_name:
+                continue
+
             candidate = CEOCandidate(
                 row_id=i + 1,
                 person_unique_id=row.get('person_unique_id', f"04.04.02.99.{i+1:05d}.{(i+1) % 1000:03d}"),
                 company_unique_id=row.get('company_unique_id', ''),
-                first_name=row.get('First Name', row.get('first_name', '')).strip(),
-                last_name=row.get('Last Name', row.get('last_name', '')).strip(),
-                full_name=row.get('Full Name', row.get('full_name', '')).strip(),
-                job_title=row.get('Job Title', row.get('job_title', '')).strip(),
-                linkedin_url=row.get('LinkedIn Profile', row.get('linkedin_url', '')).strip(),
-                company_name=row.get('Company Name', row.get('company_name', '')).strip(),
-                company_domain=row.get('Company Domain', row.get('company_domain', '')).strip(),
+                first_name=first_name,
+                last_name=last_name,
+                full_name=full_name,
+                job_title=job_title,
+                linkedin_url=linkedin_url,
+                phone_number=phone_number,
+                company_name=company_name,
+                company_domain=company_domain,
+                outreach_id=outreach_id,
                 slot_type=slot_type,
             )
             candidates.append(candidate)

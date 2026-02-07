@@ -720,6 +720,32 @@ doppler run -- python hubs/people-intelligence/imo/middle/phases/ceo_email_pipel
 doppler run -- python hubs/people-intelligence/imo/middle/phases/ceo_email_pipeline.py <csv_path> --slot-type HR --skip-verification
 ```
 
+### Fill Slots from Hunter CSV
+
+```bash
+# Fill people.company_slot with contacts from Hunter-enriched CSVs
+# Matches contacts to slots via outreach_id, creates people_master records
+# Adds phone numbers to slot_phone column
+
+# Basic usage
+doppler run -- python hubs/people-intelligence/imo/middle/phases/fill_slots_from_hunter.py <csv_path>
+
+# Dry run (preview without changes)
+doppler run -- python hubs/people-intelligence/imo/middle/phases/fill_slots_from_hunter.py <csv_path> --dry-run
+```
+
+**CSV Requirements:**
+- Must have `outreach_id` column to match slots
+- Supports Hunter format columns: `Email address`, `First name`, `Last name`, `Job title`, `Phone number`, `LinkedIn URL`
+- Also supports slot_contacts format with `slot_type` column pre-assigned
+
+**What it does:**
+1. Reads Hunter CSV and detects slot type from job title (CEO/CFO/HR keywords)
+2. Looks up matching slot in `people.company_slot` by outreach_id + slot_type
+3. Creates new `people.people_master` record with Barton ID format (`04.04.02.YY.NNNNNN.NNN`)
+4. Links person to slot and marks `is_filled = TRUE`
+5. Adds phone number to `slot_phone` column if present
+
 ### Run Pipeline for Company
 
 ```python

@@ -72,3 +72,64 @@
 | Phase 8 | `imo/middle/phases/phase8_output_writer.py` |
 | Movement | `imo/middle/movement_engine/movement_engine.py` |
 | Verification | `imo/middle/email/bulk_verifier.py` |
+| CEO Pipeline | `imo/middle/phases/ceo_email_pipeline.py` |
+| Hunter Slot Fill | `imo/middle/phases/fill_slots_from_hunter.py` |
+
+---
+
+## Hunter Enrichment Flow
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    HUNTER SLOT FILL FLOW                    │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│ INPUT: Hunter-enriched CSV                                   │
+│ ─────────────────────────────────────────────────────────── │
+│ • outreach_id (required for slot matching)                  │
+│ • Email, First name, Last name, Job title                   │
+│ • Phone number, LinkedIn URL (optional)                     │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│ STEP 1: Slot Type Detection                                  │
+│ ─────────────────────────────────────────────────────────── │
+│ • CEO: ceo, president, owner, founder, managing director    │
+│ • CFO: cfo, chief financial, controller, treasurer          │
+│ • HR: hr, human resources, chro, people operations          │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│ STEP 2: Slot Lookup                                          │
+│ ─────────────────────────────────────────────────────────── │
+│ • Match by outreach_id + slot_type in people.company_slot   │
+│ • Skip if slot already filled (is_filled = TRUE)            │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│ STEP 3: Person Creation                                      │
+│ ─────────────────────────────────────────────────────────── │
+│ • Create people.people_master with Barton ID                │
+│ • Format: 04.04.02.YY.NNNNNN.NNN                            │
+│ • Link company_unique_id + company_slot_unique_id           │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│ STEP 4: Slot Update                                          │
+│ ─────────────────────────────────────────────────────────── │
+│ • Set person_unique_id, is_filled = TRUE                    │
+│ • Add slot_phone if phone number present                    │
+│ • Set source_system = 'hunter'                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Usage:**
+```bash
+doppler run -- python hubs/people-intelligence/imo/middle/phases/fill_slots_from_hunter.py <csv_path> [--dry-run]
+```
