@@ -814,6 +814,56 @@ DOCTRINE_VERSION=04
 | Schema Reference | `docs/schema_map.json` | Database schema |
 | Architecture | `docs/architecture/` | Design docs |
 | ADRs | `docs/adr/` | Decision records |
+| HEIR Guide | `docs/HEIR_INTEGRATION_GUIDE.md` | Identity tracking |
+| BIT Architecture | `docs/adr/ADR-014_BIT_Engine_Architecture.md` | Buyer intent scoring |
+| HEIR Doctrine | `heir.doctrine.yaml` | Hub identity config |
+
+---
+
+## HEIR + BIT SYSTEMS
+
+### HEIR (Hub Environment Identity Record)
+
+Every operation MUST have a `unique_id` for traceability.
+
+```python
+from src.sys.heir import generate_unique_id, track_operation
+
+# Generate unique_id
+unique_id = generate_unique_id()
+# Output: outreach-core-001-20260207143022-a1b2c3d4
+
+# Track operation with HEIR + ORBT
+with track_operation("my_pipeline") as ctx:
+    do_work(unique_id=ctx.unique_id, process_id=ctx.process_id)
+```
+
+**Key Files:**
+- `src/sys/heir/heir_identity.py` - HEIR ID generation
+- `src/sys/heir/orbt_process.py` - ORBT process lifecycle
+- `src/sys/heir/tracking.py` - Unified tracker
+
+### BIT (Buyer Intent Tracker)
+
+Aggregates signals from all hubs to compute intent scores.
+
+| Tier | Score | Outreach Action |
+|------|-------|-----------------|
+| COLD | 0-24 | NO outreach |
+| WARM | 25-49 | Standard cadence |
+| HOT | 50-74 | Accelerated cadence |
+| BURNING | 75+ | Priority outreach |
+
+**Signal Sources:**
+- People: SLOT_FILLED (+10), EMAIL_VERIFIED (+3)
+- DOL: FORM_5500_FILED (+5), BROKER_CHANGE (+7)
+- Blog: FUNDING_EVENT (+15), ACQUISITION (+12)
+- Talent Flow: EXECUTIVE_JOINED (+10), EXECUTIVE_LEFT (-5)
+
+**Key Files:**
+- `hubs/company-target/imo/middle/bit_engine.py` - BIT Engine
+- `doctrine/schemas/bit-schema.sql` - Database schema
+- `ops/schedulers/bit_batch_score.py` - Batch scoring
 
 ---
 
