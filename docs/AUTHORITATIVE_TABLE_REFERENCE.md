@@ -1,6 +1,6 @@
 # Authoritative Table Reference
 
-> **Last Updated:** 2026-02-06
+> **Last Updated:** 2026-02-09
 > **Status:** CANONICAL - This document defines the single source of truth
 
 ---
@@ -9,8 +9,9 @@
 
 **ALL WORK in this repository MUST use `outreach.company_target` as the authoritative company list.**
 
-**Sovereign Eligible:** 95,004 companies (101,503 total - 6,499 excluded)
-**Outreach Claimed:** 95,004 = 95,004 ✓ ALIGNED
+**CL Total:** 102,922 (95,004 sovereign eligible + 6,499 excluded + 1,419 new lanes)
+**Outreach Spine:** 95,837 (95,004 cold outreach + 833 fractional CFO)
+**Three Messaging Lanes:** Cold (95,837) | Appointments Already Had (771) | Fractional CFO Partners (833)
 
 Do NOT use:
 - ❌ `company.company_master` - Too broad
@@ -27,8 +28,8 @@ Do NOT use:
 |-----------|-------|
 | **Schema** | `outreach` |
 | **Table** | `company_target` |
-| **Sovereign Eligible** | 95,004 |
-| **Record Count** | 95,004 ✓ ALIGNED |
+| **Record Count** | 95,837 (95,004 cold + 833 fractional CFO) |
+| **CL Total** | 102,922 |
 | **Source** | Clay (CL) exports |
 | **Primary Key** | `outreach_id` |
 
@@ -39,21 +40,26 @@ This table represents the **curated, qualified companies** that we are actively 
 ## Key Relationships
 
 ```
-cl.company_identity (95,004 eligible) ← SOVEREIGN AUTHORITY
-    │                (101,503 total - 6,499 excluded)
+cl.company_identity (102,922 total) ← SOVEREIGN AUTHORITY
+    │                (95,004 eligible + 6,499 excluded + 1,419 new lanes)
     │
-    └──→ outreach.company_target (95,004) ← 100% ALIGNED
+    └──→ outreach.company_target (95,837) ← COLD + FRACTIONAL CFO
             ├── outreach_id (PRIMARY KEY)
             │
-            ├──→ people.company_slot (285,012 slots, 62.2% fill rate)
+            ├──→ people.company_slot (285,012 slots, 62.4% fill rate)
             │       └── Slot assignments: CEO, CFO, HR
             │       └── Links to person_unique_id when filled
             │
             ├──→ outreach.people (336,395 contacts)
             │       └── People promoted for outreach
             │
-            └──→ outreach.outreach (95,004)
-                    └── Outreach activity records
+            └──→ outreach.outreach (95,837)
+                    └── Operational spine
+
+THREE MESSAGING LANES:
+  Lane 1: Cold Outreach     → outreach.company_target (95,837) via CLS
+  Lane 2: Appointments      → sales.appointments_already_had (771)
+  Lane 3: Fractional CFO    → partners.fractional_cfo_master (833)
 ```
 
 ---
@@ -63,7 +69,7 @@ cl.company_identity (95,004 eligible) ← SOVEREIGN AUTHORITY
 ### ✅ Get company count
 ```sql
 SELECT COUNT(*) FROM outreach.company_target;
--- Returns: 95,004
+-- Returns: 95,837
 ```
 
 ### ✅ Get slot coverage
@@ -98,28 +104,31 @@ SELECT * FROM people.people_master;
 ## Data Flow
 
 ```
-cl.company_identity (95,004 eligible)
+cl.company_identity (102,922 total / 95,004 eligible)
         ↓
-outreach.company_target (95,004 aligned)
+outreach.company_target (95,837 = 95,004 cold + 833 fractional CFO)
         ↓
-people.company_slot (285,012 slots, 62.2% fill)
+people.company_slot (285,012 slots, 62.4% fill)
         ↓
-outreach.people (336,395 contacts)
+people.people_master (182,946 contacts)
         ↓
-outreach.outreach (95,004 spine records)
+outreach.outreach (95,837 spine records)
 ```
 
 ---
 
-## Current State (as of 2026-02-06)
+## Current State (as of 2026-02-09)
 
 | Table | Count | Status |
 |-------|-------|--------|
-| `cl.company_identity` (eligible) | 95,004 | ✅ Sovereign authority |
-| `outreach.company_target` | 95,004 | ✅ Authoritative (aligned) |
-| `people.company_slot` (total) | 285,012 | ✅ 62.2% fill rate |
-| `outreach.people` | 336,395 | ✅ Hunter promoted |
-| `people.people_master` | 179,363 | ✅ People data |
+| `cl.company_identity` (total) | 102,922 | ✅ Sovereign authority |
+| `outreach.company_target` | 95,837 | ✅ Cold + fractional CFO |
+| `outreach.outreach` | 95,837 | ✅ Operational spine |
+| `people.company_slot` (total) | 285,012 | ✅ 62.4% fill rate |
+| `people.people_master` | 182,946 | ✅ People data |
+| `sales.appointments_already_had` | 771 | ✅ Lane A: Reactivation |
+| `partners.fractional_cfo_master` | 833 | ✅ Lane B: Partners |
+| `outreach.appointments` | 704 | ✅ Appointment tracking |
 
 ---
 
@@ -138,11 +147,11 @@ outreach.outreach (95,004 spine records)
 
 | Metric | Count | % of Total |
 |--------|-------|------------|
-| **Sovereign eligible** | **95,004** | 100% |
+| **Outreach spine** | **95,837** | 95,004 cold + 833 fractional CFO |
 | With email_method | 82,074 | 86.4% |
 | With DOL data | 70,150 | 73.8% |
-| With Blog data | 95,004 | 100% |
-| With BIT scores | 13,226 | 13.9% |
+| With Blog data | 95,004 | 100% (original eligible) |
+| With CLS scores | 13,226 | 13.9% |
 
 ### What Needs Enrichment
 
@@ -393,6 +402,7 @@ WHERE eu.discovery_method = 'hunter_dol_enrichment'
 
 | Date | Change |
 |------|--------|
+| 2026-02-09 | Updated for three messaging lanes, CL total 102,922, spine 95,837, people 182,946, CLS replaces BIT |
 | 2026-02-03 | Added DOL EIN URLs section (58,069 Hunter EINs) |
 | 2026-02-03 | Updated Hunter contact count to 583,433 |
 | 2026-02-03 | Added Hunter.io Source URLs section |

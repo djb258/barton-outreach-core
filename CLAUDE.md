@@ -6,7 +6,7 @@
 **Architecture**: CL Parent-Child Doctrine
 **Primary Purpose**: Marketing intelligence & executive enrichment platform
 **Database**: Neon PostgreSQL (serverless)
-**Last Refactored**: 2026-02-07
+**Last Refactored**: 2026-02-09
 
 ---
 
@@ -47,8 +47,9 @@ The OSAM tells you exactly where to go for any data question:
 ## CRITICAL: Authoritative Table Reference
 
 > **ALL pipeline work MUST use `outreach.company_target` as the authoritative company list.**
-> **SOVEREIGN ELIGIBLE: 95,004 companies** (101,503 total - 6,499 excluded)
-> **OUTREACH CLAIMED: 95,004 = 95,004 ✓ ALIGNED**
+> **CL TOTAL: 102,922** (95,004 sovereign eligible + 6,499 excluded + 1,419 new lanes)
+> **OUTREACH SPINE: 95,837** (95,004 cold outreach + 833 fractional CFO)
+> **THREE MESSAGING LANES**: Cold Outreach (95,837) | Appointments Already Had (771) | Fractional CFO Partners (833)
 > **PRIMARY KEY: `outreach_id`**
 
 ### DO NOT USE These Tables as Company Source:
@@ -58,20 +59,32 @@ The OSAM tells you exactly where to go for any data question:
 
 ### Key Documentation:
 - **[docs/OSAM.md](docs/OSAM.md)** - WHERE TO GO for any data question
+- **[docs/DATA_MAP.md](docs/DATA_MAP.md)** - WHERE ALL DATA LIVES (complete inventory, LinkedIn, intake, enrichment, CSVs)
 - **[docs/AUTHORITATIVE_TABLE_REFERENCE.md](docs/AUTHORITATIVE_TABLE_REFERENCE.md)** - Complete table reference
 - **[docs/diagrams/PEOPLE_DATA_FLOW_ERD.md](docs/diagrams/PEOPLE_DATA_FLOW_ERD.md)** - People slot/enrichment flow
 
-### Current Enrichment Status (2026-02-07 VERIFIED):
+### Current Enrichment Status (2026-02-09 VERIFIED):
 | Metric | Count | % |
 |--------|-------|---|
-| **Sovereign eligible** | **95,004** | 100% |
+| **CL total** | **102,922** | — |
+| **Sovereign eligible (cold outreach)** | **95,004** | — |
 | Excluded (non-commercial) | 6,499 | — |
+| **Outreach spine** | **95,837** | 95,004 + 833 fractional CFO |
 | With email_method | 82,074 | 86.4% |
 | Slot fill (CEO) | 62,289 | 65.6% |
 | Slot fill (CFO) | 57,327 | 60.3% |
 | Slot fill (HR) | 58,141 | 61.2% |
 | **Overall slot fill** | **177,757 / 285,012** | **62.4%** |
-| **People count** | **182,661** | — |
+| **People count** | **182,946** | — |
+
+### Three Messaging Lanes (2026-02-09):
+| Lane | Table | Records | Source |
+|------|-------|---------|--------|
+| **Cold Outreach** | `outreach.company_target` | 95,837 | CLS scoring |
+| **Appointments Already Had** | `sales.appointments_already_had` | 771 | CSV import |
+| **Fractional CFO Partners** | `partners.fractional_cfo_master` | 833 | Clay + Hunter |
+
+**CL Source Systems**: hunter_dol_enrichment (54,155) | clay_import (39,298) | clay (7,060) | fractional_cfo_outreach (904) | orphan_mint (765) | barton_appointments (496) | apollo_import (225) | MANUAL_OUTREACH_2026 (19)
 
 ### DOL Bridge Enrichment Status (2026-02-06):
 | Column | Fill | Notes |
@@ -94,14 +107,14 @@ The OSAM tells you exactly where to go for any data question:
 
 | Source Type | Count | Purpose |
 |-------------|-------|---------|
-| `about_page` | 24,099 | Company About Us pages |
+| `about_page` | 26,662 | Company About Us pages |
 | `press_page` | 14,377 | News/Press/Announcements |
-| `leadership_page` | 9,214 | Executive bios |
-| `team_page` | 7,959 | Staff listings |
+| `leadership_page` | 12,602 | Executive bios |
+| `team_page` | 8,896 | Staff listings |
 | `careers_page` | 16,262 | Job postings |
 | `contact_page` | 25,213 | Contact info |
 
-**Total URLs**: 97,124 | **Outreach Coverage**: 19,996 (47.6%)
+**Total URLs**: 104,012 | **Companies with URLs**: 36,142
 
 ### Bridge Path to Outreach
 ```
@@ -138,7 +151,7 @@ WHERE csu.source_type IN ('about_page', 'press_page');
 **Sovereign Cleanup**: 2026-01-21 (23,025 records archived)
 **Commercial Eligibility Cleanup**: 2026-01-29 (5,259 excluded + 4,577 phantoms + 2,709 orphans)
 **Exclusion Consolidation**: 2026-01-30 (2,432 total excluded records)
-**Sovereign Eligible**: 95,004 | **Outreach Claimed**: 95,004 = 95,004 ✓
+**CL Total**: 102,922 | **Outreach Spine**: 95,837 | **Three Lanes**: Cold (95,837) + Appointments (771) + CFO Partners (833)
 **Safe to Enable Live Marketing**: YES
 
 ### Key Documentation
@@ -251,8 +264,8 @@ IF outreach_id IS NULL:
 
 ALIGNMENT RULE:
 outreach.outreach count = cl.company_identity (outreach_id NOT NULL) count
-Sovereign Eligible: 95,004 (101,503 total - 6,499 excluded)
-Outreach Claimed: 95,004 = 95,004 ✓ ALIGNED
+CL Total: 102,922 (95,004 eligible + 6,499 excluded + 1,419 new lanes)
+Outreach Spine: 95,837 (95,004 cold + 833 fractional CFO)
 ```
 
 ### CL Authority Registry (LOCKED)
@@ -747,6 +760,30 @@ doppler run -- python hubs/people-intelligence/imo/middle/phases/fill_slots_from
 4. Links person to slot and marks `is_filled = TRUE`
 5. Adds phone number to `slot_phone` column if present
 
+### Discover Blog/About/Press URLs (Blog Sub-Hub)
+
+```bash
+# Sitemap-first URL discovery for company.company_source_urls
+# 3-step waterfall: sitemap.xml → homepage links → brute-force probe
+# Tier 0 FREE — httpx only, no paid APIs
+
+# Dry run preview (20 companies, no DB writes)
+doppler run -- python hubs/blog-content/imo/middle/discover_blog_urls.py --dry-run --limit 20
+
+# Full production run (all companies without URLs)
+doppler run -- python hubs/blog-content/imo/middle/discover_blog_urls.py --workers 20
+
+# Control concurrency and batch size
+doppler run -- python hubs/blog-content/imo/middle/discover_blog_urls.py --workers 30 --chunk-size 200
+
+# Debug mode (verbose HTTP logging)
+doppler run -- python hubs/blog-content/imo/middle/discover_blog_urls.py --debug --limit 10
+```
+
+**What it discovers:** about_page, press_page, blog_page, leadership_page, team_page, careers_page, contact_page, investor_page
+
+**Resume-safe:** Skips companies already in `company.company_source_urls` (ON CONFLICT DO NOTHING).
+
 ### Run Pipeline for Company
 
 ```python
@@ -878,11 +915,11 @@ Aggregates signals from all hubs to compute intent scores.
 
 ---
 
-**Last Updated**: 2026-02-07
+**Last Updated**: 2026-02-09
 **Architecture**: CL Parent-Child Doctrine v1.1 + CTB Registry v1.0
 **Status**: v1.0 OPERATIONAL BASELINE (CERTIFIED + FROZEN)
-**Sovereign Eligible**: 95,004 | **Outreach Claimed**: 95,004 = 95,004 ✓
-**Verified By**: `scripts/full_numbers_audit.py`
+**CL Total**: 102,922 | **Outreach Spine**: 95,837 | **Three Lanes**: Cold (95,837) + Appointments (771) + CFO Partners (833)
+**Verified By**: `scripts/full_numbers_audit.py` (2026-02-09)
 
 ---
 
@@ -946,17 +983,20 @@ See `infra/MIGRATION_ORDER.md` for execution order.
 - `cl.company_identity_archive` (22,263 records)
 - `people.company_slot_archive`
 
-**Current State (2026-02-07 VERIFIED)**:
+**Current State (2026-02-09 VERIFIED)**:
 | Sub-Hub | Table | Records | Notes |
 |---------|-------|---------|-------|
-| **Sovereign** | cl.company_identity | 95,004 eligible | 102,426 total - 5,327 excluded |
-| Spine | outreach.outreach | 95,004 | **ALIGNED** |
-| CT | outreach.company_target | 95,004 | 100% coverage |
+| **Sovereign** | cl.company_identity | 102,922 total | 95,004 eligible + 6,499 excluded + 1,419 new lanes |
+| Spine | outreach.outreach | 95,837 | 95,004 cold + 833 fractional CFO |
+| CT | outreach.company_target | 95,837 | Includes fractional CFO companies |
 | DOL | outreach.dol | 70,150 | 73.8% coverage |
-| People | people.people_master | 182,661 | Enriched contacts |
+| People | people.people_master | 182,946 | Enriched contacts |
 | People | people.company_slot | 285,012 | 62.4% fill rate (177,757 filled) |
-| Blog | outreach.blog | 95,004 | 100% coverage |
-| BIT | outreach.bit_scores | 13,226 | 13.9% coverage |
+| Blog | outreach.blog | 95,004 | 100% coverage (original eligible) |
+| CLS | outreach.bit_scores | 13,226 | 13.9% coverage |
+| **Lane: Appointments** | sales.appointments_already_had | 771 | Reactivation lane |
+| **Lane: Fractional CFO** | partners.fractional_cfo_master | 833 | Partner lane |
+| **Lane: Appointments** | outreach.appointments | 704 | Appointment tracking |
 
 ---
 
@@ -1118,10 +1158,10 @@ SELECT * FROM bit.proof_lines WHERE company_unique_id = ? AND valid_until > NOW(
 
 ---
 
-**Last Updated**: 2026-02-07
+**Last Updated**: 2026-02-09
 **Architecture**: CL Parent-Child Doctrine v1.1 + BIT Authorization v2.0 + CTB Registry v1.0
 **Status**: v1.0 OPERATIONAL BASELINE + BIT v2.0 Phase 1 + CTB Phase 3 LOCKED
-**Verified By**: `scripts/full_numbers_audit.py`
+**Verified By**: `scripts/full_numbers_audit.py` (2026-02-09)
 
 ---
 
@@ -1242,6 +1282,6 @@ SELECT * FROM ctb.violation_log;
 - All invalid sovereign_ids
 - Full audit trail preserved
 
-**Sovereign Eligible**: 95,004 | **Outreach Claimed**: 95,004 = 95,004 ✓
+**CL Total**: 102,922 | **Outreach Spine**: 95,837 | **Three Lanes**: Cold (95,837) + Appointments (771) + CFO Partners (833)
 
 **Q1 2026 Audit Status**: COMPLIANT (0 CRITICAL, 0 HIGH violations)

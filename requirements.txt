@@ -10,6 +10,7 @@ psycopg2-binary==2.9.10
 
 # HTTP client for external APIs
 requests==2.32.3
+httpx>=0.25
 
 # Python data validation
 pydantic==2.10.2

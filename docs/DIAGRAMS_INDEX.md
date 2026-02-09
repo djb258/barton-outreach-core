@@ -9,7 +9,7 @@
 
 ## ⚠️ CRITICAL: Authoritative Table Reference
 
-> **ALL work MUST use `outreach.company_target` as the company source (95,004 companies).**
+> **ALL work MUST use `outreach.company_target` as the company source (95,837 companies).**
 > **See [AUTHORITATIVE_TABLE_REFERENCE.md](AUTHORITATIVE_TABLE_REFERENCE.md) for complete details.**
 
 ---
@@ -34,6 +34,8 @@
 | **Architecture** | [DATA_FLOW.mmd](diagrams/architecture/DATA_FLOW.mmd) | Data flow sequence |
 | **ERD** | [COMPLETENESS_SYSTEM.mmd](diagrams/erd/COMPLETENESS_SYSTEM.mmd) | Completeness contract schema |
 | **Architecture** | [COMPLETENESS_FLOW.mmd](diagrams/architecture/COMPLETENESS_FLOW.mmd) | Completeness evaluation flow |
+| **Operations** | [COMPLETENESS_CHECK.md](COMPLETENESS_CHECK.md) | Per-company completeness lookup |
+| **Operations** | [SUBHUB_COMPLETENESS_MATRIX.md](SUBHUB_COMPLETENESS_MATRIX.md) | Enrichment progress tracking |
 
 ---
 
@@ -45,7 +47,7 @@
 **Location**: `docs/diagrams/PEOPLE_DATA_FLOW_ERD.md`
 **Purpose**: Complete people data flow from company_target through slots to outreach
 **Key Tables**:
-- `outreach.company_target` → AUTHORITATIVE (95,004)
+- `outreach.company_target` → AUTHORITATIVE (95,837)
 - `people.company_slot` → Slot assignments (CEO, CFO, HR)
 - `people.people_master` → People data
 - `outreach.people` → Promoted for outreach

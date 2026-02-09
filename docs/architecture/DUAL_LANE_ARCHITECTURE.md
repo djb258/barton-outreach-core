@@ -2,22 +2,29 @@
 
 **Status**: ACTIVE
 **Authority**: Barton Doctrine v1.1
-**Version**: 1.0.0
+**Version**: 1.1.0
 **Created**: 2026-01-28
+**Last Updated**: 2026-02-09
 **Change Protocol**: ADR REQUIRED
 
 ---
 
 ## §1 Purpose
 
-This document defines TWO ISOLATED LANES operating in parallel within the Barton Outreach system.
+This document defines TWO ISOLATED LANES operating in parallel within the Barton Outreach system. Together with the main Cold Outreach lane, these form the **Three Messaging Lanes**.
 
-| Lane | Name | Purpose | Schema |
-|------|------|---------|--------|
-| **A** | Appointment Reactivation | Re-engage stalled/ghosted prospects | `sales.*` |
-| **B** | Fractional CFO Partners | Build partner referral network | `partners.*` |
+### Three Messaging Lanes Overview
 
-**CRITICAL**: These lanes MUST remain isolated. No cross-lane data flow. No shared state.
+| Lane | Name | Table | Records | Schema |
+|------|------|-------|---------|--------|
+| **Cold Outreach** | Main outreach pipeline | `outreach.company_target` | 95,837 | `outreach.*` |
+| **A** | Appointments Already Had | `sales.appointments_already_had` | 771 | `sales.*` |
+| **B** | Fractional CFO Partners | `partners.fractional_cfo_master` | 833 | `partners.*` |
+
+**CL Total**: 102,922 (95,004 sovereign eligible + 6,499 excluded + 1,419 new lanes)
+**Outreach Spine**: 95,837 (95,004 cold + 833 fractional CFO)
+
+**CRITICAL**: Lanes A and B MUST remain isolated from each other. No cross-lane data flow. No shared state. Lane A records also exist in `outreach.appointments` (704 records) for CLS scoring within the cold outreach spine.
 
 ---
 
@@ -39,12 +46,14 @@ This document defines TWO ISOLATED LANES operating in parallel within the Barton
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+**Current State**: 771 records loaded from CRM export + 130 migrated from `outreach.appointments`
+
 ### §2.2 ERD (Mermaid Format)
 
 ```mermaid
 erDiagram
 
-  APPOINTMENT_HISTORY {
+  APPOINTMENTS_ALREADY_HAD {
     text appointment_uid PK
     uuid company_id FK
     uuid people_id FK
@@ -72,21 +81,21 @@ erDiagram
     timestamptz last_touched_at
   }
 
-  APPOINTMENT_HISTORY ||--|| REACTIVATION_INTENT : "appointment_uid"
+  APPOINTMENTS_ALREADY_HAD ||--|| REACTIVATION_INTENT : "appointment_uid"
 ```
 
 ### §2.3 Column Data Dictionary
 
 | column_unique_id | description | data_type | format | constraints | source_of_truth | volatility | consumer |
 |------------------|-------------|-----------|--------|-------------|-----------------|------------|----------|
-| `sales.appointment_history.appointment_uid` | Deterministic PK: company_id\|people_id\|meeting_date | text | UUID\|UUID\|DATE | NOT NULL, PK | Computed | IMMUTABLE | BIT |
-| `sales.appointment_history.company_id` | FK to company_master | uuid | UUID | Nullable | CRM/Manual | IMMUTABLE | Analytics |
-| `sales.appointment_history.people_id` | FK to people_master | uuid | UUID | Nullable | CRM/Manual | IMMUTABLE | Analytics |
-| `sales.appointment_history.meeting_date` | Date of the meeting | date | YYYY-MM-DD | NOT NULL | CRM/Calendar | IMMUTABLE | BIT |
-| `sales.appointment_history.meeting_type` | Type of meeting | enum | discovery\|systems\|numbers\|other | NOT NULL | Manual | IMMUTABLE | BIT |
-| `sales.appointment_history.meeting_outcome` | Meeting result | enum | progressed\|stalled\|ghosted\|lost | NOT NULL | Manual | IMMUTABLE | BIT |
-| `sales.appointment_history.stalled_reason` | Why meeting stalled | text | Free text | Required if stalled | Manual | IMMUTABLE | BIT |
-| `sales.appointment_history.source` | Data source | enum | calendar\|crm\|manual | NOT NULL | System | IMMUTABLE | Audit |
+| `sales.appointments_already_had.appointment_uid` | Deterministic PK: company_id\|people_id\|meeting_date | text | UUID\|UUID\|DATE | NOT NULL, PK | Computed | IMMUTABLE | BIT |
+| `sales.appointments_already_had.company_id` | FK to company_master | uuid | UUID | Nullable | CRM/Manual | IMMUTABLE | Analytics |
+| `sales.appointments_already_had.people_id` | FK to people_master | uuid | UUID | Nullable | CRM/Manual | IMMUTABLE | Analytics |
+| `sales.appointments_already_had.meeting_date` | Date of the meeting | date | YYYY-MM-DD | NOT NULL | CRM/Calendar | IMMUTABLE | BIT |
+| `sales.appointments_already_had.meeting_type` | Type of meeting | enum | discovery\|systems\|numbers\|other | NOT NULL | Manual | IMMUTABLE | BIT |
+| `sales.appointments_already_had.meeting_outcome` | Meeting result | enum | progressed\|stalled\|ghosted\|lost | NOT NULL | Manual | IMMUTABLE | BIT |
+| `sales.appointments_already_had.stalled_reason` | Why meeting stalled | text | Free text | Required if stalled | Manual | IMMUTABLE | BIT |
+| `sales.appointments_already_had.source` | Data source | enum | calendar\|crm\|manual | NOT NULL | System | IMMUTABLE | Audit |
 | `bit.reactivation_intent.bit_score` | Reactivation priority score | numeric(5,2) | 0-100 | 0-100 range | BIT Engine | COMPUTED | Outreach |
 | `bit.reactivation_intent.eligibility_status` | Kill switch status | enum | eligible\|excluded\|cooling_off | NOT NULL | Manual/System | MUTABLE | Outreach |
 
@@ -103,6 +112,8 @@ erDiagram
 ---
 
 ## §3 Lane B: Fractional CFO Partners
+
+**Current State**: 833 partner records loaded, 833 outreach_ids minted into spine
 
 ### §3.1 IMO Model
 
@@ -311,23 +322,32 @@ SELECT * FROM shq.audit_log WHERE schema_name = 'partners';
 ## §9 Visual Summary
 
 ```
-╔══════════════════════════════════════════════════════════════════╗
-║                    TWO LANES, ZERO OVERLAP                        ║
-╠══════════════════════════════════════════════════════════════════╣
-║                                                                  ║
-║   LANE A (Reactivation)      ║      LANE B (Partners)            ║
-║   ─────────────────────      ║      ─────────────────            ║
-║   sales.* schema             ║      partners.* schema            ║
-║   bit.reactivation_intent    ║      bit.partner_intent           ║
-║   v_reactivation_ready       ║      v_partner_outreach_ready     ║
-║   Past prospects             ║      Referral network             ║
-║   LinkedIn/Email             ║      LinkedIn/Email               ║
-║                              ║                                   ║
-║              ════════════════════════════════════                ║
-║                      NO CROSS-LANE DATA                          ║
-║              ════════════════════════════════════                ║
-║                                                                  ║
-╚══════════════════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    THREE MESSAGING LANES                                     ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║   COLD OUTREACH (95,837)                                                     ║
+║   ──────────────────────                                                     ║
+║   outreach.* schema    outreach.company_target    CLS scoring                ║
+║   outreach.appointments (704 tracking records)                               ║
+║                                                                              ║
+║   ══════════════════════════════════════════════════════════════════          ║
+║                        ISOLATED LANES BELOW                                  ║
+║   ══════════════════════════════════════════════════════════════════          ║
+║                                                                              ║
+║   LANE A (Appointments: 771) ║      LANE B (Partners: 833)                  ║
+║   ──────────────────────────  ║      ──────────────────────                  ║
+║   sales.* schema              ║      partners.* schema                       ║
+║   appointments_already_had    ║      fractional_cfo_master                   ║
+║   bit.reactivation_intent     ║      bit.partner_intent                      ║
+║   v_reactivation_ready        ║      v_partner_outreach_ready                ║
+║   Past prospects              ║      Referral network                        ║
+║                               ║                                              ║
+║               ════════════════════════════════════                            ║
+║                       NO CROSS-LANE DATA                                     ║
+║               ════════════════════════════════════                            ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
 ```
 
 ---
@@ -337,8 +357,15 @@ SELECT * FROM shq.audit_log WHERE schema_name = 'partners';
 | Field | Value |
 |-------|-------|
 | Created | 2026-01-28 |
-| Last Modified | 2026-01-28 |
-| Version | 1.0.0 |
+| Last Modified | 2026-02-09 |
+| Version | 1.1.0 |
 | Status | ACTIVE |
 | Authority | Barton Doctrine v1.1 |
 | Change Protocol | ADR REQUIRED |
+
+### Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2026-01-28 | Initial dual lane architecture spec |
+| 1.1.0 | 2026-02-09 | Updated with actual record counts (771 appointments, 833 partners), corrected table name to `sales.appointments_already_had`, added three messaging lanes context |

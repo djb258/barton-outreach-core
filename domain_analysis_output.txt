@@ -1,0 +1,49 @@
+================================================================================
+DOMAIN-BASED SLOT FILLING ANALYSIS (READ-ONLY)
+================================================================================
+
+[1/6] Hunter domains matchable via outreach.outreach.domain
+Matchable Hunter domains: 80,729
+
+[2/6] CEO slot fill potential
+Fillable CEO slots: 6 of 32,998 (0.0%)
+
+[3/6] CFO slot fill potential
+Fillable CFO slots: 0 of 37,840 (0.0%)
+
+[4/6] HR slot fill potential
+Fillable HR slots: 8 of 37,013 (0.0%)
+
+[5/6] Sample CEO slot fills (top 5 by confidence score)
+--------------------------------------------------------------------------------
+1. alphamechanicalservice.com
+   Name: None None
+   Title: Chief Executive Officer
+   Email: jeff.morrison@alphamechanicalservice.com
+   Score: 95
+
+2. columbusceo.com
+   Name: Anita None
+   Title: Chief Executive Officer
+   Email: aundefined@columbusceo.com
+   Score: 75
+
+3. studio387.net
+   Name: None None
+   Title: CEO
+   Email: hijab@studio387.net
+   Score: 74
+
+4. studio387.net
+   Name: None None
+   Title: CEO
+   Email: hijab@studio387.net
+   Score: 74
+
+[6/6] Schema check: outreach.company_target.domain column
+Domain column exists in outreach.company_target: False
+Note: Domain is stored in outreach.outreach table (FK join via outreach_id)
+
+================================================================================
+ANALYSIS COMPLETE
+================================================================================

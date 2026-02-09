@@ -34,8 +34,9 @@ Tables:
 | Total Tables Registered | 246 |
 | Frozen Core Tables | 9 |
 | Current Violations | 0 |
-| **Sovereign Eligible** | 95,004 (101,503 - 6,499 excluded) |
-| **Outreach Claimed** | 95,004 = 95,004 ✓ ALIGNED |
+| **CL Total** | 102,922 (95,004 eligible + 6,499 excluded + 1,419 new lanes) |
+| **Outreach Spine** | 95,837 (95,004 cold + 833 fractional CFO) |
+| **Three Lanes** | Cold (95,837) + Appointments (771) + Partners (833) |
 
 ---
 

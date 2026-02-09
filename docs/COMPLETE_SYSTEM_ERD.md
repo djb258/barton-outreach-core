@@ -7,8 +7,9 @@
 **ADR:** ADR-011_CL_Authority_Registry_Outreach_Spine.md
 **DOL Subhub:** EIN Resolution + Violation Discovery
 **Join Doctrine:** All DOL/Government data joins on EIN
-**Sovereign Eligible:** 95,004 (101,503 total - 6,499 excluded)
-**Outreach Claimed:** 95,004 = 95,004 ✓ ALIGNED
+**CL Total:** 102,922 (95,004 eligible + 6,499 excluded + 1,419 new lanes)
+**Outreach Spine:** 95,837 (95,004 cold + 833 fractional CFO)
+**Three Lanes:** Cold (95,837) | Appointments (771) | Fractional CFO (833)
 **FREE Extraction:** 2026-01-30 COMPLETE - 77,256 people, 9 states
 
 ---
@@ -22,8 +23,8 @@
 │                                                                              │
 │  cl.company_identity                                                         │
 │  ────────────────────                                                        │
-│  sovereign_company_id   PK, IMMUTABLE (minted by CL)        101,503 total   │
-│  outreach_id            WRITE-ONCE (minted by Outreach)      95,004 claimed │
+│  sovereign_company_id   PK, IMMUTABLE (minted by CL)        102,922 total   │
+│  outreach_id            WRITE-ONCE (minted by Outreach)      95,837 claimed │
 │  sales_process_id       WRITE-ONCE (minted by Sales)         —              │
 │  client_id              WRITE-ONCE (minted by Client)        —              │
 │                                                                              │
@@ -47,7 +48,7 @@
 │              OUTREACH OPERATIONAL SPINE (Workflow State)                     │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  outreach.outreach: 95,004 rows                                              │
+│  outreach.outreach: 95,837 rows (95,004 cold + 833 fractional CFO)                                              │
 │  ─────────────────────────────────────────────────────────────────────────── │
 │  outreach_id            PK (minted here, registered in CL)                   │
 │  sovereign_company_id   FK → cl.company_identity                             │
@@ -69,7 +70,7 @@
 │    ┌─────────────────────────────────────────────────────────────────────┐ │
 │    │  SUBHUB 1: COMPANY TARGET (04.04.01)                    [ACTIVE]    │ │
 │    │  ───────────────────────────────────────────────────────────────    │ │
-│    │  Records: 95,004 | 91.4% with email_method | 5,539 errors           │ │
+│    │  Records: 95,837 | 91.4% with email_method | 5,539 errors           │ │
 │    │  • Domain resolution                                                │ │
 │    │  • Email pattern discovery                                          │ │
 │    │  • company_target (FK: outreach_id)                                 │ │
@@ -91,8 +92,8 @@
 │  ┌─────────────────────────────────────────────────────────────────────┐ │
 │    │  SUBHUB 3: PEOPLE INTELLIGENCE (04.04.02)               [ACTIVE]    │ │
 │    │  ───────────────────────────────────────────────────────────────    │ │
-│    │  people.people_master: 77,256 | people.company_slot: 127,083       │ │
-│    │  CEO: 37.2% | CFO: 11.7% | HR: 15.7% filled                         │ │
+│    │  people.people_master: 182,946 | people.company_slot: 285,012       │ │
+│    │  CEO: 65.6% | CFO: 60.3% | HR: 61.2% filled                         │ │
 │    │  FREE EXTRACTION: ✅ COMPLETE (2026-01-30)                          │ │
 │    │  • CONSUMER ONLY - Does NOT discover patterns or EINs               │ │
 │    │  • Slot assignment (seniority-based)                                │ │
@@ -1057,14 +1058,14 @@ erDiagram
 
 | Schema | Table | Rows | Purpose | Key Relationships |
 |--------|-------|------|---------|-------------------|
-| **outreach** | outreach | 95,004 | **MASTER SPINE** - ALIGNED WITH CL | FK: sovereign_id → cl.company_identity |
+| **outreach** | outreach | 95,837 | **MASTER SPINE** (95,004 cold + 833 fractional CFO) | FK: sovereign_id → cl.company_identity |
 | **outreach** | outreach_archive | 23,025 | Archived records | Sovereign cleanup 2026-01-21 |
 
 ### Sub-Hub Tables
 
 | Schema | Table | Rows | Purpose | Key Relationships |
 |--------|-------|------|---------|-------------------|
-| **outreach** | company_target | 95,004 | Company targeting | FK: outreach_id |
+| **outreach** | company_target | 95,837 | Company targeting | FK: outreach_id |
 | **outreach** | company_target_errors | 5,539 | CT errors | FK: outreach_id |
 | **outreach** | dol | 16,860 | DOL filing facts (40% coverage) | FK: outreach_id |
 | **outreach** | dol_errors | 37,319 | DOL errors | FK: outreach_id |
@@ -1077,8 +1078,8 @@ erDiagram
 
 | Schema | Table | Rows | Purpose | Key Relationships |
 |--------|-------|------|---------|-------------------|
-| **people** | people_master | **77,256** | Master people records | FK: company_unique_id |
-| **people** | company_slot | 127,083 | Slot assignments (42,361 x 3) | FK: outreach_id, person_unique_id |
+| **people** | people_master | **182,946** | Master people records | FK: company_unique_id |
+| **people** | company_slot | 285,012 | Slot assignments (3 per company) | FK: outreach_id, person_unique_id |
 | **people** | people_staging | — | Pre-promotion staging | FK: company_unique_id |
 | **people** | paid_enrichment_queue | 27,338 | URLs for Clay enrichment | FK: company_unique_id |
 | **people** | company_slot_archive | — | Archived slots | Sovereign cleanup |
@@ -1173,7 +1174,7 @@ erDiagram
 │                                                                             │
 │   ALIGNMENT RULE:                                                          │
 │   outreach.outreach count = cl.company_identity (PASS) count               │
-│   Current: 95,004 = 95,004 ✓ ALIGNED                                       │
+│   Current: 95,837 outreach spine (95,004 cold + 833 fractional CFO)                                       │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -1190,5 +1191,5 @@ erDiagram
 
 ---
 
-*Generated: 2026-02-06 | Barton Outreach Core v4.4 | CL Parent-Child Doctrine v1.1 + CTB Phase 3*
-*Current Alignment: 95,004 = 95,004 | CTB Registry: 246 tables | CTB Tags: CTB_PHASE3_ENFORCEMENT_LOCK*
+*Generated: 2026-02-09 | Barton Outreach Core v4.5 | CL Parent-Child Doctrine v1.1 + CTB Phase 3*
+*Current: CL 102,922 | Spine 95,837 | Three Lanes: Cold (95,837) + Appointments (771) + CFO Partners (833) | CTB: 246 tables*

@@ -6,8 +6,9 @@
 **Last Updated**: 2026-02-06
 **Status**: OPERATIONAL BASELINE
 **Certification**: FINAL_CERTIFICATION_REPORT_2026-01-19.md
-**Sovereign Eligible**: 95,004 (101,503 total - 6,499 excluded)
-**Outreach Claimed**: 95,004 = 95,004 ✓ ALIGNED
+**CL Total**: 102,922 (95,004 eligible + 6,499 excluded + 1,419 new lanes)
+**Outreach Spine**: 95,837 (95,004 cold + 833 fractional CFO)
+**Three Lanes**: Cold (95,837) | Appointments (771) | Fractional CFO (833)
 
 ---
 
@@ -27,8 +28,8 @@ This document defines the **v1.0 operational baseline** for Barton Outreach, cer
 
 | Component | Status | Record Count | Notes |
 |-----------|--------|--------------|-------|
-| `cl.company_identity` | LIVE | 95,004 ELIGIBLE | 101,503 total - 6,499 excluded |
-| `outreach.outreach` | LIVE | 95,004 rows | **MASTER SPINE** (aligned) |
+| `cl.company_identity` | LIVE | 102,922 total | 95,004 eligible + 6,499 excluded + 1,419 new lanes |
+| `outreach.outreach` | LIVE | 95,837 rows | **MASTER SPINE** (95,004 cold + 833 fractional CFO) |
 | `outreach.hub_registry` | LIVE | 6 hubs | All hubs registered |
 | `outreach.company_hub_status` | LIVE | ~570K rows | Hub status tracking (6 hubs × 95K) |
 | `outreach.manual_overrides` | LIVE | — | RLS enabled |
@@ -205,6 +206,7 @@ Hub waterfall order is FROZEN:
 | 2026-01-21 | CL Sovereign Cleanup | **PASS** |
 | 2026-01-21 | Outreach Cascade Cleanup | **PASS** |
 | 2026-01-22 | CL-Outreach Alignment Verified | **95,004 = 95,004** |
+| 2026-02-09 | Three Messaging Lanes Active | Spine: 95,837, Appointments: 771, Partners: 833 |
 
 ---
 
@@ -234,4 +236,4 @@ Any modification to FROZEN components requires:
 **Document Classification**: OPERATIONAL BASELINE
 **Modification Authority**: CHANGE REQUEST REQUIRED
 **Last Certified**: 2026-01-22
-**CL-Outreach Alignment**: 95,004 = 95,004 ✓
+**CL Total**: 102,922 | **Spine**: 95,837 | **Three Lanes Active**

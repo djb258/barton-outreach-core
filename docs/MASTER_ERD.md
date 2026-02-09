@@ -24,15 +24,15 @@
 
 | What | Table | Count | Primary Key |
 |------|-------|-------|-------------|
-| **Companies (Authoritative)** | `outreach.company_target` | 95,004 | `outreach_id` |
-| **People Slots** | `people.company_slot` | 124,275 (3 per company) | `slot_id` |
-| **People Data** | `people.people_master` | 78,143 | `unique_id` |
+| **Companies (Authoritative)** | `outreach.company_target` | 95,837 | `outreach_id` |
+| **People Slots** | `people.company_slot` | 285,012 (3 per company) | `slot_id` |
+| **People Data** | `people.people_master` | 182,946 | `unique_id` |
 | **Outreach People** | `outreach.people` | 324 | `person_id` |
 
 ### Key Linkages
 
 ```
-outreach.company_target.outreach_id (95,004 companies)
+outreach.company_target.outreach_id (95,837 companies)
     │
     ├── people.company_slot.outreach_id (CEO, CFO, HR slots)
     │       └── person_unique_id → people.people_master.unique_id
@@ -40,14 +40,16 @@ outreach.company_target.outreach_id (95,004 companies)
     └── outreach.people.outreach_id (promoted for outreach)
 ```
 
-### Current Enrichment Status (2026-02-02)
+### Current Enrichment Status (2026-02-09)
 
-| Metric | Count | % |
-|--------|-------|---|
-| Total companies | 95,004 | 100% |
-| Companies with ≥1 person | 18,353 | 44.3% |
-| Companies with ≥1 email | 15,401 | 37.2% |
-| **Companies needing people** | **23,072** | **55.7%** |
+| Metric | Count | Notes |
+|--------|-------|-------|
+| CL total | 102,922 | 95,004 eligible + 6,499 excluded + 1,419 new lanes |
+| Outreach spine | 95,837 | 95,004 cold + 833 fractional CFO |
+| People | 182,946 | All contacts |
+| Company slots | 285,012 | 62.4% fill rate (177,757 filled) |
+| Appointments lane | 771 | sales.appointments_already_had |
+| Partner lane | 833 | partners.fractional_cfo_master |
 
 ---
 
@@ -64,8 +66,8 @@ outreach.company_target.outreach_id (95,004 companies)
 | `bit` | BIT scoring/intent | varies | `bit.phase_state.company_unique_id` |
 | `funnel` | Legacy funnel system | `suspect_id` | `funnel.appointment_history` |
 | `shq` | Audit/error logging | `audit_id` | Shared infrastructure |
-| `sales` | **LANE A** - Reactivation | `appointment_uid` | **ISOLATED** |
-| `partners` | **LANE B** - Partners | `fractional_cfo_id` | **ISOLATED** |
+| `sales` | **LANE A** - Reactivation (771 records) | `appointment_uid` | **ISOLATED** |
+| `partners` | **LANE B** - Partners (833 records) | `fractional_cfo_id` | **ISOLATED** |
 
 ---
 
@@ -677,20 +679,21 @@ WHERE cm.ein IS NOT NULL;
 
 | Table | Records | Notes |
 |-------|---------|-------|
-| `outreach.outreach` | 95,004 | **THE SPINE** |
-| `outreach.company_target` | 95,004 | 91% email_method |
-| `outreach.dol` | 16,860 | 40% coverage |
-| `outreach.blog` | 95,004 | 98% coverage |
+| `outreach.outreach` | 95,837 | **THE SPINE** (95,004 cold + 833 fractional CFO) |
+| `outreach.company_target` | 95,837 | 86.4% email_method |
+| `outreach.dol` | 70,150 | 73.8% coverage |
+| `outreach.blog` | 95,004 | 100% coverage |
 | `outreach.people` | 324 | Active contacts |
-| `outreach.bit_scores` | 13,226 | Scored companies |
-| `dol.form_5500` | 230,482 | Large filers |
-| `dol.form_5500_sf` | 760,839 | Small filers |
-| `dol.ein_urls` | 119,409 | EIN→URL mapping |
-| `people.people_master` | 78,143 | All people |
-| `people.company_slot` | 126,576 | Slot assignments |
+| `outreach.bit_scores` | 13,226 | CLS scored companies |
+| `outreach.appointments` | 704 | Appointment tracking |
+| `dol.form_5500` | 432,582 | Large filers |
+| `dol.form_5500_sf` | 1,535,999 | Small filers |
+| `dol.ein_urls` | 127,909 | EIN→URL mapping |
+| `people.people_master` | 182,946 | All people |
+| `people.company_slot` | 285,012 | Slot assignments (62.4% fill) |
 | `company.company_master` | 74,641 | **DISCONNECTED** |
-| `sales.appointment_history` | 0 | Lane A (new) |
-| `partners.fractional_cfo_master` | 0 | Lane B (new) |
+| `sales.appointments_already_had` | 771 | Lane A: Reactivation |
+| `partners.fractional_cfo_master` | 833 | Lane B: Partners |
 
 ---
 
@@ -896,7 +899,7 @@ The CTB (Christmas Tree Backbone) registry tracks all 246 tables with governance
 | Field | Value |
 |-------|-------|
 | Created | 2026-01-28 |
-| Last Modified | 2026-02-06 |
+| Last Modified | 2026-02-09 |
 | Version | 1.1.0 |
 | Status | CANONICAL REFERENCE |
 | Authority | Barton Doctrine v1.1 + CTB Phase 3 |

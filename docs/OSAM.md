@@ -435,7 +435,7 @@ WHERE cs.is_filled = true
 > **These tables are NOT part of the DOL sub-hub.** They are queryable reference data that feeds INTO `outreach.dol` (the canonical table). The DOL sub-hub owns 4 tables: `outreach.dol`, `outreach.dol_errors`, `dol.form_5500_icp_filtered`, `dol.column_metadata`.
 
 **Data Coverage**: 2023, 2024, 2025 — **11,124,508 total rows** across 27 data-bearing tables (+2 empty staging tables).
-**Pipeline Reach**: 69,233 of 95,004 pipeline companies have EINs (72%). All 27 data-bearing tables are LIVE.
+**Pipeline Reach**: 69,233 of 95,837 pipeline companies have EINs (72%). All 27 data-bearing tables are LIVE.
 **EIN Format**: All EINs are 9-digit, no dashes (e.g., `832809723`). Matches across `outreach.outreach.ein`, `outreach.dol.ein`, and all `dol.*` tables.
 
 ### Join Paths (all working)
@@ -640,11 +640,16 @@ WHERE o.outreach_id = 'your-outreach-id';
 
 ---
 
-## Multi-Source BIT Scoring & Message Personalization
+## Multi-Source CLS Scoring & Message Personalization
 
-Each sub-hub contributes signals to the BIT score. When building a personalized message, query across sources to assemble the complete picture.
+Each sub-hub contributes signals to the CLS (Company Lifecycle Score, replacing BIT). When building a personalized message, query across sources to assemble the complete picture.
 
-### BIT Signal Sources
+CLS is the single scoring/authorization engine across all **three messaging lanes**:
+- **Cold Outreach**: 95,837 companies (`outreach.company_target`)
+- **Appointments Already Had**: 771 records (`sales.appointments_already_had`)
+- **Fractional CFO Partners**: 833 records (`partners.fractional_cfo_master`)
+
+### CLS Signal Sources
 
 | Source | Signal | Query |
 |--------|--------|-------|
@@ -661,7 +666,7 @@ Each sub-hub contributes signals to the BIT score. When building a personalized 
 
 ### Complete Company Profile Query
 
-Pull all signals for a single company to build BIT + message:
+Pull all signals for a single company to build CLS score + message:
 
 ```sql
 WITH company_dol AS (
@@ -719,7 +724,7 @@ LEFT JOIN people.people_master pm ON pm.unique_id = cs.person_unique_id
 WHERE o.outreach_id = 'your-outreach-id';
 ```
 
-### BIT Score Calculation Example
+### CLS Score Calculation Example
 
 ```sql
 -- Calculate BIT score from multiple signals
@@ -857,6 +862,7 @@ WHERE is_frozen = TRUE;
 
 | Date | Change |
 |------|--------|
+| 2026-02-09 | Updated for three messaging lanes (Cold Outreach 95,837 + Appointments 771 + Fractional CFO 833). CLS replaces BIT as scoring engine. CL total 102,922. People 182,946 |
 | 2026-02-06 | Added renewal_month + outreach_start_month to outreach.dol (70,142/70,150 = 100%). Outreach start = 5 months before renewal. 86.6% renew in January → outreach starts in August |
 | 2026-02-06 | DOL bridge enrichment: normalized EINs (stripped dashes), populated carrier/broker_or_advisor/funding_type in outreach.dol. Synced EINs to outreach.outreach. Corrected filing table list (removed non-existent _ele tables, added actual _codes tables). Updated all row counts to match DB. Total: 27 data-bearing + 2 staging tables, 11.1M rows |
 | 2026-02-06 | Corrected DOL sub-hub to 4 core tables (canonical/errors/MV/registry per CTB Leaf Lock). Reclassified filing tables as supportive reference data |
