@@ -61,6 +61,7 @@ The OSAM tells you exactly where to go for any data question:
 - **[docs/OSAM.md](docs/OSAM.md)** - WHERE TO GO for any data question
 - **[docs/DATA_MAP.md](docs/DATA_MAP.md)** - WHERE ALL DATA LIVES (complete inventory, LinkedIn, intake, enrichment, CSVs)
 - **[docs/AUTHORITATIVE_TABLE_REFERENCE.md](docs/AUTHORITATIVE_TABLE_REFERENCE.md)** - Complete table reference
+- **[docs/EMAIL_VERIFICATION_STATUS.md](docs/EMAIL_VERIFICATION_STATUS.md)** - Email verification results & queries
 - **[docs/diagrams/PEOPLE_DATA_FLOW_ERD.md](docs/diagrams/PEOPLE_DATA_FLOW_ERD.md)** - People slot/enrichment flow
 
 ### Current Enrichment Status (2026-02-09 VERIFIED):
@@ -96,6 +97,28 @@ The OSAM tells you exactly where to go for any data question:
 | broker_or_advisor | 6,995 (10%) | From Schedule C code 28 |
 | **renewal_month** | **70,142 (100%)** | **Plan year begin month (1-12)** |
 | **outreach_start_month** | **70,142 (100%)** | **5 months before renewal (1-12)** |
+
+### Email Verification Status (2026-02-10):
+
+**See**: [docs/EMAIL_VERIFICATION_STATUS.md](docs/EMAIL_VERIFICATION_STATUS.md) for full details and queries.
+
+| Metric | Count | % |
+|--------|-------|---|
+| **Unique emails verified** | 60,431 | 100% |
+| **VALID** (outreach_ready=TRUE) | 43,330 | 71.7% |
+| **RISKY** (catch-all domains) | 9,223 | 15.3% |
+| **INVALID** (need re-enrichment) | 7,878 | 13.0% |
+| **Deliverable rate** | — | **87.0%** |
+
+**Slots needing re-enrichment**: CEO (4,946) + CFO (3,965) + HR (3,444) = **12,355 total**
+
+**Key columns in `people.people_master`**:
+- `email_verified = TRUE` → Email checked (VALID or RISKY)
+- `outreach_ready = TRUE` → Safe to send outreach
+- `email_verified = FALSE AND outreach_ready = FALSE` → INVALID, needs Hunter re-enrichment
+
+**Export files**:
+- `exports/domains_for_hunter_reenrichment.csv` — 18,457 domains needing fresh contacts
 
 ---
 
@@ -450,6 +473,7 @@ OUTREACH                                    SALES
 | 3 | **DOL Filings** | 04.04.03 | FILING_MATCH_RATE | form_5500, schedule_a, ein_registry |
 | 4 | **People Intelligence** | 04.04.02 | SLOT_FILL_RATE | outreach.people, slot_assignments |
 | 5 | **Blog Content** | 04.04.05 | CONTENT_SIGNAL_RATE | blog_signals, news_events |
+| 6 | **Coverage** | 04.04.06 | COVERAGE_ZIP_COUNT | service_agent_coverage, v_service_agent_coverage_zips |
 
 **Note**: People Intelligence (04.04.02) executes AFTER DOL Filings (04.04.03) in the waterfall.
 
@@ -517,11 +541,20 @@ barton-outreach-core/
 │   │           ├── processors/
 │   │           └── importers/
 │   │
-│   └── outreach-execution/            # Sub-hub (04.04.04)
+│   ├── outreach-execution/            # Sub-hub (04.04.04)
+│   │   ├── hub.manifest.yaml
+│   │   └── imo/
+│   │       └── middle/
+│   │           └── outreach_hub.py
+│   │
+│   └── coverage/                      # Coverage Hub (04.04.06)
 │       ├── hub.manifest.yaml
 │       └── imo/
 │           └── middle/
-│               └── outreach_hub.py
+│               ├── run_coverage.py              # Single entry point
+│               ├── coverage_report.py           # Sub-hub completeness report
+│               ├── route_gaps.py                # Gap routing to error tables
+│               └── create_service_agent_coverage.py  # Low-level coverage creation
 │
 ├── spokes/                            # I/O ONLY CONNECTORS
 │   ├── __init__.py
@@ -717,6 +750,62 @@ hubs/outreach-execution/hub.manifest.yaml
 ---
 
 ## COMMON TASKS
+
+### Run Coverage (Scout, Report, Export, Activate)
+
+```bash
+# THE repeatable process for working a market.
+# Give it a ZIP + radius → get back what you have and what you need.
+
+# List all active markets
+doppler run -- python hubs/coverage/imo/middle/run_coverage.py --list
+
+# Scout a new market (creates coverage_id + shows report)
+doppler run -- python hubs/coverage/imo/middle/run_coverage.py \
+    --anchor-zip 26739 --radius-miles 100
+
+# Scout + export CSV (outreach_id join key + sub-hub status + LinkedIn)
+doppler run -- python hubs/coverage/imo/middle/run_coverage.py \
+    --anchor-zip 26739 --radius-miles 100 --export
+
+# Check an existing market by coverage_id
+doppler run -- python hubs/coverage/imo/middle/run_coverage.py \
+    --coverage-id 126b7fc9-4a2c-49bd-97ef-4c769312a576
+
+# Activate — push gaps to enrichment work queues (conscious opt-in)
+doppler run -- python hubs/coverage/imo/middle/run_coverage.py \
+    --coverage-id 126b7fc9-4a2c-49bd-97ef-4c769312a576 --activate
+
+# Retire a market
+doppler run -- python hubs/coverage/imo/middle/run_coverage.py \
+    --coverage-id 126b7fc9-4a2c-49bd-97ef-4c769312a576 --retire
+```
+
+**What it does:**
+1. **Scout** — Picks a market (ZIP + radius), gets or reuses a `coverage_id`
+2. **Report** — Shows CT companies, DOL linked %, people slots filled %, blog coverage
+3. **Export** — CSV with `outreach_id` (join key), company info, sub-hub filled/LinkedIn status
+4. **Activate** — Routes gaps to `people.people_errors`, `outreach.blog_errors`, `outreach.dol_errors` (opt-in only)
+
+**CSV columns:** `outreach_id`, `company_name`, `domain`, `city`, `state`, `zip`, `company_linkedin`, `has_dol`, `has_blog`, `ceo_filled`, `ceo_linkedin`, `cfo_filled`, `cfo_linkedin`, `hr_filled`, `hr_linkedin`
+
+**Export path:** `exports/coverage_{zip}_{radius}mi.csv`
+
+**Key files:**
+- `hubs/coverage/imo/middle/run_coverage.py` — Single entry point (orchestrator)
+- `hubs/coverage/imo/middle/coverage_report.py` — Report logic
+- `hubs/coverage/imo/middle/route_gaps.py` — Gap routing logic
+- `hubs/coverage/imo/middle/create_service_agent_coverage.py` — Low-level coverage creation
+
+**Active markets (2026-02-09):**
+| Market | ZIP | Radius | Coverage ID |
+|--------|-----|--------|-------------|
+| Mount Storm, WV | 26739 | 100mi | `126b7fc9-4a2c-49bd-97ef-4c769312a576` |
+| New York, NY | 10001 | 25mi | (check --list) |
+| Pittsburgh, PA | 15201 | 50mi | (check --list) |
+| Dallas, TX | 75201 | 50mi | (check --list) |
+
+---
 
 ### Run CEO Email Pipeline (Phases 5-8)
 

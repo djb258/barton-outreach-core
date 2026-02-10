@@ -3,8 +3,8 @@ node_modules/
 .pnp
 .pnp.js
 
-# Testing
-coverage/
+# Testing (JS coverage reports, not hubs/coverage/)
+/coverage/
 
 # Production builds
 dist/
@@ -43,5 +43,6 @@ __pycache__/
 
 # Temporary data files
 *.csv
+!exports/*.csv
 nul
 output/

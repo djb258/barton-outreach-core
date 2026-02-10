@@ -36,6 +36,7 @@
 | **Architecture** | [COMPLETENESS_FLOW.mmd](diagrams/architecture/COMPLETENESS_FLOW.mmd) | Completeness evaluation flow |
 | **Operations** | [COMPLETENESS_CHECK.md](COMPLETENESS_CHECK.md) | Per-company completeness lookup |
 | **Operations** | [SUBHUB_COMPLETENESS_MATRIX.md](SUBHUB_COMPLETENESS_MATRIX.md) | Enrichment progress tracking |
+| **Operations** | [EMAIL_VERIFICATION_STATUS.md](EMAIL_VERIFICATION_STATUS.md) | Email verification results & queries |
 
 ---
 

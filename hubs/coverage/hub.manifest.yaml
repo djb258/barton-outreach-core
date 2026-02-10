@@ -1,0 +1,88 @@
+# Coverage Hub Manifest
+# Altitude: 40k (System Infrastructure)
+# Version: 1.0.0
+
+# =============================================================================
+# CONSTITUTIONAL COMPLIANCE (IMO-Creator v1.0)
+# =============================================================================
+constitutional:
+  doctrine_version: "IMO-Creator v1.0"
+  domain_spec: "doctrine/REPO_DOMAIN_SPEC.md"
+  cc_layer: CC-02
+
+  # Pass Structure (Constitutional)
+  passes:
+    - name: CAPTURE
+      imo_layer: I
+      description: "Receive CLI args: agent-id, anchor-zip, radius-miles"
+    - name: COMPUTE
+      imo_layer: M
+      description: "Haversine radius computation against reference.us_zip_codes"
+    - name: GOVERN
+      imo_layer: O
+      description: "Emit coverage_id artifact"
+
+hub:
+  id: HUB-COVERAGE
+  name: Coverage Hub
+  doctrine_id: "04.04.06"
+  type: hub
+  version: "1.1.0"
+  description: |
+    Geographic gating layer. Persists coverage intent (agent + anchor ZIP +
+    radius) and derives ZIP membership via view. No downstream action
+    (CT join, enrichment, outreach) may occur without a valid coverage_id.
+    ADR: docs/adr/ADR-COVERAGE-INTENT-VIEW-REFACTOR.md
+
+classification:
+  type: required
+  gates_completion: false
+  waterfall_order: null
+
+core_metric:
+  name: COVERAGE_ZIP_COUNT
+  description: Number of ZIP codes within radius of anchor
+  aggregation: count
+
+entities_owned:
+  - coverage.service_agent
+  - coverage.service_agent_coverage
+
+views_derived:
+  - coverage.v_service_agent_coverage_zips
+
+entities_read_only:
+  - reference.us_zip_codes
+
+imo:
+  input:
+    - cli_args
+  middle:
+    - run_coverage              # Single entry point: scout, report, export, activate
+    - create_service_agent_coverage  # Low-level: create coverage intent
+    - coverage_report           # Report: sub-hub completeness for a market
+    - route_gaps                # Route: push gaps to sub-hub error tables
+  output:
+    - coverage_id_artifact
+    - coverage_csv_export
+
+spokes:
+  ingress_from: []
+  egress_to: []
+
+boundary_rules:
+  does_not_own:
+    - outreach.*
+    - cl.*
+    - people.*
+  golden_rule: |
+    No downstream action without valid coverage_id.
+    reference.us_zip_codes is READ-ONLY — never modified by this hub.
+    ZIP membership is derived via view, never materialized.
+
+tools:
+  tier_0:
+    - sql_haversine
+    - stdlib
+  tier_1: []
+  tier_2: []

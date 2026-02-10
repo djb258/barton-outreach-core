@@ -41,6 +41,10 @@ SPINE (outreach.outreach)
 | Who is in a slot? | `people.company_slot` → `people.people_master` | slot_id |
 | Contact details (name/email/phone)? | `people.people_master` | company_slot_unique_id |
 | LinkedIn URL for person? | `people.people_master` | company_slot_unique_id |
+| Is email verified? | `people.people_master` | `email_verified = TRUE` |
+| Is email outreach-ready? | `people.people_master` | `outreach_ready = TRUE` |
+| Email needs re-enrichment? | `people.people_master` | `email_verified = FALSE` |
+| RISKY (catch-all) emails? | `people.people_master` | `email_verified = TRUE AND outreach_ready = FALSE` |
 | DOL filing status/carrier/broker/funding? | `outreach.dol` | outreach_id |
 | EIN for company? | `outreach.outreach` (72% coverage, 69,233 EINs) | - |
 | ICP-filtered filings? | `dol.form_5500_icp_filtered` | Direct (MV, 24,892 rows) |
