@@ -1,6 +1,6 @@
 # Hunter.io + DOL Integration ERD
 
-> **Last Updated**: 2026-02-03
+> **Last Updated**: 2026-02-13
 > **Status**: PRODUCTION
 
 ---
@@ -136,8 +136,8 @@ erDiagram
 | `dol` | `ein_urls` | 127,909 | EIN to domain mapping |
 | `dol` | `form_5500` | 230,482 | Full DOL 5500 filings |
 | `dol` | `form_5500_sf` | 760,839 | Short form 5500-SF filings |
-| `outreach` | `outreach` | 95,004 | Outreach spine |
-| `outreach` | `dol` | 17,338 | Outreach DOL sub-hub |
+| `outreach` | `outreach` | 95,837 | Outreach spine (95,004 cold + 833 fractional CFO) |
+| `outreach` | `dol` | 74,529 | Outreach DOL sub-hub (79.2% coverage) |
 
 ---
 
@@ -165,14 +165,14 @@ erDiagram
                              v
                    +------------------+
                    | outreach.outreach|
-                   | (95,004)         |
+                   | (95,837)         |
                    +--------+---------+
                             |
                             | outreach_id
                             v
                    +------------------+
                    | outreach.dol     |
-                   | (17,338)         |
+                   | (74,529)         |
                    +--------+---------+
                             |
                             | ein
@@ -250,17 +250,23 @@ LEFT JOIN enrichment.hunter_contact hc ON LOWER(o.domain) = LOWER(hc.domain);
 
 ---
 
-## Key Metrics (2026-02-03)
+## Key Metrics (2026-02-13 VERIFIED)
 
 | Metric | Value |
 |--------|-------|
 | Hunter companies | 88,405 |
 | Hunter contacts | 583,433 |
 | Hunter source URLs | 231,973 |
-| DOL EINs with domains | 58,069 |
-| Outreach records | 95,004 |
-| Outreach with DOL/EIN | 17,338 |
-| EINs matched to outreach | 830 |
-| New companies from Hunter DOL | 54,166 |
+| DOL EINs with domains | 127,909 |
+| Outreach records | 95,837 |
+| **DOL bridge linked** | **74,529 (79.2%)** |
+| DOL with filing | 64,975 (87.2% of linked) |
+| DOL with renewal month | 74,521 (99.9% of linked) |
+| DOL with carrier | 10,233 (13.7% of linked) |
+| DOL with broker | 6,995 (9.4% of linked) |
+| Fuzzy bridge matches | 4,580 (included in 74,529) |
+| New companies from Hunter DOL | 54,155 |
+
+> See `docs/DATABASE_OVERVIEW_TEMPLATE.md` for full sub-hub coverage view.
 
 ---

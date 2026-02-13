@@ -380,62 +380,55 @@ WHERE category = 'Insurance';
 
 ---
 
-## 6. Data Statistics (2023 Filing Year)
+## 6. Data Statistics (2023-2025 Filing Years)
 
-### Row Counts
+> **Standard View**: See `docs/DATABASE_OVERVIEW_TEMPLATE.md` for the complete Database Overview format.
 
-| Table | Rows | Year |
-|-------|------|------|
-| form_5500 | 230,482 | 2023 |
-| form_5500_sf | 760,839 | 2023 |
-| schedule_a | 337,476 | 2023 |
+### DOL Bridge Metrics (2026-02-13 VERIFIED)
 
-### State Coverage
+| Metric | Count | % |
+|--------|-------|---|
+| **DOL Linked (EIN)** | 73,617 | 78.2% of 94,129 companies |
+| → Has Filing | 69,318 | 94.2% of DOL |
+| → Renewal Month | 69,029 | 93.8% of DOL |
+| → Carrier | 9,991 | 13.6% of DOL |
+| → Broker/Advisor | 6,818 | 9.3% of DOL |
 
-| Table | Unique States |
-|-------|---------------|
-| form_5500 | 58 |
-| form_5500_sf | 58 |
-| schedule_a | 55 |
+**Percentage Logic**: DOL Linked is measured against total companies. All sub-metrics cascade off DOL Linked.
 
-### Top States (Schedule A)
+### Funding Type Breakdown
 
-| State | Filings |
-|-------|---------|
-| CA | 43,313 |
-| TX | 22,731 |
-| NY | 21,497 |
-| PA | 19,098 |
-| FL | 17,770 |
+| Type | Count | % of DOL |
+|------|-------|----------|
+| Pension Only | 54,673 | 74.3% |
+| Fully Insured | 11,567 | 15.7% |
+| Unknown | 4,588 | 6.2% |
+| Self-Funded | 2,874 | 3.9% |
 
-### Broker Data Coverage (Schedule A)
+### Row Counts (3 years: 2023-2025)
 
-| Metric | Count | Percentage |
-|--------|-------|------------|
-| Records with broker commissions | 235,847 | 70% |
-| Records with broker fees | 130,062 | 39% |
-| Records with carrier name | 337,358 | 99.9% |
+**Total: 11,124,508 rows across 27 data-bearing tables + 2 staging tables**
 
-### Welfare Benefit Types (Schedule A)
-
-| Benefit Type | Filings |
-|--------------|---------|
-| Life Insurance | 79,469 |
-| Health | 64,989 |
-| Vision | 60,143 |
-| Dental | 57,955 |
-| HMO | 20,052 |
-| PPO | 17,074 |
-| Stop Loss | 8,351 |
+| Table | Rows | Notes |
+|-------|------|-------|
+| form_5500 | 432,582 | Large filers (100+ participants) |
+| form_5500_sf | 1,535,999 | Small filers (<100 participants) |
+| schedule_a | 625,520 | Insurance carriers/brokers |
+| schedule_c (all sub-tables) | 4,352,852 | Service provider compensation |
+| schedule_d (all sub-tables) | 3,322,211 | DFE participation |
+| schedule_h/i (all sub-tables) | 307,072 | Plan financials |
+| ein_urls | 127,909 | EIN→domain lookup |
 
 ### Renewal Month Distribution
 
-| Month | Filings | % |
-|-------|---------|---|
-| January | 235,308 | 70% |
-| July | 21,752 | 6% |
-| October | 12,078 | 4% |
-| April | 10,002 | 3% |
+| Month | EINs | Outreach Start |
+|-------|------|----------------|
+| Jan (1) | 60,777 | Aug (8) |
+| May (5) | 2,369 | Dec (12) |
+| Jun (6) | 1,773 | Jan (1) |
+| Jul (7) | 1,686 | Feb (2) |
+| All others | 3,537 | Various |
+| **Total** | **70,142** | **100% filled** |
 
 ---
 
@@ -586,6 +579,7 @@ RESET dol.import_mode;
 | 2.1 | 2025-12-17 | Hardened: Correlation ID, Signal idempotency, Two-layer errors |
 | 2.2 | 2026-01-13 | Database schema created, RLS enabled |
 | 3.0 | 2026-01-15 | **2023 data import complete, read-only lock, AI-ready metadata** |
+| 4.0 | 2026-02-13 | Updated to 3-year data (2023-2025, 11.1M rows). DOL bridge metrics: 73,617 linked (78.2%). Added funding type breakdown, cascading percentage logic. Reference to Database Overview Template. |
 
 ---
 
@@ -601,8 +595,8 @@ RESET dol.import_mode;
 
 ---
 
-*Document Version: 3.0*
-*Last Updated: 2026-01-15*
+*Document Version: 4.0*
+*Last Updated: 2026-02-13*
 *Owner: DOL Sub-Hub*
 *CC Layer: CC-02*
 *Doctrine: CL Parent-Child Doctrine v1.0*

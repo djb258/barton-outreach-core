@@ -14,13 +14,13 @@
 > **CRITICAL: All People Sub-Hub operations MUST use `outreach.company_target` as the company source.**
 > **See [AUTHORITATIVE_TABLE_REFERENCE.md](../AUTHORITATIVE_TABLE_REFERENCE.md) for complete details.**
 
-### The Single Source of Truth (2026-02-07 VERIFIED)
+### The Single Source of Truth (2026-02-13 VERIFIED)
 
 | Table | Schema | Count | Purpose |
 |-------|--------|-------|---------|
-| `company_target` | `outreach` | **95,004** | **AUTHORITATIVE company list** |
+| `company_target` | `outreach` | **94,129** | **AUTHORITATIVE company list** (after 1,708 no-geography exclusions) |
 | `company_slot` | `people` | 285,012 | Slot assignments (3 per company) |
-| `people_master` | `people` | 182,661 | People data (name, email, etc.) |
+| `people_master` | `people` | 182,946 | People data (name, email, etc.) |
 | `people` | `outreach` | 336,395 | People promoted for outreach |
 
 ### Data Flow
@@ -47,33 +47,60 @@ outreach.people (ready for outreach)
 
 ---
 
-## LIVE ENRICHMENT STATUS (2026-02-07 VERIFIED)
+## LIVE ENRICHMENT STATUS (2026-02-13 VERIFIED)
+
+> **Standard View**: See `docs/DATABASE_OVERVIEW_TEMPLATE.md` for the complete Database Overview format.
 
 ### Company-Level Coverage
 
-| Metric | Count | % of 95,004 |
+| Metric | Count | % of 94,129 |
 |--------|-------|-------------|
-| Total companies | 95,004 | 100% |
+| Total companies | 94,129 | 100% |
 | Total slots | 285,012 | 3 per company |
 | Total filled slots | 177,757 | **62.4%** |
-| Total people | 182,661 | — |
+| Total people | 182,946 | — |
 
 ### Slot-Level Coverage
 
 | Slot | Total | Filled | Fill Rate |
 |------|-------|--------|-----------|
-| **CEO** | 95,004 | 62,289 | **65.6%** |
-| **CFO** | 95,004 | 57,327 | **60.3%** |
-| **HR** | 95,004 | 58,141 | **61.2%** |
+| **CEO** | 94,129 | 62,289 | **66.2%** |
+| **CFO** | 94,129 | 57,327 | **60.9%** |
+| **HR** | 94,129 | 58,141 | **61.8%** |
 | **TOTAL** | **285,012** | **177,757** | **62.4%** |
 
-### Remaining Work
+### People Readiness Funnel
 
-| Slot | Empty | Priority |
-|------|-------|----------|
-| CEO | 32,715 | HIGH - Primary contact |
-| CFO | 37,677 | MEDIUM - Financial decision maker |
-| HR | 36,863 | MEDIUM - Benefits decision maker |
+The readiness funnel answers: "Can we reach anyone at this company?"
+
+| Step | Count | % |
+|------|-------|---|
+| **Total Companies** | 94,129 | 100% |
+| **At Least 1 Slot Filled** | 63,648 | 67.6% |
+| **At Least 1 Person Reachable** | 60,180 | 63.9% |
+| **Zero Slots (unreachable)** | 30,481 | 32.4% |
+
+**Reachable** = has a verified email (outreach_ready = TRUE) OR a LinkedIn URL for at least one filled slot.
+
+### Depth of Coverage
+
+Per-company analysis: how many of 3 slots (CEO/CFO/HR) are filled, and quality of contact data.
+
+| Depth | Companies | All Have Email | All Have LinkedIn | Full Coverage (Both) |
+|-------|-----------|----------------|-------------------|---------------------|
+| **All 3 Slots Filled** | 54,949 | 32,585 (59.3%) | 41,689 (75.9%) | **25,014 (45.5%)** |
+| **2 of 3 Filled** | 2,884 | 1,155 (40.0%) | 2,271 (78.7%) | 1,048 (36.3%) |
+| **1 of 3 Filled** | 5,815 | 2,843 (48.9%) | 4,949 (85.1%) | 2,749 (47.3%) |
+| **0 Filled** | 30,481 | — | — | — |
+
+### Email Verification
+
+| Metric | Count | % |
+|--------|-------|---|
+| People with Email | 181,478 | — |
+| Email Verified | 145,358 | 80.1% of emails |
+| Outreach Ready | 122,094 | 67.3% of emails |
+| Companies with 1+ Ready Email | 47,504 | 50.5% of companies |
 
 ### Primary Data Source
 
@@ -1431,11 +1458,12 @@ doppler run -- python scripts/correct_status.py
 | 2.1 | 2025-12-17 | Hardened: Correlation ID, Signal idempotency, TTL policies, Two-layer errors, Promotion states |
 | 2.2 | 2026-01-14 | Added: Production implementation details (CEO Email Pipeline, multi-slot support) |
 | 3.0 | 2026-01-30 | Added: FREE State Extraction Pipeline (§15) - 77,256 people extracted across 9 states |
+| 3.2 | 2026-02-13 | Added: Readiness funnel, depth of coverage, email verification metrics. Updated all live metrics to 2026-02-13 verified numbers. Reference to Database Overview Template. |
 
 ---
 
-*Document Version: 3.1*
-*Last Updated: 2026-02-07*
+*Document Version: 3.2*
+*Last Updated: 2026-02-13*
 *Owner: People Sub-Hub*
 *Doctrine: CTB v1.0 / Barton Doctrine*
 *Source: scripts/full_numbers_audit.py*

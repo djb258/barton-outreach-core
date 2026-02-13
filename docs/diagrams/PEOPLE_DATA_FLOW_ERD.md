@@ -1,7 +1,7 @@
 # People Data Flow ERD
 
-**Version:** 1.0.0
-**Last Updated:** 2026-02-02
+**Version:** 1.1.0
+**Last Updated:** 2026-02-13
 **Status:** CANONICAL REFERENCE
 
 ---
@@ -112,7 +112,7 @@ erDiagram
 │   │  outreach_id (UUID) ← PRIMARY KEY - Use this for all joins         │   │
 │   │  company_name, domain, email_pattern, outreach_status               │   │
 │   │                                                                     │   │
-│   │  COUNT: 95,004 companies                                            │   │
+│   │  COUNT: 94,129 companies (after 1,708 no-geography exclusions)      │   │
 │   └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                              │
 │   ⚠️  THIS IS THE AUTHORITATIVE COMPANY LIST                               │
@@ -129,9 +129,9 @@ erDiagram
 │   ┌──────────────────┬──────────────────┬──────────────────┐               │
 │   │      CEO         │       CFO        │        HR        │               │
 │   ├──────────────────┼──────────────────┼──────────────────┤               │
-│   │ 15,171 filled    │ 4,807 filled     │ 6,575 filled     │               │
-│   │ 26,254 empty     │ 36,618 empty     │ 34,850 empty     │               │
-│   │ 36.6% coverage   │ 11.6% coverage   │ 15.9% coverage   │               │
+│   │ 62,289 filled    │ 57,327 filled    │ 58,141 filled    │               │
+│   │ 32,723 empty     │ 37,685 empty     │ 36,871 empty     │               │
+│   │ 65.6% coverage   │ 60.3% coverage   │ 61.2% coverage   │               │
 │   └──────────────────┴──────────────────┴──────────────────┘               │
 │                                                                              │
 │   JOIN KEY: outreach_id → company_target.outreach_id                        │
@@ -151,9 +151,10 @@ erDiagram
 │   │  email ← TARGET FOR ENRICHMENT                                      │   │
 │   │  linkedin_url, work_phone_e164                                      │   │
 │   │                                                                     │   │
-│   │  Matched to slots: 26,443                                           │   │
-│   │  With email: 21,751                                                 │   │
-│   │  Need email: 4,692                                                  │   │
+│   │  Total records: 182,946                                              │   │
+│   │  Matched to slots: 177,757 (62.4% fill rate)                        │   │
+│   │  With email: 181,478                                                │   │
+│   │  Email verified: 145,358 (outreach_ready: 122,094)                  │   │
 │   └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                              │
 └────────────────────────────────┬────────────────────────────────────────────┘
@@ -242,26 +243,37 @@ SELECT * FROM outreach.outreach;  -- Different record count
 
 ---
 
-## Key Metrics (2026-02-02)
+## Key Metrics (2026-02-13 VERIFIED)
 
 ### Summary Statistics
 
 | Metric | Value |
 |--------|-------|
-| Total Companies (Authoritative) | 95,004 |
-| Companies with ≥1 Person | 18,353 (44.3%) |
-| Companies with ≥1 Email | 15,401 (37.2%) |
-| **Companies Needing People** | **23,072 (55.7%)** |
-| People with Email | 21,751 |
-| People Needing Email | 4,692 |
+| Total Companies (Authoritative) | 94,129 (after 1,708 no-geography exclusions) |
+| Total Slots | 285,012 (3 per company) |
+| Slots Filled | 177,757 (62.4%) |
+| People Records | 182,946 |
+| People with Email | 181,478 |
+| Email Verified (outreach_ready) | 122,094 |
 
 ### Slot Coverage
 
 | Slot | Filled | Empty | Coverage |
 |------|--------|-------|----------|
-| CEO | 15,171 | 26,254 | 36.6% |
-| CFO | 4,807 | 36,618 | 11.6% |
-| HR | 6,575 | 34,850 | 15.9% |
+| CEO | 62,289 | 32,723 | 65.6% |
+| CFO | 57,327 | 37,685 | 60.3% |
+| HR | 58,141 | 36,871 | 61.2% |
+
+### Email Verification
+
+| Status | Count | % |
+|--------|-------|---|
+| VALID (outreach_ready=TRUE) | 43,330 | 71.7% |
+| RISKY (catch-all) | 9,223 | 15.3% |
+| INVALID (need re-enrichment) | 7,878 | 13.0% |
+| Deliverable rate | — | 87.0% |
+
+> See `docs/DATABASE_OVERVIEW_TEMPLATE.md` for full sub-hub coverage view.
 
 ---
 
@@ -269,4 +281,5 @@ SELECT * FROM outreach.outreach;  -- Different record count
 
 | Date | Version | Change |
 |------|---------|--------|
+| 2026-02-13 | 1.1.0 | Updated all metrics to current verified counts, added email verification |
 | 2026-02-02 | 1.0.0 | Initial creation with live metrics |

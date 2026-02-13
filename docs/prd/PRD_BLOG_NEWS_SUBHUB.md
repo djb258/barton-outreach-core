@@ -192,6 +192,43 @@ _Constitutional pass mapping per `PRD_CONSTITUTION.md §Pass-to-IMO Mapping`_
 
 ---
 
+## Blog Sub-Hub Live Metrics (2026-02-13 VERIFIED)
+
+> **Standard View**: See `docs/DATABASE_OVERVIEW_TEMPLATE.md` for the complete Database Overview format.
+
+| Metric | Count | % of 94,129 |
+|--------|-------|-------------|
+| **Blog Coverage** | 93,596 | 99.4% |
+| **Companies with Sitemap** | 31,679 | 33.7% |
+| **Companies with Source URLs** | 40,381 | 42.9% |
+| **Company LinkedIn** | 45,057 | 47.9% |
+| Domain Reachable | 52,870 | 85.4% of checked |
+| Domain Unreachable | 9,047 | 14.6% of checked |
+
+### Source URL Types (company.company_source_urls)
+
+| Source Type | Count | Purpose |
+|-------------|-------|---------|
+| `about_page` | 26,662 | Company About Us pages |
+| `press_page` | 14,377 | News/Press/Announcements |
+| `leadership_page` | 12,602 | Executive bios |
+| `team_page` | 8,896 | Staff listings |
+| `careers_page` | 16,262 | Job postings |
+| `contact_page` | 25,213 | Contact info |
+| **Total URLs** | **104,012** | **36,142 companies** |
+
+### Data Sources
+
+| Metric | Source Table |
+|--------|-------------|
+| Blog Coverage | `outreach.blog` |
+| Sitemaps | `outreach.sitemap_discovery` (`has_sitemap = TRUE`) |
+| Source URLs | `company.company_source_urls` |
+| Company LinkedIn | `cl.company_identity.linkedin_company_url` |
+| Domain Health | `outreach.sitemap_discovery.domain_reachable` |
+
+---
+
 ## 1. Purpose
 
 The Blog/News Sub-Hub monitors external news sources, company blogs, and press releases to detect business events that signal buyer intent. It processes unstructured content and emits structured signals to the BIT Engine.
@@ -1144,11 +1181,12 @@ logger.info(
 |---------|------|---------|
 | 1.0 | 2025-12-17 | Initial Blog/News Sub-Hub PRD (PLANNED status) |
 | 2.1 | 2025-12-17 | Hardened: Correlation ID, Signal Idempotency, Tooling, Failure Handling, Promotion States |
+| 3.0 | 2026-02-13 | Added live metrics: blog coverage 93,596 (99.4%), sitemaps 31,679 (33.7%), source URLs 104,012 across 36,142 companies, company LinkedIn 45,057 (47.9%). Reference to Database Overview Template. |
 
 ---
 
-*Document Version: 2.1*
-*Last Updated: 2025-12-17*
+*Document Version: 3.0*
+*Last Updated: 2026-02-13*
 *Owner: Blog/News Sub-Hub*
-*Status: PLANNED*
-*Doctrine: Bicycle Wheel v1.1 / Barton Doctrine*
+*Status: ACTIVE (data populated, signal detection PLANNED)*
+*Doctrine: CL Parent-Child Doctrine v1.1 / Barton Doctrine*

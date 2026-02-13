@@ -59,6 +59,15 @@ SPINE (outreach.outreach)
 | EIN → URL/domain lookup? | `dol.ein_urls` | EIN direct (127,909 rows) |
 | Company news/blog URLs? | `outreach.blog` | outreach_id |
 | Company name/domain? | `cl.company_identity` | sovereign_company_id |
+| Employee count/size band? | `outreach.company_target` | `employees` column |
+| Domain reachable? | `outreach.sitemap_discovery` | outreach_id |
+| Has sitemap? | `outreach.sitemap_discovery` | outreach_id (`has_sitemap = TRUE`) |
+| About/press/leadership URLs? | `company.company_source_urls` | company_unique_id (bridge via domain) |
+| Company LinkedIn URL? | `cl.company_identity` | `linkedin_company_url` column |
+| Person LinkedIn URL? | `people.people_master` | `linkedin_url` via company_slot |
+| Companies in ZIP+radius? | `outreach.company_target` + `reference.us_zip_codes` | Haversine on lat/lng, match via postal_code |
+| Database overview (full/market)? | See `docs/DATABASE_OVERVIEW_TEMPLATE.md` | Standard view template |
+| Readiness funnel (can we reach anyone)? | `people.company_slot` + `people.people_master` | outreach_id, check email/LinkedIn |
 
 ---
 
@@ -148,9 +157,19 @@ FK:    outreach_id → outreach.outreach
 - "How many companies in Maryland?" → `WHERE state = 'MD'`
 - "What's the email pattern for this company?"
 - "What industry is this company in?"
-- "How many employees does this company have?"
+- "How many employees does this company have?" → `employees` column (74.8% coverage)
+- "Employee size band?" → `employees >= 50` for target market, bands: 50-100, 101-250, 501-1000, 1001-5000, 5001+
 - "Company count by state/city?"
 - "Which companies are pending execution?"
+- "Email method for company?" → `email_method` column (86.0% coverage)
+
+**CT Live Metrics (2026-02-13)**:
+| Metric | Count | % |
+|--------|-------|---|
+| Has Employee Data | 70,392 | 74.8% |
+| 50+ Employees | 37,493 | 39.8% |
+| Total Employees (50+) | 16,205,443 | — |
+| Email Method | 80,950 | 86.0% |
 
 ---
 
@@ -209,7 +228,16 @@ FK:    outreach_id → outreach.outreach
 | All others | 3,537 | Various |
 | **Total** | **70,142** | **100% filled** |
 
-**Note**: DOL can have multiple records per outreach_id (multiple filing years). Carrier/broker fill rates are lower because 79% of matched companies are pension-only filers without Schedule A/C data.
+**DOL Live Metrics (2026-02-13)**:
+| Metric | Count | % |
+|--------|-------|---|
+| DOL Linked (EIN) | 73,617 | 78.2% of companies |
+| Has Filing | 69,318 | 94.2% of DOL |
+| Renewal Month | 69,029 | 93.8% of DOL |
+| Carrier | 9,991 | 13.6% of DOL |
+| Broker/Advisor | 6,818 | 9.3% of DOL |
+
+**Note**: DOL can have multiple records per outreach_id (multiple filing years). Carrier/broker fill rates are lower because 79% of matched companies are pension-only filers without Schedule A/C data. DOL sub-metrics cascade off DOL Linked, not CT total.
 
 **Supportive Reference Data**: 27 DOL filing/utility tables in `dol.*` schema are ALL queryable via EIN or ack_id. They are NOT sub-hub members. See DOL section below.
 
@@ -239,6 +267,19 @@ FK:    outreach_id → outreach.outreach
 - "What's the about page URL?"
 - "What's the news/blog URL?"
 - "When was content last extracted?"
+- "Does this company have a sitemap?" → `outreach.sitemap_discovery` (`has_sitemap = TRUE`)
+- "Is the domain reachable?" → `outreach.sitemap_discovery.domain_reachable`
+- "About/press/leadership/team/careers/contact URLs?" → `company.company_source_urls` (bridge via domain)
+- "Company LinkedIn URL?" → `cl.company_identity.linkedin_company_url`
+
+**Blog Live Metrics (2026-02-13)**:
+| Metric | Count | % |
+|--------|-------|---|
+| Blog Coverage | 93,596 | 99.4% |
+| Companies with Sitemap | 31,679 | 33.7% |
+| Companies with Source URLs | 40,381 | 42.9% |
+| Company LinkedIn | 45,057 | 47.9% |
+| Domain Reachable | 52,870 | 85.4% of checked |
 
 ---
 
@@ -306,8 +347,21 @@ FK:    company_slot_unique_id → people.company_slot.slot_id
 - "What's the email for this person?"
 - "What's their LinkedIn URL?"
 - "What's their job title?"
-- "How many people have verified emails?"
+- "How many people have verified emails?" → `email_verified = TRUE`
+- "How many people are outreach ready?" → `outreach_ready = TRUE`
 - "How many people are missing LinkedIn?"
+
+**People Readiness Funnel (2026-02-13)**:
+| Step | Count | % |
+|------|-------|---|
+| Total Companies | 94,129 | 100% |
+| At Least 1 Slot Filled | 63,648 | 67.6% |
+| At Least 1 Person Reachable | 60,180 | 63.9% |
+| Zero Slots (unreachable) | 30,481 | 32.4% |
+
+**Reachable** = has a verified email (outreach_ready = TRUE) OR a LinkedIn URL for at least one filled slot.
+
+**Depth of Coverage**: See `docs/DATABASE_OVERVIEW_TEMPLATE.md` for the per-company depth analysis (all 3 filled, 2 of 3, 1 of 3) with email/LinkedIn/full coverage breakdowns.
 
 ---
 
@@ -866,6 +920,7 @@ WHERE is_frozen = TRUE;
 
 | Date | Change |
 |------|--------|
+| 2026-02-13 | Added CT sub-hub metrics (employee bands, domain health), blog metrics (sitemap, source URLs, company LinkedIn), DOL live metrics, people readiness funnel, geographic filtering reference, Database Overview Template reference |
 | 2026-02-09 | Updated for three messaging lanes (Cold Outreach 95,837 + Appointments 771 + Fractional CFO 833). CLS replaces BIT as scoring engine. CL total 102,922. People 182,946 |
 | 2026-02-06 | Added renewal_month + outreach_start_month to outreach.dol (70,142/70,150 = 100%). Outreach start = 5 months before renewal. 86.6% renew in January → outreach starts in August |
 | 2026-02-06 | DOL bridge enrichment: normalized EINs (stripped dashes), populated carrier/broker_or_advisor/funding_type in outreach.dol. Synced EINs to outreach.outreach. Corrected filing table list (removed non-existent _ele tables, added actual _codes tables). Updated all row counts to match DB. Total: 27 data-bearing + 2 staging tables, 11.1M rows |

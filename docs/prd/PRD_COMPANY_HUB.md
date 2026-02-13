@@ -89,8 +89,51 @@ _Constitutional pass mapping per `PRD_CONSTITUTION.md §Pass-to-IMO Mapping`_
 
 | Scope | Description |
 |-------|-------------|
-| **IN SCOPE** | Domain resolution, email pattern discovery, pattern verification, company matching, BIT signal aggregation |
+| **IN SCOPE** | Domain resolution, email pattern discovery, pattern verification, company matching, BIT signal aggregation, employee data, domain health tracking |
 | **OUT OF SCOPE** | Minting sovereign_company_id (CL owns), slot assignment (People owns), DOL data (DOL owns), people state (People owns) |
+
+---
+
+## CT Sub-Hub Live Metrics (2026-02-13)
+
+> **Standard View**: See `docs/DATABASE_OVERVIEW_TEMPLATE.md` for the complete Database Overview format.
+
+### Company Firmographics
+
+| Metric | Count | % of 94,129 |
+|--------|-------|-------------|
+| **Has Employee Data** | 70,392 | 74.8% |
+| **50+ Employees** | 37,493 | 39.8% |
+| **Total Employees (50+)** | **16,205,443** | — |
+| Email Method | 80,950 | 86.0% |
+
+### Employee Size Bands (50+ only)
+
+| Band | Companies | Total Employees | % |
+|------|-----------|-----------------|---|
+| 50-100 | 24,179 | 1,233,129 | 64.5% |
+| 101-250 | 6,795 | 1,365,795 | 18.1% |
+| 501-1,000 | 2,696 | 1,350,696 | 7.2% |
+| 1,001-5,000 | 2,657 | 2,659,657 | 7.1% |
+| 5,001+ | 1,166 | 9,596,166 | 3.1% |
+| **Total** | **37,493** | **16,205,443** | **100%** |
+
+**Note**: Employee counts are Hunter enrichment band minimums (floor estimates). Real totals are higher.
+
+### Domain Health
+
+| Metric | Count | % |
+|--------|-------|---|
+| Domain Reachable | 52,870 | 85.4% of checked |
+| Domain Unreachable | 9,047 | 14.6% of checked |
+
+### Data Sources
+
+| Metric | Source Table |
+|--------|-------------|
+| Employee Count | `outreach.company_target.employees` |
+| Email Method | `outreach.company_target.email_method` |
+| Domain Health | `outreach.sitemap_discovery.domain_reachable` |
 
 ---
 
@@ -759,6 +802,7 @@ All errors from Phases 1-4 and BIT Engine MUST be logged to `public.shq_error_lo
 
 ---
 
-*Document Version: 2.0*
+*Document Version: 3.1*
+*Last Updated: 2026-02-13*
 *Template: PRD_HUB.md*
 *Doctrine: Barton Doctrine v2.0 (Refactored Boundaries)*
