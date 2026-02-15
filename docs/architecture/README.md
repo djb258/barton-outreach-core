@@ -151,7 +151,7 @@ ORDER BY total_assets DESC;
 
 **Last Updated:** 2026-02-06
 **Schema Version:** 4.4.0
-**CTB Registry:** 246 tables registered, Phase 3 LOCKED
+**CTB Registry:** 249 tables registered, Phase 3 LOCKED
 **Status:** Production Ready
 
 ---
@@ -160,7 +160,7 @@ ORDER BY total_assets DESC;
 
 > **Full CTB governance documentation**: [../CTB_GOVERNANCE.md](../CTB_GOVERNANCE.md)
 
-As of 2026-02-06, all 246 tables are registered in the CTB (Christmas Tree Backbone) registry with governance metadata:
+As of 2026-02-06, all 249 tables are registered in the CTB (Christmas Tree Backbone) registry with governance metadata:
 
 ```sql
 -- Query the registry
@@ -171,9 +171,15 @@ ORDER BY leaf_type, table_schema;
 
 | Leaf Type | Count | Description |
 |-----------|-------|-------------|
-| CANONICAL | 50 | Core data tables |
-| ARCHIVE | 112 | History tables |
-| DEPRECATED | 21 | Legacy (read-only) |
+| ARCHIVE | 119 | History tables |
+| SYSTEM | 36 | System/metadata |
+| CANONICAL | 26 | Core data tables |
+| DEPRECATED | 24 | Legacy (read-only) |
+| STAGING | 13 | Intake/staging |
+| ERROR | 11 | Error tracking |
+| MV | 8 | Materialized views |
+| REGISTRY | 7 | Lookup/reference |
+| SUPPORTING | 5 | Operational data serving CANONICAL tables (ADR required) |
 | FROZEN | 9 | Immutable core tables |
 
 See [../CTB_GOVERNANCE.md](../CTB_GOVERNANCE.md) for governance rules and `docs/audit/CTB_PHASE3_ENFORCEMENT_SUMMARY.md` for execution details.

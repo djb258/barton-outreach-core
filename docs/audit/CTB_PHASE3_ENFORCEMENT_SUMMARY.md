@@ -27,22 +27,23 @@
 | Component | Status |
 |-----------|--------|
 | Schema `ctb` | CREATED |
-| `ctb.table_registry` | CREATED (246 tables) |
+| `ctb.table_registry` | CREATED (249 tables) |
 | `ctb.violation_log` | CREATED (0 violations) |
 
 ### Leaf Type Distribution
 
 | Leaf Type | Count | Description |
 |-----------|-------|-------------|
-| ARCHIVE | 112 | CTB archive tables |
-| CANONICAL | 50 | Primary data tables |
-| SYSTEM | 23 | System/metadata tables |
-| DEPRECATED | 21 | Legacy tables (read-only) |
-| ERROR | 14 | Error tracking tables |
-| STAGING | 12 | Intake/staging tables |
+| ARCHIVE | 119 | CTB archive tables |
+| SYSTEM | 36 | System/metadata tables |
+| CANONICAL | 26 | Primary data tables |
+| DEPRECATED | 24 | Legacy tables (read-only) |
+| STAGING | 13 | Intake/staging tables |
+| ERROR | 11 | Error tracking tables |
 | MV | 8 | Materialized view candidates |
-| REGISTRY | 6 | Lookup/reference tables |
-| **TOTAL** | **246** | |
+| REGISTRY | 7 | Lookup/reference tables |
+| SUPPORTING | 5 | Operational data serving CANONICAL tables (ADR required) |
+| **TOTAL** | **249** | |
 
 ---
 
@@ -130,7 +131,7 @@ These tables are marked DEPRECATED but retain data for reference:
 | Check | Result |
 |-------|--------|
 | CTB Registry Structure | PASS |
-| Table Registration Coverage | PASS (246/246) |
+| Table Registration Coverage | PASS (249/249) |
 | Error Table NOT NULL | PASS (4/4) |
 | Frozen Core Tables | PASS (9/9) |
 | Join Key Integrity | PASS (95,004 = 95,004) |

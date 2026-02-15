@@ -1135,19 +1135,20 @@ erDiagram
 ### CTB Registry (Governance Layer)
 
 **Status**: Phase 3 LOCKED (2026-02-06)
-**Tables Registered**: 246
+**Tables Registered**: 249
 **Frozen Core**: 9 tables
 
 | Leaf Type | Count | Description |
 |-----------|-------|-------------|
-| ARCHIVE | 112 | Archive/history tables |
-| CANONICAL | 50 | Primary data tables |
-| SYSTEM | 23 | System/metadata |
-| DEPRECATED | 21 | Legacy (read-only) |
-| ERROR | 14 | Error tracking |
-| STAGING | 12 | Intake/staging |
+| ARCHIVE | 119 | Archive/history tables |
+| SYSTEM | 36 | System/metadata |
+| CANONICAL | 26 | Primary data tables |
+| DEPRECATED | 24 | Legacy (read-only) |
+| STAGING | 13 | Intake/staging |
+| ERROR | 11 | Error tracking |
 | MV | 8 | Materialized view candidates |
-| REGISTRY | 6 | Lookup/reference |
+| REGISTRY | 7 | Lookup/reference |
+| SUPPORTING | 5 | Operational data serving CANONICAL tables (ADR required) |
 
 **Frozen Core Tables**:
 - `cl.company_identity`, `outreach.outreach`, `outreach.company_target`
@@ -1192,4 +1193,4 @@ erDiagram
 ---
 
 *Generated: 2026-02-09 | Barton Outreach Core v4.5 | CL Parent-Child Doctrine v1.1 + CTB Phase 3*
-*Current: CL 102,922 | Spine 95,837 | Three Lanes: Cold (95,837) + Appointments (771) + CFO Partners (833) | CTB: 246 tables*
+*Current: CL 102,922 | Spine 95,837 | Three Lanes: Cold (95,837) + Appointments (771) + CFO Partners (833) | CTB: 249 tables*

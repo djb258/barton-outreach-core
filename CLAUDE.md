@@ -36,7 +36,7 @@ The OSAM tells you exactly where to go for any data question:
 > | company_target | company_target | company_target_errors | company_hub_status | - |
 > | dol | dol | dol_errors | form_5500_icp_filtered | column_metadata |
 > | blog | blog | blog_errors | - | blog_ingress_control |
-> | people | people_master, company_slot | people_errors | - | slot_ingress_control, title_slot_mapping |
+> | people | company_slot (CANONICAL) + people_master (SUPPORTING, ADR-020) | people_errors | - | slot_ingress_control, title_slot_mapping |
 > | bit | bit_scores | bit_errors | bit_signals, movement_events | - |
 > | execution | appointments, campaigns, sequences | - | engagement_events | - |
 >
@@ -1261,13 +1261,13 @@ SELECT * FROM bit.proof_lines WHERE company_unique_id = ? AND valid_until > NOW(
 
 ### What is CTB?
 
-CTB (Christmas Tree Backbone) is the hierarchical data model with ID-based paths organizing all 246 tables in the database. Every table is classified by leaf type and registered in the central registry.
+CTB (Christmas Tree Backbone) is the hierarchical data model with ID-based paths organizing all 249 tables in the database. Every table is classified by leaf type and registered in the central registry.
 
 ### CTB Schema
 
 ```sql
 -- Central Registry
-ctb.table_registry   -- 246 tables registered with leaf types
+ctb.table_registry   -- 249 tables registered with leaf types
 ctb.violation_log    -- Guardrail violation tracking (0 violations)
 ```
 
@@ -1275,15 +1275,16 @@ ctb.violation_log    -- Guardrail violation tracking (0 violations)
 
 | Leaf Type | Count | Description |
 |-----------|-------|-------------|
-| ARCHIVE | 112 | CTB archive tables |
-| CANONICAL | 50 | Primary data tables |
-| SYSTEM | 23 | System/metadata tables |
-| DEPRECATED | 21 | Legacy tables (read-only) |
-| ERROR | 14 | Error tracking tables |
-| STAGING | 12 | Intake/staging tables |
+| ARCHIVE | 119 | Archive/history tables |
+| SYSTEM | 36 | System/metadata/audit tables |
+| CANONICAL | 26 | Primary data tables |
+| DEPRECATED | 24 | Legacy tables (read-only) |
+| STAGING | 13 | Intake/staging tables |
+| ERROR | 11 | Error tracking tables |
 | MV | 8 | Materialized view candidates |
-| REGISTRY | 6 | Lookup/reference tables |
-| **TOTAL** | **246** | |
+| REGISTRY | 7 | Lookup/reference tables |
+| SUPPORTING | 5 | Operational data serving a CANONICAL table (ADR required) |
+| **TOTAL** | **249** | |
 
 ### Frozen Core Tables (9)
 
@@ -1325,7 +1326,7 @@ Error tables have NOT NULL constraints on `error_type` discriminator:
 | `docs/audit/CTB_PHASE3_ENFORCEMENT_SUMMARY.md` | Phase 3 execution summary |
 | `docs/audit/CTB_GUARDRAIL_STATUS.md` | Guardrail status report |
 | `docs/audit/CTB_DRIFT_REPORT.md` | Drift detection (23 items) |
-| `docs/audit/CTB_GUARDRAIL_MATRIX.csv` | Full table registry (246 tables) |
+| `docs/audit/CTB_GUARDRAIL_MATRIX.csv` | Full table registry (249 tables) |
 | `neon/migrations/ctb_phase3_enforcement.sql` | Enforcement DDL |
 
 ### Query CTB Registry

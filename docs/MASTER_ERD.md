@@ -59,7 +59,7 @@ outreach.company_target.outreach_id (95,837 companies)
 |--------|---------|-----------|------------------------|
 | `outreach` | Outreach operational spine | `outreach_id` | **THIS IS THE SPINE** |
 | `cl` | Company Lifecycle (Authority) | `sovereign_company_id` | `outreach.outreach.sovereign_company_id` |
-| `ctb` | **CTB Registry** (governance) | `registry_id` | Tracks all 246 tables |
+| `ctb` | **CTB Registry** (governance) | `registry_id` | Tracks all 249 tables |
 | `company` | Legacy company master | `company_unique_id` | **DISCONNECTED** - domain match only |
 | `dol` | DOL Form 5500 filings | `ein` | `outreach.dol.ein` |
 | `people` | People/contacts master | `person_unique_id` | `people.company_slot.outreach_id` |
@@ -829,7 +829,7 @@ ORDER BY pi.leverage_score DESC;
 **Status**: PHASE 3 LOCKED (2026-02-06)
 **Full Governance**: [CTB_GOVERNANCE.md](CTB_GOVERNANCE.md)
 
-The CTB (Christmas Tree Backbone) registry tracks all 246 tables with governance metadata.
+The CTB (Christmas Tree Backbone) registry tracks all 249 tables with governance metadata.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -837,13 +837,14 @@ The CTB (Christmas Tree Backbone) registry tracks all 246 tables with governance
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │ ctb.table_registry (246 rows) - CENTRAL GOVERNANCE TABLE            │   │
+│  │ ctb.table_registry (249 rows) - CENTRAL GOVERNANCE TABLE            │   │
 │  ├─────────────────────────────────────────────────────────────────────┤   │
 │  │ registry_id         SERIAL    PK   Auto-increment                   │   │
 │  │ table_schema        VARCHAR   REQ  Schema name                      │   │
 │  │ table_name          VARCHAR   REQ  Table name                       │   │
 │  │ leaf_type           VARCHAR   REQ  CANONICAL|ERROR|MV|REGISTRY|     │   │
-│  │                                    STAGING|ARCHIVE|SYSTEM|DEPRECATED│   │
+│  │                                    STAGING|ARCHIVE|SYSTEM|          │   │
+│  │                                    DEPRECATED|SUPPORTING            │   │
 │  │ ctb_path            VARCHAR        CTB hierarchy path               │   │
 │  │ parent_table        VARCHAR        Parent table reference           │   │
 │  │ is_frozen           BOOLEAN        TRUE for core tables (9 frozen)  │   │
@@ -869,14 +870,15 @@ The CTB (Christmas Tree Backbone) registry tracks all 246 tables with governance
 │  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
 │  LEAF TYPE DISTRIBUTION:                                                   │
-│  ├── ARCHIVE: 112 tables                                                   │
-│  ├── CANONICAL: 50 tables (core data)                                      │
-│  ├── SYSTEM: 23 tables                                                     │
-│  ├── DEPRECATED: 21 tables (read-only)                                     │
-│  ├── ERROR: 14 tables                                                      │
-│  ├── STAGING: 12 tables                                                    │
+│  ├── ARCHIVE: 119 tables                                                   │
+│  ├── SYSTEM: 36 tables                                                     │
+│  ├── CANONICAL: 26 tables (core data)                                      │
+│  ├── DEPRECATED: 24 tables (read-only)                                     │
+│  ├── STAGING: 13 tables                                                    │
+│  ├── ERROR: 11 tables                                                      │
 │  ├── MV: 8 tables (materialized view candidates)                           │
-│  └── REGISTRY: 6 tables                                                    │
+│  ├── REGISTRY: 7 tables                                                    │
+│  └── SUPPORTING: 5 tables (operational, ADR required)                      │
 │                                                                             │
 │  FROZEN CORE TABLES (9):                                                   │
 │  ├── cl.company_identity                                                   │
@@ -916,7 +918,7 @@ The CTB (Christmas Tree Backbone) registry tracks all 246 tables with governance
 | `docs/DATA_REGISTRY.md` | Schema quick reference |
 | `docs/architecture/DUAL_LANE_ARCHITECTURE.md` | Lane A/B isolation rules |
 | `docs/audit/CTB_PHASE3_ENFORCEMENT_SUMMARY.md` | CTB Phase 3 execution |
-| `docs/audit/CTB_GUARDRAIL_MATRIX.csv` | Full CTB registry (246 tables) |
+| `docs/audit/CTB_GUARDRAIL_MATRIX.csv` | Full CTB registry (249 tables) |
 | `docs/audit/CTB_DRIFT_REPORT.md` | CTB drift detection |
 | `neon/migrations/` | All schema definitions |
 | `neon/migrations/ctb_phase3_enforcement.sql` | CTB Phase 3 DDL |

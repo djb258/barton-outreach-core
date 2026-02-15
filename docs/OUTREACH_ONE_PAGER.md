@@ -233,7 +233,7 @@ Proofs expire when movements expire. They cannot be refreshed — they must rege
 | **Kill Switch** | Immediate halt per company or globally, no grace period |
 | **Pattern Lock** | Verified email patterns locked against overwrite |
 | **Proof Expiration** | Stale evidence auto-expires, can't justify contact |
-| **CTB Registry** | 246 tables governed, 9 frozen core tables, 0 violations |
+| **CTB Registry** | 249 tables governed, 9 frozen core tables, 0 violations |
 | **Band Caps** | No DOL = max Band 2. Blog alone = max Band 1 |
 
 ---

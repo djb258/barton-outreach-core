@@ -15,7 +15,7 @@ As of 2026-02-06, the system uses **CTB (Christmas Tree Backbone)** as the autho
 
 | Property | Value |
 |----------|-------|
-| **Total Tables** | 246 |
+| **Total Tables** | 249 |
 | **Spine Table** | `outreach.outreach` |
 | **Universal Join Key** | `outreach_id` |
 | **Sovereign Eligible** | 95,004 |
@@ -36,14 +36,15 @@ All messaging targets exactly one of three slot types:
 
 | Leaf Type | Count | Description |
 |-----------|-------|-------------|
-| CANONICAL | 50 | Primary data tables |
-| ARCHIVE | 112 | Archive/backup tables |
-| SYSTEM | 23 | System/metadata |
-| DEPRECATED | 21 | Legacy (read-only) |
-| ERROR | 14 | Error tracking |
-| STAGING | 12 | Intake/staging |
+| ARCHIVE | 119 | Archive/backup tables |
+| SYSTEM | 36 | System/metadata |
+| CANONICAL | 26 | Primary data tables |
+| DEPRECATED | 24 | Legacy (read-only) |
+| STAGING | 13 | Intake/staging |
+| ERROR | 11 | Error tracking |
 | MV | 8 | Materialized views |
-| REGISTRY | 6 | Lookup/reference |
+| REGISTRY | 7 | Lookup/reference |
+| SUPPORTING | 5 | Operational data serving CANONICAL tables (ADR required) |
 
 ### CTB Sub-Hub Coverage
 
@@ -138,7 +139,7 @@ IF company_id IS NULL OR domain IS NULL OR email_pattern IS NULL:
 | Issue | Hub-and-Spoke | CTB Solution |
 |-------|---------------|--------------|
 | Join key fragmentation | Multiple keys (company_id, domain) | Single key (outreach_id) |
-| Schema sprawl | Ad-hoc table creation | 246 registered tables with leaf types |
+| Schema sprawl | Ad-hoc table creation | 249 registered tables with leaf types |
 | Orphan records | Possible without enforcement | Prevented by registry |
 | Audit trail | Manual | Automated via ctb.table_registry |
 

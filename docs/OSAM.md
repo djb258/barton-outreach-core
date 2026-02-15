@@ -907,10 +907,15 @@ WHERE is_frozen = TRUE;
 
 | Leaf Type | Count | Description |
 |-----------|-------|-------------|
-| CANONICAL | 50 | Primary data tables |
-| ARCHIVE | 112 | Archive tables |
-| ERROR | 14 | Error tracking |
-| DEPRECATED | 21 | Legacy (read-only) |
+| ARCHIVE | 119 | Archive tables |
+| SYSTEM | 36 | System/metadata |
+| CANONICAL | 26 | Primary data tables |
+| DEPRECATED | 24 | Legacy (read-only) |
+| STAGING | 13 | Intake/staging |
+| ERROR | 11 | Error tracking |
+| MV | 8 | Materialized views |
+| REGISTRY | 7 | Lookup/reference |
+| SUPPORTING | 5 | Operational data serving CANONICAL tables (ADR required) |
 
 **Full Registry**: See `docs/audit/CTB_GUARDRAIL_MATRIX.csv`
 

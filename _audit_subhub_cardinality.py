@@ -195,8 +195,19 @@ def run_audit():
             for schema, table in tables:
                 declared.add((schema, table))
 
-    # Also include the main hub spine table
-    declared.add(("outreach", "outreach"))
+    # Also include the main hub spine table and known hub-level tables
+    # (these belong to the hub itself, not to any sub-hub)
+    declared.add(("outreach", "outreach"))           # Main hub spine
+    declared.add(("outreach", "bit_scores"))         # BIT scoring engine (hub-level)
+    declared.add(("outreach", "bit_errors"))         # BIT errors (hub-level)
+    declared.add(("outreach", "outreach_errors"))    # Spine errors (hub-level)
+    declared.add(("outreach", "appointments"))       # Appointments lane (hub-level)
+    declared.add(("outreach", "people"))             # People data (hub-level, frozen)
+    declared.add(("outreach", "people_errors"))      # People errors (hub-level)
+    declared.add(("outreach", "url_discovery_failures"))  # URL failures (hub-level)
+    declared.add(("people", "people_invalid"))       # Invalid records (hub-level)
+    declared.add(("people", "people_sidecar"))       # Enrichment sidecar (hub-level)
+    declared.add(("people", "person_scores"))        # Person BIT scores (hub-level)
 
     # Check outreach.* and people.* for CANONICAL/ERROR/SUPPORTING tables not in our list
     unaccounted = []

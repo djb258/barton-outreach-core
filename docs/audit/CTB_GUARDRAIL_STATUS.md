@@ -8,21 +8,22 @@
 
 | Metric | Value |
 |--------|-------|
-| Total Registered | 246 |
+| Total Registered | 249 |
 | Frozen (Immutable) | 9 |
 
 ### Leaf Type Distribution
 
 | Leaf Type | Count |
 |-----------|-------|
-| ARCHIVE | 112 |
-| CANONICAL | 50 |
-| SYSTEM | 23 |
-| DEPRECATED | 21 |
-| ERROR | 14 |
-| STAGING | 12 |
+| ARCHIVE | 119 |
+| SYSTEM | 36 |
+| CANONICAL | 26 |
+| DEPRECATED | 24 |
+| STAGING | 13 |
+| ERROR | 11 |
 | MV | 8 |
-| REGISTRY | 6 |
+| REGISTRY | 7 |
+| SUPPORTING | 5 |
 
 ## 2. NOT NULL Constraint Status
 

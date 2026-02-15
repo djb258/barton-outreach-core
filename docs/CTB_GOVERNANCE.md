@@ -23,7 +23,7 @@
 ```
 Schema: ctb
 Tables:
-  - ctb.table_registry (246 rows) - Master table classification
+  - ctb.table_registry (249 rows) - Master table classification
   - ctb.violation_log (audit trail) - Schema violation tracking
 ```
 
@@ -31,7 +31,7 @@ Tables:
 
 | Metric | Value |
 |--------|-------|
-| Total Tables Registered | 246 |
+| Total Tables Registered | 249 |
 | Frozen Core Tables | 9 |
 | Current Violations | 0 |
 | **CL Total** | 102,922 (95,004 eligible + 6,499 excluded + 1,419 new lanes) |
@@ -46,14 +46,15 @@ Every table in the database is assigned exactly one leaf type:
 
 | Leaf Type | Count | Description | Modification Rules |
 |-----------|-------|-------------|-------------------|
-| **CANONICAL** | 50 | Primary data tables | Normal write access |
-| **ARCHIVE** | 112 | CTB archive tables | Append-only |
-| **SYSTEM** | 23 | System/metadata tables | Admin only |
-| **DEPRECATED** | 21 | Legacy tables | Read-only |
-| **ERROR** | 14 | Error tracking tables | Append-only |
-| **STAGING** | 12 | Intake/staging tables | Temporary data |
+| **ARCHIVE** | 119 | Archive/history tables | Append-only |
+| **SYSTEM** | 36 | System/metadata/audit tables | Admin only |
+| **CANONICAL** | 26 | Primary data tables | Normal write access |
+| **DEPRECATED** | 24 | Legacy tables | Read-only |
+| **STAGING** | 13 | Intake/staging tables | Temporary data |
+| **ERROR** | 11 | Error tracking tables | Append-only |
 | **MV** | 8 | Materialized view candidates | Refresh-only |
-| **REGISTRY** | 6 | Lookup/reference tables | Admin only |
+| **REGISTRY** | 7 | Lookup/reference tables | Admin only |
+| **SUPPORTING** | 5 | Operational data serving a CANONICAL table (ADR required) | Normal write access |
 
 ### 2.1 Leaf Type Query
 
@@ -85,8 +86,8 @@ The following 9 tables are **FROZEN** and require formal change request before m
 | `outreach` | `blog` | Blog/content signals |
 | `outreach` | `people` | People references |
 | `outreach` | `bit_scores` | BIT scoring data |
-| `people` | `people_master` | Contact master records |
-| `people` | `company_slot` | Executive slot assignments |
+| `people` | `people_master` | Contact master records (SUPPORTING) |
+| `people` | `company_slot` | Executive slot assignments (CANONICAL) |
 
 ### 3.1 Frozen Table Query
 
@@ -179,7 +180,7 @@ These tables are marked DEPRECATED but retain data:
 ### 6.1 Phase 1: Initial Lock (CTB_PHASE1_LOCK)
 
 - Created CTB registry schema
-- Registered all 246 tables
+- Registered all tables (246 initial, 249 after ADR-020 cleanup)
 - Established leaf type classification
 
 ### 6.2 Phase 2: Column Hygiene (CTB_PHASE2_COLUMN_HYGIENE)
@@ -310,8 +311,9 @@ CREATE EVENT TRIGGER ctb_table_creation_check
 
 | Field | Value |
 |-------|-------|
-| Version | 1.0.0 |
+| Version | 1.1.0 |
 | Created | 2026-02-06 |
+| Last Modified | 2026-02-15 |
 | Author | System |
 | Status | ACTIVE |
 | Review Cycle | Quarterly |
