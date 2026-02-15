@@ -43,6 +43,10 @@ __pycache__/
 
 # Temporary data files
 *.csv
-!exports/*.csv
 nul
 output/
+
+# Archives (data files and env templates)
+archive/data-files/**/*.csv
+archive/data-files/**/*.log
+archive/**/env.example.txt
