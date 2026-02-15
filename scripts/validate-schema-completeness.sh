@@ -9,7 +9,8 @@
 # Exit: 0 = complete, 1 = violations found, 2 = dependency error
 # ═══════════════════════════════════════════════════════════════════════════════
 
-set -euo pipefail
+set -uo pipefail
+## NOTE: -e removed — incompatible with ((VAR++)) arithmetic (returns 1 when VAR=0)
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'

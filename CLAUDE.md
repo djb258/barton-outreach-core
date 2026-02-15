@@ -52,7 +52,6 @@ The OSAM tells you exactly where to go for any data question:
 > | blog | blog | blog_errors | - | blog_ingress_control |
 > | people | company_slot (CANONICAL) + people_master (SUPPORTING, ADR-020) | people_errors | - | slot_ingress_control, title_slot_mapping |
 > | bit | bit_scores | bit_errors | bit_signals, movement_events | - |
-> | execution | appointments, campaigns, sequences | - | engagement_events | - |
 >
 > **Do NOT elevate supportive/reference tables to sub-hub members.** The `dol.*` schema has 27 data-bearing filing tables (+ 2 empty staging tables) — they feed INTO `outreach.dol`, they are not part of the sub-hub. Total: 11,124,508 rows across 3 years (2023–2025).
 
@@ -555,12 +554,6 @@ barton-outreach-core/
 │   │           ├── processors/
 │   │           └── importers/
 │   │
-│   ├── outreach-execution/            # Sub-hub (04.04.04)
-│   │   ├── hub.manifest.yaml
-│   │   └── imo/
-│   │       └── middle/
-│   │           └── outreach_hub.py
-│   │
 │   └── coverage/                      # Coverage Hub (04.04.06)
 │       ├── hub.manifest.yaml
 │       └── imo/
@@ -714,9 +707,6 @@ from hubs.people_intelligence.imo.middle.phases import Phase5EmailGeneration
 # DOL Filings Hub
 from hubs.dol_filings import DOLHub, EINMatcher
 
-# Outreach Execution Hub
-from hubs.outreach_execution import OutreachHub
-
 # Spokes (I/O only)
 from spokes.target_people import SlotRequirementsIngress, SlotAssignmentsEgress
 ```
@@ -739,7 +729,6 @@ contracts/cl-identity.contract.yaml
 hubs/company-target/hub.manifest.yaml
 hubs/people-intelligence/hub.manifest.yaml
 hubs/dol-filings/hub.manifest.yaml
-hubs/outreach-execution/hub.manifest.yaml
 ```
 
 ---
