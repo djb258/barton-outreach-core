@@ -22,9 +22,11 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 
 manifest:
-  version: "1.7.0"
-  last_updated: "2026-02-05"
-  total_file_count: 95
+  version: "2.0.0"
+  last_updated: "2026-02-06"
+  total_file_count: 96
+  ctb_hardening_version: "2.0.0"
+  note: "CTB Hardening refactor - ARCHITECTURE.md consolidates architecture doctrine"
   authority: "CONSTITUTIONAL"
   scope: "PARENT"
   repository: "imo-creator"
@@ -100,20 +102,32 @@ files:
   # DOCTRINE (LOCKED - AI CANNOT MODIFY)
   # ═══════════════════════════════════════════════════════════════════════════
   doctrine:
-    - path: "templates/doctrine/CANONICAL_ARCHITECTURE_DOCTRINE.md"
-      purpose: "Root doctrine - CC layers, CTB structure"
+    # PRIMARY ARCHITECTURE DOCTRINE (READ FIRST)
+    - path: "templates/doctrine/ARCHITECTURE.md"
+      purpose: "CTB Constitutional Law - CTB, CC, Hub-Spoke, IMO, Descent, PID, ownership"
       required: true
       locked: true
+      version: "2.0.0"
+      note: "Primary architecture doctrine. Consolidates CANONICAL, HUB_SPOKE, and ALTITUDE."
+
+    # REDIRECT FILES (backward compatibility)
+    - path: "templates/doctrine/CANONICAL_ARCHITECTURE_DOCTRINE.md"
+      purpose: "REDIRECT → ARCHITECTURE.md"
+      required: true
+      locked: true
+      status: "REDIRECT"
 
     - path: "templates/doctrine/HUB_SPOKE_ARCHITECTURE.md"
-      purpose: "Hub/Spoke geometry, IMO model"
+      purpose: "REDIRECT → ARCHITECTURE.md Part IV"
       required: true
       locked: true
+      status: "REDIRECT"
 
     - path: "templates/doctrine/ALTITUDE_DESCENT_MODEL.md"
-      purpose: "Descent gates, altitude levels"
+      purpose: "REDIRECT → ARCHITECTURE.md Part VI"
       required: true
       locked: true
+      status: "REDIRECT"
 
     - path: "templates/doctrine/REPO_REFACTOR_PROTOCOL.md"
       purpose: "Refactor sequence, structure requirements"
@@ -614,9 +628,9 @@ reading_order:
         prerequisites: ["IMO_SYSTEM_SPEC.md"]
 
       - order: 5
-        file: "templates/doctrine/CANONICAL_ARCHITECTURE_DOCTRINE.md"
+        file: "templates/doctrine/ARCHITECTURE.md"
         location: "templates/doctrine/"
-        purpose: "Root doctrine - CC layers, CTB structure"
+        purpose: "Primary architecture doctrine - CC layers, CTB structure, Hub-Spoke, IMO, Descent"
         required: true
         prerequisites: ["AI_EMPLOYEE_OPERATING_CONTRACT.md"]
 
@@ -625,7 +639,7 @@ reading_order:
         location: "templates/"
         purpose: "Tool registry - check before using any tool"
         required: true
-        prerequisites: ["CANONICAL_ARCHITECTURE_DOCTRINE.md"]
+        prerequisites: ["ARCHITECTURE.md"]
 
       - order: 7
         file: "templates/claude/APPLY_DOCTRINE.prompt.md"
@@ -901,6 +915,7 @@ update_manifest:
   always_sync:
     description: "These files are ALWAYS synced on update"
     files:
+      - "templates/doctrine/ARCHITECTURE.md"
       - "templates/doctrine/CANONICAL_ARCHITECTURE_DOCTRINE.md"
       - "templates/doctrine/HUB_SPOKE_ARCHITECTURE.md"
       - "templates/doctrine/ALTITUDE_DESCENT_MODEL.md"

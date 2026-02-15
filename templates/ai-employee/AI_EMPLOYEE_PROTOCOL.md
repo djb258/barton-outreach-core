@@ -22,13 +22,13 @@ This protocol derives all authority from existing constitutional doctrine:
 | Source Document | Authority Inherited |
 |-----------------|---------------------|
 | `CONSTITUTION.md` | Transformation Law (CONST → VAR), Governance Direction |
-| `CANONICAL_ARCHITECTURE_DOCTRINE.md` | CC layers, CTB structure, Hub-Spoke geometry |
+| `ARCHITECTURE.md` | CC layers, CTB structure, Hub-Spoke geometry |
 | `AI_EMPLOYEE_OPERATING_CONTRACT.md` | Operator role, escalation rules, halt conditions |
 | `REPO_REFACTOR_PROTOCOL.md` | Remediation order, validation requirements |
 
 **This protocol does not define authority. It operationalizes authority defined elsewhere.**
 
-For definitions of Sovereign, CC layers, Governance Direction, and Territory ownership, see `CONSTITUTION.md` and `CANONICAL_ARCHITECTURE_DOCTRINE.md`.
+For definitions of Sovereign, CC layers, Governance Direction, and Territory ownership, see `CONSTITUTION.md` and `ARCHITECTURE.md`.
 
 ---
 
@@ -52,9 +52,9 @@ CHILD REPOS (Operating Territory)
 AI EMPLOYEE (This protocol)
 ```
 
-**Diagram does not confer authority.** For authoritative hierarchy, see `CANONICAL_ARCHITECTURE_DOCTRINE.md` §2 (Canonical Chain).
+**Diagram does not confer authority.** For authoritative hierarchy, see `ARCHITECTURE.md` Part III (Canonical Chain).
 
-**AI employees operate at CC-04.** Per `CANONICAL_ARCHITECTURE_DOCTRINE.md` §2.1, CC-04 is the Process layer: execution instances within a context. AI employees execute. They do not define, govern, or legislate.
+**AI employees operate at CC-04.** Per `ARCHITECTURE.md` Part III, CC-04 is the Process layer: execution instances within a context. AI employees execute. They do not define, govern, or legislate.
 
 ---
 
@@ -142,7 +142,7 @@ STEP 2: Does templates/doctrine/ directory exist?
 1. CONSTITUTION.md (repo root)
 2. templates/TEMPLATES_MANIFEST.yaml
 3. templates/IMO_SYSTEM_SPEC.md
-4. templates/doctrine/CANONICAL_ARCHITECTURE_DOCTRINE.md
+4. templates/doctrine/ARCHITECTURE.md
 5. Task-specific prompts in templates/claude/
 ```
 
@@ -292,18 +292,53 @@ Is this task in imo-creator?
   └─ NO → Continue to Gate 2
 ```
 
-### Gate 2: Constitutional Validity
+### Gate 2: HSS Entry (Declaration Check)
+
+```
+HSS (Hub-and-Spoke Setup) requires a declaration before any hub work.
+
+Does the target hub have HUB_DESIGN_DECLARATION.yaml?
+  │
+  ├─ MISSING → Run HUB_DESIGN_DECLARATION_INTAKE.prompt.md
+  │            Generate DRAFT declaration
+  │            HALT and wait for human to complete
+  │            DO NOT proceed until status = CONFIRMED
+  │
+  ├─ DRAFT → HALT. Declaration incomplete.
+  │          Instruct human to complete and sign.
+  │
+  └─ CONFIRMED → Validate declaration fields
+                 If valid → Continue to Gate 3
+                 If invalid → HALT and list defects
+```
+
+**No PRD work without confirmed declaration. No inference. No bypass.**
+
+Reference: `templates/claude/HUB_DESIGN_DECLARATION_INTAKE.prompt.md`
+
+### Gate 3: Constitutional Validity
 
 ```
 Does the target hub have:
-  ├─ PRD with CONST → VAR declaration?
+  ├─ PRD with HSS (Hub-and-Spoke Set Up) section?
+  │     ├─ Idea/Need completed?
+  │     ├─ Hub Justification (CONST → VAR) completed?
+  │     ├─ Hub-Spoke Decision (IMPLEMENTED/DECLINED)?
+  │     ├─ Candidate Constants listed?
+  │     ├─ Candidate Variables listed?
+  │     └─ Candidate Tools (SNAP-ON only)?
+  ├─ PRD body (§§1-15) restates all decisions?
   ├─ ERD with structural proof?
   └─ Process declaration?
 
+If PRD missing HSS section → INVALID PRD
 If ANY missing → REJECT or REQUEST creation first
 ```
 
-### Gate 3: Task Traceability
+**PRD without completed HSS section = INVALID. No exceptions.**
+**PRD HSS section must match HUB_DESIGN_DECLARATION.yaml.**
+
+### Gate 4: Task Traceability
 
 ```
 Can this task be traced to:
@@ -314,7 +349,7 @@ Can this task be traced to:
 If NO → REJECT. Task has no constitutional basis.
 ```
 
-### Gate 4: Authority Level
+### Gate 5: Authority Level
 
 ```
 Does this task require:
@@ -333,6 +368,7 @@ TASK ACCEPTED
 ─────────────
 Territory: [child repo name]
 Hub: [HUB-ID]
+Declaration: [path to HUB_DESIGN_DECLARATION.yaml] — CONFIRMED
 Governing PRD: [path]
 Governing ERD: [path]
 Task traces to: [CONST] → [VAR]
@@ -349,9 +385,29 @@ If any gate fails, AI employee responds:
 ```
 TASK REJECTED
 ─────────────
-Failed Gate: [1|2|3|4]
+Failed Gate: [1|2|3|4|5]
 Reason: [specific reason]
 Resolution: [what human must do first]
+```
+
+### Gate 2 Rejection (Declaration Missing/Incomplete)
+
+When Gate 2 fails, use this specific format:
+
+```
+DECLARATION REQUIRED
+────────────────────
+Hub: [hub name]
+Declaration Status: MISSING | DRAFT | INVALID
+
+Resolution:
+1. Run HUB_DESIGN_DECLARATION_INTAKE.prompt.md
+2. Complete the generated YAML
+3. Change status to CONFIRMED
+4. Sign off on the declaration
+5. Resubmit task
+
+I CANNOT proceed without a confirmed declaration.
 ```
 
 **AI employee does not attempt workarounds. Rejection is final until resolution.**

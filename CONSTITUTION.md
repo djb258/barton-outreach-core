@@ -2,8 +2,8 @@
 
 **Status**: INHERITED
 **Authority**: IMO-Creator (Parent Sovereign)
-**Version**: 1.0.0
-**Last Updated**: 2026-01-29
+**Version**: 1.1.0
+**Last Updated**: 2026-02-15
 
 ---
 
@@ -15,7 +15,8 @@ This repository inherits its constitution from **IMO-Creator**.
 |-------|-------|
 | **Parent Sovereign** | IMO-Creator |
 | **Upstream Repo** | imo-creator |
-| **Upstream Commit** | 0074aa1 |
+| **Upstream Commit** | ddf45bb |
+| **Conformance Version** | Architecture 2.1.0 |
 | **Conformance Direction** | DOWNSTREAM (we conform to parent) |
 
 **Governance Rule**: Doctrine flows DOWN, never UP. This repository CONFORMS to imo-creator. It does not CONTRIBUTE to it.
@@ -86,6 +87,7 @@ raw_people (from LinkedIn)       →    slot_assignments
 - **CTB branches**: `sys` / `data` / `app` / `ai` / `ui`
 - **CC descent gates**: PRD before code, ADR before code
 - **Hub owns logic**: Spokes carry data only, no logic
+- **Sub-hub table cardinality**: Exactly 1 CANONICAL + 1 ERROR table per sub-hub (ADR-001)
 - **Forbidden folders**: `utils`, `helpers`, `common`, `shared`, `lib`, `misc`
 - **Doctrine-first**: Structure before code, gates before artifacts
 
@@ -133,8 +135,8 @@ See: `docs/audits/AUDIT_PROCEDURE.md`
 | Field | Value |
 |-------|-------|
 | Created | 2026-01-29 |
-| Last Modified | 2026-01-29 |
-| Version | 1.0.0 |
+| Last Modified | 2026-02-15 |
+| Version | 1.1.0 |
 | Status | INHERITED |
 | Authority | IMO-Creator (Parent Sovereign) |
 | Change Protocol | ADR + HUMAN APPROVAL REQUIRED |
