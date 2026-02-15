@@ -1,0 +1,169 @@
+# EIN Status CSV Export Summary
+
+**Export Date**: 2026-02-06
+**Export Directory**: `C:\Users\CUSTOM PC\Desktop\Cursor Builds\barton-outreach-core\exports\ein_status`
+
+---
+
+## Export Overview
+
+| Category | Records | Files | Description |
+|----------|---------|-------|-------------|
+| **Companies WITH EIN** | 69,233 | 3 parts | Companies with DOL filing data and valid EIN |
+| **Companies WITHOUT EIN** | 25,771 | 2 parts | Enrichment queue - no DOL match or NULL EIN |
+| **TOTAL** | **95,004** | **5 files** | Complete outreach spine coverage |
+
+---
+
+## Verification Results
+
+```
+Total in outreach.outreach:           95,004
+Total exported (WITH + WITHOUT EIN):  95,004
+  - WITH EIN:                         69,233
+  - WITHOUT EIN:                      25,771
+
+✓ VERIFICATION PASSED: All records accounted for
+```
+
+---
+
+## File Breakdown
+
+### 1. Companies WITH EIN (69,233 records)
+
+Split into 24K chunks for manageability:
+
+| File | Records | Row Range | Size |
+|------|---------|-----------|------|
+| `companies_with_ein_part1.csv` | 24,000 | 1-24,000 | 2.2M |
+| `companies_with_ein_part2.csv` | 24,000 | 24,001-48,000 | 2.2M |
+| `companies_with_ein_part3.csv` | 21,233 | 48,001-69,233 | 1.9M |
+
+**Columns**:
+- `outreach_id` - UUID primary key
+- `domain` - Company domain
+- `ein` - Employer Identification Number
+- `filing_present` - Boolean (Form 5500 filing exists)
+- `funding_type` - Type of benefit plan funding
+- `broker_or_advisor` - Name of broker/advisor
+- `carrier` - Insurance carrier name
+
+**Sample Data**:
+```csv
+outreach_id,domain,ein,filing_present,funding_type,broker_or_advisor,carrier
+00007883-d4ed-4ce2-a7ff-0bd3a6ca059e,ecyclesecure.com,271859831,True,pension_only,,
+00010b8f-768d-4ba7-ae2c-e706801b40f3,boneandjoint.org.uk,342045293,True,fully_insured,,
+000566e6-c5e3-40a7-be58-01c10126b769,skofirm.com,610421389,True,fully_insured,CHARLES SCHWAB,UNITEDHEALTHCARE
+```
+
+**Notes**:
+- Used `DISTINCT ON (o.outreach_id)` to handle 917 companies with multiple DOL records
+- Selected most recent DOL record (ordered by `d.created_at DESC`)
+
+---
+
+### 2. Companies WITHOUT EIN (25,771 records)
+
+The enrichment queue - companies missing DOL data:
+
+| File | Records | Row Range | Size |
+|------|---------|-----------|------|
+| `companies_without_ein_part1.csv` | 24,000 | 1-24,000 | 2.5M |
+| `companies_without_ein_part2.csv` | 1,771 | 24,001-25,771 | 181K |
+
+**Columns**:
+- `outreach_id` - UUID primary key
+- `domain` - Company domain
+- `company_name` - Company name (from CL)
+- `email_method` - Email pattern (if discovered)
+
+**Sample Data**:
+```csv
+outreach_id,domain,company_name,email_method
+d26f0653-6deb-44e2-927e-f963236bd339,1-pack.us,1-Pack,{first}.{last}@1-pack.us
+867f2a50-ab94-4025-869d-19e2be7081ca,100holegolf.com,100 Hole Golf,
+1b2d40a0-4350-46ee-89cf-aabcf8713463,101mobility.com,101 Mobility,{first}.{last}@101mobility.com
+```
+
+**Notes**:
+- Includes companies not in `outreach.dol` table
+- Includes companies in `outreach.dol` with `NULL` EIN
+- These are candidates for DOL enrichment pipeline (WO-DOL-001)
+
+---
+
+## SQL Queries Used
+
+### Companies WITH EIN
+```sql
+SELECT DISTINCT ON (o.outreach_id)
+    o.outreach_id,
+    o.domain,
+    d.ein,
+    d.filing_present,
+    d.funding_type,
+    d.broker_or_advisor,
+    d.carrier
+FROM outreach.outreach o
+JOIN outreach.dol d ON o.outreach_id = d.outreach_id
+WHERE d.ein IS NOT NULL
+ORDER BY o.outreach_id, d.created_at DESC;
+```
+
+### Companies WITHOUT EIN
+```sql
+SELECT
+    o.outreach_id,
+    o.domain,
+    ci.company_name,
+    ct.email_method
+FROM outreach.outreach o
+LEFT JOIN outreach.dol d ON o.outreach_id = d.outreach_id
+LEFT JOIN outreach.company_target ct ON o.outreach_id = ct.outreach_id
+LEFT JOIN cl.company_identity ci ON o.sovereign_id = ci.sovereign_company_id
+WHERE d.ein IS NULL OR d.outreach_id IS NULL
+ORDER BY o.domain;
+```
+
+---
+
+## Key Insights
+
+1. **EIN Coverage**: 72.9% of companies have EIN data (69,233 / 95,004)
+2. **Enrichment Queue**: 27.1% of companies need DOL enrichment (25,771 / 95,004)
+3. **Duplicate DOL Records**: 917 companies had multiple DOL filing records (resolved by selecting most recent)
+4. **Email Pattern Coverage**: Most companies in WITHOUT EIN queue have email patterns discovered
+
+---
+
+## Next Steps
+
+### For Companies WITH EIN (69,233)
+- Ready for DOL-powered marketing campaigns
+- Use EIN for regulatory compliance targeting
+- Leverage broker/advisor/carrier data for personalization
+
+### For Companies WITHOUT EIN (25,771)
+- Queue for DOL enrichment pipeline (WO-DOL-001)
+- Alternative enrichment sources:
+  - LinkedIn company search
+  - Third-party EIN databases
+  - Manual research for high-value targets
+- Still eligible for marketing if email patterns exist (most do)
+
+---
+
+## Technical Notes
+
+- **Export Script**: `generate_ein_status_exports.py`
+- **Chunk Size**: 24,000 records per file
+- **Database**: Neon PostgreSQL (Marketing DB)
+- **Encoding**: UTF-8
+- **Format**: Standard CSV with headers
+
+---
+
+**Generated by**: Barton Outreach Core
+**Schema Version**: v1.0 Operational Baseline
+**CL-Outreach Alignment**: 51,148 = 51,148 ✓

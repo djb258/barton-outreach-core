@@ -1,0 +1,6 @@
+FIELD_POSITION,FIELD_NAME,TYPE,SIZE (only for text fields)
+===========================================
+1,ACK_ID,TEXT,30
+2,ROW_ORDER,NUMERIC
+3,CODE_ORDER,NUMERIC
+4,SERVICE_CODE,TEXT,2

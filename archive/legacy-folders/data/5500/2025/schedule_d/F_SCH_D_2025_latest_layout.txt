@@ -1,0 +1,7 @@
+FIELD_POSITION,FIELD_NAME,TYPE,SIZE (only for text fields)
+===========================================
+1,ACK_ID,TEXT,30
+2,SCH_D_PLAN_YEAR_BEGIN_DATE,TEXT,10
+3,SCH_D_TAX_PRD,TEXT,10
+4,SCH_D_PN,TEXT,3
+5,SCH_D_EIN,TEXT,9

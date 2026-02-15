@@ -1,0 +1,4 @@
+FIELD_POSITION,FIELD_NAME,TYPE,SIZE (only for text fields)
+===========================================
+1,ACK_ID,TEXT,30
+2,PROVIDER_EXCLUDE_IND,TEXT,1
