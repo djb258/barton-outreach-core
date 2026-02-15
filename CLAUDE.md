@@ -7,6 +7,20 @@
 **Primary Purpose**: Marketing intelligence & executive enrichment platform
 **Database**: Neon PostgreSQL (serverless)
 **Last Refactored**: 2026-02-09
+**Manifest Version**: 2.8.0 (synced 2026-02-15)
+
+---
+
+## SESSION STARTUP (MANDATORY)
+
+Every session, before any work. See `STARTUP_PROTOCOL.md` for full sequence.
+
+1. **Doctrine version check** — compare `DOCTRINE.md` version vs parent `TEMPLATES_MANIFEST.yaml`
+2. **Load Tier 1** — 3 files only: `IMO_CONTROL.json`, `CC_OPERATIONAL_DIGEST.md`, `CLAUDE.md`
+3. **Verify checkpoint** — read `DOCTRINE_CHECKPOINT.yaml`, fill if stale (>24h)
+4. **Ready** — begin work, load Tier 2 on-demand
+
+**Rollback**: If a doctrine sync breaks the repo, see `doctrine/ROLLBACK_PROTOCOL.md`.
 
 ---
 
@@ -1004,7 +1018,7 @@ Aggregates signals from all hubs to compute intent scores.
 
 ---
 
-**Last Updated**: 2026-02-09
+**Last Updated**: 2026-02-15
 **Architecture**: CL Parent-Child Doctrine v1.1 + CTB Registry v1.0
 **Status**: v1.0 OPERATIONAL BASELINE (CERTIFIED + FROZEN)
 **CL Total**: 102,922 | **Outreach Spine**: 95,837 | **Three Lanes**: Cold (95,837) + Appointments (771) + CFO Partners (833)
@@ -1247,7 +1261,7 @@ SELECT * FROM bit.proof_lines WHERE company_unique_id = ? AND valid_until > NOW(
 
 ---
 
-**Last Updated**: 2026-02-09
+**Last Updated**: 2026-02-15
 **Architecture**: CL Parent-Child Doctrine v1.1 + BIT Authorization v2.0 + CTB Registry v1.0
 **Status**: v1.0 OPERATIONAL BASELINE + BIT v2.0 Phase 1 + CTB Phase 3 LOCKED
 **Verified By**: `scripts/full_numbers_audit.py` (2026-02-09)
