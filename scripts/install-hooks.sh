@@ -10,7 +10,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-HOOKS_SRC="$SCRIPT_DIR/hooks"
+HOOKS_SRC="$REPO_ROOT/templates/scripts/hooks"
 HOOKS_DEST="$REPO_ROOT/.git/hooks"
 
 echo ""

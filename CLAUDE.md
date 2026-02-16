@@ -40,8 +40,6 @@ The OSAM tells you exactly where to go for any data question:
 
 ### ⛔ BEFORE EDITING ANY SUB-HUB DEFINITION (OSAM, PRD, ERD, SCHEMA):
 
-> **READ `docs/audit/CTB_REMEDIATION_SUMMARY.md` → Phase 2: Leaf Lock table FIRST.**
->
 > Each sub-hub has exactly **4 core tables** (CANONICAL / ERRORS / MV / REGISTRY).
 > Everything else is supportive reference data — queryable, but **NOT a sub-hub member**.
 >
@@ -72,9 +70,6 @@ The OSAM tells you exactly where to go for any data question:
 
 ### Key Documentation:
 - **[docs/OSAM.md](docs/OSAM.md)** - WHERE TO GO for any data question
-- **[docs/DATA_MAP.md](docs/DATA_MAP.md)** - WHERE ALL DATA LIVES (complete inventory, LinkedIn, intake, enrichment, CSVs)
-- **[docs/AUTHORITATIVE_TABLE_REFERENCE.md](docs/AUTHORITATIVE_TABLE_REFERENCE.md)** - Complete table reference
-- **[docs/EMAIL_VERIFICATION_STATUS.md](docs/EMAIL_VERIFICATION_STATUS.md)** - Email verification results & queries
 - **[docs/diagrams/PEOPLE_DATA_FLOW_ERD.md](docs/diagrams/PEOPLE_DATA_FLOW_ERD.md)** - People slot/enrichment flow
 
 ### Current Enrichment Status (2026-02-09 VERIFIED):
@@ -113,7 +108,7 @@ The OSAM tells you exactly where to go for any data question:
 
 ### Email Verification Status (2026-02-10):
 
-**See**: [docs/EMAIL_VERIFICATION_STATUS.md](docs/EMAIL_VERIFICATION_STATUS.md) for full details and queries.
+**Email verification data is inline below.**
 
 | Metric | Count | % |
 |--------|-------|---|
@@ -130,8 +125,7 @@ The OSAM tells you exactly where to go for any data question:
 - `outreach_ready = TRUE` → Safe to send outreach
 - `email_verified = FALSE AND outreach_ready = FALSE` → INVALID, needs Hunter re-enrichment
 
-**Export files**:
-- `exports/domains_for_hunter_reenrichment.csv` — 18,457 domains needing fresh contacts
+**Re-enrichment**: 18,457 domains need fresh Hunter contacts (12,355 slots total)
 
 ---
 
@@ -175,7 +169,7 @@ JOIN company.company_source_urls csu ON csu.company_unique_id = cm.company_uniqu
 WHERE csu.source_type IN ('about_page', 'press_page');
 ```
 
-**Full Documentation**: [docs/AUTHORITATIVE_TABLE_REFERENCE.md](docs/AUTHORITATIVE_TABLE_REFERENCE.md#blog-sub-hub-url-storage)
+**Bridge and query examples are inline above.**
 
 ---
 
@@ -194,11 +188,8 @@ WHERE csu.source_type IN ('about_page', 'press_page');
 
 | Document | Purpose |
 |----------|---------|
-| `docs/AUTHORITATIVE_TABLE_REFERENCE.md` | **COMPANY SOURCE** - Read FIRST |
-| `docs/DATA_REGISTRY.md` | **WHERE DATA LIVES** - Check FIRST before searching |
-| `docs/GO-LIVE_STATE_v1.0.md` | What is live vs intentionally incomplete |
+| `docs/OSAM.md` | **QUERY ROUTING** - Which table for which question |
 | `doctrine/DO_NOT_MODIFY_REGISTRY.md` | Frozen components requiring change request |
-| `docs/reports/FINAL_CERTIFICATION_REPORT_2026-01-19.md` | Certification audit results |
 
 ### Deferred Work Orders
 
@@ -465,7 +456,7 @@ OUTREACH                                    SALES
 | Data flows FORWARD ONLY* | Bound by outreach_context_id |
 | Sub-hubs may re-run if upstream unchanged | Idempotent design |
 
-*\*Exception: Verified Email → CT Promotion (reverse flow). See OUTREACH_WATERFALL_DOCTRINE.md v1.3*
+*\*Exception: Verified Email → CT Promotion (reverse flow per Waterfall Doctrine v1.3*
 
 ### Verification Agent Chain (v1.3)
 
@@ -475,7 +466,7 @@ OUTREACH                                    SALES
 | **Verification Gate** | CT has verified email + pattern | Flips email_pattern_status GUESS → FACT |
 | **Bounce Downgrade** | Hard bounce on verified email | Unlocks pattern, resets to GUESS |
 
-**Canonical Reference**: `docs/OUTREACH_WATERFALL_DOCTRINE.md` (v1.3)
+**Waterfall Doctrine**: v1.3 (rules are inline above)
 
 ### Hub Registry (Waterfall Order)
 
@@ -494,11 +485,11 @@ OUTREACH                                    SALES
 
 | Contract | Direction | Trigger |
 |----------|-----------|---------|
-| target-people | Bidirectional | slot_requirement / slot_assignment |
-| target-dol | Bidirectional | ein_lookup / filing_signal |
-| target-outreach | Bidirectional | target_selection / engagement_signal |
+| company-people | Bidirectional | slot_requirement / slot_assignment |
+| company-dol | Bidirectional | ein_lookup / filing_signal |
+| company-outreach | Bidirectional | target_selection / engagement_signal |
 | people-outreach | Bidirectional | contact_selection / contact_state |
-| cl-identity | Ingress Only | company_unique_id from CL |
+| signal-company | Ingress Only | external signals into company |
 
 ### Key Doctrine Rules
 
@@ -528,8 +519,7 @@ barton-outreach-core/
 │   │       │   ├── bit_engine.py
 │   │       │   ├── company_pipeline.py
 │   │       │   ├── phases/            # Phases 1-4
-│   │       │   ├── email/             # Pattern discovery
-│   │       │   └── utils/
+│   │       │   └── email/             # Pattern discovery
 │   │       └── output/                # Outgoing spoke data
 │   │           └── neon_writer.py
 │   │
@@ -553,6 +543,18 @@ barton-outreach-core/
 │   │           ├── ein_matcher.py
 │   │           ├── processors/
 │   │           └── importers/
+│   │
+│   ├── blog-content/                  # Sub-hub (04.04.05)
+│   │   ├── hub.manifest.yaml
+│   │   └── imo/
+│   │       └── middle/
+│   │           └── discover_blog_urls.py
+│   │
+│   ├── outreach-execution/            # Sub-hub (04.04.04)
+│   │   ├── hub.manifest.yaml
+│   │   └── imo/
+│   │       └── middle/
+│   │           └── outreach_hub.py
 │   │
 │   └── coverage/                      # Coverage Hub (04.04.06)
 │       ├── hub.manifest.yaml
@@ -582,9 +584,10 @@ barton-outreach-core/
 │   └── signal-company.contract.yaml
 │
 ├── docs/                              # DOCUMENTATION
-│   ├── schema_map.json                # Neon schema reference
+│   ├── OSAM.md                        # Query routing map
 │   ├── adr/                           # Architecture Decision Records
 │   ├── prd/                           # Product Requirements
+│   ├── diagrams/                      # ERDs and flow diagrams
 │   └── architecture/
 │
 ├── doctrine/                          # DOCTRINE REFERENCE
@@ -592,16 +595,7 @@ barton-outreach-core/
 │   ├── ple/
 │   └── schemas/
 │
-├── global-config/                     # IMO-RA TEMPLATES
-│   └── scripts/
-│
-├── infra/                             # INFRASTRUCTURE
-│   ├── docs/
-│   ├── migrations/
-│   └── scripts/
-│
-├── neon/                              # DATABASE MIGRATIONS
-│   └── migrations/
+├── migrations/                        # DATABASE MIGRATIONS (SQL)
 │
 ├── ops/                               # OPERATIONS
 │   ├── enforcement/
@@ -610,13 +604,17 @@ barton-outreach-core/
 │   ├── providers/
 │   └── validation/
 │
-├── shared/                            # SHARED UTILITIES
-│   ├── logger/
-│   └── wheel/
+├── src/                               # SOURCE CODE
+│   ├── sys/heir/                      # HEIR identity system
+│   └── data/hub/generated/            # Codegen TypeScript output
 │
-├── templates/                         # TEMPLATES
+├── scripts/                           # OPERATIONAL SCRIPTS
+│
+├── templates/                         # IMO-CREATOR TEMPLATES
 │   ├── adr/
 │   ├── checklists/
+│   ├── claude/
+│   ├── scripts/
 │   ├── pr/
 │   └── prd/
 │
@@ -625,10 +623,13 @@ barton-outreach-core/
 │   ├── spokes/
 │   └── ops/
 │
-├── integrations/                      # EXTERNAL INTEGRATIONS
-├── tooling/                           # TOOLING
+├── archive/                           # ARCHIVED files (reports, one-off scripts, stale exports)
 │
 ├── CLAUDE.md                          # This file
+├── DOCTRINE.md                        # Doctrine v2.8.0
+├── REGISTRY.yaml                      # Hub identity declaration
+├── column_registry.yml                # Schema column registry
+├── DOCTRINE_CHECKPOINT.yaml           # Session checkpoint
 ├── README.md
 ├── LICENSE
 ├── package.json
@@ -715,11 +716,11 @@ from spokes.target_people import SlotRequirementsIngress, SlotAssignmentsEgress
 
 ```yaml
 # View spoke contracts
-contracts/target-people.contract.yaml
-contracts/target-dol.contract.yaml
-contracts/target-outreach.contract.yaml
+contracts/company-people.contract.yaml
+contracts/company-dol.contract.yaml
+contracts/company-outreach.contract.yaml
 contracts/people-outreach.contract.yaml
-contracts/cl-identity.contract.yaml
+contracts/signal-company.contract.yaml
 ```
 
 ### Hub Manifests
@@ -729,6 +730,9 @@ contracts/cl-identity.contract.yaml
 hubs/company-target/hub.manifest.yaml
 hubs/people-intelligence/hub.manifest.yaml
 hubs/dol-filings/hub.manifest.yaml
+hubs/blog-content/hub.manifest.yaml
+hubs/outreach-execution/hub.manifest.yaml
+hubs/coverage/hub.manifest.yaml
 ```
 
 ---
@@ -939,14 +943,14 @@ DOCTRINE_VERSION=04
 
 | Document | Location | Purpose |
 |----------|----------|---------|
+| OSAM | `docs/OSAM.md` | Query routing map |
 | Hub Manifests | `hubs/*/hub.manifest.yaml` | Hub definitions |
 | Spoke Contracts | `contracts/*.contract.yaml` | Spoke I/O contracts |
-| Schema Reference | `docs/schema_map.json` | Database schema |
 | Architecture | `docs/architecture/` | Design docs |
 | ADRs | `docs/adr/` | Decision records |
-| HEIR Guide | `docs/HEIR_INTEGRATION_GUIDE.md` | Identity tracking |
 | BIT Architecture | `docs/adr/ADR-014_BIT_Engine_Architecture.md` | Buyer intent scoring |
 | HEIR Doctrine | `heir.doctrine.yaml` | Hub identity config |
+| Column Registry | `column_registry.yml` | Schema column metadata |
 
 ---
 
@@ -1011,7 +1015,7 @@ Aggregates signals from all hubs to compute intent scores.
 **Architecture**: CL Parent-Child Doctrine v1.1 + CTB Registry v1.0
 **Status**: v1.0 OPERATIONAL BASELINE (CERTIFIED + FROZEN)
 **CL Total**: 102,922 | **Outreach Spine**: 95,837 | **Three Lanes**: Cold (95,837) + Appointments (771) + CFO Partners (833)
-**Verified By**: `scripts/full_numbers_audit.py` (2026-02-09)
+**Verified By**: Full numbers audit (2026-02-09)
 
 ---
 
@@ -1037,7 +1041,7 @@ Runtime doctrine enforcement is implemented in `ops/enforcement/`:
 | `2026-01-13-outreach-execution-complete.sql` | Outreach execution (campaigns, sequences, send_log) |
 | `2026-01-13-enable-rls-production-tables.sql` | RLS on all production tables |
 
-See `infra/MIGRATION_ORDER.md` for execution order.
+See `migrations/MIGRATION_ORDER.md` for execution order.
 
 ---
 
@@ -1054,8 +1058,6 @@ See `infra/MIGRATION_ORDER.md` for execution order.
 ---
 
 ## COMMERCIAL ELIGIBILITY CLEANUP (2026-01-29)
-
-**Report**: `docs/reports/OUTREACH_CASCADE_CLEANUP_REPORT_2026-01-29.md`
 
 **Trigger**: CL excluded 5,327 non-commercial entities (government, education, healthcare, religious, insurance, financial services) to `cl.company_identity_excluded`
 
@@ -1243,7 +1245,6 @@ SELECT * FROM bit.proof_lines WHERE company_unique_id = ? AND valid_until > NOW(
 | Document | Location |
 |----------|----------|
 | ADR-017 | `docs/adr/ADR-017_BIT_Authorization_System_Migration.md` |
-| Implementation Plan | `docs/implementation/BIT_V2_IMPLEMENTATION_PLAN.md` |
 | Band Definitions | `doctrine/ple/BIT_AUTHORIZATION_BANDS.md` |
 | Proof Line Rule | `doctrine/ple/PROOF_LINE_RULE.md` |
 | Inline Context | `doctrine/BIT_AUTHORIZATION_INLINE.md` |
@@ -1253,7 +1254,7 @@ SELECT * FROM bit.proof_lines WHERE company_unique_id = ? AND valid_until > NOW(
 **Last Updated**: 2026-02-15
 **Architecture**: CL Parent-Child Doctrine v1.1 + BIT Authorization v2.0 + CTB Registry v1.0
 **Status**: v1.0 OPERATIONAL BASELINE + BIT v2.0 Phase 1 + CTB Phase 3 LOCKED
-**Verified By**: `scripts/full_numbers_audit.py` (2026-02-09)
+**Verified By**: Full numbers audit (2026-02-09)
 
 ---
 
@@ -1325,12 +1326,7 @@ Error tables have NOT NULL constraints on `error_type` discriminator:
 
 | Document | Purpose |
 |----------|---------|
-| **[docs/CTB_GOVERNANCE.md](docs/CTB_GOVERNANCE.md)** | **START HERE** - CTB governance rules, leaf types, frozen tables |
-| `docs/audit/CTB_PHASE3_ENFORCEMENT_SUMMARY.md` | Phase 3 execution summary |
-| `docs/audit/CTB_GUARDRAIL_STATUS.md` | Guardrail status report |
-| `docs/audit/CTB_DRIFT_REPORT.md` | Drift detection (23 items) |
-| `docs/audit/CTB_GUARDRAIL_MATRIX.csv` | Full table registry (249 tables) |
-| `neon/migrations/ctb_phase3_enforcement.sql` | Enforcement DDL |
+| `migrations/ctb_phase3_enforcement.sql` | Enforcement DDL |
 
 ### Query CTB Registry
 
@@ -1352,8 +1348,6 @@ SELECT * FROM ctb.violation_log;
 ---
 
 ## EXCLUSION CONSOLIDATION (2026-01-30)
-
-**Report**: `docs/reports/HUB_COMPLIANCE_AUDIT_2026-01-30.md`
 
 **Purpose**: Consolidated all non-commercial/invalid records into single exclusion table
 

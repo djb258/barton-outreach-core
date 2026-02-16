@@ -77,10 +77,6 @@ subhubs:
 
 spokes:
   ingress:
-    - spoke_id: "cl-identity-ingress"
-      name: "CL Identity Ingress"
-      contract: "contracts/cl-identity.contract.yaml"
-
     - spoke_id: "signal-company-ingress"
       name: "Signal Company Ingress"
       contract: "contracts/signal-company.contract.yaml"

@@ -361,7 +361,7 @@ echo ""
 echo "─── Check 5: Data Dictionary Staleness ─────────────────────────"
 
 DICT_FILE=""
-for candidate in "DATA_DICTIONARY.md" "docs/DATA_DICTIONARY.md" "data/DATA_DICTIONARY.md"; do
+for candidate in "docs/data/COLUMN_DATA_DICTIONARY.md" "DATA_DICTIONARY.md" "docs/DATA_DICTIONARY.md" "data/DATA_DICTIONARY.md"; do
     if [ -f "$candidate" ]; then
         DICT_FILE="$candidate"
         break
