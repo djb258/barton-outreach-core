@@ -70,7 +70,7 @@ jobs:
             echo "$FOUND"
             echo ""
             echo "CTB VIOLATION: These folders are prohibited by doctrine."
-            echo "See: CANONICAL_ARCHITECTURE_DOCTRINE.md §1.3"
+            echo "See: ARCHITECTURE.md Part II (CTB Topology)"
             exit 1
           else
             echo "PASS: No forbidden folders found"

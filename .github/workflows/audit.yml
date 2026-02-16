@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -49,72 +49,6 @@ jobs:
             echo "⚠️  No HEIR validation script found - skipping"
           fi
 
-      - name: Validate CTB Branch Map
-        run: |
-          # global-config/ctb.branchmap.yaml was removed during repo cleanup.
-          # CTB governance is now documented in docs/CTB_GOVERNANCE.md.
-          echo "Skipped - CTB branch map removed. See docs/CTB_GOVERNANCE.md."
-
-      - name: Check Doctrine ID Generation
-        run: |
-          python3 << 'EOF'
-          import os
-          import sys
-
-          required_env_vars = ['DOCTRINE_DB', 'DOCTRINE_SUBHIVE', 'DOCTRINE_APP', 'DOCTRINE_VER']
-
-          print("Checking Doctrine environment variables...")
-
-          # Check if environment variables are documented
-          if os.path.exists('.env.example'):
-              with open('.env.example', 'r') as f:
-                  env_example = f.read()
-
-              missing_vars = []
-              for var in required_env_vars:
-                  if var not in env_example:
-                      missing_vars.append(var)
-
-              if missing_vars:
-                  print(f"⚠️  Missing env vars in .env.example: {', '.join(missing_vars)}")
-              else:
-                  print("✅ All Doctrine env vars documented in .env.example")
-          else:
-              print("⚠️  .env.example not found")
-
-          # Check if ID generation code exists
-          if os.path.exists('src/server/main.py'):
-              with open('src/server/main.py', 'r') as f:
-                  content = f.read()
-
-              if 'generate_unique_id' in content and 'generate_process_id' in content:
-                  print("✅ Doctrine ID generation functions found")
-              else:
-                  print("⚠️  Doctrine ID generation functions not found in main.py")
-
-          EOF
-
-      - name: Validate Composio Integration
-        run: |
-          if [ -f "COMPOSIO_INTEGRATION.md" ]; then
-            echo "✅ Composio integration documentation found"
-
-            # Check for required Composio configuration
-            if grep -q "COMPOSIO_API_KEY" COMPOSIO_INTEGRATION.md; then
-              echo "✅ Composio API key documented"
-            else
-              echo "⚠️  Composio API key not documented"
-            fi
-
-            if grep -q "HEIR/ORBT" COMPOSIO_INTEGRATION.md; then
-              echo "✅ HEIR/ORBT compliance documented"
-            else
-              echo "⚠️  HEIR/ORBT compliance not documented"
-            fi
-          else
-            echo "⚠️  COMPOSIO_INTEGRATION.md not found"
-          fi
-
       - name: Generate Compliance Report
         if: always()
         run: |
@@ -126,15 +60,15 @@ jobs:
 
           echo "Files Checked:" >> compliance_report.txt
           echo "- heir.doctrine.yaml" >> compliance_report.txt
-          echo "- docs/CTB_GOVERNANCE.md" >> compliance_report.txt
-          echo "- COMPOSIO_INTEGRATION.md" >> compliance_report.txt
-          echo "- src/server/main.py" >> compliance_report.txt
+          echo "- CLAUDE.md" >> compliance_report.txt
+          echo "- DOCTRINE.md" >> compliance_report.txt
+          echo "- CONSTITUTION.md" >> compliance_report.txt
 
           cat compliance_report.txt
 
       - name: Upload Compliance Report
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: heir-compliance-report
           path: compliance_report.txt
