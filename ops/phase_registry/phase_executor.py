@@ -45,18 +45,19 @@ import logging
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from backend.outreach_phase_registry import (
-    get_phase_entry,
-    get_phase_function,
-    validate_phase_sequence,
-    get_next_phase,
-    get_phase_dependencies,
-    get_phase_status_summary
-)
+# TODO: backend module does not exist — need to implement or remove
+# from backend.outreach_phase_registry import (
+#     get_phase_entry,
+#     get_phase_function,
+#     validate_phase_sequence,
+#     get_next_phase,
+#     get_phase_dependencies,
+#     get_phase_status_summary
+# )
 
 # Import database utilities
 try:
-    from backend.validator.db_utils import log_to_pipeline_events, log_to_audit_log
+    from backend.validator.db_utils import log_to_pipeline_events, log_to_audit_log  # TODO: backend module does not exist
     DB_UTILS_AVAILABLE = True
 except ImportError:
     DB_UTILS_AVAILABLE = False

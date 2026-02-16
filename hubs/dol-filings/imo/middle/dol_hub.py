@@ -357,7 +357,7 @@ class DOLNodeSpoke(Spoke):
 
         # PRIORITY 2: Direct Company Hub lookup via Neon
         try:
-            from hubs.company_target.imo.middle.company_hub import CompanyHub
+            from hubs.company_target.imo.middle.company_hub import CompanyHub  # TODO: SOVEREIGNTY VIOLATION — this hub imports directly from another hub. Needs spoke contract.
             company_hub = CompanyHub()
             company = company_hub.find_company_by_ein(ein_normalized)
 

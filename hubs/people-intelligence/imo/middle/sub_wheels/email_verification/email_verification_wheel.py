@@ -12,8 +12,9 @@ from typing import Any, Dict, List, Optional
 from datetime import datetime
 import logging
 
-from ctb.sys.enrichment.pipeline_engine.wheel.bicycle_wheel import Hub, SubWheel, Spoke
-from ctb.sys.enrichment.pipeline_engine.wheel.wheel_result import WheelResult, SpokeResult, FailureResult, ResultStatus, FailureType
+# TODO: ctb/ was archived — bicycle_wheel module does not exist. Need to implement in src/sys/wheel/ or remove.
+# from ctb.sys.enrichment.pipeline_engine.wheel.bicycle_wheel import Hub, SubWheel, Spoke
+# from ctb.sys.enrichment.pipeline_engine.wheel.wheel_result import WheelResult, SpokeResult, FailureResult, ResultStatus, FailureType
 
 
 logger = logging.getLogger(__name__)

@@ -629,7 +629,7 @@ class OutreachSpoke(Spoke):
         if self._company_pipeline and hasattr(self._company_pipeline, 'hub'):
             # Check if hub has people data cached
             try:
-                from hubs.company_target.imo.output.neon_writer import CompanyNeonWriter
+                from hubs.company_target.imo.output.neon_writer import CompanyNeonWriter  # TODO: SOVEREIGNTY VIOLATION — this hub imports directly from another hub. Needs spoke contract.
                 writer = CompanyNeonWriter()
 
                 # Query people_master for this person

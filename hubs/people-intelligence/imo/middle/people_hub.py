@@ -167,7 +167,7 @@ class PeopleNodeSpoke(Spoke):
 
         # Fallback: Try to get company from hub
         try:
-            from hubs.company_target.imo.middle.company_hub import CompanyHub
+            from hubs.company_target.imo.middle.company_hub import CompanyHub  # TODO: SOVEREIGNTY VIOLATION — this hub imports directly from another hub. Needs spoke contract.
             company_hub = CompanyHub()
             company = company_hub.get_company(company_id)
 
