@@ -120,7 +120,6 @@ Per-company analysis: how many of 3 slots (CEO/CFO/HR) are filled, and quality o
 | **Domain Spec Reference** | `doctrine/REPO_DOMAIN_SPEC.md` |
 | **CC Layer** | CC-02 |
 | **PRD Constitution** | `templates/doctrine/PRD_CONSTITUTION.md` |
-| **CTB Governance** | `docs/CTB_GOVERNANCE.md` |
 
 ---
 
@@ -315,7 +314,6 @@ The People Sub-Hub manages the **person lifecycle** within the Barton Outreach s
 
 ### Phase 0: People Ingest
 
-**File:** `ctb/sys/enrichment/pipeline_engine/phases/phase0_people_ingest.py`
 **Purpose:** Classify newly ingested people into lifecycle states
 
 #### Classification Priority (First Match Wins)
@@ -395,7 +393,6 @@ bit_engine.create_signal(
 
 ### Phase 5: Email Generation
 
-**File:** `ctb/sys/enrichment/pipeline_engine/phases/phase5_email_generation.py`
 **Purpose:** Generate emails using verified patterns from Company Hub
 
 #### Tooling Declaration
@@ -481,7 +478,6 @@ if confidence in [EmailConfidence.VERIFIED, EmailConfidence.WATERFALL]:
 
 ### Phase 6: Slot Assignment
 
-**File:** `ctb/sys/enrichment/pipeline_engine/phases/phase6_slot_assignment.py`
 **Purpose:** Assign people to company HR slots based on title classification
 
 #### Tooling Declaration
@@ -602,7 +598,6 @@ if replaced_person_id:
 
 ### Phase 7: Enrichment Queue
 
-**File:** `ctb/sys/enrichment/pipeline_engine/phases/phase7_enrichment_queue.py`
 **Purpose:** Build unified queue for items needing additional processing
 
 #### Tooling Declaration
@@ -700,7 +695,6 @@ When `enable_waterfall=True`:
 
 ### Phase 8: Output Writer
 
-**File:** `ctb/sys/enrichment/pipeline_engine/phases/phase8_output_writer.py`
 **Purpose:** Write pipeline results to CSV files
 
 #### Tooling Declaration
@@ -776,8 +770,6 @@ Talent Flow detects executive movement events (people joining/leaving companies)
 | `TITLE_CHANGE` | +3.0 | Executive title/role changed |
 
 ### Talent Flow Gate
-
-**File:** `ctb/sys/enrichment/pipeline_engine/phases/talentflow_phase0_company_gate.py`
 
 Before processing any Talent Flow event:
 1. Validate `company_id` exists in Company Hub

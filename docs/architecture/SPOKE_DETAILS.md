@@ -316,7 +316,7 @@ ORDER BY total_assets DESC;
 ### DOL Data Refresh (Annual)
 
 1. Download latest datasets from DOL FOIA
-2. Run import scripts (see [FORM_5500_COMPLETE_GUIDE.md](../../ctb/sys/enrichment/FORM_5500_COMPLETE_GUIDE.md))
+2. Run import scripts via `hubs/dol-filings/imo/middle/importers/import_dol_full.py`
 3. Run matching procedures to link to company_master via EIN
 4. Verify match rates and data quality
 
@@ -332,14 +332,9 @@ ORDER BY total_assets DESC;
 
 ## File Locations
 
-**Schema Docs:**
-- [repo-data-diagrams/DOL_SPOKE_ERD.md](../../repo-data-diagrams/DOL_SPOKE_ERD.md)
-- [repo-data-diagrams/ple_schema.json](../../repo-data-diagrams/ple_schema.json)
-
 **Import Scripts:**
-- [ctb/sys/enrichment/create_schedule_a_table.js](../../ctb/sys/enrichment/create_schedule_a_table.js)
-- [ctb/sys/enrichment/import_schedule_a.py](../../ctb/sys/enrichment/import_schedule_a.py)
-- [ctb/sys/enrichment/FORM_5500_COMPLETE_GUIDE.md](../../ctb/sys/enrichment/FORM_5500_COMPLETE_GUIDE.md)
+- `hubs/dol-filings/imo/middle/importers/import_dol_full.py`
+- `hubs/dol-filings/imo/middle/importers/build_column_metadata.py`
 
 **Architecture Docs:**
 - [docs/architecture/PLE_DATA_ARCHITECTURE.md](./PLE_DATA_ARCHITECTURE.md)

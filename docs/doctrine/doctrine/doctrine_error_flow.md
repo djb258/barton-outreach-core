@@ -38,8 +38,8 @@ error_logging:
 - HEIR/ORBT ensures each remediation is tracked to a process lineage and altitude.
 
 ### Where it is implemented
-- Error sink builder: `ctb/sys/infrastructure/garage-mcp/services/mcp/modules/error_sink.py`
-- ID generators: `ctb/sys/server/blueprints/ids.py`
-- Version hashing: `ctb/sys/server/blueprints/versioning.py`
+- Error sink: `shq.master_error_log` table
+- ID generators: HEIR/ORBT system (`src/sys/heir/`)
+- Enforcement: `ops/enforcement/`
 
 

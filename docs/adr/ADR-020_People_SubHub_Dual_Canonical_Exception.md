@@ -172,7 +172,7 @@ This makes the people sub-hub **fully compliant** with OWN-10a (exactly 1 CANONI
 
 ## Migration
 
-**File**: `neon/migrations/2026-02-15-ctb-supporting-leaf-type.sql`
+**File**: `migrations/2026-02-15-ctb-supporting-leaf-type.sql`
 
 ```sql
 -- ADR-020: Add SUPPORTING leaf type + reclassify people_master
@@ -217,7 +217,7 @@ Revert CHECK constraint to 8 leaf types. UPDATE `people_master` back to CANONICA
 |----------|-----------|
 | Parent Rule | OWN-10a, OWN-10c — ARCHITECTURE.md v2.1.0 Part X §3 |
 | Parent ADR | ADR-001 (IMO-Creator) — Sub-Hub Table Cardinality Constraint |
-| Migration | `neon/migrations/2026-02-15-ctb-supporting-leaf-type.sql` |
+| Migration | `migrations/2026-02-15-ctb-supporting-leaf-type.sql` |
 | CTB Registry | `ctb.table_registry` — `people_master` reclassified |
 | Audit Script | `_audit_subhub_cardinality.py` |
 | Sub-Hub PRD | `docs/prd/PRD_PEOPLE_SUBHUB.md` v3.2 |

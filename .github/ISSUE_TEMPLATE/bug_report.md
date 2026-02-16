@@ -28,7 +28,7 @@ assignees: ''
 
 ## Environment
 - **Branch**: <!-- e.g., master, sys/chartdb -->
-- **CTB Version**: <!-- Run: `grep version global-config/ctb.branchmap.yaml` -->
+- **CTB Version**: <!-- Check: docs/CTB_GOVERNANCE.md -->
 - **OS**: <!-- e.g., Ubuntu 22.04, macOS 14, Windows 11 -->
 
 ## Logs
@@ -38,7 +38,7 @@ assignees: ''
 ```
 
 ## CTB Enforcement Status
-<!-- Run: `bash global-config/scripts/ctb_enforce.sh` and paste output -->
+<!-- CTB enforcement scripts were removed during repo cleanup. Check docs/CTB_GOVERNANCE.md for current status. -->
 ```
 <!-- enforcement output -->
 ```

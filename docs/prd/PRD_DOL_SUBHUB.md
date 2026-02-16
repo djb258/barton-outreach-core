@@ -18,7 +18,6 @@
 | **Domain Spec Reference** | `doctrine/REPO_DOMAIN_SPEC.md` |
 | **CC Layer** | CC-02 |
 | **PRD Constitution** | `templates/doctrine/PRD_CONSTITUTION.md` |
-| **CTB Governance** | `docs/CTB_GOVERNANCE.md` |
 
 ---
 
@@ -555,7 +554,6 @@ WHERE category = 'Insurance';
 ```bash
 # Enable import mode and load data
 doppler run -- python hubs/dol-filings/imo/middle/importers/import_dol_full.py \
-    --data-dir data/dol_2023 \
     --year 2023 \
     --table all
 ```
@@ -591,7 +589,7 @@ RESET dol.import_mode;
 | Hub Manifest | `hubs/dol-filings/hub.manifest.yaml` |
 | Import Script | `hubs/dol-filings/imo/middle/importers/import_dol_full.py` |
 | Metadata Builder | `hubs/dol-filings/imo/middle/importers/build_column_metadata.py` |
-| Migrations | `infra/migrations/2026-01-15-*.sql` |
+| Migrations | `migrations/2026-01-15-*.sql` |
 
 ---
 

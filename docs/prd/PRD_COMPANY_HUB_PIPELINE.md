@@ -8,7 +8,6 @@
 | **Domain Spec Reference** | `doctrine/REPO_DOMAIN_SPEC.md` |
 | **CC Layer** | CC-02 |
 | **PRD Constitution** | `templates/doctrine/PRD_CONSTITUTION.md` |
-| **CTB Governance** | `docs/CTB_GOVERNANCE.md` |
 
 ---
 
@@ -968,7 +967,6 @@ Result:   HR Director replaces HR Manager
 
 ## 11. Observability
 
-- **Logs:** `pipeline_engine/output/audit_log.json`
 - **Metrics:**
   - `pipeline_duration_seconds`
   - `phase_{N}_match_rate`

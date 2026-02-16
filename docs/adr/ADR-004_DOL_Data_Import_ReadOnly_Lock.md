@@ -185,7 +185,7 @@ If this decision fails:
    -- repeat for all triggers
    ```
 
-2. Data can be re-imported from source CSV files stored in `data/dol_2023/`
+2. Data can be re-imported from DOL FOIA source files (available from DOL.gov)
 
 3. Metadata table can be dropped and regenerated:
    ```sql
@@ -207,8 +207,8 @@ If this decision fails:
 
 | File | Purpose |
 |------|---------|
-| `infra/migrations/2026-01-15-dol-readonly-lock.sql` | Read-only trigger migration |
-| `infra/migrations/2026-01-15-dol-column-metadata.sql` | Metadata table schema |
+| `migrations/2026-01-15-dol-readonly-lock.sql` | Read-only trigger migration |
+| `migrations/2026-01-15-dol-column-metadata.sql` | Metadata table schema |
 | `hubs/dol-filings/imo/middle/importers/import_dol_full.py` | Full-column data import |
 | `hubs/dol-filings/imo/middle/importers/build_column_metadata.py` | Metadata generator |
 | `docs/prd/PRD_DOL_SUBHUB.md` | Updated to v3.0 |

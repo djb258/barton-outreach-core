@@ -40,12 +40,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -f "infra/scripts/sync-svg-ple-to-github-projects.sh" ]; then
-            chmod +x infra/scripts/sync-svg-ple-to-github-projects.sh
-            bash infra/scripts/sync-svg-ple-to-github-projects.sh
-          else
-            echo "Sync script not found, skipping..."
-          fi
+          # infra/scripts/ was removed during repo cleanup.
+          echo "Skipped - sync script removed. infra/ directory no longer exists."
 
       - name: Update GitHub Projects with Recent Commits
         env:
@@ -75,24 +71,9 @@ jobs:
       - name: Check for Obsidian vault changes
         id: check_changes
         run: |
-          if git diff --quiet HEAD -- ctb/docs/obsidian-vault/; then
-            echo "has_changes=false" >> $GITHUB_OUTPUT
-          else
-            echo "has_changes=true" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Commit Obsidian changes
-        if: steps.check_changes.outputs.has_changes == 'true'
-        run: |
-          git config --global user.name "Obsidian Bot"
-          git config --global user.email "obsidian-bot@barton-outreach.local"
-          git add ctb/docs/obsidian-vault/
-          git commit -m "docs(obsidian): auto-sync vault changes
-
-          🤖 Automated commit from GitHub Actions
-
-          Co-Authored-By: GitHub Actions <actions@github.com>"
-          git push
+          # ctb/docs/obsidian-vault/ was removed during repo cleanup.
+          echo "has_changes=false" >> $GITHUB_OUTPUT
+          echo "Skipped - ctb/ directory no longer exists."
 
   refresh-schema:
     name: Refresh Database Schema
@@ -121,23 +102,21 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          if [ -f "ctb/ops/scripts/export-neon-schema.py" ]; then
-            python ctb/ops/scripts/export-neon-schema.py
-          else
-            echo "Schema export script not found"
-          fi
+          # ctb/ops/scripts/export-neon-schema.py was removed during repo cleanup.
+          # Schema reference is now at docs/schema_map.json.
+          echo "Skipped - ctb/ directory no longer exists."
 
       - name: Commit schema changes
         run: |
           git config --global user.name "Schema Bot"
           git config --global user.email "schema-bot@barton-outreach.local"
-          git add ctb/docs/schema_map.json ctb/data/SCHEMA_REFERENCE.md
+          git add docs/schema_map.json
           if git diff --staged --quiet; then
             echo "No schema changes to commit"
           else
             git commit -m "chore(schema): auto-refresh database schema
 
-            🤖 Automated schema export from Neon PostgreSQL
+            Automated schema export from Neon PostgreSQL
 
             Co-Authored-By: GitHub Actions <actions@github.com>"
             git push
@@ -164,10 +143,8 @@ jobs:
             sed -i "s/Last Updated: .*/Last Updated: $CURRENT_DATE/" CLAUDE.md
           fi
 
-          # Update CTB README
-          if [ -f "ctb/README.md" ]; then
-            sed -i "s/Last Updated: .*/Last Updated: $CURRENT_DATE/" ctb/README.md
-          fi
+          # ctb/README.md was removed during repo cleanup.
+          # CTB governance is now in docs/CTB_GOVERNANCE.md.
 
       - name: Commit timestamp updates
         run: |

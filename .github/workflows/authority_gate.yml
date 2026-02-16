@@ -11,7 +11,8 @@ on:
     branches: [main]
     paths:
       - 'heir.doctrine.yaml'
-      - 'delegations/**'
+      # delegations/ directory was removed during repo cleanup
+      # - 'delegations/**'
       - 'ops/enforcement/authority_gate.py'
 
 jobs:
@@ -75,7 +76,7 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "To obtain CC-02:" >> $GITHUB_STEP_SUMMARY
             echo "1. Obtain delegation artifact from upstream authority" >> $GITHUB_STEP_SUMMARY
-            echo "2. Place artifact in \`delegations/\` directory" >> $GITHUB_STEP_SUMMARY
+            echo "2. Place artifact in the repository (delegations/ was removed, coordinate with repo owner)" >> $GITHUB_STEP_SUMMARY
             echo "3. Update \`heir.doctrine.yaml\` with artifact reference" >> $GITHUB_STEP_SUMMARY
           elif [ "${{ steps.authority.outputs.authority_status }}" = "PASSED" ]; then
             echo "### ✅ PASSED" >> $GITHUB_STEP_SUMMARY

@@ -14,7 +14,6 @@
 | **Domain Spec Reference** | `doctrine/REPO_DOMAIN_SPEC.md` |
 | **CC Layer** | CC-02 |
 | **PRD Constitution** | `templates/doctrine/PRD_CONSTITUTION.md` |
-| **CTB Governance** | `docs/CTB_GOVERNANCE.md` |
 
 ---
 
@@ -736,7 +735,6 @@ All errors from Phases 1-4 and BIT Engine MUST be logged to `public.shq_error_lo
 
 ### Logs
 
-- `pipeline_engine/output/audit_log.json`
 - `public.shq_error_log` (database) — **MUST include correlation_id**
 
 ### Metrics

@@ -252,26 +252,12 @@ ORDER BY slots_filled DESC;
 
 ## Import Process
 
-See: [ctb/sys/enrichment/FORM_5500_COMPLETE_GUIDE.md](../../ctb/sys/enrichment/FORM_5500_COMPLETE_GUIDE.md)
-
 **Quick Start:**
 ```bash
-# 1. Download DOL datasets from FOIA
-# 2. Place in data/ directory
-# 3. Run import scripts
-node ctb/sys/enrichment/create_schedule_a_table.js
-python ctb/sys/enrichment/import_schedule_a.py
-psql $NEON_CONNECTION_STRING -c "\COPY marketing.schedule_a_staging FROM 'output/schedule_a_2023_staging.csv' CSV HEADER;"
-psql $NEON_CONNECTION_STRING -c "CALL marketing.process_schedule_a_staging();"
+# 1. Download DOL datasets from FOIA (DOL.gov)
+# 2. Run import scripts
+doppler run -- python hubs/dol-filings/imo/middle/importers/import_dol_full.py --year 2023 --table all
 ```
-
----
-
-## Schema Documentation
-
-**Visual ERD:** [repo-data-diagrams/DOL_SPOKE_ERD.md](../../repo-data-diagrams/DOL_SPOKE_ERD.md)
-**Machine-Readable:** [repo-data-diagrams/ple_schema.json](../../repo-data-diagrams/ple_schema.json)
-**Column Reference:** [repo-data-diagrams/PLE_SCHEMA_REFERENCE.md](../../repo-data-diagrams/PLE_SCHEMA_REFERENCE.md)
 
 ---
 

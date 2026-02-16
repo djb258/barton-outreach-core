@@ -6,7 +6,7 @@ on:
       - 'docs/TAS_*.md'
       - 'docs/diagrams/**/*.mmd'
       - 'docs/DIAGRAMS_INDEX.md'
-      - 'neon/migrations/*.sql'
+      - 'migrations/*.sql'
   push:
     branches:
       - main
@@ -14,7 +14,7 @@ on:
       - 'docs/TAS_*.md'
       - 'docs/diagrams/**/*.mmd'
       - 'docs/DIAGRAMS_INDEX.md'
-      - 'neon/migrations/*.sql'
+      - 'migrations/*.sql'
 
 jobs:
   tas-drift-check:
@@ -47,7 +47,7 @@ jobs:
           ERD_CHANGED=$(echo "$CHANGED_FILES" | grep -E '^docs/diagrams/erd/.*\.mmd$' || echo "")
           ARCH_CHANGED=$(echo "$CHANGED_FILES" | grep -E '^docs/diagrams/architecture/.*\.mmd$' || echo "")
           INDEX_CHANGED=$(echo "$CHANGED_FILES" | grep -E '^docs/DIAGRAMS_INDEX\.md$' || echo "")
-          MIGRATION_CHANGED=$(echo "$CHANGED_FILES" | grep -E '^neon/migrations/.*\.sql$' || echo "")
+          MIGRATION_CHANGED=$(echo "$CHANGED_FILES" | grep -E '^migrations/.*\.sql$' || echo "")
 
           echo "tas_changed=$([[ -n \"$TAS_CHANGED\" ]] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
           echo "erd_changed=$([[ -n \"$ERD_CHANGED\" ]] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
@@ -127,7 +127,7 @@ jobs:
           echo "::group::Migration Documentation Check"
 
           # Get changed migration files
-          MIGRATIONS=$(echo "${{ steps.changed.outputs.changed_files }}" | grep '^neon/migrations/.*\.sql$' || echo "")
+          MIGRATIONS=$(echo "${{ steps.changed.outputs.changed_files }}" | grep '^migrations/.*\.sql$' || echo "")
 
           for migration in $MIGRATIONS; do
             MIGRATION_NAME=$(basename "$migration" .sql)

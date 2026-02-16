@@ -32,7 +32,7 @@ jobs:
           echo "🔒 Running Repo Shape Guard..."
 
           # Allowed top-level directories
-          ALLOWED_DIRS=".github .vscode contracts docs doctrine global-config hubs infra integrations neon ops shared spokes templates tests tooling"
+          ALLOWED_DIRS=".github .vscode .claude .devcontainer contracts docs doctrine hubs migrations ops shared spokes templates tests src"
 
           # Check for Python files at root
           ROOT_PY=$(find . -maxdepth 1 -name "*.py" -type f | head -5)
@@ -164,14 +164,11 @@ EOF
         run: |
           echo "🔍 Running Spoke Purity Linter..."
 
-          # Run the spoke linter if it exists
-          if [ -f "tooling/spoke_linter.py" ]; then
-            python3 tooling/spoke_linter.py
-          else
-            echo "⚠️ Spoke linter not found, running inline checks..."
+          # tooling/ directory was removed during repo cleanup.
+          # Running inline spoke purity checks instead.
+          echo "Running inline spoke purity checks..."
 
-            # Inline spoke purity checks
-            python3 << 'EOF'
+          python3 << 'EOF'
 import os
 import ast
 import sys
@@ -243,7 +240,6 @@ if violations:
 
 print("✓ All spokes pass purity checks")
 EOF
-          fi
 
           echo "✅ Spoke Purity Linter passed"
 

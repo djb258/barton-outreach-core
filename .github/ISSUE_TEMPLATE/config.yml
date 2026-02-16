@@ -1,14 +1,14 @@
 blank_issues_enabled: true
 contact_links:
-  - name: 📚 Documentation
+  - name: Documentation
     url: https://github.com/djb258/barton-outreach-core/tree/main/docs
     about: Browse the Barton Outreach Core documentation
-  - name: 🎯 Bicycle Wheel Doctrine
-    url: https://github.com/djb258/barton-outreach-core/blob/main/repo-data-diagrams/BICYCLE_WHEEL_DOCTRINE.md
-    about: Learn about the Hub-and-Spoke architecture
-  - name: 🏛️ Pipeline Architecture
-    url: https://github.com/djb258/barton-outreach-core/blob/main/ctb/sys/enrichment/pipeline_engine/ARCHITECTURE.md
-    about: Pipeline Engine architecture documentation
-  - name: 🚀 Quick Start (CLAUDE.md)
+  - name: Architecture (CLAUDE.md)
+    url: https://github.com/djb258/barton-outreach-core/blob/main/CLAUDE.md
+    about: Learn about the Hub-and-Spoke architecture and bootstrap guide
+  - name: CTB Governance
+    url: https://github.com/djb258/barton-outreach-core/blob/main/docs/CTB_GOVERNANCE.md
+    about: CTB registry governance, leaf types, and frozen tables
+  - name: Quick Start (CLAUDE.md)
     url: https://github.com/djb258/barton-outreach-core/blob/main/CLAUDE.md
     about: Bootstrap guide for new contributors

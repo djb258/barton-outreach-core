@@ -10,7 +10,7 @@
       "version": "3.11"
     }
   },
-  "postCreateCommand": "bash global-config/scripts/dev_setup.sh",
+  "postCreateCommand": "pip install -r requirements.txt 2>/dev/null || true",
   "customizations": {
     "vscode": {
       "extensions": [

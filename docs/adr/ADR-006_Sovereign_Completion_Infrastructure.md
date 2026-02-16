@@ -175,8 +175,8 @@ Note: Rollback will lose all hub status history.
 | PRD | docs/prd/PRD_SOVEREIGN_COMPLETION.md |
 | Work Items | Sovereign Completion Infrastructure deployment |
 | PR(s) | PR: Sovereign Completion Infrastructure v1.1.0 |
-| Migration | infra/migrations/2026-01-19-hub-registry.sql |
-| Migration | infra/migrations/2026-01-19-sovereign-completion-view.sql |
+| Migration | migrations/2026-01-19-hub-registry.sql |
+| Migration | migrations/2026-01-19-sovereign-completion-view.sql |
 
 ---
 

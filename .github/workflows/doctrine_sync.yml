@@ -31,13 +31,11 @@ jobs:
       - name: Load CTB Branch Map
         id: load-map
         run: |
-          if [ -f "global-config/ctb.branchmap.yaml" ]; then
-            echo "CTB branch map found"
-            echo "branchmap_exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "CTB branch map not found - skipping sync"
-            echo "branchmap_exists=false" >> $GITHUB_OUTPUT
-          fi
+          # global-config/ctb.branchmap.yaml was removed during repo cleanup.
+          # CTB governance is now in docs/CTB_GOVERNANCE.md.
+          # Branch sync is effectively disabled.
+          echo "CTB branch map removed - skipping sync"
+          echo "branchmap_exists=false" >> $GITHUB_OUTPUT
 
       - name: Verify All CTB Branches Exist
         if: steps.load-map.outputs.branchmap_exists == 'true'
@@ -82,7 +80,7 @@ jobs:
           # Doctrine files that should exist on all branches
           DOCTRINE_FILES=(
             "heir.doctrine.yaml"
-            "global-config/ctb.branchmap.yaml"
+            "docs/CTB_GOVERNANCE.md"
             ".github/workflows/doctrine_sync.yml"
             ".github/workflows/ctb_health.yml"
             ".github/workflows/audit.yml"

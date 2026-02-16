@@ -96,7 +96,7 @@ All items must be checked (✓) before the hub can be promoted to production. Th
 | 6.1 | Schema follows naming convention | ✓ | `dol.*` schema |
 | 6.2 | RLS policies enabled | ✓ | All tables have RLS |
 | 6.3 | Tables have audit columns | ✓ | `created_at`, `updated_at` |
-| 6.4 | Migrations documented | ✓ | `infra/migrations/2026-01-15-*.sql` |
+| 6.4 | Migrations documented | ✓ | `migrations/2026-01-15-*.sql` |
 | 6.5 | **Read-only lock enforced** | ✓ | Trigger-based protection |
 
 ---

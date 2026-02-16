@@ -52,7 +52,7 @@ class MarketingSafetyGate:
 
 ### 3. Create Append-Only Audit Table
 
-Location: `infra/migrations/2026-01-20-send-attempt-audit.sql`
+Location: `migrations/2026-01-20-send-attempt-audit.sql`
 
 Table: `outreach.send_attempt_audit`
 - Logs every send attempt (allowed or blocked)
@@ -120,8 +120,8 @@ Removed all fallback patterns:
 ## References
 
 - `hubs/outreach-execution/imo/middle/marketing_safety_gate.py`
-- `infra/migrations/2026-01-20-send-attempt-audit.sql`
-- `infra/migrations/2026-01-19-kill-switches.sql`
+- `migrations/2026-01-20-send-attempt-audit.sql`
+- `migrations/2026-01-19-kill-switches.sql`
 - ADR-007: Kill Switch System
 
 ## Author

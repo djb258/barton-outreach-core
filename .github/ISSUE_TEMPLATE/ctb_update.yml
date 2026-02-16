@@ -55,8 +55,8 @@ body:
         - label: drivers/ (Vendor implementations)
         - label: viewer-api/ (External API layer)
         - label: .github/workflows/ (CI/CD workflows)
-        - label: docs/ctb/ (CTB documentation)
-        - label: global-config/ (Global configuration)
+        - label: docs/ (Documentation)
+        - label: doctrine/ (Doctrine reference)
         - label: scripts/ (Automation scripts)
 
   - type: checkboxes

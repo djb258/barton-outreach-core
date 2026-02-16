@@ -73,7 +73,7 @@
 - [x] `hubs/talent-flow/imo/middle/hub_status.py` - Talent flow hub status
 - [x] `ops/metrics/tier_snapshot.py` - Daily snapshot job
 - [x] `ops/metrics/tier_report.py` - Markdown report generator
-- [x] `analytics/__init__.py` - Analytics module exports
+- [x] Analytics module (consolidated into `ops/metrics/`)
 
 ---
 

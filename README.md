@@ -1,93 +1,110 @@
-# Welcome to your Lovable project
+# Barton Outreach Core
 
-## Project info
+Marketing intelligence and executive enrichment platform built on hub-and-spoke architecture with Neon PostgreSQL.
 
-**URL**: https://lovable.dev/projects/a8e59576-8676-4e68-b0fc-322fc78b5a7c
+## What This Is
 
-## How can I edit this code?
+Barton Outreach Core is a data pipeline system that manages company targeting, executive slot filling, DOL filing analysis, and outreach execution for B2B marketing. It processes ~95,000 companies through a waterfall of enrichment sub-hubs, each building on the previous one's output.
 
-There are several ways of editing your application.
+## Architecture
 
-**Use Lovable**
+**Hub-and-Spoke** with strict doctrine enforcement inherited from [IMO-Creator](https://github.com/djb258/imo-creator).
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/a8e59576-8676-4e68-b0fc-322fc78b5a7c) and start prompting.
+- **CL (Company Lifecycle)** — Authority registry. Mints `sovereign_company_id`, stores identity pointers only.
+- **Outreach Spine** (`outreach.outreach`) — Operational backbone. All sub-hubs FK via `outreach_id`.
+- **Sub-Hubs** execute in waterfall order: Company Target → DOL Filings → People Intelligence → Blog Content.
+- **Spokes** are I/O connectors only — no logic, no state.
 
-Changes made via Lovable will be committed automatically to this repo.
+### Sub-Hubs
 
-**Use your preferred IDE**
+| Order | Hub | Doctrine ID | Purpose |
+|-------|-----|-------------|---------|
+| 1 | Company Target | 04.04.01 | Domain resolution, email pattern discovery |
+| 2 | DOL Filings | 04.04.03 | EIN resolution, Form 5500 + Schedule A |
+| 3 | People Intelligence | 04.04.02 | Slot assignment, email generation |
+| 4 | Blog Content | 04.04.05 | URL discovery, content signals |
+| 5 | Coverage | 04.04.06 | Market coverage analysis + gap routing |
+| 6 | Outreach Execution | 04.04.04 | Campaign execution, sequences |
+| 7 | Talent Flow | — | Executive movement detection |
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Tech Stack
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- **Database**: Neon PostgreSQL (serverless), 18 schemas, 249 registered tables
+- **Backend**: Python 3.11+ (hub logic, pipelines, scripts)
+- **Secrets**: Doppler (`doppler run -- python ...`)
+- **HTTP**: httpx (async) — `requests` is banned per Snap-on Toolbox
+- **Templates**: Inherited from IMO-Creator parent repo
 
-Follow these steps:
+## Repository Structure
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+barton-outreach-core/
+├── hubs/                    # Hub business logic (IMO pattern)
+│   ├── company-target/      # Internal anchor (04.04.01)
+│   ├── dol-filings/         # DOL filing analysis (04.04.03)
+│   ├── people-intelligence/ # Slot assignment + enrichment (04.04.02)
+│   ├── blog-content/        # URL discovery (04.04.05)
+│   ├── coverage/            # Market coverage (04.04.06)
+│   ├── outreach-execution/  # Campaign execution (04.04.04)
+│   └── talent-flow/         # Executive movement detection
+├── spokes/                  # I/O connectors (no logic)
+├── contracts/               # Spoke interface contracts (YAML)
+├── ops/                     # Enforcement, validation, scheduling
+├── src/                     # Source code (HEIR identity, codegen)
+├── scripts/                 # Operational scripts (hooks, codegen, staleness)
+├── migrations/              # Database migrations (SQL)
+├── docs/                    # OSAM, ADRs, PRDs, ERDs, schema
+├── doctrine/                # Governance doctrine files
+├── templates/               # IMO-Creator inherited templates
+├── tests/                   # Hub, spoke, and ops tests
+└── archive/                 # Archived reports, one-off scripts
 ```
 
-**Edit a file directly in GitHub**
+## Quick Start
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+# Prerequisites: Python 3.11+, Doppler CLI, Neon database access
 
-**Use GitHub Codespaces**
+# Install hooks
+bash scripts/install-hooks.sh
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+# Run coverage for a market
+doppler run -- python hubs/coverage/imo/middle/run_coverage.py \
+    --anchor-zip 26739 --radius-miles 100
 
-## What technologies are used for this project?
+# Fill executive slots from Hunter CSV
+doppler run -- python hubs/people-intelligence/imo/middle/phases/fill_slots_from_hunter.py data.csv
 
-This project is built with:
+# Discover blog/about URLs
+doppler run -- python hubs/blog-content/imo/middle/discover_blog_urls.py --dry-run --limit 20
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Key Doctrine Rules
 
-## Deployment Platform
+1. **Universal join key**: `outreach_id` — never use domain as FK
+2. **CL is authority registry** — identity pointers only, never workflow state
+3. **Write-once to CL** — each hub mints its ID and registers once
+4. **Spokes are I/O only** — no logic, no state, no transformation
+5. **No processing without valid `outreach_id`**
 
-✅ **Active**: **Vercel Serverless** (primary and only deployment platform)
+## Key Documentation
 
-❌ **Deprecated**: Render (legacy files archived in `archive/render-legacy/`)
+| Document | Purpose |
+|----------|---------|
+| `CLAUDE.md` | AI bootstrap guide (start here) |
+| `docs/OSAM.md` | Query routing — which table for which question |
+| `DOCTRINE.md` | Doctrine reference (v2.8.0) |
+| `REGISTRY.yaml` | Hub identity declaration |
+| `doctrine/DO_NOT_MODIFY_REGISTRY.md` | Frozen components list |
 
-### Deployment Architecture
+## Status
 
-All external service integrations flow through **Composio MCP** server (port 3001), which runs independently of the deployment platform. This enables:
-- Serverless-first architecture (Vercel edge functions)
-- 100+ service integrations via single MCP interface
-- No direct API credentials in deployment environment
-- Simplified deployment and scaling
+- **v1.0 Baseline**: Certified and frozen (2026-01-20)
+- **Outreach Spine**: 95,837 companies
+- **Slot Fill Rate**: 62.4% (177,757 / 285,012)
+- **People Records**: 182,946
+- **CTB Registry**: 249 tables, 9 frozen core, 9 leaf types
 
-See: [VERCEL_DEPLOYMENT_GUIDE.md](./VERCEL_DEPLOYMENT_GUIDE.md) for deployment instructions
+## License
 
-See: [COMPOSIO_INTEGRATION.md](./COMPOSIO_INTEGRATION.md) for MCP integration details
-
-**Note**: Legacy Render files have been archived as part of doctrinal compliance audit (October 2025). See [docs/audit_report.md](./docs/audit_report.md) for details.
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/a8e59576-8676-4e68-b0fc-322fc78b5a7c) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+See [LICENSE](LICENSE).

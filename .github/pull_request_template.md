@@ -132,8 +132,8 @@
 - [ ] Rollback plan documented
 
 ### CTB Compliance
-- [ ] CTB enforcement passes: `bash global-config/scripts/ctb_enforce.sh`
-- [ ] Security scan passes: `bash global-config/scripts/security_lockdown.sh`
+- [ ] CTB enforcement passes (see docs/CTB_GOVERNANCE.md)
+- [ ] Security scan passes (no hardcoded secrets)
 - [ ] No hardcoded secrets (all secrets use Doppler)
 - [ ] No `.env` files committed
 - [ ] Branch follows CTB structure (if new branch)

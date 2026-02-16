@@ -6,7 +6,7 @@
 **Architecture**: CL Parent-Child Doctrine
 **Primary Purpose**: Marketing intelligence & executive enrichment platform
 **Database**: Neon PostgreSQL (serverless)
-**Last Refactored**: 2026-02-09
+**Last Refactored**: 2026-02-15
 **Manifest Version**: 2.8.0 (synced 2026-02-15)
 
 ---
@@ -556,14 +556,19 @@ barton-outreach-core/
 │   │       └── middle/
 │   │           └── outreach_hub.py
 │   │
-│   └── coverage/                      # Coverage Hub (04.04.06)
+│   ├── coverage/                      # Coverage Hub (04.04.06)
+│   │   ├── hub.manifest.yaml
+│   │   └── imo/
+│   │       └── middle/
+│   │           ├── run_coverage.py              # Single entry point
+│   │           ├── coverage_report.py           # Sub-hub completeness report
+│   │           ├── route_gaps.py                # Gap routing to error tables
+│   │           └── create_service_agent_coverage.py  # Low-level coverage creation
+│   │
+│   └── talent-flow/                   # Executive movement detection
 │       ├── hub.manifest.yaml
 │       └── imo/
 │           └── middle/
-│               ├── run_coverage.py              # Single entry point
-│               ├── coverage_report.py           # Sub-hub completeness report
-│               ├── route_gaps.py                # Gap routing to error tables
-│               └── create_service_agent_coverage.py  # Low-level coverage creation
 │
 ├── spokes/                            # I/O ONLY CONNECTORS
 │   ├── __init__.py
@@ -588,33 +593,65 @@ barton-outreach-core/
 │   ├── adr/                           # Architecture Decision Records
 │   ├── prd/                           # Product Requirements
 │   ├── diagrams/                      # ERDs and flow diagrams
-│   └── architecture/
+│   ├── architecture/
+│   ├── audits/                        # Audit reports and summaries
+│   ├── checklists/                    # Operational checklists
+│   ├── data/                          # Data dictionary and inventories
+│   ├── doctrine/                      # Doctrine-related docs
+│   ├── schema/                        # Schema reference (YAML)
+│   └── schema_csv/                    # Schema exports (CSV)
 │
 ├── doctrine/                          # DOCTRINE REFERENCE
+│   ├── delegations/
 │   ├── diagrams/
-│   ├── ple/
+│   ├── ple/                           # Proof Line / Authorization bands
 │   └── schemas/
 │
 ├── migrations/                        # DATABASE MIGRATIONS (SQL)
 │
 ├── ops/                               # OPERATIONS
-│   ├── enforcement/
+│   ├── enforcement/                   # Runtime doctrine enforcement
+│   ├── guards/                        # Guard modules
 │   ├── master_error_log/
+│   ├── metrics/                       # Metric collection
 │   ├── phase_registry/
+│   ├── processes/                     # Process orchestration
 │   ├── providers/
+│   ├── schedulers/                    # Batch scheduling (BIT, etc.)
+│   ├── schema-drift/                  # Schema drift detection
 │   └── validation/
 │
 ├── src/                               # SOURCE CODE
-│   ├── sys/heir/                      # HEIR identity system
-│   └── data/hub/generated/            # Codegen TypeScript output
+│   ├── sys/
+│   │   ├── heir/                      # HEIR identity system
+│   │   ├── db/                        # Database utilities
+│   │   ├── logger/                    # Logging
+│   │   └── wheel/                     # Shared wheel utilities
+│   └── data/
+│       ├── hub/                       # Codegen hub output
+│       └── spokes/                    # Codegen spoke output
 │
 ├── scripts/                           # OPERATIONAL SCRIPTS
+│   ├── install-hooks.sh               # Git hook installer
+│   ├── detect-staleness.sh            # Governance artifact freshness
+│   ├── codegen-generate.sh            # Registry → generated files
+│   ├── codegen-verify.sh              # Verify codegen sync
+│   ├── validate-schema-completeness.sh # DBA Gate B validation
+│   ├── generate-data-dictionary.sh    # Data dictionary generator
+│   ├── update_from_imo_creator.sh     # Template sync from parent
+│   ├── ci/                            # CI/CD scripts
+│   ├── completeness/                  # Completeness checks
+│   └── ingest/                        # Data ingestion scripts
 │
-├── templates/                         # IMO-CREATOR TEMPLATES
+├── templates/                         # IMO-CREATOR TEMPLATES (inherited)
 │   ├── adr/
 │   ├── checklists/
-│   ├── claude/
-│   ├── scripts/
+│   ├── child/                         # Child repo templates
+│   ├── claude/                        # AI prompt templates
+│   ├── config/
+│   ├── doctrine/
+│   ├── scripts/                       # Script templates (hooks, etc.)
+│   ├── semantic/                      # OSAM template
 │   ├── pr/
 │   └── prd/
 │
@@ -625,11 +662,17 @@ barton-outreach-core/
 │
 ├── archive/                           # ARCHIVED files (reports, one-off scripts, stale exports)
 │
-├── CLAUDE.md                          # This file
+├── CLAUDE.md                          # AI bootstrap guide (this file)
+├── CC_OPERATIONAL_DIGEST.md           # Operational digest for AI sessions
+├── STARTUP_PROTOCOL.md                # Session startup checklist
+├── CONSTITUTION.md                    # Constitutional governance
 ├── DOCTRINE.md                        # Doctrine v2.8.0
+├── DOCTRINE_CHECKPOINT.yaml           # Session checkpoint (fill before coding)
 ├── REGISTRY.yaml                      # Hub identity declaration
 ├── column_registry.yml                # Schema column registry
-├── DOCTRINE_CHECKPOINT.yaml           # Session checkpoint
+├── IMO_CONTROL.json                   # IMO control configuration
+├── heir.doctrine.yaml                 # HEIR identity config
+├── doppler.yaml                       # Doppler secrets config
 ├── README.md
 ├── LICENSE
 ├── package.json

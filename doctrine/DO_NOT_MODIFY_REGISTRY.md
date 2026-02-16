@@ -5,8 +5,6 @@
 **Freeze Date**: 2026-01-26
 **Status**: FROZEN
 **Reference**: docs/GO-LIVE_STATE_v1.0.md, docs/adr/ADR-017_BIT_Authorization_System_Migration.md
-**CTB Governance**: [docs/CTB_GOVERNANCE.md](../docs/CTB_GOVERNANCE.md)
-
 ---
 
 ## Purpose
@@ -33,17 +31,17 @@ Any modification to FROZEN components requires:
 
 | Component | File | Purpose |
 |-----------|------|---------|
-| `outreach.vw_marketing_eligibility_with_overrides` | infra/migrations/2026-01-19-kill-switches.sql | THE source of truth for marketing eligibility |
+| `outreach.vw_marketing_eligibility_with_overrides` | migrations/2026-01-19-kill-switches.sql | THE source of truth for marketing eligibility |
 | `outreach.vw_sovereign_completion` | (base migration) | Sovereign completion status per company |
-| `outreach.vw_tier_distribution` | infra/migrations/2026-01-20-tier-telemetry-views.sql | Tier breakdown by count |
+| `outreach.vw_tier_distribution` | migrations/2026-01-20-tier-telemetry-views.sql | Tier breakdown by count |
 
 ### Kill Switch System (SQL)
 
 | Component | File | Purpose |
 |-----------|------|---------|
-| `outreach.manual_overrides` | infra/migrations/2026-01-19-kill-switches.sql | Kill switch enforcement table |
-| `outreach.override_audit_log` | infra/migrations/2026-01-19-kill-switches.sql | Override audit trail |
-| `outreach.override_type_enum` | infra/migrations/2026-01-19-kill-switches.sql | Override type definitions |
+| `outreach.manual_overrides` | migrations/2026-01-19-kill-switches.sql | Kill switch enforcement table |
+| `outreach.override_audit_log` | migrations/2026-01-19-kill-switches.sql | Override audit trail |
+| `outreach.override_type_enum` | migrations/2026-01-19-kill-switches.sql | Override type definitions |
 
 ### Marketing Safety Gate (Python)
 
@@ -56,18 +54,18 @@ Any modification to FROZEN components requires:
 
 | Component | File | Purpose |
 |-----------|------|---------|
-| `outreach.send_attempt_audit` | infra/migrations/2026-01-20-send-attempt-audit.sql | Append-only audit log |
-| Protective triggers | infra/migrations/2026-01-20-send-attempt-audit.sql | Prevent updates/deletes |
+| `outreach.send_attempt_audit` | migrations/2026-01-20-send-attempt-audit.sql | Append-only audit log |
+| Protective triggers | migrations/2026-01-20-send-attempt-audit.sql | Prevent updates/deletes |
 
 ### Tier Telemetry (SQL)
 
 | Component | File | Purpose |
 |-----------|------|---------|
-| `outreach.vw_hub_block_analysis` | infra/migrations/2026-01-20-tier-telemetry-views.sql | Hub blocking analysis |
-| `outreach.vw_freshness_analysis` | infra/migrations/2026-01-20-tier-telemetry-views.sql | Freshness decay tracking |
-| `outreach.vw_signal_gap_analysis` | infra/migrations/2026-01-20-tier-telemetry-views.sql | Signal coverage gaps |
-| `outreach.vw_tier_telemetry_summary` | infra/migrations/2026-01-20-tier-telemetry-views.sql | Dashboard summary |
-| `outreach.tier_snapshot_history` | infra/migrations/2026-01-20-tier-telemetry-views.sql | Historical snapshots |
+| `outreach.vw_hub_block_analysis` | migrations/2026-01-20-tier-telemetry-views.sql | Hub blocking analysis |
+| `outreach.vw_freshness_analysis` | migrations/2026-01-20-tier-telemetry-views.sql | Freshness decay tracking |
+| `outreach.vw_signal_gap_analysis` | migrations/2026-01-20-tier-telemetry-views.sql | Signal coverage gaps |
+| `outreach.vw_tier_telemetry_summary` | migrations/2026-01-20-tier-telemetry-views.sql | Dashboard summary |
+| `outreach.tier_snapshot_history` | migrations/2026-01-20-tier-telemetry-views.sql | Historical snapshots |
 
 ### Hub Registry (SQL)
 
@@ -105,11 +103,11 @@ Any modification to FROZEN components requires:
 
 The following files contain DO NOT MODIFY banners at the top:
 
-1. `infra/migrations/2026-01-19-kill-switches.sql`
-2. `infra/migrations/2026-01-20-tier-telemetry-views.sql`
-3. `infra/migrations/2026-01-20-send-attempt-audit.sql`
+1. `migrations/2026-01-19-kill-switches.sql`
+2. `migrations/2026-01-20-tier-telemetry-views.sql`
+3. `migrations/2026-01-20-send-attempt-audit.sql`
 4. `hubs/outreach-execution/imo/middle/marketing_safety_gate.py`
-5. `neon/migrations/2026-01-25-bit-v2-phase1-schema.sql`
+5. `migrations/2026-01-25-bit-v2-phase1-schema.sql`
 
 ---
 
@@ -117,7 +115,7 @@ The following files contain DO NOT MODIFY banners at the top:
 
 **Authority**: ADR-017
 **Freeze Date**: 2026-01-26
-**Migration**: neon/migrations/2026-01-26-bit-v2-phase1-distributed-signals.sql
+**Migration**: migrations/2026-01-26-bit-v2-phase1-distributed-signals.sql
 
 ### Architecture Principle (FROZEN)
 

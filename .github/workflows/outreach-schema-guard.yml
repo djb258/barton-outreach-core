@@ -8,15 +8,13 @@ on:
   pull_request:
     branches: ['main']
     paths:
-      - 'infra/migrations/**'
-      - 'neon/**'
+      - 'migrations/**'
       - 'hubs/**/*.py'
       - 'spokes/**/*.py'
   push:
     branches: ['main']
     paths:
-      - 'infra/migrations/**'
-      - 'neon/**'
+      - 'migrations/**'
       - 'hubs/**/*.py'
       - 'spokes/**/*.py'
 
@@ -263,7 +261,7 @@ FORBIDDEN_PATTERNS = [
 ]
 
 # Directories to check
-CHECK_DIRS = ["hubs", "spokes", "infra/scripts"]
+CHECK_DIRS = ["hubs", "spokes"]
 
 violations = []
 
@@ -326,7 +324,7 @@ FORBIDDEN_WRITE_PATTERNS = [
     (r"UPDATE\s+company\.", "writing to company.* schema"),
 ]
 
-CHECK_DIRS = ["hubs", "spokes", "infra/scripts"]
+CHECK_DIRS = ["hubs", "spokes"]
 
 violations = []
 

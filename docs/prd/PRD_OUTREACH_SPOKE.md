@@ -18,7 +18,6 @@
 | **Domain Spec Reference** | `doctrine/REPO_DOMAIN_SPEC.md` |
 | **CC Layer** | CC-02 |
 | **PRD Constitution** | `templates/doctrine/PRD_CONSTITUTION.md` |
-| **CTB Governance** | `docs/CTB_GOVERNANCE.md` |
 
 ---
 
@@ -532,11 +531,9 @@ CREATE TRIGGER trg_engagement_events_immutability_delete
 ### Migration Reference
 
 ```
-infra/migrations/2026-01-13-outreach-execution-complete.sql
-infra/migrations/2026-01-13-enable-rls-production-tables.sql
+migrations/2026-01-13-outreach-execution-complete.sql
+migrations/2026-01-13-enable-rls-production-tables.sql
 ```
-
-See `infra/MIGRATION_ORDER.md` for execution order.
 
 ---
 

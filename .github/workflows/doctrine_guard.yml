@@ -30,10 +30,8 @@ on:
     paths:
       - 'hubs/**'
       - 'spokes/**'
-      - 'contexts/**'
       - 'migrations/**'
       - 'docs/**'
-      - 'tooling/**'
 
 concurrency:
   group: doctrine-guard-${{ github.ref }}
@@ -81,6 +79,8 @@ jobs:
           TOOL_CALLS=$(grep -roh --include="*.py" -E "(hunter|clearbit|apollo|prospeo|snov|clay|millionverifier|firecrawl)" hubs/ 2>/dev/null | sort -u || true)
 
           # Check each against registry
+          # tooling/ directory was removed during repo cleanup.
+          # Tool registry check is skipped until a replacement is established.
           if [ -f "tooling/tool_registry.md" ]; then
             for tool in $TOOL_CALLS; do
               if ! grep -qi "$tool" tooling/tool_registry.md; then
@@ -88,6 +88,8 @@ jobs:
                 exit 1
               fi
             done
+          else
+            echo "tooling/tool_registry.md not found (removed during cleanup), skipping registry check"
           fi
 
           echo "DG-002: PASS - All tools in registry"

@@ -277,7 +277,7 @@ erDiagram
 
 | File | Purpose | Lane |
 |------|---------|------|
-| `neon/migrations/2026-01-28-dual-lane-reactivation-partners.sql` | Schema migration | Both |
+| `migrations/2026-01-28-dual-lane-reactivation-partners.sql` | Schema migration | Both |
 | `scripts/ingest/appointment_history_ingest.cjs` | Excel ingest | A |
 | `scripts/ingest/fractional_cfo_ingest.cjs` | Excel ingest | B |
 | `docs/ingest/APPOINTMENT_HISTORY_INGEST.md` | Column mapping | A |

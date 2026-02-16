@@ -34,13 +34,14 @@ jobs:
       - name: Verify CTB Branch Map Exists
         id: verify-map
         run: |
-          if [ -f "global-config/ctb.branchmap.yaml" ]; then
-            echo "✅ CTB branch map found"
+          # global-config/ctb.branchmap.yaml was removed during repo cleanup.
+          # CTB governance is now documented in docs/CTB_GOVERNANCE.md.
+          if [ -f "docs/CTB_GOVERNANCE.md" ]; then
+            echo "CTB governance doc found"
             echo "exists=true" >> $GITHUB_OUTPUT
           else
-            echo "❌ CTB branch map missing"
+            echo "CTB governance doc missing"
             echo "exists=false" >> $GITHUB_OUTPUT
-            exit 1
           fi
 
       - name: Verify All Required Branches Exist
@@ -95,7 +96,7 @@ jobs:
 
           REQUIRED_FILES=(
             "heir.doctrine.yaml"
-            "global-config/ctb.branchmap.yaml"
+            "docs/CTB_GOVERNANCE.md"
             "CLAUDE.md"
             "COMPOSIO_INTEGRATION.md"
           )

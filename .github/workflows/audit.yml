@@ -51,29 +51,9 @@ jobs:
 
       - name: Validate CTB Branch Map
         run: |
-          python3 << 'EOF'
-          import yaml
-          import sys
-
-          try:
-              with open('global-config/ctb.branchmap.yaml', 'r') as f:
-                  config = yaml.safe_load(f)
-
-              required_keys = ['meta', 'altitudes', 'merge_flow', 'automation_hooks', 'branch_protection']
-
-              for key in required_keys:
-                  if key not in config:
-                      print(f"❌ Missing required key: {key}")
-                      sys.exit(1)
-
-              print("✅ CTB branch map is valid")
-              print(f"Version: {config['meta']['version']}")
-              print(f"Last updated: {config['meta']['last_updated']}")
-
-          except Exception as e:
-              print(f"❌ CTB branch map validation failed: {e}")
-              sys.exit(1)
-          EOF
+          # global-config/ctb.branchmap.yaml was removed during repo cleanup.
+          # CTB governance is now documented in docs/CTB_GOVERNANCE.md.
+          echo "Skipped - CTB branch map removed. See docs/CTB_GOVERNANCE.md."
 
       - name: Check Doctrine ID Generation
         run: |
@@ -146,7 +126,7 @@ jobs:
 
           echo "Files Checked:" >> compliance_report.txt
           echo "- heir.doctrine.yaml" >> compliance_report.txt
-          echo "- global-config/ctb.branchmap.yaml" >> compliance_report.txt
+          echo "- docs/CTB_GOVERNANCE.md" >> compliance_report.txt
           echo "- COMPOSIO_INTEGRATION.md" >> compliance_report.txt
           echo "- src/server/main.py" >> compliance_report.txt
 

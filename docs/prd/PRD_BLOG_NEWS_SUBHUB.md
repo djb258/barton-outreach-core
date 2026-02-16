@@ -17,7 +17,6 @@
 | **Domain Spec Reference** | `doctrine/REPO_DOMAIN_SPEC.md` |
 | **CC Layer** | CC-02 |
 | **PRD Constitution** | `templates/doctrine/PRD_CONSTITUTION.md` |
-| **CTB Governance** | `docs/CTB_GOVERNANCE.md` |
 
 ---
 
@@ -346,7 +345,6 @@ The Blog/News Sub-Hub monitors external news sources, company blogs, and press r
 
 ### Blog Node Spoke (Planned)
 
-**File:** `ctb/sys/enrichment/pipeline_engine/spokes/blog_node/blog_node_spoke.py`
 **Status:** PLANNED
 **Purpose:** Process news articles and emit signals to BIT Engine
 

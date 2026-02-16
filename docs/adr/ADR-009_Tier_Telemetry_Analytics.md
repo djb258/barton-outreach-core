@@ -51,21 +51,14 @@ Operations team needs to:
 - Output: Formatted markdown with tables and status indicators
 - Includes: Tier distribution, hub analysis, freshness, signal gaps, drift
 
-### 4. Python Analytics Module
-
-- Module: `analytics/`
-- Exports: `capture_tier_snapshot`, `get_tier_drift`, `generate_markdown_report`
-- Usage: Import from analytics module for programmatic access
-
 ## Implementation
 
 ### SQL Migration
-`infra/migrations/2026-01-20-tier-telemetry-views.sql`
+`migrations/2026-01-20-tier-telemetry-views.sql`
 
 ### Python Components
 - `ops/metrics/tier_snapshot.py` - Daily snapshot job
 - `ops/metrics/tier_report.py` - Markdown report generator
-- `analytics/__init__.py` - Module exports
 
 ## Consequences
 
@@ -98,7 +91,7 @@ Operations team needs to:
 
 ## References
 
-- `infra/migrations/2026-01-20-tier-telemetry-views.sql`
+- `migrations/2026-01-20-tier-telemetry-views.sql`
 - `ops/metrics/tier_snapshot.py`
 - `ops/metrics/tier_report.py`
 - ADR-006: Sovereign Completion Infrastructure

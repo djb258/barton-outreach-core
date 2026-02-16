@@ -198,7 +198,7 @@ Note: Rollback will lose all override history - export first!
 | PRD | docs/prd/PRD_KILL_SWITCH_SYSTEM.md |
 | Work Items | Kill Switch Security Hardening |
 | PR(s) | PR: Sovereign Completion Infrastructure v1.1.0 |
-| Migration | infra/migrations/2026-01-19-kill-switches.sql |
+| Migration | migrations/2026-01-19-kill-switches.sql |
 
 ---
 

@@ -59,7 +59,7 @@ Execute aggressive repo cleanup and conservative Neon cleanup with full audit tr
 | `scripts/import_wv_executives.py` | Operational script |
 | `scripts/load_clay_people_intake.py` | Operational script |
 | `scripts/promote_intake_to_slots.py` | Operational script |
-| `infra/migrations/*.py` | May need for future migrations |
+| `migrations/*.py` | May need for future migrations |
 | `hubs/dol-filings/imo/middle/importers/import_dol_2023.py` | Active importer |
 
 ---

@@ -63,7 +63,7 @@ Defines perspective and scope for planning, execution, and reporting within CTB.
 | 5k    | Operational Runbook    | Concrete tasks, endpoints, migrations, health checks, dashboards                |
 
 Notes:
-- ALTITUDE appears in enforcement and orchestration (see `ctb/docs/global-config/global_manifest.yaml`).
+- ALTITUDE appears in enforcement and orchestration.
 - HEIR/ORBT tracking should include an `orbt_layer` and altitude context where applicable.
 
 
