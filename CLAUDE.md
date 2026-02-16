@@ -6,6 +6,7 @@
 **Architecture**: CL Parent-Child Doctrine
 **Primary Purpose**: Marketing intelligence & executive enrichment platform
 **Database**: Neon PostgreSQL (serverless)
+**Frontend**: Lovable (React/Vite/Tailwind) — scaffolding present but NOT active. Python/SQL is the current working stack. Do not run npm commands unless explicitly instructed for frontend work.
 **Last Refactored**: 2026-02-15
 **Manifest Version**: 2.8.0 (synced 2026-02-15)
 
