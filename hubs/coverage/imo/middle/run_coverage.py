@@ -54,48 +54,94 @@ def get_connection():
     )
 
 
-def get_or_create_agent(cur, created_by):
-    """Get the default agent, or create one if none exists."""
-    cur.execute("SELECT service_agent_id, agent_name FROM coverage.service_agent WHERE status = 'active' LIMIT 1")
+def next_agent_number(cur):
+    """Get the next SA-NNN number."""
+    cur.execute("SELECT agent_number FROM coverage.service_agent ORDER BY agent_number DESC LIMIT 1")
     row = cur.fetchone()
-    if row:
-        return row[0], row[1]
-    # Create default agent
+    if not row:
+        return "SA-001"
+    num = int(row[0].split("-")[1]) + 1
+    return f"SA-{num:03d}"
+
+
+def create_agent(cur, agent_name):
+    """Create a new service agent with the next sequential number."""
+    num = next_agent_number(cur)
     cur.execute("""
-        INSERT INTO coverage.service_agent (agent_name, status)
-        VALUES (%s, 'active')
-        RETURNING service_agent_id, agent_name
-    """, (f"Agent - {created_by}",))
+        INSERT INTO coverage.service_agent (agent_number, agent_name, status)
+        VALUES (%s, %s, 'active')
+        RETURNING agent_number, agent_name
+    """, (num, agent_name))
     return cur.fetchone()
 
 
+def list_agents(cur):
+    """Show all service agents."""
+    cur.execute("""
+        SELECT sa.agent_number, sa.agent_name, sa.status,
+               COUNT(sac.coverage_id) FILTER (WHERE sac.status = 'active') AS active_markets
+        FROM coverage.service_agent sa
+        LEFT JOIN coverage.service_agent_coverage sac ON sac.service_agent_id = sa.service_agent_id
+        GROUP BY sa.agent_number, sa.agent_name, sa.status
+        ORDER BY sa.agent_number
+    """)
+    rows = cur.fetchall()
+    if not rows:
+        print("  No agents found.")
+        return
+
+    print(f"{'='*65}")
+    print(f"  SERVICE AGENTS")
+    print(f"{'='*65}")
+    print(f"  {'NUMBER':8s} {'NAME':28s} {'STATUS':10s} {'MARKETS':>8s}")
+    print(f"  {'-'*58}")
+    for num, name, status, markets in rows:
+        print(f"  {num:8s} {name:28s} {status:10s} {markets:>8,}")
+    print(f"{'='*65}")
+
+
+def resolve_agent(cur, agent_number):
+    """Look up agent by number. Returns (service_agent_id, agent_number, agent_name) or exits."""
+    cur.execute("""
+        SELECT service_agent_id, agent_number, agent_name
+        FROM coverage.service_agent WHERE agent_number = %s AND status = 'active'
+    """, (agent_number.upper(),))
+    row = cur.fetchone()
+    if not row:
+        print(f"  ERROR: Agent {agent_number} not found or inactive")
+        sys.exit(1)
+    return row
+
+
 def list_markets(cur):
-    """Show all coverage runs."""
+    """Show all coverage runs with agent info."""
     cur.execute("""
         SELECT sac.coverage_id, sac.anchor_zip, sac.radius_miles, sac.status,
-               sac.created_by, sac.created_at::date, sac.notes,
-               ref.city, ref.state_id
+               sac.created_at::date, sac.notes,
+               ref.city, ref.state_id,
+               sa.agent_number, sa.agent_name
         FROM coverage.service_agent_coverage sac
         JOIN reference.us_zip_codes ref ON ref.zip = sac.anchor_zip
-        ORDER BY sac.status DESC, sac.created_at DESC
+        JOIN coverage.service_agent sa ON sa.service_agent_id = sac.service_agent_id
+        ORDER BY sa.agent_number, sac.status DESC, sac.created_at DESC
     """)
     rows = cur.fetchall()
     if not rows:
         print("  No coverage runs found.")
         return
 
-    print(f"{'='*90}")
+    print(f"{'='*100}")
     print(f"  COVERAGE MARKETS")
-    print(f"{'='*90}")
-    print(f"  {'STATUS':8s} {'ANCHOR':28s} {'RADIUS':8s} {'DATE':12s} {'COVERAGE ID':38s}")
-    print(f"  {'-'*86}")
+    print(f"{'='*100}")
+    print(f"  {'AGENT':8s} {'STATUS':8s} {'MARKET':28s} {'RADIUS':8s} {'DATE':12s} {'COVERAGE ID'}")
+    print(f"  {'-'*96}")
     for r in rows:
-        cid, anchor, radius, status, by, dt, notes, city, state = r
+        cid, anchor, radius, status, dt, notes, city, state, anum, aname = r
         label = f"{anchor} ({city}, {state})"
-        print(f"  {status:8s} {label:28s} {str(radius)+'mi':8s} {str(dt):12s} {cid}")
+        print(f"  {anum:8s} {status:8s} {label:28s} {str(radius)+'mi':8s} {str(dt):12s} {cid}")
         if notes:
             print(f"           {notes}")
-    print(f"{'='*90}")
+    print(f"{'='*100}")
 
 
 def resolve_from_coverage_id(cur, coverage_id):
@@ -170,13 +216,21 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  --list                                    Show all markets
-  --anchor-zip 26739 --radius-miles 100     Scout a new market
-  --coverage-id <uuid>                      Check a market
-  --coverage-id <uuid> --activate           Activate enrichment
-  --coverage-id <uuid> --retire             Retire a market
+  --agents                                        List all service agents
+  --create-agent "Dave Allan"                     Create a new agent (SA-002, SA-003...)
+  --list                                          Show all markets
+  --agent SA-001 --anchor-zip 26739 --radius 100  Scout a new market for an agent
+  --coverage-id <uuid>                            Check a market
+  --coverage-id <uuid> --export                   Export CSV
+  --coverage-id <uuid> --activate                 Activate enrichment
+  --coverage-id <uuid> --retire                   Retire a market
         """,
     )
+
+    # Agent management
+    parser.add_argument("--agents", action="store_true", help="List all service agents")
+    parser.add_argument("--create-agent", metavar="NAME", help="Create a new agent (e.g. 'Dave Allan')")
+    parser.add_argument("--agent", metavar="SA-NNN", help="Agent number for new market assignment")
 
     # What to do
     parser.add_argument("--list", action="store_true", help="List all coverage markets")
@@ -202,6 +256,20 @@ Examples:
 
     conn = get_connection()
     cur = conn.cursor()
+
+    # ---- AGENTS ----
+    if args.agents:
+        list_agents(cur)
+        conn.close()
+        return
+
+    # ---- CREATE AGENT ----
+    if args.create_agent:
+        num, name = create_agent(cur, args.create_agent)
+        conn.commit()
+        print(f"  Created agent: {num} — {name}")
+        conn.close()
+        return
 
     # ---- LIST ----
     if args.list:
@@ -255,12 +323,12 @@ Examples:
             print(f"  ERROR: anchor_zip must be exactly 5 digits")
             sys.exit(1)
 
-        agent_id, agent_name = get_or_create_agent(cur, args.created_by)
-
         # Check if this exact market already exists (active)
         cur.execute("""
-            SELECT coverage_id FROM coverage.service_agent_coverage
-            WHERE anchor_zip = %s AND radius_miles = %s AND status = 'active'
+            SELECT sac.coverage_id, sa.agent_number, sa.agent_name
+            FROM coverage.service_agent_coverage sac
+            JOIN coverage.service_agent sa ON sa.service_agent_id = sac.service_agent_id
+            WHERE sac.anchor_zip = %s AND sac.radius_miles = %s AND sac.status = 'active'
             LIMIT 1
         """, (args.anchor_zip, args.radius_miles))
         existing_row = cur.fetchone()
@@ -269,7 +337,11 @@ Examples:
             coverage_id = existing_row[0]
             print(f"\n  Market already exists — reusing coverage_id")
             print(f"  Coverage ID: {coverage_id}")
+            print(f"  Agent:       {existing_row[1]} ({existing_row[2]})")
         elif not args.dry_run:
+            if not args.agent:
+                parser.error("New market requires --agent SA-NNN")
+            agent_id, agent_num, agent_name = resolve_agent(cur, args.agent)
             cur.execute("""
                 INSERT INTO coverage.service_agent_coverage
                     (service_agent_id, anchor_zip, radius_miles, created_by, notes)
@@ -280,14 +352,18 @@ Examples:
             conn.commit()
             print(f"\n  New market created")
             print(f"  Coverage ID: {coverage_id}")
+            print(f"  Agent:       {agent_num} ({agent_name})")
         else:
             coverage_id = None
             print(f"\n  [DRY RUN] Would create market: {args.anchor_zip} / {args.radius_miles}mi")
     else:
         coverage_id = args.coverage_id
         cur.execute("""
-            SELECT anchor_zip, radius_miles, status
-            FROM coverage.service_agent_coverage WHERE coverage_id = %s
+            SELECT sac.anchor_zip, sac.radius_miles, sac.status,
+                   sa.agent_number, sa.agent_name
+            FROM coverage.service_agent_coverage sac
+            JOIN coverage.service_agent sa ON sa.service_agent_id = sac.service_agent_id
+            WHERE sac.coverage_id = %s
         """, (coverage_id,))
         row = cur.fetchone()
         if not row:
@@ -296,6 +372,7 @@ Examples:
             sys.exit(1)
         print(f"\n  Coverage ID: {coverage_id}")
         print(f"  Market: {row[0]} / {row[1]}mi  Status: {row[2]}")
+        print(f"  Agent:  {row[3]} ({row[4]})")
 
     # ---- Resolve ZIPs ----
     if coverage_id:
@@ -462,11 +539,26 @@ Examples:
     elapsed = time.time() - start
 
     # ---- SUMMARY ----
+    # Look up agent for this coverage
+    agent_label = ""
+    if coverage_id:
+        cur.execute("""
+            SELECT sa.agent_number, sa.agent_name
+            FROM coverage.service_agent_coverage sac
+            JOIN coverage.service_agent sa ON sa.service_agent_id = sac.service_agent_id
+            WHERE sac.coverage_id = %s
+        """, (coverage_id,))
+        arow = cur.fetchone()
+        if arow:
+            agent_label = f"{arow[0]} ({arow[1]})"
+
     print(f"\n  {'='*75}")
     print(f"  COVERAGE RUN COMPLETE")
     print(f"  {'='*75}")
     if coverage_id:
         print(f"    Coverage ID:    {coverage_id}")
+    if agent_label:
+        print(f"    Agent:          {agent_label}")
     print(f"    Market:         {anchor_zip} ({a_city}, {a_state}) / {radius_miles}mi")
     print(f"    Companies:      {report['ct_total']:,}")
     print(f"    DOL linked:     {report['dol_linked']:,}")
