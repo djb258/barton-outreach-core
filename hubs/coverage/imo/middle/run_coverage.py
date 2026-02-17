@@ -67,22 +67,25 @@ def next_agent_number(cur):
 def create_agent(cur, agent_name):
     """Create a new service agent with the next sequential number."""
     num = next_agent_number(cur)
+    parts = agent_name.strip().split(None, 1)
+    first_name = parts[0] if parts else agent_name
+    last_name = parts[1] if len(parts) > 1 else ""
     cur.execute("""
-        INSERT INTO coverage.service_agent (agent_number, agent_name, status)
-        VALUES (%s, %s, 'active')
+        INSERT INTO coverage.service_agent (agent_number, agent_name, first_name, last_name, status)
+        VALUES (%s, %s, %s, %s, 'active')
         RETURNING agent_number, agent_name
-    """, (num, agent_name))
+    """, (num, agent_name, first_name, last_name))
     return cur.fetchone()
 
 
 def list_agents(cur):
     """Show all service agents."""
     cur.execute("""
-        SELECT sa.agent_number, sa.agent_name, sa.status,
+        SELECT sa.agent_number, sa.first_name, sa.last_name, sa.status,
                COUNT(sac.coverage_id) FILTER (WHERE sac.status = 'active') AS active_markets
         FROM coverage.service_agent sa
         LEFT JOIN coverage.service_agent_coverage sac ON sac.service_agent_id = sa.service_agent_id
-        GROUP BY sa.agent_number, sa.agent_name, sa.status
+        GROUP BY sa.agent_number, sa.first_name, sa.last_name, sa.status
         ORDER BY sa.agent_number
     """)
     rows = cur.fetchall()
@@ -90,14 +93,14 @@ def list_agents(cur):
         print("  No agents found.")
         return
 
-    print(f"{'='*65}")
+    print(f"{'='*72}")
     print(f"  SERVICE AGENTS")
-    print(f"{'='*65}")
-    print(f"  {'NUMBER':8s} {'NAME':28s} {'STATUS':10s} {'MARKETS':>8s}")
-    print(f"  {'-'*58}")
-    for num, name, status, markets in rows:
-        print(f"  {num:8s} {name:28s} {status:10s} {markets:>8,}")
-    print(f"{'='*65}")
+    print(f"{'='*72}")
+    print(f"  {'NUMBER':8s} {'FIRST':14s} {'LAST':14s} {'STATUS':10s} {'MARKETS':>8s}")
+    print(f"  {'-'*66}")
+    for num, first, last, status, markets in rows:
+        print(f"  {num:8s} {first or '':14s} {last or '':14s} {status:10s} {markets:>8,}")
+    print(f"{'='*72}")
 
 
 def resolve_agent(cur, agent_number):
