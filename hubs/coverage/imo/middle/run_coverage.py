@@ -227,6 +227,8 @@ Examples:
   --coverage-id <uuid> --export                   Export CSV
   --coverage-id <uuid> --activate                 Activate enrichment
   --coverage-id <uuid> --retire                   Retire a market
+  --agent-dashboard SA-003                        Agent portfolio dashboard
+  --agent-dashboard SA-003 --detail               Dashboard with company-level rows
         """,
     )
 
@@ -234,6 +236,10 @@ Examples:
     parser.add_argument("--agents", action="store_true", help="List all service agents")
     parser.add_argument("--create-agent", metavar="NAME", help="Create a new agent (e.g. 'Dave Allan')")
     parser.add_argument("--agent", metavar="SA-NNN", help="Agent number for new market assignment")
+    parser.add_argument("--agent-dashboard", metavar="SA-NNN",
+                        help="Show portfolio dashboard for an agent (e.g. SA-003)")
+    parser.add_argument("--detail", action="store_true",
+                        help="Show company-level rows (with --agent-dashboard)")
 
     # What to do
     parser.add_argument("--list", action="store_true", help="List all coverage markets")
@@ -277,6 +283,14 @@ Examples:
     # ---- LIST ----
     if args.list:
         list_markets(cur)
+        conn.close()
+        return
+
+    # ---- AGENT DASHBOARD ----
+    if args.agent_dashboard:
+        agent_id, agent_num, agent_name = resolve_agent(cur, args.agent_dashboard)
+        from agent_dashboard import run_agent_dashboard
+        run_agent_dashboard(cur, agent_id, agent_num, agent_name, detail=args.detail)
         conn.close()
         return
 
