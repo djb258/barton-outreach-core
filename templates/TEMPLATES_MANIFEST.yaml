@@ -3,8 +3,8 @@
 # Authority: CONSTITUTIONAL
 # Scope: PARENT (imo-creator - repo of repos)
 # Purpose: Machine-readable index for AI agents - file list, reading order, bootstrap
-# Version: 2.8.0
-# Last Updated: 2026-01-30
+# Version: 3.3.0
+# Last Updated: 2026-02-20
 # ═══════════════════════════════════════════════════════════════════════════════
 #
 # AI AGENTS: READ THIS FIRST WHEN PULLING TEMPLATES
@@ -22,11 +22,11 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 
 manifest:
-  version: "2.8.0"
-  last_updated: "2026-02-15"
-  total_file_count: 117  # Run: find templates -type f | wc -l to verify
-  ctb_hardening_version: "2.0.0"
-  note: "CTB Hardening refactor - ARCHITECTURE.md consolidates architecture doctrine"
+  version: "3.3.0"
+  last_updated: "2026-02-20"
+  total_file_count: 141  # Run: find templates -type f | wc -l to verify
+  ctb_hardening_version: "3.3.0"
+  note: "Phase 3 Bootstrap Guarantees — non-superuser enforcement, governance CI verification, Day 0 audit"
   authority: "CONSTITUTIONAL"
   scope: "PARENT"
   repository: "imo-creator"
@@ -175,6 +175,30 @@ files:
       locked: true
       version: "1.0.0"
 
+    - path: "templates/doctrine/EXECUTION_SURFACE_LAW.md"
+      purpose: "Execution surface containment — where code can run, prohibited directories"
+      required: true
+      locked: true
+      version: "1.0.0"
+
+    - path: "templates/doctrine/CTB_REGISTRY_ENFORCEMENT.md"
+      purpose: "Registry-first enforcement — build-time, database, application gates, live drift audit, batch-level RAW lockdown, vendor JSON containment, and bootstrap enforcement"
+      required: true
+      locked: true
+      version: "1.5.0"
+
+    - path: "templates/doctrine/FAIL_CLOSED_CI_CONTRACT.md"
+      purpose: "Fail-closed CI contract — default deny, 5-gate enforcement, no continue-on-error, bootstrap guarantees"
+      required: true
+      locked: true
+      version: "1.1.0"
+
+    - path: "templates/doctrine/LEGACY_COLLAPSE_PLAYBOOK.md"
+      purpose: "Legacy collapse protocol — 5-phase migration from ungoverned to CTB-governed"
+      required: true
+      locked: true
+      version: "1.0.0"
+
   # ═══════════════════════════════════════════════════════════════════════════
   # SEMANTIC (OSAM - QUERY ROUTING CONTRACT)
   # ═══════════════════════════════════════════════════════════════════════════
@@ -270,22 +294,6 @@ files:
       required: true
       locked: true
 
-    # ── Child-specific prompts (barton-outreach-core) ─────────────────────
-    - path: "templates/claude/CL_COMMERCIAL_ELIGIBILITY_ENFORCER.prompt.md"
-      purpose: "CL commercial eligibility enforcement agent (child-specific)"
-      required: false
-      locked: false
-
-    - path: "templates/claude/CL_ELIGIBILITY_WITH_OUTREACH_CASCADE.prompt.md"
-      purpose: "CL eligibility with outreach cascade cleanup (child-specific)"
-      required: false
-      locked: false
-
-    - path: "templates/claude/OUTREACH_CASCADE_CLEANUP.prompt.md"
-      purpose: "Outreach cascade cleanup agent (child-specific)"
-      required: false
-      locked: false
-
   # ═══════════════════════════════════════════════════════════════════════════
   # AI EMPLOYEE
   # ═══════════════════════════════════════════════════════════════════════════
@@ -350,6 +358,12 @@ files:
       purpose: "Quarterly audit checklist"
       required: true
       action: "Execute quarterly"
+
+    - path: "templates/checklists/REPO_HOUSEKEEPING.md"
+      purpose: "Structural housekeeping audit — repo file/folder hygiene, debris, references, secrets"
+      required: true
+      action: "Execute quarterly or post-refactor"
+      note: "Complement to QUARTERLY_HYGIENE_AUDIT.md (governance) and HUB_COMPLIANCE.md (hub readiness)"
 
   audit:
     - path: "templates/audit/CONSTITUTIONAL_AUDIT_ATTESTATION.md"
@@ -657,8 +671,105 @@ files:
       purpose: "Staleness detection audit (Windows) — checks governance artifacts for freshness relative to code changes"
       required: true
 
+    - path: "templates/scripts/ctb-registry-gate.sh"
+      purpose: "CTB registry gate (Unix) — validates migrations vs column_registry.yml + sub-hub cardinality enforcement"
+      required: true
+
+    - path: "templates/scripts/ctb-registry-gate.ps1"
+      purpose: "CTB registry gate (Windows) — validates migrations vs column_registry.yml + sub-hub cardinality enforcement"
+      required: true
+
+    - path: "templates/scripts/detect-banned-db-clients.sh"
+      purpose: "Banned DB client detection — scans src/ for direct database access bypassing Gatekeeper module"
+      required: true
+
+    - path: "templates/scripts/verify-governance-ci.sh"
+      purpose: "Governance CI adoption verification — validates required workflow references, no continue-on-error, enforcement scripts present"
+      required: true
+
+    - path: "templates/scripts/bootstrap-audit.sh"
+      purpose: "Bootstrap audit — Day 0 structural validation, produces docs/BOOTSTRAP_AUDIT.md attestation"
+      required: true
+
+    - path: "templates/scripts/ctb-drift-audit.sh"
+      purpose: "CTB drift audit — live database vs ctb.table_registry vs column_registry.yml drift detection (baseline/strict modes)"
+      required: true
+      locked: true
+
     - path: "templates/scripts/hooks/pre-commit"
       purpose: "Pre-commit hook (includes registry-first, manifest sync, doctrine checkpoint, and schema completeness enforcement gates)"
+      required: true
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # MIGRATIONS (DATABASE GOVERNANCE)
+  # ═══════════════════════════════════════════════════════════════════════════
+  migrations:
+    - path: "templates/migrations/README.md"
+      purpose: "Migration directory documentation — architecture, usage, design principles"
+      required: true
+
+    - path: "templates/migrations/001_ctb_table_registry.sql"
+      purpose: "CTB schema + table_registry + audit log — runtime registry of all allowed tables"
+      required: true
+
+    - path: "templates/migrations/002_ctb_event_trigger.sql"
+      purpose: "DDL event trigger — blocks CREATE/ALTER/DROP TABLE on unregistered tables"
+      required: true
+
+    - path: "templates/migrations/003_ctb_write_guards.sql"
+      purpose: "Write guard triggers — blocks INSERT/UPDATE/DELETE on unregistered or frozen tables"
+      required: true
+
+    - path: "templates/migrations/004_ctb_promotion_enforcement.sql"
+      purpose: "Promotion enforcement — controls SUPPORTING → CANONICAL data flow via declared paths"
+      required: true
+
+    - path: "templates/migrations/005_raw_immutability.sql"
+      purpose: "RAW immutability — INSERT-only enforcement on STAGING/SUPPORTING/CANONICAL, vendor bridge registration"
+      required: true
+
+    - path: "templates/migrations/006_raw_batch_registry.sql"
+      purpose: "Batch registry — tracks every ingestion batch with supersede chain and status lifecycle"
+      required: true
+
+    - path: "templates/migrations/007_raw_active_view_template.sql"
+      purpose: "RAW active view — helper to create _active views filtering to current batches, validation functions"
+      required: true
+
+    - path: "templates/migrations/008_vendor_json_template.sql"
+      purpose: "Vendor JSON table template — per-sub-hub JSON sandbox with validation helper"
+      required: true
+
+    - path: "templates/migrations/009_bridge_template.sql"
+      purpose: "Frozen bridge function template — versioned JSON→RAW transformation with strict validation"
+      required: true
+
+    - path: "templates/migrations/010_vendor_write_permissions.sql"
+      purpose: "Role separation template — ctb_vendor_writer, ctb_data_reader, ctb_bridge_executor roles"
+      required: true
+
+    - path: "templates/migrations/011_enforce_application_role.sql"
+      purpose: "Application role enforcement — ctb_app_role (non-superuser), validate_application_role() function"
+      required: true
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # MODULES (APPLICATION-LEVEL ENFORCEMENT)
+  # ═══════════════════════════════════════════════════════════════════════════
+  modules:
+    - path: "templates/modules/gatekeeper/README.md"
+      purpose: "Gatekeeper module documentation — purpose, file inventory, usage example"
+      required: true
+
+    - path: "templates/modules/gatekeeper/index.ts"
+      purpose: "Gatekeeper class — application-level DB write wrapper enforcing CTB registry"
+      required: true
+
+    - path: "templates/modules/gatekeeper/types.ts"
+      purpose: "Gatekeeper type definitions — config, registry entries, audit entries, results"
+      required: true
+
+    - path: "templates/modules/gatekeeper/audit-logger.ts"
+      purpose: "Audit logger — structured audit trail for every database write operation"
       required: true
 
   # ═══════════════════════════════════════════════════════════════════════════
@@ -936,6 +1047,20 @@ categories:
     ai_can_copy: true
     action: "Copy and execute"
 
+  - name: "migrations"
+    description: "Database governance migrations (CTB enforcement)"
+    ai_can_modify: false
+    ai_can_read: true
+    ai_can_copy: true
+    action: "Copy to child repo migrations/, apply in order"
+
+  - name: "modules"
+    description: "Application-level enforcement modules"
+    ai_can_modify: false
+    ai_can_read: true
+    ai_can_copy: true
+    action: "Copy to child repo src/data/modules/"
+
   - name: "ai_employee"
     description: "AI employee governance"
     ai_can_modify: false
@@ -1027,7 +1152,7 @@ bootstrap:
         | Architecture | templates/doctrine/ARCHITECTURE.md | 2.1.0 |
         | Tools | templates/integrations/TOOLS.md | 1.1.0 |
         | OSAM | templates/semantic/OSAM.md | 1.1.0 |
-        | Manifest | templates/TEMPLATES_MANIFEST.yaml | 2.8.0 |
+        | Manifest | templates/TEMPLATES_MANIFEST.yaml | 3.3.0 |
 
         ## This Hub
 
@@ -1112,7 +1237,7 @@ update_manifest:
   always_sync:
     description: "These files are ALWAYS synced on update — overwrite in child repo"
     files:
-      # Doctrine (constitutional law — all 12 files)
+      # Doctrine (constitutional law — all 16 files)
       - source: "templates/doctrine/ARCHITECTURE.md"
         destination: "doctrine/ARCHITECTURE.md"
       - source: "templates/doctrine/CANONICAL_ARCHITECTURE_DOCTRINE.md"
@@ -1139,6 +1264,14 @@ update_manifest:
         destination: "doctrine/DOCUMENTATION_ERD_DOCTRINE.md"
       - source: "templates/doctrine/ROLLBACK_PROTOCOL.md"
         destination: "doctrine/ROLLBACK_PROTOCOL.md"
+      - source: "templates/doctrine/EXECUTION_SURFACE_LAW.md"
+        destination: "doctrine/EXECUTION_SURFACE_LAW.md"
+      - source: "templates/doctrine/CTB_REGISTRY_ENFORCEMENT.md"
+        destination: "doctrine/CTB_REGISTRY_ENFORCEMENT.md"
+      - source: "templates/doctrine/FAIL_CLOSED_CI_CONTRACT.md"
+        destination: "doctrine/FAIL_CLOSED_CI_CONTRACT.md"
+      - source: "templates/doctrine/LEGACY_COLLAPSE_PLAYBOOK.md"
+        destination: "doctrine/LEGACY_COLLAPSE_PLAYBOOK.md"
       # Semantic + Constitutional
       - source: "templates/semantic/OSAM.md"
         destination: "doctrine/OSAM.md"
@@ -1172,6 +1305,16 @@ update_manifest:
         destination: "scripts/update_from_imo_creator.sh"
       - source: "templates/scripts/detect-staleness.sh"
         destination: "scripts/detect-staleness.sh"
+      - source: "templates/scripts/ctb-registry-gate.sh"
+        destination: "scripts/ctb-registry-gate.sh"
+      - source: "templates/scripts/detect-banned-db-clients.sh"
+        destination: "scripts/detect-banned-db-clients.sh"
+      - source: "templates/scripts/verify-governance-ci.sh"
+        destination: "scripts/verify-governance-ci.sh"
+      - source: "templates/scripts/bootstrap-audit.sh"
+        destination: "scripts/bootstrap-audit.sh"
+      - source: "templates/scripts/ctb-drift-audit.sh"
+        destination: "scripts/ctb-drift-audit.sh"
 
   sync_if_missing:
     description: "These files are synced only if they don't exist in child (templates that get customized)"
@@ -1192,6 +1335,38 @@ update_manifest:
         destination: "DOCTRINE_CHECKPOINT.yaml"
       - source: "templates/checklists/QUARTERLY_HYGIENE_AUDIT.md"
         destination: "docs/checklists/QUARTERLY_HYGIENE_AUDIT.md"
+      - source: "templates/checklists/REPO_HOUSEKEEPING.md"
+        destination: "docs/checklists/REPO_HOUSEKEEPING.md"
+      # Migrations (database governance — copy once, child may customize order)
+      - source: "templates/migrations/001_ctb_table_registry.sql"
+        destination: "migrations/001_ctb_table_registry.sql"
+      - source: "templates/migrations/002_ctb_event_trigger.sql"
+        destination: "migrations/002_ctb_event_trigger.sql"
+      - source: "templates/migrations/003_ctb_write_guards.sql"
+        destination: "migrations/003_ctb_write_guards.sql"
+      - source: "templates/migrations/004_ctb_promotion_enforcement.sql"
+        destination: "migrations/004_ctb_promotion_enforcement.sql"
+      - source: "templates/migrations/005_raw_immutability.sql"
+        destination: "migrations/005_raw_immutability.sql"
+      - source: "templates/migrations/006_raw_batch_registry.sql"
+        destination: "migrations/006_raw_batch_registry.sql"
+      - source: "templates/migrations/007_raw_active_view_template.sql"
+        destination: "migrations/007_raw_active_view_template.sql"
+      - source: "templates/migrations/008_vendor_json_template.sql"
+        destination: "migrations/008_vendor_json_template.sql"
+      - source: "templates/migrations/009_bridge_template.sql"
+        destination: "migrations/009_bridge_template.sql"
+      - source: "templates/migrations/010_vendor_write_permissions.sql"
+        destination: "migrations/010_vendor_write_permissions.sql"
+      - source: "templates/migrations/011_enforce_application_role.sql"
+        destination: "migrations/011_enforce_application_role.sql"
+      # Gatekeeper module (application-level enforcement)
+      - source: "templates/modules/gatekeeper/index.ts"
+        destination: "src/data/modules/gatekeeper/index.ts"
+      - source: "templates/modules/gatekeeper/types.ts"
+        destination: "src/data/modules/gatekeeper/types.ts"
+      - source: "templates/modules/gatekeeper/audit-logger.ts"
+        destination: "src/data/modules/gatekeeper/audit-logger.ts"
 
   never_sync:
     description: "These are child-repo specific, never overwrite"
@@ -1215,6 +1390,103 @@ update_manifest:
 # ─────────────────────────────────────────────────────────────────────────────────
 
 changelog:
+  - version: "3.3.0"
+    date: "2026-02-20"
+    breaking: false
+    changes:
+      - "PHASE 3 BOOTSTRAP GUARANTEES: Non-superuser enforcement, governance CI verification, Day 0 audit"
+      - "Added 011_enforce_application_role.sql — ctb_app_role (NOSUPERUSER, NOCREATEDB, NOCREATEROLE, NOBYPASSRLS), validate_application_role() function"
+      - "Added verify-governance-ci.sh — validates required workflow references, no continue-on-error, enforcement scripts present"
+      - "Added bootstrap-audit.sh — one-command Day 0 structural validation, outputs docs/BOOTSTRAP_AUDIT.md attestation"
+      - "Added Gate E to reusable-fail-closed-gate.yml — runs verify-governance-ci.sh in CI"
+      - "Added drift check 14 (SUPERUSER_CONNECTION) to ctb-drift-audit.sh — validates application role"
+      - "Added CTB_REGISTRY_ENFORCEMENT.md §10 — Bootstrap Enforcement Layer (non-superuser, governance CI, bootstrap audit)"
+      - "Added FAIL_CLOSED_CI_CONTRACT.md §7 — Bootstrap Guarantees (v1.1.0)"
+      - "Updated CTB_REGISTRY_ENFORCEMENT.md version 1.4.0 → 1.5.0"
+      - "Updated FAIL_CLOSED_CI_CONTRACT.md version 1.0.0 → 1.1.0"
+      - "total_file_count: 138 → 141"
+    migration: "Child repos must: (1) Copy 011 migration to migrations/ and apply, (2) Copy verify-governance-ci.sh and bootstrap-audit.sh to scripts/, (3) Update ctb-drift-audit.sh from always_sync, (4) Configure DATABASE_URL to use ctb_app_role (not postgres), (5) Run bootstrap-audit.sh to generate attestation."
+
+  - version: "3.2.0"
+    date: "2026-02-20"
+    breaking: false
+    changes:
+      - "VENDOR JSON + FROZEN BRIDGE ENFORCEMENT: JSON containment at vendor layer only"
+      - "Added CTB_REGISTRY_ENFORCEMENT.md §9 — Vendor JSON Intake Model (Frozen Bridge Architecture)"
+      - "Added 008_vendor_json_template.sql — per-sub-hub vendor JSON table template with validation"
+      - "Added 009_bridge_template.sql — versioned frozen bridge function template with strict JSON extraction"
+      - "Added 010_vendor_write_permissions.sql — role separation (ctb_vendor_writer, ctb_data_reader, ctb_bridge_executor)"
+      - "Extended ctb-drift-audit.sh with 4 new drift classes: JSON_IN_RAW (§9.3), JSON_IN_DOWNSTREAM (§9.4), BRIDGE_NO_VERSION (§9.2), VENDOR_REF_VIOLATION (§9.4)"
+      - "Updated CTB_REGISTRY_ENFORCEMENT.md version 1.3.0 → 1.4.0"
+      - "total_file_count: 135 → 138"
+    migration: "Child repos must: (1) Copy 008-010 migrations to migrations/, (2) Update ctb-drift-audit.sh from always_sync, (3) Create vendor_claude_<subhub> tables per sub-hub, (4) Implement bridge functions per sub-hub, (5) Configure role separation."
+
+  - version: "3.1.0"
+    date: "2026-02-20"
+    breaking: false
+    changes:
+      - "BATCH-LEVEL RAW LOCKDOWN: INSERT-only immutability enforcement across the data pipeline"
+      - "Added CTB_REGISTRY_ENFORCEMENT.md §8 — vendor bridges, RAW immutability, batch registry, _active views, promotion chain"
+      - "Added 005_raw_immutability.sql — enforce_immutability() trigger blocks UPDATE/DELETE on STAGING/SUPPORTING/CANONICAL tables"
+      - "Added 006_raw_batch_registry.sql — ctb.raw_batch_registry with supersede chain, status lifecycle, auto-supersede trigger"
+      - "Added 007_raw_active_view_template.sql — helper to create _active views, validation functions for RAW column requirements"
+      - "Added ctb.vendor_bridges table — bridge registration for vendor integrations writing to RAW tables"
+      - "Extended ctb-drift-audit.sh with 3 new drift classes: IMMUTABILITY_MISSING (§8), RAW_COLUMNS_MISSING (§8.2), RAW_VIEW_MISSING (§8.4)"
+      - "Updated CTB_REGISTRY_ENFORCEMENT.md version 1.2.0 → 1.3.0"
+      - "total_file_count: 132 → 135"
+    migration: "Child repos must: (1) Copy 005-007 migrations to migrations/ and apply in order, (2) Update ctb-drift-audit.sh from always_sync, (3) Run ctb.create_immutability_guard() on all governed tables, (4) Register vendor bridges in ctb.vendor_bridges, (5) Create _active views for STAGING tables."
+
+  - version: "3.0.2"
+    date: "2026-02-20"
+    breaking: false
+    changes:
+      - "PHASE TWO LOCKDOWN: Drift audit is now mandatory, fail-closed, and tamper-resistant"
+      - "Added ctb-governance-required.yml — mandatory governance pipeline running both reusable gates on PR/push/dispatch"
+      - "Updated ctb-drift-audit.sh with --mode=baseline|strict and --write-baseline support"
+      - "Baseline mode: only NEW rogue tables and NEW undocumented CANONICAL columns fail; known legacy = warning"
+      - "Baseline storage: docs/CTB_DRIFT_BASELINE.json (repo-level, not template)"
+      - "Marked ctb-drift-audit.sh as locked in manifest (tamper-protected)"
+      - "Added pre-commit CHECK 15: ADR-REF trailer required when modifying ctb-drift-audit.sh"
+      - "Updated CTB_REGISTRY_ENFORCEMENT.md §6.6 with enforcement modes documentation (v1.2.0)"
+      - "total_file_count: 132 (unchanged — no new template files)"
+    migration: "Child repos should: (1) Update ctb-drift-audit.sh from always_sync, (2) Update pre-commit hook, (3) Add ctb-governance-required.yml to CI or wire own pipeline to call reusable workflows, (4) Optionally run --write-baseline to capture legacy state."
+
+  - version: "3.0.1"
+    date: "2026-02-20"
+    breaking: false
+    changes:
+      - "Added ctb-drift-audit.sh (live database vs ctb.table_registry vs column_registry.yml drift detection)"
+      - "Added reusable-ctb-drift-audit.yml (reusable CI workflow for drift audit — workflow_call, no continue-on-error)"
+      - "Added CTB_REGISTRY_ENFORCEMENT.md §6 'Live Drift Audit Enforcement Layer' (6 drift classes, 3 trigger conditions)"
+      - "Updated CTB_REGISTRY_ENFORCEMENT.md version 1.0.0 → 1.1.0, renumbered Enforcement Summary to §7"
+      - "total_file_count: 131 → 132"
+    migration: "Child repos should copy ctb-drift-audit.sh to scripts/. Add reusable-ctb-drift-audit.yml to CI pipeline with DATABASE_URL secret."
+
+  - version: "3.0.0"
+    date: "2026-02-20"
+    breaking: true
+    changes:
+      - "FAIL-CLOSED GOVERNANCE: Added 4-gate reusable CI workflow (reusable-fail-closed-gate.yml)"
+      - "Added 4 doctrine documents: EXECUTION_SURFACE_LAW.md, CTB_REGISTRY_ENFORCEMENT.md, FAIL_CLOSED_CI_CONTRACT.md, LEGACY_COLLAPSE_PLAYBOOK.md"
+      - "Added ctb-registry-gate.sh/.ps1 (build-time registry enforcement — migrations vs column_registry.yml + sub-hub cardinality)"
+      - "Added detect-banned-db-clients.sh (scans src/ for direct DB access bypassing Gatekeeper)"
+      - "Added templates/migrations/ (4 SQL files: ctb schema, table_registry, DDL event trigger, write guards, promotion enforcement)"
+      - "Added templates/modules/gatekeeper/ (TypeScript application-level write enforcement module)"
+      - "Added pre-commit CHECK 13 (ctb-registry-gate) and CHECK 14 (banned DB client detection)"
+      - "Added docs/AUTHORITY_MAP.md (full enforcement topology — NOT a template, repo-root doc)"
+      - "total_file_count: 115 → 131"
+    migration: "Child repos must: (1) Copy 4 new doctrine files to doctrine/, (2) Copy ctb-registry-gate.sh and detect-banned-db-clients.sh to scripts/, (3) Copy migrations/ to repo root and apply in order, (4) Copy gatekeeper module to src/data/modules/, (5) Update pre-commit hook, (6) Add reusable-fail-closed-gate.yml to CI pipeline."
+
+  - version: "2.9.0"
+    date: "2026-02-16"
+    breaking: false
+    changes:
+      - "Added templates/checklists/REPO_HOUSEKEEPING.md (structural housekeeping audit — 19 checks across 3 phases)"
+      - "Companion to QUARTERLY_HYGIENE_AUDIT.md (governance) and HUB_COMPLIANCE.md (hub readiness)"
+      - "Audit-first, fix-never design: Phase 1 read-only scan, Phase 2 report, Phase 3 human-approved fix"
+      - "total_file_count: 114 → 115"
+    migration: "Child repos should copy REPO_HOUSEKEEPING.md to docs/checklists/. Execute quarterly or post-refactor."
+
   - version: "2.8.0"
     date: "2026-02-15"
     breaking: false
@@ -1353,7 +1625,7 @@ verification:
     After pulling templates, verify:
 
     [ ] All files in this manifest exist locally
-    [ ] File count matches total_file_count (114 files)
+    [ ] File count matches total_file_count (141 files)
     [ ] No files were skipped or missed
     [ ] Doctrine files are present and locked
     [ ] Claude prompts are present and locked
@@ -1367,8 +1639,8 @@ verification:
 
 document_control:
   created: "2026-01-30"
-  last_modified: "2026-02-15"
-  version: "2.8.0"
+  last_modified: "2026-02-20"
+  version: "3.3.0"
   doctrine_version: "2.1.0"
   status: "ACTIVE"
   authority: "CONSTITUTIONAL"

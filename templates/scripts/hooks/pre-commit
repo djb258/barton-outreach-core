@@ -34,7 +34,7 @@ if [ -d "src" ]; then
             echo -e "${RED}[VIOLATION]${NC} CTB_VIOLATION: src/$folder/ exists"
             echo "            Doctrine: No utils/helpers/common/shared/lib/misc folders"
             echo "            Action: Move contents to src/{sys,data,app,ai,ui} or DELETE"
-            VIOLATIONS=$((VIOLATIONS + 1))
+            ((VIOLATIONS++))
         fi
     done
 fi
@@ -49,7 +49,7 @@ if [ -d "src" ]; then
         echo "            Files found:"
         echo "$LOOSE_FILES" | while read -r f; do echo "              - $f"; done
         echo "            Action: Move to src/{sys,data,app,ai,ui} or DELETE"
-        VIOLATIONS=$((VIOLATIONS + 1))
+        ((VIOLATIONS++))
     fi
 fi
 
@@ -70,7 +70,7 @@ if [ -d "src" ]; then
         echo -e "${YELLOW}[WARNING]${NC} CTB structure incomplete"
         echo "          Missing branches:$MISSING_BRANCHES"
         echo "          Expected: src/{sys,data,app,ai,ui}"
-        WARNINGS=$((WARNINGS + 1))
+        ((WARNINGS++))
     fi
 fi
 
@@ -81,7 +81,7 @@ if [ -d "src" ] && [ ! -f "REGISTRY.yaml" ]; then
     echo -e "${YELLOW}[WARNING]${NC} REGISTRY.yaml missing"
     echo "          Hub repos require REGISTRY.yaml at root"
     echo "          See: REPO_REFACTOR_PROTOCOL.md section 3"
-    WARNINGS=$((WARNINGS + 1))
+    ((WARNINGS++))
 fi
 
 # ───────────────────────────────────────────────────────────────────
@@ -93,7 +93,7 @@ if [ "$REPO_NAME" != "imo-creator" ] && [ -d "src" ] && [ ! -f "DOCTRINE.md" ]; 
     echo -e "${YELLOW}[WARNING]${NC} DOCTRINE.md missing"
     echo "          Child repos must reference imo-creator doctrine"
     echo "          See: REPO_REFACTOR_PROTOCOL.md section 8"
-    WARNINGS=$((WARNINGS + 1))
+    ((WARNINGS++))
 fi
 
 # ───────────────────────────────────────────────────────────────────
@@ -107,7 +107,7 @@ for file in $STAGED_FILES; do
         if echo "$file" | grep -qi "$pattern"; then
             echo -e "${RED}[VIOLATION]${NC} Potential secret file staged: $file"
             echo "            Action: Remove from staging or add to .gitignore"
-            VIOLATIONS=$((VIOLATIONS + 1))
+            ((VIOLATIONS++))
         fi
     done
 done
@@ -121,7 +121,7 @@ if [ -d "src" ]; then
         echo -e "${YELLOW}[WARNING]${NC} Code changes without PRD"
         echo "          Descent rule: PRD (CC-02) before code (CC-04)"
         echo "          Action: Create docs/PRD.md first"
-        WARNINGS=$((WARNINGS + 1))
+        ((WARNINGS++))
     fi
 fi
 
@@ -139,7 +139,7 @@ if [ -n "$GENERATED_STAGED" ] && [ -z "$REGISTRY_STAGED" ]; then
     echo "$GENERATED_STAGED" | while read -r f; do echo "              - $f"; done
     echo "            Generated files are PROJECTIONS of column_registry.yml"
     echo "            Action: Update column_registry.yml, then run codegen-generate.sh"
-    VIOLATIONS=$((VIOLATIONS + 1))
+    ((VIOLATIONS++))
 fi
 
 # ───────────────────────────────────────────────────────────────────
@@ -159,14 +159,14 @@ if [ -n "$REGISTRY_STAGED" ]; then
             echo -e "${RED}[VIOLATION]${NC} CODEGEN_DRIFT: Registry updated but generated files are out of sync"
             echo "            column_registry.yml was changed but generated output does not match"
             echo "            Action: Run codegen-generate.sh and stage the generated files"
-            VIOLATIONS=$((VIOLATIONS + 1))
+            ((VIOLATIONS++))
         else
             echo -e "${GREEN}[PASS]${NC} Codegen sync verified — generated files match registry"
         fi
     else
         echo -e "${YELLOW}[WARNING]${NC} codegen-verify.sh not found — cannot verify registry sync"
         echo "          Install: Copy from imo-creator templates/scripts/"
-        WARNINGS=$((WARNINGS + 1))
+        ((WARNINGS++))
     fi
 fi
 
@@ -189,14 +189,14 @@ if [ -n "$TEMPLATE_STAGED" ]; then
             echo -e "${RED}[VIOLATION]${NC} MANIFEST_DRIFT: templates/ changed but manifest is out of sync"
             echo "            Staged template files do not match TEMPLATES_MANIFEST.yaml"
             echo "            Action: Run verify_manifest.sh and update TEMPLATES_MANIFEST.yaml"
-            VIOLATIONS=$((VIOLATIONS + 1))
+            ((VIOLATIONS++))
         else
             echo -e "${GREEN}[PASS]${NC} Manifest sync verified — disk matches manifest"
         fi
     else
         echo -e "${YELLOW}[WARNING]${NC} verify_manifest.sh not found — cannot verify manifest sync"
         echo "          Install: Copy from imo-creator templates/scripts/"
-        WARNINGS=$((WARNINGS + 1))
+        ((WARNINGS++))
     fi
 fi
 
@@ -215,7 +215,7 @@ if [ -n "$SRC_STAGED" ]; then
         echo -e "${RED}[VIOLATION]${NC} CHECKPOINT_MISSING: DOCTRINE_CHECKPOINT.yaml not found"
         echo "            Doctrine checkpoint required before coding."
         echo "            Action: Read CC_OPERATIONAL_DIGEST.md, fill out DOCTRINE_CHECKPOINT.yaml, then commit."
-        VIOLATIONS=$((VIOLATIONS + 1))
+        ((VIOLATIONS++))
     else
         # 11b: Staleness check (24 hours)
         FILE_MOD=$(stat -c %Y "$CHECKPOINT_FILE" 2>/dev/null || stat -f %m "$CHECKPOINT_FILE" 2>/dev/null || echo "0")
@@ -228,7 +228,7 @@ if [ -n "$SRC_STAGED" ]; then
             echo -e "${RED}[VIOLATION]${NC} CHECKPOINT_STALE: DOCTRINE_CHECKPOINT.yaml is older than 24 hours"
             echo "            Last modified: $STALE_DATE"
             echo "            Action: Re-read CC_OPERATIONAL_DIGEST.md and refresh the checkpoint"
-            VIOLATIONS=$((VIOLATIONS + 1))
+            ((VIOLATIONS++))
         fi
 
         # 11c: All required fields must be filled (not empty, not bracket placeholders)
@@ -246,7 +246,7 @@ if [ -n "$SRC_STAGED" ]; then
             echo -e "${RED}[VIOLATION]${NC} CHECKPOINT_INCOMPLETE: Unfilled fields in DOCTRINE_CHECKPOINT.yaml"
             echo "            Missing/placeholder fields:$UNFILLED"
             echo "            Action: Fill ALL fields before committing code"
-            VIOLATIONS=$((VIOLATIONS + 1))
+            ((VIOLATIONS++))
         fi
 
         # 11d: Spoke logic validation — spokes carry data only, no logic
@@ -259,7 +259,7 @@ if [ -n "$SRC_STAGED" ]; then
                 echo "            Spokes carry data only — logic lives in hubs"
                 echo "            logic_placement: '$LOGIC_PLACE'"
                 echo "            Action: Set logic_placement to 'n/a' or change hub_or_spoke to 'hub'"
-                VIOLATIONS=$((VIOLATIONS + 1))
+                ((VIOLATIONS++))
             fi
         fi
     fi
@@ -285,14 +285,118 @@ if [ -n "$REGISTRY_STAGED" ]; then
             echo "            Every table: description + leaf_type + source_of_truth + row_identity_strategy"
             echo "            Every column: description + type + nullable + semantic_role + format"
             echo "            Action: Run validate-schema-completeness.sh, fix all violations, then commit"
-            VIOLATIONS=$((VIOLATIONS + 1))
+            ((VIOLATIONS++))
         else
             echo -e "${GREEN}[PASS]${NC} Schema completeness verified — all metadata fields populated"
         fi
     else
         echo -e "${YELLOW}[WARNING]${NC} validate-schema-completeness.sh not found — cannot verify schema metadata"
         echo "          Install: Copy from imo-creator templates/scripts/"
-        WARNINGS=$((WARNINGS + 1))
+        ((WARNINGS++))
+    fi
+fi
+
+# ───────────────────────────────────────────────────────────────────
+# CHECK 13: CTB registry gate (registry-first enforcement)
+# ───────────────────────────────────────────────────────────────────
+# If column_registry.yml or migrations/*.sql are staged, run ctb-registry-gate.sh
+# to validate migrations vs registry and sub-hub cardinality.
+MIGRATION_STAGED=$(git diff --cached --name-only | grep -E '^migrations/.*\.sql$' || true)
+
+if [ -n "$REGISTRY_STAGED" ] || [ -n "$MIGRATION_STAGED" ]; then
+    CTB_GATE=""
+    if [ -f "scripts/ctb-registry-gate.sh" ]; then
+        CTB_GATE="scripts/ctb-registry-gate.sh"
+    elif [ -f "./ctb-registry-gate.sh" ]; then
+        CTB_GATE="./ctb-registry-gate.sh"
+    fi
+
+    if [ -n "$CTB_GATE" ]; then
+        if ! bash "$CTB_GATE" > /dev/null 2>&1; then
+            echo -e "${RED}[VIOLATION]${NC} CTB_REGISTRY_GATE: Registry-first enforcement failed"
+            echo "            CTB_REGISTRY_ENFORCEMENT.md §3 requires:"
+            echo "            - All migration tables registered in column_registry.yml"
+            echo "            - Sub-hub cardinality: 1 CANONICAL + 1 ERROR + 0-2 SUPPORTING"
+            echo "            Action: Run ctb-registry-gate.sh, fix violations, then commit"
+            ((VIOLATIONS++))
+        else
+            echo -e "${GREEN}[PASS]${NC} CTB registry gate — migrations and registry in sync"
+        fi
+    else
+        echo -e "${YELLOW}[WARNING]${NC} ctb-registry-gate.sh not found — cannot verify registry"
+        echo "          Install: Copy from imo-creator templates/scripts/"
+        ((WARNINGS++))
+    fi
+fi
+
+# ───────────────────────────────────────────────────────────────────
+# CHECK 14: Banned DB client detection (Gatekeeper enforcement)
+# ───────────────────────────────────────────────────────────────────
+# If any .ts/.js/.py files in src/ are staged, scan for direct DB access.
+SRC_CODE_STAGED=$(git diff --cached --name-only | grep -E '^src/.*\.(ts|tsx|js|jsx|py|mjs|cjs)$' || true)
+
+if [ -n "$SRC_CODE_STAGED" ]; then
+    BANNED_DETECT=""
+    if [ -f "scripts/detect-banned-db-clients.sh" ]; then
+        BANNED_DETECT="scripts/detect-banned-db-clients.sh"
+    elif [ -f "./detect-banned-db-clients.sh" ]; then
+        BANNED_DETECT="./detect-banned-db-clients.sh"
+    fi
+
+    if [ -n "$BANNED_DETECT" ]; then
+        if ! bash "$BANNED_DETECT" > /dev/null 2>&1; then
+            echo -e "${RED}[VIOLATION]${NC} BANNED_DB_CLIENT: Direct database access detected in src/"
+            echo "            CTB_REGISTRY_ENFORCEMENT.md §5.3: All writes must use Gatekeeper"
+            echo "            Action: Replace direct DB imports with Gatekeeper module"
+            ((VIOLATIONS++))
+        else
+            echo -e "${GREEN}[PASS]${NC} No banned database client patterns in staged files"
+        fi
+    else
+        echo -e "${YELLOW}[WARNING]${NC} detect-banned-db-clients.sh not found — cannot check for banned DB clients"
+        echo "          Install: Copy from imo-creator templates/scripts/"
+        ((WARNINGS++))
+    fi
+fi
+
+# ───────────────────────────────────────────────────────────────────
+# CHECK 15: Tamper protection for ctb-drift-audit.sh (locked script)
+# ───────────────────────────────────────────────────────────────────
+# If ctb-drift-audit.sh is staged, the commit message must contain
+# an ADR reference trailer: "ADR-REF: ADR-XXX"
+# This prevents unauthorized modification of the drift auditor.
+DRIFT_AUDIT_STAGED=$(echo "$STAGED_FILES" | grep -E "ctb-drift-audit\.sh$" || true)
+
+if [ -n "$DRIFT_AUDIT_STAGED" ]; then
+    # Read the commit message from the file (if available via prepare-commit-msg)
+    # In a pre-commit hook, the commit message file is not yet written.
+    # We check for the ADR-REF in the most recent commit message template
+    # or require the user to use: git commit -m "... ADR-REF: ADR-XXX"
+    #
+    # Since pre-commit fires BEFORE the message is finalized, we check
+    # if there's a COMMIT_EDITMSG from a previous attempt or if the user
+    # set the GIT_ADR_REF environment variable.
+    COMMIT_MSG_FILE=".git/COMMIT_EDITMSG"
+    ADR_FOUND=false
+
+    if [ -n "${GIT_ADR_REF:-}" ]; then
+        # Allow override via environment variable
+        ADR_FOUND=true
+    elif [ -f "$COMMIT_MSG_FILE" ]; then
+        if grep -qE "^ADR-REF:\s*ADR-[0-9]+" "$COMMIT_MSG_FILE" 2>/dev/null; then
+            ADR_FOUND=true
+        fi
+    fi
+
+    if [ "$ADR_FOUND" = false ]; then
+        echo -e "${RED}[VIOLATION]${NC} TAMPER_PROTECTION: ctb-drift-audit.sh is a locked script"
+        echo "            Modifying this file requires an ADR reference."
+        echo "            Add trailer to commit message: ADR-REF: ADR-XXX"
+        echo "            Or set: GIT_ADR_REF=ADR-XXX git commit ..."
+        echo "            Doctrine: CTB_REGISTRY_ENFORCEMENT.md §6"
+        ((VIOLATIONS++))
+    else
+        echo -e "${GREEN}[PASS]${NC} ADR reference found for locked script modification"
     fi
 fi
 

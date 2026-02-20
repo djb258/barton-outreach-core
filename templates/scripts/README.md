@@ -12,7 +12,7 @@ These scripts are distributed to downstream repos. They enforce doctrine complia
 
 | Script | Purpose |
 |--------|---------|
-| `hooks/pre-commit` | Pre-commit doctrine compliance gate (10 checks) |
+| `hooks/pre-commit` | Pre-commit doctrine compliance gate (15 checks) |
 
 ### Doctrine & CTB
 
@@ -54,9 +54,31 @@ These scripts are distributed to downstream repos. They enforce doctrine complia
 
 | Script | Purpose |
 |--------|---------|
-| `update_from_imo_creator.sh` | Pull updates from imo-creator |
+| `update_from_imo_creator.sh` | Pull updates from imo-creator (Unix) |
+| `update_from_imo_creator.ps1` | Pull updates from imo-creator (Windows) |
 | `push-doctrine-update.sh` | Push doctrine updates (Unix) |
 | `push-doctrine-update.ps1` | Push doctrine updates (Windows) |
+
+### Enforcement (Fail-Closed)
+
+| Script | Purpose |
+|--------|---------|
+| `ctb-registry-gate.sh` | CTB registry gate — validates migrations vs `column_registry.yml` + sub-hub cardinality (Unix) |
+| `ctb-registry-gate.ps1` | CTB registry gate (Windows) |
+| `detect-banned-db-clients.sh` | Banned DB client detection — scans `src/` for direct database access bypassing Gatekeeper |
+| `verify-governance-ci.sh` | Governance CI adoption verification — validates required workflow references, no continue-on-error, enforcement scripts present |
+| `bootstrap-audit.sh` | Bootstrap audit — Day 0 structural validation, outputs `docs/BOOTSTRAP_AUDIT.md` attestation (requires `DATABASE_URL` for full checks) |
+| `ctb-drift-audit.sh` | CTB drift audit — live database vs `ctb.table_registry` vs `column_registry.yml` with `--mode=baseline\|strict` and `--write-baseline`. Includes immutability checks (§8), JSON containment checks (§9), and application role check (§10): trigger presence, RAW columns, _active views, JSON in RAW/downstream, bridge versions, vendor references, superuser detection. (requires `DATABASE_URL`, `psql`, `yq`, `jq`) **LOCKED** |
+
+### Validation
+
+| Script | Purpose |
+|--------|---------|
+| `validate-schema-completeness.sh` | Schema completeness validator (DBA Gate B metadata) |
+| `validate-schema-completeness.ps1` | Schema completeness validator (Windows) |
+| `generate-data-dictionary.sh` | Data dictionary generator from `column_registry.yml` |
+| `detect-staleness.sh` | Governance artifact freshness audit (Unix) |
+| `detect-staleness.ps1` | Governance artifact freshness audit (Windows) |
 
 ### Security
 
