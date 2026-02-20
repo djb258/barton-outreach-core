@@ -14,11 +14,12 @@
 | `scan_sitemaps.py` | `outreach.sitemap_discovery` | `discover_source_urls.py` |
 | `verify_domains.py` | `outreach.sitemap_discovery` | `discover_source_urls.py` |
 | `recover_dead_domains.py` | `outreach.sitemap_discovery` | `discover_source_urls.py` |
+| `discover_source_urls.py` | `outreach.source_urls` | N/A (table dropped in Phase 3) |
+| `scrape_leadership_pages.py` | `outreach.source_urls` | N/A (reads from dropped table) |
 
 ## Current Scripts (still in `hubs/blog-content/imo/middle/`)
 
-- `discover_source_urls.py` — Spine-linked URL discovery (outreach.source_urls)
-- `scrape_leadership_pages.py` — Leadership page scraping + slot filling
+- `classify_event.py`, `extract_entities.py`, `parse_content.py`, `validate_signal.py`, `match_company.py`, `hub_status.py` — Blog content processing pipeline
 
 ## Data Location
 

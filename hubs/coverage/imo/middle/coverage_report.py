@@ -130,13 +130,13 @@ def run_report(cur, radius_zips, allowed_states, anchor_zip, radius_miles, a_cit
 
     print(f"\n  CT companies (state-filtered): {ct_total:,}")
 
-    # DOL linked
+    # DOL linked (EXISTS avoids fan-out — 421 outreach_ids have multiple DOL rows)
     cur.execute("""
         SELECT COUNT(*)
         FROM outreach.company_target ct
-        JOIN outreach.dol d ON d.outreach_id = ct.outreach_id
         WHERE LEFT(TRIM(ct.postal_code), 5) = ANY(%s)
           AND UPPER(TRIM(ct.state)) = ANY(%s)
+          AND EXISTS (SELECT 1 FROM outreach.dol d WHERE d.outreach_id = ct.outreach_id)
     """, (radius_zips, allowed_states))
     dol_linked = cur.fetchone()[0]
     dol_pct = 100 * dol_linked / ct_total if ct_total > 0 else 0
