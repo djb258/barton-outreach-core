@@ -229,20 +229,22 @@ If this decision fails:
 | PRD | hubs/blog-content/PRD.md (v2.0) |
 | Work Items | URL-DISCOVERY-001 |
 
-### Files Created
+### Files Created (SUPERSEDED 2026-02-20)
 
-| File | Purpose |
-|------|---------|
-| `hubs/blog-content/imo/middle/discover_company_urls.py` | Sequential URL discovery |
-| `hubs/blog-content/imo/middle/discover_urls_batch.py` | Parallel batch discovery |
-| `hubs/blog-content/imo/middle/discovery_status.py` | Progress monitoring |
+| File | Purpose | Status |
+|------|---------|--------|
+| `hubs/blog-content/imo/middle/discover_company_urls.py` | Sequential URL discovery | ARCHIVED to `archive/blog-content-superseded/` |
+| `hubs/blog-content/imo/middle/discover_urls_batch.py` | Parallel batch discovery | ARCHIVED to `archive/blog-content-superseded/` |
+| `hubs/blog-content/imo/middle/discovery_status.py` | Progress monitoring | ARCHIVED to `archive/blog-content-superseded/` |
 
-### Tables Created
+**Current replacement**: `hubs/blog-content/imo/middle/discover_source_urls.py` (spine-linked, writes to `outreach.source_urls`)
 
-| Table | Purpose |
-|-------|---------|
-| `company.company_source_urls` | Discovered URLs storage |
-| `company.url_discovery_failures` | Failed discovery tracking |
+### Tables Created (MIGRATED 2026-02-20)
+
+| Table | Purpose | Status |
+|-------|---------|--------|
+| `company.company_source_urls` | Discovered URLs storage | Data migrated to `vendor.blog`, table DROPPED |
+| `company.url_discovery_failures` | Failed discovery tracking | DROPPED |
 
 ---
 

@@ -132,7 +132,7 @@ _Constitutional pass mapping per `PRD_CONSTITUTION.md §Pass-to-IMO Mapping`_
 |--------|-------------|
 | Employee Count | `outreach.company_target.employees` |
 | Email Method | `outreach.company_target.email_method` |
-| Domain Health | `outreach.sitemap_discovery.domain_reachable` |
+| Domain Health | `vendor.blog` (`source_table = 'outreach.sitemap_discovery'`, `domain_reachable`) |
 
 ---
 

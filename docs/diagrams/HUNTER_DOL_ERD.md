@@ -1,7 +1,7 @@
 # Hunter.io + DOL Integration ERD
 
-> **Last Updated**: 2026-02-13
-> **Status**: PRODUCTION
+> **Last Updated**: 2026-02-20
+> **Status**: PRODUCTION (Post-Phase 3 Legacy Collapse)
 
 ---
 
@@ -9,68 +9,40 @@
 
 ```mermaid
 erDiagram
-    HUNTER_COMPANY ||--o{ HUNTER_CONTACT : "domain"
-    HUNTER_CONTACT ||--o{ V_HUNTER_CONTACT_SOURCES : "unpivot"
-    OUTREACH ||--o| HUNTER_COMPANY : "domain match"
-    OUTREACH ||--o| HUNTER_CONTACT : "domain match"
+    VENDOR_CT ||--o{ VENDOR_PEOPLE : "domain (source_table filter)"
     OUTREACH ||--|| OUTREACH_DOL : "outreach_id"
     EIN_URLS ||--o| OUTREACH : "domain match"
     EIN_URLS ||--o| FORM_5500 : "ein match"
     EIN_URLS ||--o| FORM_5500_SF : "ein match"
+    OUTREACH ||--o| COMPANY_TARGET : "outreach_id"
+    OUTREACH ||--o| COMPANY_SLOT : "outreach_id"
+    COMPANY_SLOT ||--o| PEOPLE_MASTER : "person_unique_id"
 
-    HUNTER_COMPANY {
-        serial id PK
-        varchar domain UK
-        varchar organization
-        varchar company_type
-        varchar industry
-        varchar headcount
-        int headcount_min
-        int headcount_max
-        varchar country
-        varchar state
-        varchar city
-        varchar postal_code
-        varchar street
-        varchar email_pattern
-        varchar source_file
-        timestamp created_at
-        timestamp updated_at
+    VENDOR_CT {
+        bigserial vendor_row_id PK
+        text source_table "enrichment.hunter_company etc"
+        text domain
+        text company_name
+        text company_unique_id
+        uuid outreach_id
+        text industry
+        int employee_count
+        text email_pattern
+        timestamptz migrated_at
     }
 
-    HUNTER_CONTACT {
-        serial id PK
-        varchar domain FK
-        varchar email UK
-        varchar email_type
-        int confidence_score
-        int num_sources
-        varchar first_name
-        varchar last_name
-        varchar department
-        varchar job_title
-        varchar position_raw
-        varchar twitter_handle
-        varchar linkedin_url
-        varchar phone_number
-        text source_1
-        text source_2
-        text source_3_30 "...source_30"
-        varchar source_file
-        timestamp created_at
-        timestamp updated_at
-    }
-
-    V_HUNTER_CONTACT_SOURCES {
-        int contact_id FK
-        varchar domain
-        varchar email
-        varchar first_name
-        varchar last_name
-        varchar job_title
-        varchar linkedin_url
-        int source_order
-        text source_url
+    VENDOR_PEOPLE {
+        bigserial vendor_row_id PK
+        text source_table "enrichment.hunter_contact etc"
+        text domain
+        text email
+        text first_name
+        text last_name
+        text job_title
+        text linkedin_url
+        text phone_number
+        text hunter_sources "collapsed source_1..30"
+        timestamptz migrated_at
     }
 
     EIN_URLS {
@@ -94,6 +66,16 @@ erDiagram
         timestamp updated_at
     }
 
+    COMPANY_TARGET {
+        uuid target_id PK
+        uuid outreach_id FK
+        varchar email_method
+        varchar industry
+        int employees
+        varchar state
+        varchar postal_code
+    }
+
     OUTREACH_DOL {
         uuid dol_id PK
         uuid outreach_id FK
@@ -102,25 +84,41 @@ erDiagram
         text funding_type
         text broker_or_advisor
         text carrier
-        timestamp created_at
-        timestamp updated_at
+        int renewal_month
+        int outreach_start_month
+    }
+
+    COMPANY_SLOT {
+        uuid slot_id PK
+        uuid outreach_id FK
+        text slot_type
+        text person_unique_id FK
+        boolean is_filled
+    }
+
+    PEOPLE_MASTER {
+        text unique_id PK
+        text email
+        text full_name
+        text linkedin_url
+        boolean email_verified
+        boolean outreach_ready
     }
 
     FORM_5500 {
-        uuid filing_id PK
-        varchar ack_id
+        varchar ack_id PK
         varchar sponsor_dfe_ein
         varchar sponsor_dfe_name
-        varchar plan_name
         int tot_active_partcp_cnt
+        varchar form_year
     }
 
     FORM_5500_SF {
-        uuid filing_id PK
-        varchar ack_id
-        varchar sf_spons_dfe_ein
-        varchar sf_spons_dfe_name
+        varchar ack_id PK
+        varchar sf_spons_ein
+        varchar sf_sponsor_name
         int sf_tot_partcp_boy_cnt
+        varchar form_year
     }
 ```
 
@@ -130,14 +128,16 @@ erDiagram
 
 | Schema | Table | Records | Purpose |
 |--------|-------|---------|---------|
-| `enrichment` | `hunter_company` | 88,405 | Company metadata from Hunter |
-| `enrichment` | `hunter_contact` | 583,433 | Contact data with 30 source URLs |
-| `enrichment` | `v_hunter_contact_sources` | ~231,973 | Unpivoted source URLs |
+| `vendor` | `ct` | 225,904 | Consolidated company vendor data (Hunter, Clay, CSVs) |
+| `vendor` | `people` | 843,744 | Consolidated people vendor data (Hunter contacts, Clay, scrapers) |
 | `dol` | `ein_urls` | 127,909 | EIN to domain mapping |
-| `dol` | `form_5500` | 230,482 | Full DOL 5500 filings |
-| `dol` | `form_5500_sf` | 760,839 | Short form 5500-SF filings |
-| `outreach` | `outreach` | 95,837 | Outreach spine (95,004 cold + 833 fractional CFO) |
-| `outreach` | `dol` | 74,529 | Outreach DOL sub-hub (79.2% coverage) |
+| `dol` | `form_5500` | 432,582 | Full DOL 5500 filings (large plans) |
+| `dol` | `form_5500_sf` | 1,535,999 | Short form 5500-SF filings (small plans) |
+| `outreach` | `outreach` | 114,137 | Outreach spine |
+| `outreach` | `dol` | 89,247 | Outreach DOL sub-hub |
+| `outreach` | `company_target` | 114,137 | Company firmographics + targeting |
+| `people` | `company_slot` | 340,815 | Slot assignments (CEO/CFO/HR) |
+| `people` | `people_master` | 183,397 | Contact details |
 
 ---
 
@@ -152,31 +152,28 @@ erDiagram
                     |                             |
                     v                             v
           +------------------+          +------------------+
+          | vendor.ct        |          | vendor.people    |
+          | (225,904 rows)   |          | (843,744 rows)   |
+          | source_table =   |          | source_table =   |
           | hunter_company   |          | hunter_contact   |
-          | (88,405)         |          | (583,433)        |
           +--------+---------+          +--------+---------+
                    |                             |
-                   | domain                      | domain
+                   | domain bridge               | promoted to
                    v                             v
-          +----------------------------------------+
-          |           Domain Match                 |
-          +----------------------------------------+
-                             |
-                             v
-                   +------------------+
-                   | outreach.outreach|
-                   | (95,837)         |
-                   +--------+---------+
-                            |
-                            | outreach_id
-                            v
-                   +------------------+
-                   | outreach.dol     |
-                   | (74,529)         |
-                   +--------+---------+
-                            |
-                            | ein
-                            v
+          +------------------+          +------------------+
+          | outreach.outreach|          | people.           |
+          | (114,137)        |          | people_master     |
+          +--------+---------+          | (183,397)         |
+                   |                    +------------------+
+                   | outreach_id
+                   v
+          +------------------+
+          | outreach.dol     |
+          | (89,247)         |
+          +--------+---------+
+                   |
+                   | ein
+                   v
           +----------------------------------------+
           |              EIN Match                 |
           +----------------------------------------+
@@ -184,7 +181,7 @@ erDiagram
                    v                      v
           +------------------+   +------------------+
           | dol.form_5500    |   | dol.form_5500_sf |
-          | (230,482)        |   | (760,839)        |
+          | (432,582)        |   | (1,535,999)      |
           +------------------+   +------------------+
 ```
 
@@ -192,19 +189,19 @@ erDiagram
 
 ## Join Paths
 
-### Hunter to Outreach (via domain)
+### Vendor Data to Outreach (via domain)
 
 ```sql
+-- Get Hunter company data matched to outreach
 SELECT
     o.outreach_id,
-    hc.domain,
-    hc.email,
-    hc.first_name,
-    hc.last_name,
-    hc.job_title
+    v.domain,
+    v.company_name,
+    v.industry,
+    v.email_pattern
 FROM outreach.outreach o
-JOIN enrichment.hunter_company hco ON LOWER(o.domain) = LOWER(hco.domain)
-JOIN enrichment.hunter_contact hc ON hco.domain = hc.domain;
+JOIN vendor.ct v ON LOWER(o.domain) = LOWER(v.domain)
+    AND v.source_table = 'enrichment.hunter_company';
 ```
 
 ### EIN URLs to Outreach (via domain)
@@ -231,42 +228,55 @@ FROM dol.ein_urls eu
 JOIN dol.form_5500 f ON eu.ein = f.sponsor_dfe_ein;
 ```
 
-### Full Chain: Hunter -> Outreach -> DOL Filings
+### Full Chain: Outreach -> DOL -> Filings + People
 
 ```sql
+-- Operational query: use canonical tables (NOT vendor)
 SELECT
     o.outreach_id,
     o.domain,
     od.ein,
     f.sponsor_dfe_name,
     f.tot_active_partcp_cnt,
-    hc.email,
-    hc.job_title
+    pm.email,
+    pm.full_name,
+    pm.title
 FROM outreach.outreach o
 JOIN outreach.dol od ON o.outreach_id = od.outreach_id
 JOIN dol.form_5500 f ON od.ein = f.sponsor_dfe_ein
-LEFT JOIN enrichment.hunter_contact hc ON LOWER(o.domain) = LOWER(hc.domain);
+LEFT JOIN people.company_slot cs ON o.outreach_id = cs.outreach_id
+    AND cs.slot_type = 'CEO' AND cs.is_filled = TRUE
+LEFT JOIN people.people_master pm ON pm.unique_id = cs.person_unique_id;
 ```
 
 ---
 
-## Key Metrics (2026-02-13 VERIFIED)
+## Key Metrics (2026-02-20)
 
 | Metric | Value |
 |--------|-------|
-| Hunter companies | 88,405 |
-| Hunter contacts | 583,433 |
-| Hunter source URLs | 231,973 |
+| Vendor company data (vendor.ct) | 225,904 |
+| Vendor people data (vendor.people) | 843,744 |
 | DOL EINs with domains | 127,909 |
-| Outreach records | 95,837 |
-| **DOL bridge linked** | **74,529 (79.2%)** |
-| DOL with filing | 64,975 (87.2% of linked) |
-| DOL with renewal month | 74,521 (99.9% of linked) |
-| DOL with carrier | 10,233 (13.7% of linked) |
-| DOL with broker | 6,995 (9.4% of linked) |
-| Fuzzy bridge matches | 4,580 (included in 74,529) |
-| New companies from Hunter DOL | 54,155 |
+| Outreach records | 114,137 |
+| **DOL bridge linked** | **89,247** |
+| DOL with filing | ~85,000 (est.) |
+| DOL with renewal month | ~89,000 (est.) |
+| DOL with carrier | ~10,233 |
+| DOL with broker | ~6,995 |
+| People master | 183,397 |
+| Company slots | 340,815 (52% filled) |
 
-> See `docs/DATABASE_OVERVIEW_TEMPLATE.md` for full sub-hub coverage view.
+> See `docs/migration/legacy-mapping.md` for full Phase 3 migration details.
+> See `docs/OSAM.md` for vendor schema query routing.
 
 ---
+
+## Migration Note (2026-02-20)
+
+**Phase 3 Legacy Collapse** consolidated external vendor data:
+- `enrichment.hunter_company` (88,554 rows) → `vendor.ct` (with `source_table = 'enrichment.hunter_company'`)
+- `enrichment.hunter_contact` (583,828 rows) → `vendor.people` (with `source_table = 'enrichment.hunter_contact'`)
+- `enrichment.hunter_company` and `enrichment.hunter_contact` tables still exist in the database but are considered legacy. Use `vendor.*` for new work.
+
+**For operational queries**: Use canonical tables (`outreach.outreach`, `outreach.dol`, `people.people_master`), NOT vendor tables. Vendor tables are Tier-1 staging — raw, append-only, historical.

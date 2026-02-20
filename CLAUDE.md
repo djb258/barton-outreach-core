@@ -132,45 +132,40 @@ The OSAM tells you exactly where to go for any data question:
 
 ## 🔗 BLOG SUB-HUB URL STORAGE
 
-> **Need About Us or News/Press URLs?** Use `company.company_source_urls`
+> **Need About Us or News/Press URLs?** Query `vendor.blog` (Tier-1 staging, all URL data consolidated here)
+> **Spine-linked canonical URLs?** Query `outreach.source_urls` (FK: outreach_id)
 
-### Table: `company.company_source_urls`
+### Table: `vendor.blog` (source_table filter)
 
-| Source Type | Count | Purpose |
-|-------------|-------|---------|
-| `about_page` | 26,662 | Company About Us pages |
-| `press_page` | 14,377 | News/Press/Announcements |
-| `leadership_page` | 12,602 | Executive bios |
-| `team_page` | 8,896 | Staff listings |
-| `careers_page` | 16,262 | Job postings |
-| `contact_page` | 25,213 | Contact info |
+| Source Type | Count | Original Source |
+|-------------|-------|-----------------|
+| `about_page` | 26,662 | company.company_source_urls |
+| `press_page` | 14,377 | company.company_source_urls |
+| `leadership_page` | 12,602 | company.company_source_urls |
+| `team_page` | 8,896 | company.company_source_urls |
+| `careers_page` | 16,262 | company.company_source_urls |
+| `contact_page` | 25,213 | company.company_source_urls |
 
-**Total URLs**: 104,012 | **Companies with URLs**: 36,142
-
-### Bridge Path to Outreach
-```
-outreach.outreach (domain) → company.company_master (website_url) → company.company_source_urls (company_unique_id)
-```
+**Total vendor.blog rows**: 289,624 | **Sources**: outreach.sitemap_discovery (93,596) + outreach.source_urls (81,292) + company.company_source_urls (114,736)
 
 ### Quick Queries
 ```sql
--- About Us URLs (standalone)
-SELECT company_unique_id, source_url FROM company.company_source_urls WHERE source_type = 'about_page';
+-- About Us URLs (from vendor staging)
+SELECT source_row_id, source_url FROM vendor.blog
+WHERE source_table = 'company.company_source_urls' AND source_type = 'about_page';
 
--- News/Press URLs (standalone)
-SELECT company_unique_id, source_url FROM company.company_source_urls WHERE source_type = 'press_page';
+-- Spine-linked source URLs (canonical)
+SELECT su.outreach_id, su.source_type, su.source_url
+FROM outreach.source_urls su
+WHERE su.source_type IN ('about_page', 'press_page');
 
--- ✅ BRIDGE: Get URLs for Outreach Companies
-SELECT o.outreach_id, o.domain, csu.source_type, csu.source_url
-FROM outreach.outreach o
-JOIN company.company_master cm ON LOWER(o.domain) = LOWER(
-    REPLACE(REPLACE(REPLACE(cm.website_url, 'http://', ''), 'https://', ''), 'www.', '')
-)
-JOIN company.company_source_urls csu ON csu.company_unique_id = cm.company_unique_id
-WHERE csu.source_type IN ('about_page', 'press_page');
+-- Sitemap data (from vendor staging)
+SELECT outreach_id, domain, sitemap_url, has_sitemap
+FROM vendor.blog
+WHERE source_table = 'outreach.sitemap_discovery';
 ```
 
-**Bridge and query examples are inline above.**
+**Post-Phase 3 Note**: `company.company_source_urls` and `outreach.sitemap_discovery` data migrated to `vendor.blog` (2026-02-20). Use `vendor.blog` for historical URL data, `outreach.source_urls` for spine-linked canonical URLs.
 
 ---
 
@@ -548,7 +543,8 @@ barton-outreach-core/
 │   │   ├── hub.manifest.yaml
 │   │   └── imo/
 │   │       └── middle/
-│   │           └── discover_blog_urls.py
+│   │           ├── discover_source_urls.py    # URL discovery (spine-linked)
+│   │           └── scrape_leadership_pages.py # Executive scraping + slot fill
 │   │
 │   ├── outreach-execution/            # Sub-hub (04.04.04)
 │   │   ├── hub.manifest.yaml
@@ -725,13 +721,18 @@ SSL Mode: require
 
 | Schema | Table | Purpose |
 |--------|-------|---------|
-| marketing | company_master | Master company records |
-| marketing | company_slot | Executive position tracking |
-| marketing | people_master | Contact/executive data |
-| marketing | data_enrichment_log | Enrichment job tracking |
-| intake | company_raw_intake | CSV staging |
-| public | shq_error_log | System error tracking |
-| bit | events | Buyer intent signals |
+| outreach | outreach | Operational spine (outreach_id PK) |
+| outreach | company_target | Authoritative company list |
+| outreach | dol | DOL sub-hub (EIN, filing, renewal) |
+| outreach | blog | Blog/content sub-hub |
+| people | company_slot | Executive position tracking (CEO/CFO/HR) |
+| people | people_master | Contact/executive data |
+| vendor | ct | Tier-1 company staging (Hunter, Clay, CSV) |
+| vendor | people | Tier-1 people staging (Hunter contacts, scrapers) |
+| vendor | blog | Tier-1 URL staging (sitemaps, source URLs) |
+| cl | company_identity | Authority registry (identity pointers) |
+| dol | form_5500 | DOL annual filings (large plans) |
+| dol | ein_urls | EIN-to-domain mapping |
 
 ---
 
@@ -899,29 +900,25 @@ doppler run -- python hubs/people-intelligence/imo/middle/phases/fill_slots_from
 4. Links person to slot and marks `is_filled = TRUE`
 5. Adds phone number to `slot_phone` column if present
 
-### Discover Blog/About/Press URLs (Blog Sub-Hub)
+### Discover Source URLs (Blog Sub-Hub)
 
 ```bash
-# Sitemap-first URL discovery for company.company_source_urls
+# Sitemap-first URL discovery → outreach.source_urls (spine-linked via outreach_id)
 # 3-step waterfall: sitemap.xml → homepage links → brute-force probe
 # Tier 0 FREE — httpx only, no paid APIs
 
-# Dry run preview (20 companies, no DB writes)
-doppler run -- python hubs/blog-content/imo/middle/discover_blog_urls.py --dry-run --limit 20
+# Discover URLs for a specific coverage market
+doppler run -- python hubs/blog-content/imo/middle/discover_source_urls.py \
+    --coverage-id <uuid> [--dry-run] [--limit N] [--workers N]
 
-# Full production run (all companies without URLs)
-doppler run -- python hubs/blog-content/imo/middle/discover_blog_urls.py --workers 20
-
-# Control concurrency and batch size
-doppler run -- python hubs/blog-content/imo/middle/discover_blog_urls.py --workers 30 --chunk-size 200
-
-# Debug mode (verbose HTTP logging)
-doppler run -- python hubs/blog-content/imo/middle/discover_blog_urls.py --debug --limit 10
+# Scrape leadership/team pages for executive names + slot filling
+doppler run -- python hubs/blog-content/imo/middle/scrape_leadership_pages.py \
+    --coverage-id <uuid> [--fill] [--dry-run] [--limit N] [--workers N]
 ```
 
 **What it discovers:** about_page, press_page, blog_page, leadership_page, team_page, careers_page, contact_page, investor_page
 
-**Resume-safe:** Skips companies already in `company.company_source_urls` (ON CONFLICT DO NOTHING).
+**Resume-safe:** ON CONFLICT DO NOTHING on `outreach.source_urls`.
 
 ### Run Pipeline for Company
 

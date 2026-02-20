@@ -204,7 +204,7 @@ _Constitutional pass mapping per `PRD_CONSTITUTION.md §Pass-to-IMO Mapping`_
 | Domain Reachable | 52,870 | 85.4% of checked |
 | Domain Unreachable | 9,047 | 14.6% of checked |
 
-### Source URL Types (company.company_source_urls)
+### Source URL Types (vendor.blog, source_table = 'company.company_source_urls')
 
 | Source Type | Count | Purpose |
 |-------------|-------|---------|
@@ -216,15 +216,17 @@ _Constitutional pass mapping per `PRD_CONSTITUTION.md §Pass-to-IMO Mapping`_
 | `contact_page` | 25,213 | Contact info |
 | **Total URLs** | **104,012** | **36,142 companies** |
 
+> **Phase 3 Note (2026-02-20)**: Source URL data migrated from `company.company_source_urls` to `vendor.blog`. Spine-linked URLs remain in `outreach.source_urls`.
+
 ### Data Sources
 
 | Metric | Source Table |
 |--------|-------------|
 | Blog Coverage | `outreach.blog` |
-| Sitemaps | `outreach.sitemap_discovery` (`has_sitemap = TRUE`) |
-| Source URLs | `company.company_source_urls` |
+| Sitemaps | `vendor.blog` (`source_table = 'outreach.sitemap_discovery'`, `has_sitemap = TRUE`) |
+| Source URLs | `vendor.blog` (`source_table = 'company.company_source_urls'`) or `outreach.source_urls` (spine-linked) |
 | Company LinkedIn | `cl.company_identity.linkedin_company_url` |
-| Domain Health | `outreach.sitemap_discovery.domain_reachable` |
+| Domain Health | `vendor.blog` (`source_table = 'outreach.sitemap_discovery'`, `domain_reachable`) |
 
 ---
 

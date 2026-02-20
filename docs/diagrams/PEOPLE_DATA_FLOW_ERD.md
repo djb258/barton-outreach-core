@@ -1,7 +1,7 @@
 # People Data Flow ERD
 
-**Version:** 1.1.0
-**Last Updated:** 2026-02-13
+**Version:** 1.2.0
+**Last Updated:** 2026-02-20
 **Status:** CANONICAL REFERENCE
 
 ---
@@ -10,6 +10,9 @@
 
 > **ALL People Sub-Hub operations MUST start from `outreach.company_target`**
 > **This is the ONLY authoritative source for companies.**
+>
+> **Tier-1 Staging**: Raw people data lives in `vendor.people` (843,744 rows from Hunter, Clay, scrapers).
+> Canonical promoted data lives in `people.people_master` and `people.company_slot`.
 
 ---
 
@@ -100,10 +103,12 @@ erDiagram
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                              CLAY (CL)                                       │
-│                    External Data Source / Workflows                         │
+│                      vendor.people (Tier-1 Staging)                          │
+│   843,744 rows — Hunter contacts, Clay imports, scrapers, WV intake          │
+│   source_table discriminator: enrichment.hunter_contact, intake.*            │
+│   Append-only, historical record. NOT used for operational queries.          │
 └────────────────────────────────┬────────────────────────────────────────────┘
-                                 │
+                                 │  Promotion/enrichment
                                  ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                     outreach.company_target                                  │
@@ -277,9 +282,25 @@ SELECT * FROM outreach.outreach;  -- Different record count
 
 ---
 
+## Vendor Staging Layer
+
+**Post-Phase 3 (2026-02-20)**: All raw people data from external sources is consolidated in `vendor.people` (843,744 rows). This is the Tier-1 staging layer — append-only, historical.
+
+| Source | Rows in vendor.people | Notes |
+|--------|----------------------|-------|
+| `enrichment.hunter_contact` | 583,828 | Hunter API contacts, source_1..30 collapsed to TEXT[] |
+| `intake.people_raw_intake` | 120,045 | Clay CSV imports (no outreach_id) |
+| `intake.people_staging` | 139,861 | Scraped names from leadership pages |
+| `intake.people_raw_wv` | 10 | WV intake |
+
+**For operational queries**: Use canonical tables (`people.people_master`, `people.company_slot`), NOT `vendor.people`.
+
+---
+
 ## Change Log
 
 | Date | Version | Change |
 |------|---------|--------|
+| 2026-02-20 | 1.2.0 | Added vendor.people staging layer (Phase 3 Legacy Collapse) |
 | 2026-02-13 | 1.1.0 | Updated all metrics to current verified counts, added email verification |
 | 2026-02-02 | 1.0.0 | Initial creation with live metrics |

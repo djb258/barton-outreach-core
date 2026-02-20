@@ -60,9 +60,12 @@ SPINE (outreach.outreach)
 | Company news/blog URLs? | `outreach.blog` | outreach_id |
 | Company name/domain? | `cl.company_identity` | sovereign_company_id |
 | Employee count/size band? | `outreach.company_target` | `employees` column |
-| Domain reachable? | `outreach.sitemap_discovery` | outreach_id |
-| Has sitemap? | `outreach.sitemap_discovery` | outreach_id (`has_sitemap = TRUE`) |
-| About/press/leadership URLs? | `company.company_source_urls` | company_unique_id (bridge via domain) |
+| Domain reachable? | `vendor.blog` | `source_table = 'outreach.sitemap_discovery'` |
+| Has sitemap? | `vendor.blog` | `source_table = 'outreach.sitemap_discovery' AND has_sitemap = TRUE` |
+| About/press/leadership URLs? | `vendor.blog` | `source_table = 'company.company_source_urls'` |
+| Hunter company data (raw)? | `vendor.ct` | `source_table = 'enrichment.hunter_company'` |
+| Hunter contact data (raw)? | `vendor.people` | `source_table = 'enrichment.hunter_contact'` |
+| CL domain/name/candidate data? | `vendor.ct_claude` | source_table discriminator |
 | Company LinkedIn URL? | `cl.company_identity` | `linkedin_company_url` column |
 | Person LinkedIn URL? | `people.people_master` | `linkedin_url` via company_slot |
 | Companies in ZIP+radius? | `outreach.company_target` + `reference.us_zip_codes` | Haversine on lat/lng, match via postal_code |
@@ -267,9 +270,9 @@ FK:    outreach_id → outreach.outreach
 - "What's the about page URL?"
 - "What's the news/blog URL?"
 - "When was content last extracted?"
-- "Does this company have a sitemap?" → `outreach.sitemap_discovery` (`has_sitemap = TRUE`)
-- "Is the domain reachable?" → `outreach.sitemap_discovery.domain_reachable`
-- "About/press/leadership/team/careers/contact URLs?" → `company.company_source_urls` (bridge via domain)
+- "Does this company have a sitemap?" → `vendor.blog` WHERE `source_table = 'outreach.sitemap_discovery'` AND `has_sitemap = TRUE`
+- "Is the domain reachable?" → `vendor.blog` WHERE `source_table = 'outreach.sitemap_discovery'` → `domain_reachable`
+- "About/press/leadership/team/careers/contact URLs?" → `vendor.blog` WHERE `source_table = 'company.company_source_urls'`
 - "Company LinkedIn URL?" → `cl.company_identity.linkedin_company_url`
 
 **Blog Live Metrics (2026-02-13)**:
@@ -477,14 +480,39 @@ WHERE cs.is_filled = true
 
 ---
 
-## Source Tables
+## Vendor Schema (Tier-1 Staging)
 
-### Enrichment (Sync to Sub-Hubs)
+> **Phase 3 Legacy Collapse (2026-02-20)**: All external vendor data consolidated into `vendor.*` schema. These are append-only staging tables with `source_table` discriminator identifying the original source.
+
+| Vendor Table | Rows | Sources | Query For |
+|--------------|------|---------|-----------|
+| `vendor.ct` | 225,904 | Hunter companies, company_master, intake CSVs | Raw company data, LinkedIn URLs |
+| `vendor.people` | 843,744 | Hunter contacts, Clay CSV, scraped names | Raw people/contact data |
+| `vendor.blog` | 289,624 | Sitemaps, source URLs, company_source_urls | Raw URL discovery data |
+| `vendor.ct_claude` | 262,944 | CL domains, names, candidates, confidence | CL enrichment outputs |
+| `vendor.people_claude` | 33,217 | Enrichment queues, resolution queues | People enrichment queue data |
+| `vendor.dol_claude` | 16 | DOL URL enrichment | DOL enrichment outputs |
+| `vendor.blog_claude` | 0 | (future) | Blog enrichment outputs |
+| `vendor.lane_claude` | 0 | (future) | Lane enrichment outputs |
+
+**Query Pattern**: All vendor tables have a `source_table` column (e.g., `'enrichment.hunter_company'`) to filter by origin.
+
+```sql
+-- Example: Get Hunter company data for a domain
+SELECT * FROM vendor.ct
+WHERE source_table = 'enrichment.hunter_company' AND domain = 'example.com';
+
+-- Example: Get all source URLs for an outreach_id
+SELECT source_type, source_url FROM vendor.blog
+WHERE source_table = 'company.company_source_urls' AND company_unique_id = 'xxx';
+```
+
+### Enrichment Tables (Legacy — data copied to vendor)
 
 | Table | Purpose | Query Directly? |
 |-------|---------|-----------------|
-| enrichment.hunter_company | Hunter.io company data | NO - synced to CT |
-| enrichment.hunter_contact | Hunter.io contact data | NO - synced to people_master |
+| enrichment.hunter_company | Hunter.io company data | NO — data in `vendor.ct` |
+| enrichment.hunter_contact | Hunter.io contact data | NO — data in `vendor.people` |
 
 ---
 
@@ -568,7 +596,6 @@ Path C (URL lookup):
 | **Utility** | | |
 | dol.ein_urls | 127,909 | EIN → URL/domain lookup |
 | **Staging (empty, future use)** | | |
-| dol.pressure_signals | 0 | Renewal pressure signal staging |
 | dol.renewal_calendar | 0 | Renewal calendar staging |
 
 ### DOL Column Metadata (1,081 entries)
@@ -907,15 +934,16 @@ WHERE is_frozen = TRUE;
 
 | Leaf Type | Count | Description |
 |-----------|-------|-------------|
-| ARCHIVE | 119 | Archive tables |
-| SYSTEM | 36 | System/metadata |
-| CANONICAL | 26 | Primary data tables |
-| DEPRECATED | 24 | Legacy (read-only) |
-| STAGING | 13 | Intake/staging |
-| ERROR | 11 | Error tracking |
-| MV | 8 | Materialized views |
-| REGISTRY | 7 | Lookup/reference |
-| SUPPORTING | 5 | Operational data serving CANONICAL tables (ADR required) |
+| ARCHIVE | 96 | Archive tables |
+| STAGING | 49 | Vendor data + DOL filings + intake |
+| SYSTEM | 30 | System/metadata/audit |
+| CANONICAL | 23 | Primary data tables (9 frozen) |
+| DEPRECATED | 13 | Legacy (read-only) |
+| REGISTRY | 12 | Lookup/reference (incl. LCS) |
+| ERROR | 9 | Error tracking |
+| MV | 3 | Materialized views |
+| SUPPORTING | 3 | Operational data serving CANONICAL tables (ADR required) |
+| **TOTAL** | **217** | **Post-Phase 3 (2026-02-20)** |
 
 **Full Registry**: See `docs/audit/CTB_GUARDRAIL_MATRIX.csv`
 
@@ -925,6 +953,7 @@ WHERE is_frozen = TRUE;
 
 | Date | Change |
 |------|--------|
+| 2026-02-20 | Phase 3 Legacy Collapse: Added vendor schema section (8 tables, 1.6M rows). Updated query routing for dropped tables (sitemap_discovery, source_urls, company_source_urls → vendor.blog). Updated enrichment section (data in vendor.ct/vendor.people). Removed dol.pressure_signals (dropped). Updated CTB leaf type distribution (217 tables). |
 | 2026-02-13 | Added CT sub-hub metrics (employee bands, domain health), blog metrics (sitemap, source URLs, company LinkedIn), DOL live metrics, people readiness funnel, geographic filtering reference, Database Overview Template reference |
 | 2026-02-09 | Updated for three messaging lanes (Cold Outreach 95,837 + Appointments 771 + Fractional CFO 833). CLS replaces BIT as scoring engine. CL total 102,922. People 182,946 |
 | 2026-02-06 | Added renewal_month + outreach_start_month to outreach.dol (70,142/70,150 = 100%). Outreach start = 5 months before renewal. 86.6% renew in January → outreach starts in August |
