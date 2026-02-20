@@ -2,7 +2,7 @@
 Sovereign Mutation Guard
 ========================
 
-DOCTRINE: Hub status, overrides, and eligibility are PROTECTED tables.
+DOCTRINE: Hub status and eligibility are PROTECTED tables.
           Only sanctioned IMO middle layers may write to them.
 
 This module enforces:
@@ -12,18 +12,17 @@ This module enforces:
 
 PROTECTED TABLES (DO NOT WRITE outside IMO middle layer):
 - outreach.company_hub_status
-- outreach.manual_overrides
 - outreach.hub_registry
 
 PROTECTED VIEWS (READ-ONLY, computed from tables):
 - outreach.vw_sovereign_completion
-- outreach.vw_marketing_eligibility
-- outreach.vw_marketing_eligibility_with_overrides
+
+NOTE: outreach.manual_overrides and outreach.vw_marketing_eligibility_with_overrides
+were DROPPED 2026-02-20 (table consolidation Phase 1 — both had 0 rows).
 
 SANCTIONED WRITERS:
 - hubs/*/imo/middle/hub_status.py (hub status updates)
-- infra/migrations/*.sql (schema + kill switch functions)
-- SQL functions: set_marketing_override(), remove_marketing_override()
+- infra/migrations/*.sql (schema migrations)
 """
 
 import os
@@ -41,20 +40,14 @@ logger = logging.getLogger(__name__)
 
 PROTECTED_TABLES: Set[str] = {
     'outreach.company_hub_status',
-    'outreach.manual_overrides', 
     'outreach.hub_registry',
     'company_hub_status',  # Without schema prefix
-    'manual_overrides',
     'hub_registry',
 }
 
 PROTECTED_VIEWS: Set[str] = {
     'outreach.vw_sovereign_completion',
-    'outreach.vw_marketing_eligibility',
-    'outreach.vw_marketing_eligibility_with_overrides',
     'vw_sovereign_completion',
-    'vw_marketing_eligibility', 
-    'vw_marketing_eligibility_with_overrides',
 }
 
 # ============================================================================

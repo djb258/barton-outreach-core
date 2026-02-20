@@ -356,3 +356,17 @@ This hub's `outreach.blog` data is cleaned when:
 ---
 
 **Last Updated**: 2026-01-30
+
+---
+
+## Dropped Tables (2026-02-20 -- Table Consolidation)
+
+The following tables were **dropped** during database consolidation. All had 0 rows at time of drop.
+Recreatable from migration files if needed.
+
+| Table | Reason | Migration Source |
+|-------|--------|-----------------|
+| `outreach.blog_source_history` | 0 rows, blog source tracking never populated | See `migrations/` directory |
+| `blog.pressure_signals` | 0 rows, BIT v2.0 NARRATIVE_VOLATILITY signals not yet emitted | `migrations/2026-01-26-bit-v2-phase1-distributed-signals.sql` |
+
+**Note:** `outreach.blog`, `outreach.blog_errors`, `outreach.blog_ingress_control`, `company.company_source_urls`, and `company.url_discovery_failures` were NOT dropped (they contain data or are active reference tables).

@@ -50,7 +50,7 @@ The OSAM tells you exactly where to go for any data question:
 > | dol | dol | dol_errors | form_5500_icp_filtered | column_metadata |
 > | blog | blog | blog_errors | - | blog_ingress_control |
 > | people | company_slot (CANONICAL) + people_master (SUPPORTING, ADR-020) | people_errors | - | slot_ingress_control, title_slot_mapping |
-> | bit | bit_scores | bit_errors | bit_signals, movement_events | - |
+> | bit | bit_scores | bit_errors | - | - |
 >
 > **Do NOT elevate supportive/reference tables to sub-hub members.** The `dol.*` schema has 27 data-bearing filing tables (+ 2 empty staging tables) — they feed INTO `outreach.dol`, they are not part of the sub-hub. Total: 11,124,508 rows across 3 years (2023–2025).
 
@@ -201,12 +201,11 @@ WHERE csu.source_type IN ('about_page', 'press_page');
 ### DO NOT MODIFY (v1.0 Frozen)
 
 The following components are **FROZEN** and require formal change request:
-- `outreach.vw_marketing_eligibility_with_overrides` (authoritative view)
 - `outreach.vw_sovereign_completion` (sovereign view)
 - Tier computation logic and assignment rules
-- Kill switch system (manual_overrides, override_audit_log)
 - Marketing safety gate (HARD_FAIL enforcement)
 - Hub registry and waterfall order
+- **Note**: `outreach.vw_marketing_eligibility_with_overrides`, `outreach.manual_overrides`, and `outreach.override_audit_log` were dropped 2026-02-20 (empty, no overrides active). Recreatable from `migrations/2026-01-19-kill-switches.sql` if needed.
 
 See `doctrine/DO_NOT_MODIFY_REGISTRY.md` for complete list.
 
@@ -1082,7 +1081,7 @@ Runtime doctrine enforcement is implemented in `ops/enforcement/`:
 | Migration | Purpose |
 |-----------|---------|
 | `2026-01-13-dol-schema-creation.sql` | DOL Hub tables (form_5500, schedule_a, renewal_calendar) |
-| `2026-01-13-outreach-execution-complete.sql` | Outreach execution (campaigns, sequences, send_log) |
+| `2026-01-13-outreach-execution-complete.sql` | Outreach execution (campaigns, sequences, send_log — **all 3 tables dropped 2026-02-20, were empty**) |
 | `2026-01-13-enable-rls-production-tables.sql` | RLS on all production tables |
 
 See `migrations/MIGRATION_ORDER.md` for execution order.
@@ -1277,11 +1276,8 @@ SELECT bit.validate_proof_for_send(proof_id, requested_band);
 -- Current band
 SELECT bit.get_current_band(company_id);
 
--- Movement events
-SELECT * FROM bit.movement_events WHERE company_unique_id = ?;
-
--- Proof lines
-SELECT * FROM bit.proof_lines WHERE company_unique_id = ? AND valid_until > NOW();
+-- NOTE: bit.movement_events, bit.proof_lines, bit.phase_state, bit.authorization_log
+-- were dropped 2026-02-20 (all empty, deprecated by distributed signal tables per ADR-017)
 ```
 
 ### Related Documentation

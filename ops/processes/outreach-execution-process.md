@@ -1,5 +1,7 @@
 # Process Declaration: Outreach Execution Hub
 
+> **Note (2026-02-20)**: Some tables referenced in this document were dropped during database consolidation (all had 0 rows). See `doctrine/DO_NOT_MODIFY_REGISTRY.md` for the complete list of dropped tables and their migration sources. Affected tables: `outreach.campaigns`, `outreach.sequences`, `outreach.send_log`, `outreach.engagement_events`, `outreach.pipeline_audit_log`, `outreach.outreach_errors`.
+
 ## Conformance
 
 | Field | Value |

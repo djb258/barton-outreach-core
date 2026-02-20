@@ -533,3 +533,21 @@ This hub's data is cleaned when:
 *Generated from Neon PostgreSQL via READ-ONLY connection*
 *Last verified: 2026-02-02*
 *ERD Sync: NEON_SCHEMA_REFERENCE_FOR_ERD.md*
+
+---
+
+## Dropped Tables (2026-02-20 -- Table Consolidation)
+
+The following tables were **dropped** during database consolidation. All had 0 rows at time of drop.
+Recreatable from migration files if needed.
+
+| Table | Reason | Migration Source |
+|-------|--------|-----------------|
+| `people.people_sidecar` | 0 rows, enrichment metadata never populated | `migrations/006_create_sidecar_tables.sql` |
+| `people.person_movement_history` | 0 rows, movement tracking not yet active | `migrations/2025-11-10-talent-flow.sql` |
+| `people.person_scores` | 0 rows, person scoring not yet active | See `migrations/` directory |
+| `people.people_resolution_history` | 0 rows, resolution tracking not yet active | `migrations/2026-01-26-entity-resolution-phase1.sql` |
+| `people.pressure_signals` | 0 rows, BIT v2.0 DECISION_SURFACE signals not yet emitted | `migrations/2026-01-26-bit-v2-phase1-distributed-signals.sql` |
+| `outreach.people_errors` | 0 rows, outreach people pipeline errors never recorded | See `migrations/` directory |
+
+**Note:** `people.people_master`, `people.company_slot`, `people.people_errors`, `people.slot_assignment_history`, and `people.slot_ingress_control` were NOT dropped (they contain data).

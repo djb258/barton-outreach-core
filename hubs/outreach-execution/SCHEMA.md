@@ -708,3 +708,29 @@ Current: 42,192 = 42,192 ✓ ALIGNED
 *Generated from Neon PostgreSQL via READ-ONLY connection*
 *Last verified: 2026-02-02*
 *ERD Sync: NEON_SCHEMA_REFERENCE_FOR_ERD.md*
+
+---
+
+## Dropped Tables (2026-02-20 -- Table Consolidation)
+
+The following tables were **dropped** during database consolidation. All had 0 rows at time of drop.
+Recreatable from migration files if needed.
+
+| Table | Reason | Migration Source |
+|-------|--------|-----------------|
+| `outreach.campaigns` | 0 rows, never used in production | `migrations/2026-01-13-outreach-execution-complete.sql` |
+| `outreach.sequences` | 0 rows, never used in production | `migrations/2026-01-13-outreach-execution-complete.sql` |
+| `outreach.send_log` | 0 rows, never used in production | `migrations/2026-01-13-outreach-execution-complete.sql` |
+| `outreach.engagement_events` | 0 rows, never used in production | `migrations/0003_create_engagement_events.sql` |
+| `outreach.manual_overrides` | 0 rows, kill switch never activated | `migrations/2026-01-19-kill-switches.sql` |
+| `outreach.override_audit_log` | 0 rows, kill switch never activated | `migrations/2026-01-19-kill-switches.sql` |
+| `outreach.bit_signals` | 0 rows, BIT signal ingestion not yet active | `migrations/2026-01-25-bit-v2-phase1-schema.sql` |
+| `outreach.outreach_errors` | 0 rows, no pipeline errors recorded | See `migrations/` directory |
+| `outreach.pipeline_audit_log` | 0 rows, audit pipeline not yet active | See `migrations/` directory |
+| `bit.authorization_log` | 0 rows, BIT authorization not yet active | `migrations/2026-01-25-bit-v2-phase1-schema.sql` |
+| `bit.phase_state` | 0 rows, BIT phase tracking not yet active | `migrations/2026-01-25-bit-v2-phase1-schema.sql` |
+| `bit.proof_lines` | 0 rows, BIT proof system not yet active | `migrations/2026-01-25-bit-v2-phase1-schema.sql` |
+| `bit.movement_events` | 0 rows, BIT movement detection not yet active | `migrations/2026-01-25-bit-v2-phase1-schema.sql` |
+| `outreach.bit_input_history` | 0 rows, BIT input tracking not yet active | See `migrations/` directory |
+
+**Note:** The `outreach.bit_scores` and `outreach.bit_errors` tables were NOT dropped (they contain data).

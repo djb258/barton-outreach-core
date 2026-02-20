@@ -299,3 +299,18 @@ movement_event → talent_flow.movement_history → outreach.bit_signals
 
 *Generated from Neon PostgreSQL via READ-ONLY connection*
 *Last verified: 2026-01-26*
+
+---
+
+## Dropped Tables (2026-02-20 -- Table Consolidation)
+
+The following tables were **dropped** during database consolidation. All had 0 rows at time of drop.
+Recreatable from migration files if needed.
+
+| Table | Reason | Migration Source |
+|-------|--------|-----------------|
+| `talent_flow.movement_history` | 0 rows, core movement tracking never populated | `migrations/2025-11-10-talent-flow.sql` |
+| `talent_flow.movements` | 0 rows, BIT v2.0 executive movement table never populated | `migrations/2026-01-26-bit-v2-phase1.5-backfill-and-movements.sql` |
+| `people.person_movement_history` | 0 rows, person-level movement records never populated | `migrations/2025-11-10-talent-flow.sql` |
+
+**Note:** All three core Talent Flow tables were dropped. The entire `talent_flow` schema is now empty. Movement detection was designed but never activated in production.

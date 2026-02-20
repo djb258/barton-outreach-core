@@ -31,17 +31,20 @@ Any modification to FROZEN components requires:
 
 | Component | File | Purpose |
 |-----------|------|---------|
-| `outreach.vw_marketing_eligibility_with_overrides` | migrations/2026-01-19-kill-switches.sql | THE source of truth for marketing eligibility |
+| ~~`outreach.vw_marketing_eligibility_with_overrides`~~ | ~~migrations/2026-01-19-kill-switches.sql~~ | **DROPPED 2026-02-20** (dependent on manual_overrides which was empty). Recreatable from migration file. |
 | `outreach.vw_sovereign_completion` | (base migration) | Sovereign completion status per company |
 | `outreach.vw_tier_distribution` | migrations/2026-01-20-tier-telemetry-views.sql | Tier breakdown by count |
 
-### Kill Switch System (SQL)
+### Kill Switch System (SQL) — DROPPED 2026-02-20
 
-| Component | File | Purpose |
-|-----------|------|---------|
-| `outreach.manual_overrides` | migrations/2026-01-19-kill-switches.sql | Kill switch enforcement table |
-| `outreach.override_audit_log` | migrations/2026-01-19-kill-switches.sql | Override audit trail |
-| `outreach.override_type_enum` | migrations/2026-01-19-kill-switches.sql | Override type definitions |
+> **All 3 tables were empty (0 overrides ever created). Tables + view dropped during table consolidation.**
+> **Recreatable from `migrations/2026-01-19-kill-switches.sql` if kill switches are ever needed.**
+
+| Component | File | Status |
+|-----------|------|--------|
+| ~~`outreach.manual_overrides`~~ | migrations/2026-01-19-kill-switches.sql | **DROPPED** (0 rows) |
+| ~~`outreach.override_audit_log`~~ | migrations/2026-01-19-kill-switches.sql | **DROPPED** (0 rows) |
+| `outreach.override_type_enum` | migrations/2026-01-19-kill-switches.sql | Enum type still exists |
 
 ### Marketing Safety Gate (Python)
 
@@ -125,13 +128,17 @@ Company Target OWNS a read-only view that unions all signal tables.
 BIT is a COMPUTATION inside Company Target that reads the view.
 ```
 
-### Distributed Signal Tables (Structure Frozen)
+### Distributed Signal Tables (Structure Frozen) — DROPPED 2026-02-20
 
-| Component | Schema | Freeze Type | Rationale |
-|-----------|--------|-------------|-----------|
-| `dol.pressure_signals` | dol | Structure | DOL owns STRUCTURAL_PRESSURE signals |
-| `people.pressure_signals` | people | Structure | People owns DECISION_SURFACE signals |
-| `blog.pressure_signals` | blog | Structure | Blog owns NARRATIVE_VOLATILITY signals |
+> **All 3 signal tables were empty (0 rows). Dropped during table consolidation.**
+> **The distributed signal architecture is correct per ADR-017, but tables were never populated.**
+> **Recreatable from `migrations/2026-01-26-bit-v2-phase1-distributed-signals.sql` when BIT Phase 2 activates.**
+
+| Component | Schema | Status |
+|-----------|--------|--------|
+| ~~`dol.pressure_signals`~~ | dol | **DROPPED** (0 rows) |
+| ~~`people.pressure_signals`~~ | people | **DROPPED** (0 rows) |
+| ~~`blog.pressure_signals`~~ | blog | **DROPPED** (0 rows) |
 
 ### Signal Table Contract (FROZEN)
 
@@ -151,11 +158,11 @@ All signal tables MUST implement this structure:
 | `correlation_id` | UUID | No | Trace ID |
 | `source_record_id` | TEXT | No | Traceability |
 
-### Company Target Components (FROZEN)
+### Company Target Components (FROZEN) — Views dropped 2026-02-20
 
-| Component | Freeze Type | Rationale |
-|-----------|-------------|-----------|
-| `company_target.vw_all_pressure_signals` | View | Union of all signal tables — BIT reads from here |
+| Component | Freeze Type | Status |
+|-----------|-------------|--------|
+| ~~`company_target.vw_all_pressure_signals`~~ | View | **CASCADE-DROPPED** (depended on dropped signal tables) |
 | `company_target.compute_authorization_band(TEXT)` | Signature | BIT computation contract — callers depend on this |
 
 **Function internals NOT frozen**: Logic can evolve as long as signature and return type unchanged
@@ -199,16 +206,16 @@ All signal tables MUST implement this structure:
 | All indexes | Optimization allowed |
 | Enum types | Additive changes allowed (new values) |
 
-### DEPRECATED (from v1.1.0)
+### DEPRECATED → DROPPED (from v1.1.0, dropped 2026-02-20)
 
-The following centralized components from the initial Phase 1 design are **DEPRECATED**:
+The following centralized components were deprecated in v1.1.0 and **dropped 2026-02-20** (all empty):
 
 | Component | Status | Reason |
 |-----------|--------|--------|
-| `bit.movement_events` | DEPRECATED | Replaced by distributed signal tables |
-| `bit.proof_lines` | DEPRECATED | Phase 2 concern |
-| `bit.phase_state` | DEPRECATED | Replaced by compute_authorization_band() |
-| `bit.authorization_log` | DEPRECATED | Phase 2 concern |
+| ~~`bit.movement_events`~~ | **DROPPED** | Was deprecated, 0 rows, dropped 2026-02-20 |
+| ~~`bit.proof_lines`~~ | **DROPPED** | Was deprecated, 0 rows, dropped 2026-02-20 |
+| ~~`bit.phase_state`~~ | **DROPPED** | Was deprecated, 0 rows, dropped 2026-02-20 |
+| ~~`bit.authorization_log`~~ | **DROPPED** | Was deprecated, 0 rows, dropped 2026-02-20 |
 | `bit.get_current_band()` | DEPRECATED | Replaced by company_target.compute_authorization_band() |
 | `bit.authorize_action()` | DEPRECATED | Phase 2 concern |
 | `bit.validate_proof_for_send()` | DEPRECATED | Phase 2 concern |
@@ -232,24 +239,26 @@ The following centralized components from the initial Phase 1 design are **DEPRE
 - Each hub now owns its own `pressure_signals` table
 - Company Target owns union view and BIT computation
 
-**Added:**
-- `dol.pressure_signals` table (structure frozen)
-- `people.pressure_signals` table (structure frozen)
-- `blog.pressure_signals` table (structure frozen)
-- `company_target.vw_all_pressure_signals` view (structure frozen)
-- `company_target.compute_authorization_band()` function (signature frozen)
-- Bridge adapters for Talent Flow and DOL Renewal Calendar
+**Added (v1.2.0, later dropped 2026-02-20 — all were empty):**
+- ~~`dol.pressure_signals`~~ table — DROPPED 2026-02-20
+- ~~`people.pressure_signals`~~ table — DROPPED 2026-02-20
+- ~~`blog.pressure_signals`~~ table — DROPPED 2026-02-20
+- ~~`company_target.vw_all_pressure_signals`~~ view — CASCADE-DROPPED 2026-02-20
+- `company_target.compute_authorization_band()` function (signature frozen) — still exists
 
-**Deprecated:**
-- All `bit.*` tables from v1.1.0 (centralized design was incorrect)
+**Deprecated → Dropped:**
+- All `bit.*` tables from v1.1.0 — DROPPED 2026-02-20 (all empty)
 - `bit.get_current_band()` → use `company_target.compute_authorization_band()`
 
+**Dropped (v1.0 components, 2026-02-20 table consolidation — all empty):**
+- ~~`outreach.manual_overrides`~~ + ~~`outreach.override_audit_log`~~ — kill switch tables (0 overrides ever created)
+- ~~`outreach.vw_marketing_eligibility_with_overrides`~~ — CASCADE-dropped with manual_overrides
+- ~~`outreach.campaigns`~~ + ~~`outreach.sequences`~~ + ~~`outreach.send_log`~~ — outreach execution (never implemented)
+
 **Unchanged:**
-- All v1.0 frozen components remain frozen
 - Band definitions (0-5) unchanged
 - Domain trust rules unchanged
-- Marketing Safety Gate unchanged
-- Kill switch system unchanged
+- Marketing Safety Gate (Python class) unchanged
 - Tier logic unchanged (coexists with band system during transition)
 
 ---

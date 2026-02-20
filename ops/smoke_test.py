@@ -17,7 +17,7 @@ This is a READ-ONLY test that:
 ============================================================================
 This script is READ-ONLY for sovereign tables:
 - outreach.company_hub_status
-- outreach.manual_overrides
+# - outreach.manual_overrides  # DROPPED 2026-02-20: table had 0 rows, removed during database consolidation
 - outreach.hub_registry
 
 NO WRITES to business tables. Read + audit only.

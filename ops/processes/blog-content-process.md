@@ -1,5 +1,7 @@
 # Process Declaration: Blog Content Hub
 
+> **Note (2026-02-20)**: Some tables referenced in this document were dropped during database consolidation (all had 0 rows). See `doctrine/DO_NOT_MODIFY_REGISTRY.md` for the complete list of dropped tables and their migration sources. Affected tables: `blog.pressure_signals`, `outreach.bit_signals`.
+
 ## Conformance
 
 | Field | Value |

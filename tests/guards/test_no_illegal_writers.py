@@ -7,8 +7,10 @@ of sanctioned IMO middle layers writes to protected sovereign tables.
 
 Protected Tables:
 - outreach.company_hub_status
-- outreach.manual_overrides
 - outreach.hub_registry
+
+NOTE: outreach.manual_overrides was DROPPED 2026-02-20 (0 rows, table
+consolidation Phase 1). Removed from protected list.
 
 Sanctioned Writers:
 - hubs/*/imo/middle/hub_status.py
@@ -28,7 +30,6 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 # Protected tables (mutations forbidden outside IMO)
 PROTECTED_TABLES = [
     'company_hub_status',
-    'manual_overrides',
     'hub_registry',
 ]
 

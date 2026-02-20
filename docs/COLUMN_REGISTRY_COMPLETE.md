@@ -389,7 +389,7 @@
 
 ## `04.04` Outreach Spine
 
-**Tables**: 16 | **Total rows**: 186,252
+**Tables**: 11 | **Total rows**: 186,252
 
 ### `outreach.column_registry` -- REGISTRY -- 48 rows
 
@@ -440,32 +440,6 @@
 | 8 | `original_created_at` | `outreach.ctb_queue.original_created_at` | timestamp with time zone | Y | Timestamp for original created event | attribute | ISO-8601 | inferred |
 | 9 | `ctb_merged_at` | `outreach.ctb_queue.ctb_merged_at` | timestamp with time zone | Y | Timestamp for ctb merged event | attribute | ISO-8601 | inferred |
 
-### `outreach.engagement_events` -- MV -- 0 rows
-
-**Hub**: `04.04` Outreach Spine
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `event_id` | `outreach.engagement_events.event_id` | uuid | N | UUID primary key | identifier | UUID | outreach.column_registry |
-| 2 | `person_id` | `outreach.engagement_events.person_id` | uuid | N | FK to outreach.people | foreign_key | UUID | outreach.column_registry |
-| 3 | `target_id` | `outreach.engagement_events.target_id` | uuid | N | FK to outreach.company_target | foreign_key | UUID | outreach.column_registry |
-| 4 | `company_unique_id` | `outreach.engagement_events.company_unique_id` | text | N | Denormalized FK to cl | foreign_key | TEXT | outreach.column_registry |
-| 5 | `event_type` | `outreach.engagement_events.event_type` | USER-DEFINED | N | Event type enum | attribute | outreach.event_type | outreach.column_registry |
-| 6 | `event_subtype` | `outreach.engagement_events.event_subtype` | text | Y | Event subtype | attribute | TEXT | outreach.column_registry |
-| 7 | `event_ts` | `outreach.engagement_events.event_ts` | timestamp with time zone | N | Event timestamp | attribute | TIMESTAMPTZ | outreach.column_registry |
-| 8 | `source_system` | `outreach.engagement_events.source_system` | text | Y | Source system | attribute | TEXT | outreach.column_registry |
-| 9 | `source_campaign_id` | `outreach.engagement_events.source_campaign_id` | text | Y | Source campaign ID | identifier | TEXT | outreach.column_registry |
-| 10 | `source_email_id` | `outreach.engagement_events.source_email_id` | text | Y | Source email ID | identifier | TEXT | outreach.column_registry |
-| 11 | `metadata` | `outreach.engagement_events.metadata` | jsonb | N | Event metadata | attribute | JSONB | outreach.column_registry |
-| 12 | `is_processed` | `outreach.engagement_events.is_processed` | boolean | N | Processing flag | attribute | BOOLEAN | outreach.column_registry |
-| 13 | `processed_at` | `outreach.engagement_events.processed_at` | timestamp with time zone | Y | Processing timestamp | attribute | TIMESTAMPTZ | outreach.column_registry |
-| 14 | `triggered_transition` | `outreach.engagement_events.triggered_transition` | boolean | N | Transition flag | attribute | BOOLEAN | outreach.column_registry |
-| 15 | `transition_to_state` | `outreach.engagement_events.transition_to_state` | USER-DEFINED | Y | New lifecycle state | attribute | outreach.lifecycle_state | outreach.column_registry |
-| 16 | `event_hash` | `outreach.engagement_events.event_hash` | character varying(64) | Y | Deduplication hash | attribute | VARCHAR(64) | outreach.column_registry |
-| 17 | `is_duplicate` | `outreach.engagement_events.is_duplicate` | boolean | N | Duplicate flag | attribute | BOOLEAN | outreach.column_registry |
-| 18 | `created_at` | `outreach.engagement_events.created_at` | timestamp with time zone | N | Creation timestamp | attribute | TIMESTAMPTZ | outreach.column_registry |
-| 19 | `outreach_id` | `outreach.engagement_events.outreach_id` | uuid | Y | FK to outreach.outreach spine table (universal join key) | foreign_key | UUID | inferred |
-
 ### `outreach.entity_resolution_queue` -- STAGING -- 2 rows
 
 **Hub**: `04.04` Outreach Spine
@@ -507,25 +481,6 @@
 | 11 | `created_at` | `outreach.hub_registry.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
 | 12 | `updated_at` | `outreach.hub_registry.updated_at` | timestamp with time zone | N | When this record was last updated | attribute | ISO-8601 | inferred |
 
-### `outreach.manual_overrides` -- SYSTEM -- 0 rows
-
-**Hub**: `04.04` Outreach Spine
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `override_id` | `outreach.manual_overrides.override_id` | uuid | N | Override Id | identifier | UUID | inferred |
-| 2 | `company_unique_id` | `outreach.manual_overrides.company_unique_id` | text | N | FK to cl.company_identity or Barton company ID | foreign_key | STRING | inferred |
-| 3 | `override_type` | `outreach.manual_overrides.override_type` | USER-DEFINED | N | Override Type | attribute | STRING | inferred |
-| 4 | `reason` | `outreach.manual_overrides.reason` | text | N | Reason | attribute | STRING | inferred |
-| 5 | `metadata` | `outreach.manual_overrides.metadata` | jsonb | Y | Metadata | attribute | JSONB | inferred |
-| 6 | `created_at` | `outreach.manual_overrides.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-| 7 | `created_by` | `outreach.manual_overrides.created_by` | text | N | Created By | attribute | STRING | inferred |
-| 8 | `expires_at` | `outreach.manual_overrides.expires_at` | timestamp with time zone | Y | When this record expires | attribute | ISO-8601 | inferred |
-| 9 | `is_active` | `outreach.manual_overrides.is_active` | boolean | N | Whether this record active | attribute | BOOLEAN | inferred |
-| 10 | `deactivated_at` | `outreach.manual_overrides.deactivated_at` | timestamp with time zone | Y | Timestamp for deactivated event | attribute | ISO-8601 | inferred |
-| 11 | `deactivated_by` | `outreach.manual_overrides.deactivated_by` | text | Y | Deactivated By | attribute | STRING | inferred |
-| 12 | `deactivation_reason` | `outreach.manual_overrides.deactivation_reason` | text | Y | Deactivation Reason | attribute | STRING | inferred |
-
 ### `outreach.mv_credit_usage` -- SYSTEM -- 2 rows
 
 **Hub**: `04.04` Outreach Spine
@@ -566,22 +521,6 @@
 | 5 | `domain` | `outreach.outreach_archive.domain` | character varying(255) | Y | Company website domain (lowercase, no protocol) | attribute | STRING | inferred |
 | 6 | `archived_at` | `outreach.outreach_archive.archived_at` | timestamp with time zone | Y | When this record was archived | attribute | ISO-8601 | inferred |
 | 7 | `archive_reason` | `outreach.outreach_archive.archive_reason` | text | Y | Reason this record was archived | attribute | STRING | inferred |
-
-### `outreach.outreach_errors` -- ERROR -- 0 rows
-
-**Hub**: `04.04` Outreach Spine
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `error_id` | `outreach.outreach_errors.error_id` | uuid | N | Primary key for this error record | identifier | UUID | inferred |
-| 2 | `company_unique_id` | `outreach.outreach_errors.company_unique_id` | text | N | FK to cl.company_identity or Barton company ID | foreign_key | STRING | inferred |
-| 3 | `outreach_id` | `outreach.outreach_errors.outreach_id` | text | Y | FK to outreach.outreach spine table (universal join key) | foreign_key | STRING | inferred |
-| 4 | `pipeline_stage` | `outreach.outreach_errors.pipeline_stage` | text | N | Pipeline Stage | attribute | STRING | inferred |
-| 5 | `failure_code` | `outreach.outreach_errors.failure_code` | text | N | Failure Code | attribute | STRING | inferred |
-| 6 | `details` | `outreach.outreach_errors.details` | text | Y | Event details (JSON) | attribute | STRING | inferred |
-| 7 | `run_id` | `outreach.outreach_errors.run_id` | text | N | Run Id | identifier | STRING | inferred |
-| 8 | `created_at` | `outreach.outreach_errors.created_at` | timestamp with time zone | Y | When this record was created | attribute | ISO-8601 | inferred |
-| 9 | `error_type` | `outreach.outreach_errors.error_type` | character varying(100) | Y | Discriminator column classifying the error type | attribute | ENUM | inferred |
 
 ### `outreach.outreach_excluded` -- ARCHIVE -- 5,483 rows
 
@@ -625,38 +564,6 @@
 | 5 | `domain` | `outreach.outreach_orphan_archive.domain` | character varying | Y | Company website domain (lowercase, no protocol) | attribute | STRING | inferred |
 | 6 | `archived_at` | `outreach.outreach_orphan_archive.archived_at` | timestamp with time zone | Y | When this record was archived | attribute | ISO-8601 | inferred |
 | 7 | `archive_reason` | `outreach.outreach_orphan_archive.archive_reason` | character varying | Y | Reason this record was archived | attribute | STRING | inferred |
-
-### `outreach.override_audit_log` -- SYSTEM -- 0 rows
-
-**Hub**: `04.04` Outreach Spine
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `audit_id` | `outreach.override_audit_log.audit_id` | uuid | N | Audit Id | identifier | UUID | inferred |
-| 2 | `company_unique_id` | `outreach.override_audit_log.company_unique_id` | text | N | FK to cl.company_identity or Barton company ID | foreign_key | STRING | inferred |
-| 3 | `override_id` | `outreach.override_audit_log.override_id` | uuid | Y | Override Id | identifier | UUID | inferred |
-| 4 | `action` | `outreach.override_audit_log.action` | text | N | Action | attribute | STRING | inferred |
-| 5 | `override_type` | `outreach.override_audit_log.override_type` | USER-DEFINED | Y | Override Type | attribute | STRING | inferred |
-| 6 | `old_value` | `outreach.override_audit_log.old_value` | jsonb | Y | Old Value | attribute | JSONB | inferred |
-| 7 | `new_value` | `outreach.override_audit_log.new_value` | jsonb | Y | New Value | attribute | JSONB | inferred |
-| 8 | `performed_by` | `outreach.override_audit_log.performed_by` | text | N | Performed By | attribute | STRING | inferred |
-| 9 | `performed_at` | `outreach.override_audit_log.performed_at` | timestamp with time zone | N | Timestamp for performed event | attribute | ISO-8601 | inferred |
-
-### `outreach.pipeline_audit_log` -- SYSTEM -- 0 rows
-
-**Hub**: `04.04` Outreach Spine
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `log_id` | `outreach.pipeline_audit_log.log_id` | integer | N | Primary key for this log entry | identifier | INTEGER | inferred |
-| 2 | `company_unique_id` | `outreach.pipeline_audit_log.company_unique_id` | text | N | FK to cl.company_identity or Barton company ID | foreign_key | STRING | inferred |
-| 3 | `outreach_id` | `outreach.pipeline_audit_log.outreach_id` | text | Y | FK to outreach.outreach spine table (universal join key) | foreign_key | STRING | inferred |
-| 4 | `hub` | `outreach.pipeline_audit_log.hub` | text | N | Hub | attribute | STRING | inferred |
-| 5 | `outcome` | `outreach.pipeline_audit_log.outcome` | text | N | Outcome | attribute | STRING | inferred |
-| 6 | `failure_code` | `outreach.pipeline_audit_log.failure_code` | text | Y | Failure Code | attribute | STRING | inferred |
-| 7 | `run_id` | `outreach.pipeline_audit_log.run_id` | text | N | Run Id | identifier | STRING | inferred |
-| 8 | `created_at` | `outreach.pipeline_audit_log.created_at` | timestamp with time zone | Y | When this record was created | attribute | ISO-8601 | inferred |
-| 9 | `source_hub` | `outreach.pipeline_audit_log.source_hub` | character varying(50) | Y | Source Hub | attribute | STRING | inferred |
 
 ---
 
@@ -922,7 +829,7 @@
 
 ## `04.04.02` People Intelligence
 
-**Tables**: 24 | **Total rows**: 1,034,589
+**Tables**: 18 | **Total rows**: 1,034,589
 
 ### `outreach.people` -- SUPPORTING FROZEN -- 335,097 rows
 
@@ -979,27 +886,6 @@
 | 20 | `outreach_id` | `outreach.people_archive.outreach_id` | uuid | Y | FK to outreach.outreach spine table (universal join key) | foreign_key | UUID | inferred |
 | 21 | `archived_at` | `outreach.people_archive.archived_at` | timestamp with time zone | Y | When this record was archived | attribute | ISO-8601 | inferred |
 | 22 | `archive_reason` | `outreach.people_archive.archive_reason` | text | Y | Reason this record was archived | attribute | STRING | inferred |
-
-### `outreach.people_errors` -- ERROR -- 0 rows
-
-**Hub**: `04.04.02` People Intelligence
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `error_id` | `outreach.people_errors.error_id` | uuid | N | Primary key for this error record | identifier | UUID | inferred |
-| 2 | `outreach_id` | `outreach.people_errors.outreach_id` | uuid | N | FK to outreach.outreach spine table (universal join key) | foreign_key | UUID | inferred |
-| 3 | `pipeline_stage` | `outreach.people_errors.pipeline_stage` | character varying(100) | N | Pipeline Stage | attribute | STRING | inferred |
-| 4 | `failure_code` | `outreach.people_errors.failure_code` | character varying(50) | N | Failure Code | attribute | STRING | inferred |
-| 5 | `blocking_reason` | `outreach.people_errors.blocking_reason` | text | N | Blocking Reason | attribute | STRING | inferred |
-| 6 | `severity` | `outreach.people_errors.severity` | character varying(20) | N | Severity | attribute | STRING | inferred |
-| 7 | `retry_allowed` | `outreach.people_errors.retry_allowed` | boolean | N | Retry Allowed | attribute | BOOLEAN | inferred |
-| 8 | `created_at` | `outreach.people_errors.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-| 9 | `resolved_at` | `outreach.people_errors.resolved_at` | timestamp with time zone | Y | When this error/issue was resolved | attribute | ISO-8601 | inferred |
-| 10 | `resolution_note` | `outreach.people_errors.resolution_note` | text | Y | Resolution Note | attribute | STRING | inferred |
-| 11 | `raw_input` | `outreach.people_errors.raw_input` | jsonb | Y | Raw Input | attribute | JSONB | inferred |
-| 12 | `stack_trace` | `outreach.people_errors.stack_trace` | text | Y | Stack Trace | attribute | STRING | inferred |
-| 13 | `requeue_attempts` | `outreach.people_errors.requeue_attempts` | integer | Y | Requeue Attempts | attribute | INTEGER | inferred |
-| 14 | `error_type` | `outreach.people_errors.error_type` | character varying(100) | Y | Discriminator column classifying the error type | attribute | ENUM | inferred |
 
 ### `people.company_resolution_log` -- SYSTEM -- 155 rows
 
@@ -1279,26 +1165,6 @@
 | 5 | `count` | `people.people_promotion_audit.count` | integer | Y | Count | attribute | INTEGER | inferred |
 | 6 | `created_at` | `people.people_promotion_audit.created_at` | timestamp with time zone | Y | When this record was created | attribute | ISO-8601 | inferred |
 
-### `people.people_resolution_history` -- SYSTEM -- 0 rows
-
-**Hub**: `04.04.02` People Intelligence
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `history_id` | `people.people_resolution_history.history_id` | uuid | N | History Id | identifier | UUID | inferred |
-| 2 | `outreach_id` | `people.people_resolution_history.outreach_id` | uuid | N | FK to outreach.outreach spine table (universal join key) | foreign_key | UUID | inferred |
-| 3 | `slot_type` | `people.people_resolution_history.slot_type` | character varying(20) | N | Executive role type (CEO, CFO, HR, CTO, CMO, COO) | attribute | ENUM | inferred |
-| 4 | `person_identifier` | `people.people_resolution_history.person_identifier` | text | N | Person Identifier | attribute | STRING | inferred |
-| 5 | `resolution_outcome` | `people.people_resolution_history.resolution_outcome` | character varying(30) | N | Resolution Outcome | attribute | STRING | inferred |
-| 6 | `rejection_reason` | `people.people_resolution_history.rejection_reason` | text | Y | Rejection Reason | attribute | STRING | inferred |
-| 7 | `confidence_score` | `people.people_resolution_history.confidence_score` | numeric | Y | Confidence score (0-100) | metric | NUMERIC | inferred |
-| 8 | `source` | `people.people_resolution_history.source` | character varying(50) | Y | Data source identifier | attribute | STRING | inferred |
-| 9 | `source_response` | `people.people_resolution_history.source_response` | jsonb | Y | Source Response | attribute | JSONB | inferred |
-| 10 | `checked_at` | `people.people_resolution_history.checked_at` | timestamp with time zone | Y | When this record was last checked/verified | attribute | ISO-8601 | inferred |
-| 11 | `process_id` | `people.people_resolution_history.process_id` | uuid | Y | Process Id | identifier | UUID | inferred |
-| 12 | `correlation_id` | `people.people_resolution_history.correlation_id` | uuid | Y | UUID linking related operations across tables | identifier | UUID | inferred |
-| 13 | `created_at` | `people.people_resolution_history.created_at` | timestamp with time zone | Y | When this record was created | attribute | ISO-8601 | inferred |
-
 ### `people.people_resolution_queue` -- STAGING -- 1,206 rows
 
 **Hub**: `04.04.02` People Intelligence
@@ -1322,75 +1188,6 @@
 | 15 | `notes` | `people.people_resolution_queue.notes` | text | Y | Human-readable notes | attribute | STRING | inferred |
 | 16 | `error_details` | `people.people_resolution_queue.error_details` | jsonb | Y | Error Details | attribute | JSONB | inferred |
 | 17 | `attempt_count` | `people.people_resolution_queue.attempt_count` | integer | Y | Count of attempt | metric | INTEGER | inferred |
-
-### `people.people_sidecar` -- SUPPORTING -- 0 rows
-
-**Hub**: `04.04.02` People Intelligence
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `person_unique_id` | `people.people_sidecar.person_unique_id` | character varying(50) | N | FK to people.people_master.unique_id (Barton person ID) | foreign_key | STRING | inferred |
-| 2 | `clay_insight_summary` | `people.people_sidecar.clay_insight_summary` | text | Y | Clay Insight Summary | attribute | STRING | inferred |
-| 3 | `clay_segments` | `people.people_sidecar.clay_segments` | ARRAY | Y | Clay Segments | attribute | ARRAY | inferred |
-| 4 | `social_profiles` | `people.people_sidecar.social_profiles` | jsonb | Y | Social Profiles | attribute | JSONB | inferred |
-| 5 | `enrichment_payload` | `people.people_sidecar.enrichment_payload` | jsonb | Y | Enrichment Payload | attribute | JSONB | inferred |
-| 6 | `last_enriched_at` | `people.people_sidecar.last_enriched_at` | timestamp without time zone | Y | Timestamp for last enriched event | attribute | ISO-8601 | inferred |
-| 7 | `enrichment_source` | `people.people_sidecar.enrichment_source` | text | Y | Enrichment Source | attribute | STRING | inferred |
-| 8 | `confidence_score` | `people.people_sidecar.confidence_score` | numeric | Y | Confidence score (0-100) | metric | NUMERIC | inferred |
-| 9 | `created_at` | `people.people_sidecar.created_at` | timestamp without time zone | Y | When this record was created | attribute | ISO-8601 | inferred |
-| 10 | `updated_at` | `people.people_sidecar.updated_at` | timestamp without time zone | Y | When this record was last updated | attribute | ISO-8601 | inferred |
-
-### `people.person_movement_history` -- SYSTEM -- 0 rows
-
-**Hub**: `04.04.02` People Intelligence
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `id` | `people.person_movement_history.id` | integer | N | Id | identifier | INTEGER | inferred |
-| 2 | `person_unique_id` | `people.person_movement_history.person_unique_id` | text | N | FK to people.people_master.unique_id (Barton person ID) | foreign_key | STRING | inferred |
-| 3 | `linkedin_url` | `people.person_movement_history.linkedin_url` | text | Y | LinkedIn profile URL | attribute | URL | inferred |
-| 4 | `company_from_id` | `people.person_movement_history.company_from_id` | text | N | Company From Id | identifier | STRING | inferred |
-| 5 | `company_to_id` | `people.person_movement_history.company_to_id` | text | Y | Company To Id | identifier | STRING | inferred |
-| 6 | `title_from` | `people.person_movement_history.title_from` | text | N | Title From | attribute | STRING | inferred |
-| 7 | `title_to` | `people.person_movement_history.title_to` | text | Y | Title To | attribute | STRING | inferred |
-| 8 | `movement_type` | `people.person_movement_history.movement_type` | text | N | Movement Type | attribute | STRING | inferred |
-| 9 | `detected_at` | `people.person_movement_history.detected_at` | timestamp without time zone | N | When this event/signal was detected | attribute | ISO-8601 | inferred |
-| 10 | `raw_payload` | `people.person_movement_history.raw_payload` | jsonb | Y | Raw Payload | attribute | JSONB | inferred |
-| 11 | `created_at` | `people.person_movement_history.created_at` | timestamp without time zone | Y | When this record was created | attribute | ISO-8601 | inferred |
-
-### `people.person_scores` -- SUPPORTING -- 0 rows
-
-**Hub**: `04.04.02` People Intelligence
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `id` | `people.person_scores.id` | integer | N | Id | identifier | INTEGER | inferred |
-| 2 | `person_unique_id` | `people.person_scores.person_unique_id` | text | N | FK to people.people_master.unique_id (Barton person ID) | foreign_key | STRING | inferred |
-| 3 | `bit_score` | `people.person_scores.bit_score` | integer | Y | BIT/CLS authorization score | metric | INTEGER | inferred |
-| 4 | `confidence_score` | `people.person_scores.confidence_score` | integer | Y | Confidence score (0-100) | metric | INTEGER | inferred |
-| 5 | `calculated_at` | `people.person_scores.calculated_at` | timestamp without time zone | N | Timestamp for calculated event | attribute | ISO-8601 | inferred |
-| 6 | `score_factors` | `people.person_scores.score_factors` | jsonb | Y | Score Factors | attribute | JSONB | inferred |
-| 7 | `created_at` | `people.person_scores.created_at` | timestamp without time zone | Y | When this record was created | attribute | ISO-8601 | inferred |
-| 8 | `updated_at` | `people.person_scores.updated_at` | timestamp without time zone | Y | When this record was last updated | attribute | ISO-8601 | inferred |
-
-### `people.pressure_signals` -- MV -- 0 rows
-
-**Hub**: `04.04.02` People Intelligence
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `signal_id` | `people.pressure_signals.signal_id` | uuid | N | Signal Id | identifier | UUID | inferred |
-| 2 | `company_unique_id` | `people.pressure_signals.company_unique_id` | text | N | FK to cl.company_identity or Barton company ID | foreign_key | STRING | inferred |
-| 3 | `signal_type` | `people.pressure_signals.signal_type` | character varying(50) | N | Signal Type | attribute | STRING | inferred |
-| 4 | `pressure_domain` | `people.pressure_signals.pressure_domain` | USER-DEFINED | N | Pressure Domain | attribute | STRING | inferred |
-| 5 | `pressure_class` | `people.pressure_signals.pressure_class` | USER-DEFINED | Y | Pressure Class | attribute | STRING | inferred |
-| 6 | `signal_value` | `people.pressure_signals.signal_value` | jsonb | N | Signal Value | attribute | JSONB | inferred |
-| 7 | `magnitude` | `people.pressure_signals.magnitude` | integer | N | Magnitude | attribute | INTEGER | inferred |
-| 8 | `detected_at` | `people.pressure_signals.detected_at` | timestamp with time zone | N | When this event/signal was detected | attribute | ISO-8601 | inferred |
-| 9 | `expires_at` | `people.pressure_signals.expires_at` | timestamp with time zone | N | When this record expires | attribute | ISO-8601 | inferred |
-| 10 | `correlation_id` | `people.pressure_signals.correlation_id` | uuid | Y | UUID linking related operations across tables | identifier | UUID | inferred |
-| 11 | `source_record_id` | `people.pressure_signals.source_record_id` | text | Y | Source Record Id | identifier | STRING | inferred |
-| 12 | `created_at` | `people.pressure_signals.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
 
 ### `people.slot_assignment_history` -- SYSTEM -- 1,370 rows
 
@@ -2977,89 +2774,7 @@
 
 ## `04.04.04` BIT/CLS Authorization
 
-**Tables**: 12 | **Total rows**: 14,408
-
-### `bit.authorization_log` -- CANONICAL -- 0 rows
-
-**Hub**: `04.04.04` BIT/CLS Authorization
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `log_id` | `bit.authorization_log.log_id` | uuid | N | Primary key for this log entry | identifier | UUID | inferred |
-| 2 | `company_unique_id` | `bit.authorization_log.company_unique_id` | text | N | FK to cl.company_identity or Barton company ID | foreign_key | STRING | inferred |
-| 3 | `requested_action` | `bit.authorization_log.requested_action` | text | N | Requested Action | attribute | STRING | inferred |
-| 4 | `requested_band` | `bit.authorization_log.requested_band` | integer | N | Requested Band | attribute | INTEGER | inferred |
-| 5 | `authorized` | `bit.authorization_log.authorized` | boolean | N | Authorized | attribute | BOOLEAN | inferred |
-| 6 | `actual_band` | `bit.authorization_log.actual_band` | integer | N | Actual Band | attribute | INTEGER | inferred |
-| 7 | `denial_reason` | `bit.authorization_log.denial_reason` | text | Y | Denial Reason | attribute | STRING | inferred |
-| 8 | `proof_id` | `bit.authorization_log.proof_id` | text | Y | Proof Id | identifier | STRING | inferred |
-| 9 | `proof_valid` | `bit.authorization_log.proof_valid` | boolean | Y | Proof Valid | attribute | BOOLEAN | inferred |
-| 10 | `requested_at` | `bit.authorization_log.requested_at` | timestamp with time zone | N | When this request was made | attribute | ISO-8601 | inferred |
-| 11 | `requested_by` | `bit.authorization_log.requested_by` | text | N | Requested By | attribute | STRING | inferred |
-| 12 | `correlation_id` | `bit.authorization_log.correlation_id` | text | Y | UUID linking related operations across tables | identifier | STRING | inferred |
-
-### `bit.movement_events` -- MV -- 0 rows
-
-**Hub**: `04.04.04` BIT/CLS Authorization
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `movement_id` | `bit.movement_events.movement_id` | uuid | N | Primary key for this movement event | identifier | UUID | inferred |
-| 2 | `company_unique_id` | `bit.movement_events.company_unique_id` | text | N | FK to cl.company_identity or Barton company ID | foreign_key | STRING | inferred |
-| 3 | `source_hub` | `bit.movement_events.source_hub` | text | N | Source Hub | attribute | STRING | inferred |
-| 4 | `source_table` | `bit.movement_events.source_table` | text | N | Source Table | attribute | STRING | inferred |
-| 5 | `source_fields` | `bit.movement_events.source_fields` | ARRAY | N | Source Fields | attribute | ARRAY | inferred |
-| 6 | `movement_class` | `bit.movement_events.movement_class` | text | N | Movement Class | attribute | STRING | inferred |
-| 7 | `pressure_class` | `bit.movement_events.pressure_class` | text | N | Pressure Class | attribute | STRING | inferred |
-| 8 | `domain` | `bit.movement_events.domain` | text | N | Company website domain (lowercase, no protocol) | attribute | STRING | inferred |
-| 9 | `direction` | `bit.movement_events.direction` | text | N | Direction | attribute | STRING | inferred |
-| 10 | `magnitude` | `bit.movement_events.magnitude` | numeric | N | Magnitude | attribute | NUMERIC | inferred |
-| 11 | `detected_at` | `bit.movement_events.detected_at` | timestamp with time zone | N | When this event/signal was detected | attribute | ISO-8601 | inferred |
-| 12 | `valid_from` | `bit.movement_events.valid_from` | timestamp with time zone | N | Valid From | attribute | ISO-8601 | inferred |
-| 13 | `valid_until` | `bit.movement_events.valid_until` | timestamp with time zone | N | Valid Until | attribute | ISO-8601 | inferred |
-| 14 | `comparison_period` | `bit.movement_events.comparison_period` | text | Y | Comparison Period | attribute | STRING | inferred |
-| 15 | `evidence` | `bit.movement_events.evidence` | jsonb | N | Evidence | attribute | JSONB | inferred |
-| 16 | `source_record_ids` | `bit.movement_events.source_record_ids` | jsonb | N | Source Record Ids | attribute | JSONB | inferred |
-| 17 | `created_at` | `bit.movement_events.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-
-### `bit.phase_state` -- CANONICAL -- 0 rows
-
-**Hub**: `04.04.04` BIT/CLS Authorization
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `company_unique_id` | `bit.phase_state.company_unique_id` | text | N | FK to cl.company_identity or Barton company ID | foreign_key | STRING | inferred |
-| 2 | `current_band` | `bit.phase_state.current_band` | integer | N | Current Band | attribute | INTEGER | inferred |
-| 3 | `phase_status` | `bit.phase_state.phase_status` | text | N | Phase Status | attribute | ENUM | inferred |
-| 4 | `dol_active` | `bit.phase_state.dol_active` | boolean | N | Dol Active | attribute | BOOLEAN | inferred |
-| 5 | `people_active` | `bit.phase_state.people_active` | boolean | N | People Active | attribute | BOOLEAN | inferred |
-| 6 | `blog_active` | `bit.phase_state.blog_active` | boolean | N | Blog Active | attribute | BOOLEAN | inferred |
-| 7 | `primary_pressure` | `bit.phase_state.primary_pressure` | text | Y | Primary Pressure | attribute | STRING | inferred |
-| 8 | `aligned_domains` | `bit.phase_state.aligned_domains` | integer | N | Aligned Domains | attribute | INTEGER | inferred |
-| 9 | `last_movement_at` | `bit.phase_state.last_movement_at` | timestamp with time zone | Y | Timestamp for last movement event | attribute | ISO-8601 | inferred |
-| 10 | `last_band_change_at` | `bit.phase_state.last_band_change_at` | timestamp with time zone | Y | Timestamp for last band change event | attribute | ISO-8601 | inferred |
-| 11 | `phase_entered_at` | `bit.phase_state.phase_entered_at` | timestamp with time zone | Y | Timestamp for phase entered event | attribute | ISO-8601 | inferred |
-| 12 | `stasis_start` | `bit.phase_state.stasis_start` | timestamp with time zone | Y | Stasis Start | attribute | ISO-8601 | inferred |
-| 13 | `stasis_years` | `bit.phase_state.stasis_years` | numeric | Y | Stasis Years | attribute | NUMERIC | inferred |
-| 14 | `updated_at` | `bit.phase_state.updated_at` | timestamp with time zone | N | When this record was last updated | attribute | ISO-8601 | inferred |
-
-### `bit.proof_lines` -- CANONICAL -- 0 rows
-
-**Hub**: `04.04.04` BIT/CLS Authorization
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `proof_id` | `bit.proof_lines.proof_id` | text | N | Proof Id | identifier | STRING | inferred |
-| 2 | `company_unique_id` | `bit.proof_lines.company_unique_id` | text | N | FK to cl.company_identity or Barton company ID | foreign_key | STRING | inferred |
-| 3 | `band` | `bit.proof_lines.band` | integer | N | Band | attribute | INTEGER | inferred |
-| 4 | `pressure_class` | `bit.proof_lines.pressure_class` | text | N | Pressure Class | attribute | STRING | inferred |
-| 5 | `sources` | `bit.proof_lines.sources` | ARRAY | N | Sources | attribute | ARRAY | inferred |
-| 6 | `evidence` | `bit.proof_lines.evidence` | jsonb | N | Evidence | attribute | JSONB | inferred |
-| 7 | `movement_ids` | `bit.proof_lines.movement_ids` | ARRAY | N | Movement Ids | attribute | ARRAY | inferred |
-| 8 | `human_readable` | `bit.proof_lines.human_readable` | text | N | Human Readable | attribute | STRING | inferred |
-| 9 | `generated_at` | `bit.proof_lines.generated_at` | timestamp with time zone | N | Timestamp for generated event | attribute | ISO-8601 | inferred |
-| 10 | `valid_until` | `bit.proof_lines.valid_until` | timestamp with time zone | N | Valid Until | attribute | ISO-8601 | inferred |
-| 11 | `generated_by` | `bit.proof_lines.generated_by` | text | N | Generated By | attribute | STRING | inferred |
+**Tables**: 3 | **Total rows**: 14,408
 
 ### `outreach.bit_errors` -- ERROR -- 0 rows
 
@@ -3080,26 +2795,6 @@
 | 11 | `stack_trace` | `outreach.bit_errors.stack_trace` | text | Y | Stack Trace | attribute | STRING | inferred |
 | 12 | `created_at` | `outreach.bit_errors.created_at` | timestamp with time zone | N | When the error was recorded | attribute | ISO-8601 | column_registry.yml |
 | 13 | `error_type` | `outreach.bit_errors.error_type` | character varying(100) | Y | Discriminator column — classifies the scoring error | attribute | ENUM | column_registry.yml |
-
-### `outreach.bit_input_history` -- SYSTEM -- 0 rows
-
-**Hub**: `04.04.04` BIT/CLS Authorization
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `history_id` | `outreach.bit_input_history.history_id` | uuid | N | History Id | identifier | UUID | inferred |
-| 2 | `outreach_id` | `outreach.bit_input_history.outreach_id` | uuid | N | FK to outreach.outreach spine table (universal join key) | foreign_key | UUID | inferred |
-| 3 | `signal_type` | `outreach.bit_input_history.signal_type` | character varying(50) | N | Signal Type | attribute | STRING | inferred |
-| 4 | `source` | `outreach.bit_input_history.source` | character varying(50) | N | Data source identifier | attribute | STRING | inferred |
-| 5 | `signal_fingerprint` | `outreach.bit_input_history.signal_fingerprint` | text | N | Signal Fingerprint | attribute | STRING | inferred |
-| 6 | `signal_payload` | `outreach.bit_input_history.signal_payload` | jsonb | Y | Signal Payload | attribute | JSONB | inferred |
-| 7 | `first_seen_at` | `outreach.bit_input_history.first_seen_at` | timestamp with time zone | Y | Timestamp for first seen event | attribute | ISO-8601 | inferred |
-| 8 | `last_used_at` | `outreach.bit_input_history.last_used_at` | timestamp with time zone | Y | Timestamp for last used event | attribute | ISO-8601 | inferred |
-| 9 | `use_count` | `outreach.bit_input_history.use_count` | integer | Y | Count of use | metric | INTEGER | inferred |
-| 10 | `score_contribution` | `outreach.bit_input_history.score_contribution` | integer | Y | Score Contribution | attribute | INTEGER | inferred |
-| 11 | `correlation_id` | `outreach.bit_input_history.correlation_id` | uuid | Y | UUID linking related operations across tables | identifier | UUID | inferred |
-| 12 | `process_id` | `outreach.bit_input_history.process_id` | uuid | Y | Process Id | identifier | UUID | inferred |
-| 13 | `created_at` | `outreach.bit_input_history.created_at` | timestamp with time zone | Y | When this record was created | attribute | ISO-8601 | inferred |
 
 ### `outreach.bit_scores` -- CANONICAL FROZEN -- 12,602 rows
 
@@ -3141,128 +2836,11 @@
 | 13 | `archived_at` | `outreach.bit_scores_archive.archived_at` | timestamp with time zone | Y | When this record was archived | attribute | ISO-8601 | inferred |
 | 14 | `archive_reason` | `outreach.bit_scores_archive.archive_reason` | text | Y | Reason this record was archived | attribute | STRING | inferred |
 
-### `outreach.bit_signals` -- MV -- 0 rows
-
-**Hub**: `04.04.04` BIT/CLS Authorization
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `signal_id` | `outreach.bit_signals.signal_id` | uuid | N | Signal Id | identifier | UUID | inferred |
-| 2 | `outreach_id` | `outreach.bit_signals.outreach_id` | uuid | N | FK to outreach.outreach spine table (universal join key) | foreign_key | UUID | inferred |
-| 3 | `signal_type` | `outreach.bit_signals.signal_type` | character varying(50) | N | Signal Type | attribute | STRING | inferred |
-| 4 | `signal_impact` | `outreach.bit_signals.signal_impact` | numeric | N | Signal Impact | attribute | NUMERIC | inferred |
-| 5 | `source_spoke` | `outreach.bit_signals.source_spoke` | character varying(50) | N | Source Spoke | attribute | STRING | inferred |
-| 6 | `correlation_id` | `outreach.bit_signals.correlation_id` | uuid | N | UUID linking related operations across tables | identifier | UUID | inferred |
-| 7 | `process_id` | `outreach.bit_signals.process_id` | uuid | Y | Process Id | identifier | UUID | inferred |
-| 8 | `signal_metadata` | `outreach.bit_signals.signal_metadata` | jsonb | Y | Signal Metadata | attribute | JSONB | inferred |
-| 9 | `decay_period_days` | `outreach.bit_signals.decay_period_days` | integer | N | Decay Period Days | attribute | INTEGER | inferred |
-| 10 | `decayed_impact` | `outreach.bit_signals.decayed_impact` | numeric | Y | Decayed Impact | attribute | NUMERIC | inferred |
-| 11 | `signal_timestamp` | `outreach.bit_signals.signal_timestamp` | timestamp with time zone | N | Signal Timestamp | attribute | ISO-8601 | inferred |
-| 12 | `processed_at` | `outreach.bit_signals.processed_at` | timestamp with time zone | Y | Timestamp for processed event | attribute | ISO-8601 | inferred |
-| 13 | `created_at` | `outreach.bit_signals.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-| 14 | `signal_source` | `outreach.bit_signals.signal_source` | character varying(50) | Y | Signal Source | attribute | STRING | inferred |
-
-### `outreach.campaigns` -- DEPRECATED -- 0 rows
-
-**Hub**: `04.04.04` Outreach Execution (deprecated)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `campaign_id` | `outreach.campaigns.campaign_id` | uuid | N | Campaign Id | identifier | UUID | inferred |
-| 2 | `campaign_name` | `outreach.campaigns.campaign_name` | character varying(255) | N | Campaign Name | attribute | STRING | inferred |
-| 3 | `campaign_type` | `outreach.campaigns.campaign_type` | character varying(50) | N | Campaign Type | attribute | STRING | inferred |
-| 4 | `campaign_status` | `outreach.campaigns.campaign_status` | character varying(50) | N | Campaign Status | attribute | STRING | inferred |
-| 5 | `target_bit_score_min` | `outreach.campaigns.target_bit_score_min` | integer | Y | Target Bit Score Min | attribute | INTEGER | inferred |
-| 6 | `target_outreach_state` | `outreach.campaigns.target_outreach_state` | character varying(50) | Y | Target Outreach State | attribute | STRING | inferred |
-| 7 | `daily_send_limit` | `outreach.campaigns.daily_send_limit` | integer | Y | Daily Send Limit | attribute | INTEGER | inferred |
-| 8 | `total_send_limit` | `outreach.campaigns.total_send_limit` | integer | Y | Total Send Limit | metric | INTEGER | inferred |
-| 9 | `total_targeted` | `outreach.campaigns.total_targeted` | integer | N | Total Targeted | metric | INTEGER | inferred |
-| 10 | `total_sent` | `outreach.campaigns.total_sent` | integer | N | Total Sent | metric | INTEGER | inferred |
-| 11 | `total_opened` | `outreach.campaigns.total_opened` | integer | N | Total Opened | metric | INTEGER | inferred |
-| 12 | `total_clicked` | `outreach.campaigns.total_clicked` | integer | N | Total Clicked | metric | INTEGER | inferred |
-| 13 | `total_replied` | `outreach.campaigns.total_replied` | integer | N | Total Replied | metric | INTEGER | inferred |
-| 14 | `start_date` | `outreach.campaigns.start_date` | date | Y | Start Date | attribute | DATE | inferred |
-| 15 | `end_date` | `outreach.campaigns.end_date` | date | Y | End Date | attribute | DATE | inferred |
-| 16 | `created_by` | `outreach.campaigns.created_by` | character varying(100) | Y | Created By | attribute | STRING | inferred |
-| 17 | `created_at` | `outreach.campaigns.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-| 18 | `updated_at` | `outreach.campaigns.updated_at` | timestamp with time zone | N | When this record was last updated | attribute | ISO-8601 | inferred |
-
-### `outreach.send_log` -- DEPRECATED -- 0 rows
-
-**Hub**: `04.04.04` Outreach Execution (deprecated)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `send_id` | `outreach.send_log.send_id` | uuid | N | Send Id | identifier | UUID | inferred |
-| 2 | `campaign_id` | `outreach.send_log.campaign_id` | uuid | Y | Campaign Id | identifier | UUID | inferred |
-| 3 | `sequence_id` | `outreach.send_log.sequence_id` | uuid | Y | Sequence Id | identifier | UUID | inferred |
-| 4 | `person_id` | `outreach.send_log.person_id` | uuid | Y | Person Id | identifier | UUID | inferred |
-| 5 | `target_id` | `outreach.send_log.target_id` | uuid | Y | Primary key for this target record | identifier | UUID | inferred |
-| 6 | `company_unique_id` | `outreach.send_log.company_unique_id` | text | Y | FK to cl.company_identity or Barton company ID | foreign_key | STRING | inferred |
-| 7 | `email_to` | `outreach.send_log.email_to` | character varying(255) | N | Email To | attribute | EMAIL | inferred |
-| 8 | `email_subject` | `outreach.send_log.email_subject` | text | Y | Email Subject | attribute | EMAIL | inferred |
-| 9 | `sequence_step` | `outreach.send_log.sequence_step` | integer | N | Sequence Step | attribute | INTEGER | inferred |
-| 10 | `send_status` | `outreach.send_log.send_status` | character varying(50) | N | Send Status | attribute | STRING | inferred |
-| 11 | `scheduled_at` | `outreach.send_log.scheduled_at` | timestamp with time zone | Y | Timestamp for scheduled event | attribute | ISO-8601 | inferred |
-| 12 | `sent_at` | `outreach.send_log.sent_at` | timestamp with time zone | Y | Timestamp for sent event | attribute | ISO-8601 | inferred |
-| 13 | `delivered_at` | `outreach.send_log.delivered_at` | timestamp with time zone | Y | Timestamp for delivered event | attribute | ISO-8601 | inferred |
-| 14 | `bounced_at` | `outreach.send_log.bounced_at` | timestamp with time zone | Y | Timestamp for bounced event | attribute | ISO-8601 | inferred |
-| 15 | `opened_at` | `outreach.send_log.opened_at` | timestamp with time zone | Y | Timestamp for opened event | attribute | ISO-8601 | inferred |
-| 16 | `clicked_at` | `outreach.send_log.clicked_at` | timestamp with time zone | Y | Timestamp for clicked event | attribute | ISO-8601 | inferred |
-| 17 | `replied_at` | `outreach.send_log.replied_at` | timestamp with time zone | Y | Timestamp for replied event | attribute | ISO-8601 | inferred |
-| 18 | `open_count` | `outreach.send_log.open_count` | integer | N | Count of open | metric | INTEGER | inferred |
-| 19 | `click_count` | `outreach.send_log.click_count` | integer | N | Count of click | metric | INTEGER | inferred |
-| 20 | `error_message` | `outreach.send_log.error_message` | text | Y | Human-readable error description | attribute | STRING | inferred |
-| 21 | `retry_count` | `outreach.send_log.retry_count` | integer | N | Number of retry attempts so far | metric | INTEGER | inferred |
-| 22 | `source_system` | `outreach.send_log.source_system` | character varying(100) | Y | System that originated this record | attribute | STRING | inferred |
-| 23 | `external_id` | `outreach.send_log.external_id` | character varying(255) | Y | External Id | identifier | STRING | inferred |
-| 24 | `created_at` | `outreach.send_log.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-| 25 | `updated_at` | `outreach.send_log.updated_at` | timestamp with time zone | N | When this record was last updated | attribute | ISO-8601 | inferred |
-
-### `outreach.sequences` -- DEPRECATED -- 0 rows
-
-**Hub**: `04.04.04` Outreach Execution (deprecated)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `sequence_id` | `outreach.sequences.sequence_id` | uuid | N | Sequence Id | identifier | UUID | inferred |
-| 2 | `campaign_id` | `outreach.sequences.campaign_id` | uuid | Y | Campaign Id | identifier | UUID | inferred |
-| 3 | `sequence_name` | `outreach.sequences.sequence_name` | character varying(255) | N | Sequence Name | attribute | STRING | inferred |
-| 4 | `sequence_order` | `outreach.sequences.sequence_order` | integer | N | Sequence Order | attribute | INTEGER | inferred |
-| 5 | `subject_template` | `outreach.sequences.subject_template` | text | Y | Subject Template | attribute | STRING | inferred |
-| 6 | `body_template` | `outreach.sequences.body_template` | text | Y | Body Template | attribute | STRING | inferred |
-| 7 | `template_type` | `outreach.sequences.template_type` | character varying(50) | Y | Template Type | attribute | STRING | inferred |
-| 8 | `delay_days` | `outreach.sequences.delay_days` | integer | N | Delay Days | attribute | INTEGER | inferred |
-| 9 | `delay_hours` | `outreach.sequences.delay_hours` | integer | N | Delay Hours | attribute | INTEGER | inferred |
-| 10 | `send_time_preference` | `outreach.sequences.send_time_preference` | character varying(20) | Y | Send Time Preference | attribute | STRING | inferred |
-| 11 | `sequence_status` | `outreach.sequences.sequence_status` | character varying(50) | N | Sequence Status | attribute | STRING | inferred |
-| 12 | `created_at` | `outreach.sequences.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-| 13 | `updated_at` | `outreach.sequences.updated_at` | timestamp with time zone | N | When this record was last updated | attribute | ISO-8601 | inferred |
-
 ---
 
 ## `04.04.05` Blog Content
 
-**Tables**: 8 | **Total rows**: 272,917
-
-### `blog.pressure_signals` -- MV -- 0 rows
-
-**Hub**: `04.04.05` Blog Content
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `signal_id` | `blog.pressure_signals.signal_id` | uuid | N | Signal Id | identifier | UUID | inferred |
-| 2 | `company_unique_id` | `blog.pressure_signals.company_unique_id` | text | N | FK to cl.company_identity or Barton company ID | foreign_key | STRING | inferred |
-| 3 | `signal_type` | `blog.pressure_signals.signal_type` | character varying(50) | N | Signal Type | attribute | STRING | inferred |
-| 4 | `pressure_domain` | `blog.pressure_signals.pressure_domain` | USER-DEFINED | N | Pressure Domain | attribute | STRING | inferred |
-| 5 | `pressure_class` | `blog.pressure_signals.pressure_class` | USER-DEFINED | Y | Pressure Class | attribute | STRING | inferred |
-| 6 | `signal_value` | `blog.pressure_signals.signal_value` | jsonb | N | Signal Value | attribute | JSONB | inferred |
-| 7 | `magnitude` | `blog.pressure_signals.magnitude` | integer | N | Magnitude | attribute | INTEGER | inferred |
-| 8 | `detected_at` | `blog.pressure_signals.detected_at` | timestamp with time zone | N | When this event/signal was detected | attribute | ISO-8601 | inferred |
-| 9 | `expires_at` | `blog.pressure_signals.expires_at` | timestamp with time zone | N | When this record expires | attribute | ISO-8601 | inferred |
-| 10 | `correlation_id` | `blog.pressure_signals.correlation_id` | uuid | Y | UUID linking related operations across tables | identifier | UUID | inferred |
-| 11 | `source_record_id` | `blog.pressure_signals.source_record_id` | text | Y | Source Record Id | identifier | STRING | inferred |
-| 12 | `created_at` | `blog.pressure_signals.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
+**Tables**: 6 | **Total rows**: 272,917
 
 ### `outreach.blog` -- CANONICAL FROZEN -- 93,596 rows
 
@@ -3343,26 +2921,6 @@
 | 12 | `singleton_key` | `outreach.blog_ingress_control.singleton_key` | integer | Y | Singleton Key | attribute | INTEGER | inferred |
 | 13 | `created_at` | `outreach.blog_ingress_control.created_at` | timestamp with time zone | Y | When this record was created | attribute | ISO-8601 | inferred |
 | 14 | `updated_at` | `outreach.blog_ingress_control.updated_at` | timestamp with time zone | Y | When this record was last updated | attribute | ISO-8601 | inferred |
-
-### `outreach.blog_source_history` -- SYSTEM -- 0 rows
-
-**Hub**: `04.04.05` Blog Content
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `history_id` | `outreach.blog_source_history.history_id` | uuid | N | History Id | identifier | UUID | inferred |
-| 2 | `outreach_id` | `outreach.blog_source_history.outreach_id` | uuid | N | FK to outreach.outreach spine table (universal join key) | foreign_key | UUID | inferred |
-| 3 | `source_type` | `outreach.blog_source_history.source_type` | character varying(50) | N | Source Type | attribute | ENUM | inferred |
-| 4 | `source_url` | `outreach.blog_source_history.source_url` | text | N | URL of the content source | attribute | URL | inferred |
-| 5 | `first_seen_at` | `outreach.blog_source_history.first_seen_at` | timestamp with time zone | N | Timestamp for first seen event | attribute | ISO-8601 | inferred |
-| 6 | `last_checked_at` | `outreach.blog_source_history.last_checked_at` | timestamp with time zone | Y | Timestamp for last checked event | attribute | ISO-8601 | inferred |
-| 7 | `status` | `outreach.blog_source_history.status` | character varying(20) | Y | Current status of this record | attribute | ENUM | inferred |
-| 8 | `http_status` | `outreach.blog_source_history.http_status` | integer | Y | Http Status | attribute | INTEGER | inferred |
-| 9 | `redirect_url` | `outreach.blog_source_history.redirect_url` | text | Y | Redirect URL | attribute | URL | inferred |
-| 10 | `checksum` | `outreach.blog_source_history.checksum` | text | Y | Checksum | attribute | STRING | inferred |
-| 11 | `process_id` | `outreach.blog_source_history.process_id` | uuid | Y | Process Id | identifier | UUID | inferred |
-| 12 | `correlation_id` | `outreach.blog_source_history.correlation_id` | uuid | Y | UUID linking related operations across tables | identifier | UUID | inferred |
-| 13 | `created_at` | `outreach.blog_source_history.created_at` | timestamp with time zone | Y | When this record was created | attribute | ISO-8601 | inferred |
 
 ### `outreach.sitemap_discovery` -- UNREGISTERED -- 93,596 rows
 
@@ -3529,7 +3087,7 @@
 
 ## `SYS` System / Reference / Enrichment
 
-**Tables**: 23 | **Total rows**: 1,182,515
+**Tables**: 18 | **Total rows**: 1,182,515
 
 ### `catalog.columns` -- SYSTEM -- 725 rows
 
@@ -3564,23 +3122,6 @@
 | 25 | `synonyms` | `catalog.columns.synonyms` | ARRAY | Y | Synonyms | attribute | ARRAY | inferred |
 | 26 | `created_at` | `catalog.columns.created_at` | timestamp without time zone | Y | When this record was created | attribute | ISO-8601 | inferred |
 | 27 | `updated_at` | `catalog.columns.updated_at` | timestamp without time zone | Y | When this record was last updated | attribute | ISO-8601 | inferred |
-
-### `catalog.relationships` -- SYSTEM -- 0 rows
-
-**Hub**: `SYS` Catalog (system)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `relationship_id` | `catalog.relationships.relationship_id` | integer | N | Relationship Id | identifier | INTEGER | inferred |
-| 2 | `from_table_id` | `catalog.relationships.from_table_id` | character varying(100) | N | From Table Id | identifier | STRING | inferred |
-| 3 | `from_column_id` | `catalog.relationships.from_column_id` | character varying(200) | N | From Column Id | identifier | STRING | inferred |
-| 4 | `to_table_id` | `catalog.relationships.to_table_id` | character varying(100) | N | To Table Id | identifier | STRING | inferred |
-| 5 | `to_column_id` | `catalog.relationships.to_column_id` | character varying(200) | N | To Column Id | identifier | STRING | inferred |
-| 6 | `relationship_type` | `catalog.relationships.relationship_type` | character varying(20) | N | Relationship Type | attribute | STRING | inferred |
-| 7 | `relationship_name` | `catalog.relationships.relationship_name` | character varying(100) | Y | Relationship Name | attribute | STRING | inferred |
-| 8 | `description` | `catalog.relationships.description` | text | Y | Description | attribute | STRING | inferred |
-| 9 | `is_enforced` | `catalog.relationships.is_enforced` | boolean | Y | Whether this record enforced | attribute | BOOLEAN | inferred |
-| 10 | `created_at` | `catalog.relationships.created_at` | timestamp without time zone | Y | When this record was created | attribute | ISO-8601 | inferred |
 
 ### `catalog.schemas` -- SYSTEM -- 6 rows
 
@@ -3798,27 +3339,6 @@
 | 11 | `zip` | `intake.company_raw_wv.zip` | text | Y | ZIP/postal code (5-digit) | attribute | STRING | inferred |
 | 12 | `created_at` | `intake.company_raw_wv.created_at` | timestamp without time zone | Y | When this record was created | attribute | ISO-8601 | inferred |
 
-### `intake.people_candidate` -- STAGING -- 0 rows
-
-**Hub**: `SYS` Intake & Staging (system)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `candidate_id` | `intake.people_candidate.candidate_id` | uuid | N | Primary key for this candidate record | identifier | UUID | inferred |
-| 2 | `outreach_id` | `intake.people_candidate.outreach_id` | uuid | N | FK to outreach.outreach spine table (universal join key) | foreign_key | UUID | inferred |
-| 3 | `slot_type` | `intake.people_candidate.slot_type` | character varying(20) | N | Executive role type (CEO, CFO, HR, CTO, CMO, COO) | attribute | ENUM | inferred |
-| 4 | `person_name` | `intake.people_candidate.person_name` | text | Y | Person Name | attribute | STRING | inferred |
-| 5 | `person_title` | `intake.people_candidate.person_title` | text | Y | Person Title | attribute | STRING | inferred |
-| 6 | `person_email` | `intake.people_candidate.person_email` | text | Y | Person Email | attribute | EMAIL | inferred |
-| 7 | `linkedin_url` | `intake.people_candidate.linkedin_url` | text | Y | LinkedIn profile URL | attribute | URL | inferred |
-| 8 | `confidence_score` | `intake.people_candidate.confidence_score` | numeric | Y | Confidence score (0-100) | metric | NUMERIC | inferred |
-| 9 | `source` | `intake.people_candidate.source` | character varying(50) | N | Data source identifier | attribute | STRING | inferred |
-| 10 | `status` | `intake.people_candidate.status` | character varying(20) | N | Current status of this record | attribute | ENUM | inferred |
-| 11 | `rejection_reason` | `intake.people_candidate.rejection_reason` | text | Y | Rejection Reason | attribute | STRING | inferred |
-| 12 | `created_at` | `intake.people_candidate.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-| 13 | `processed_at` | `intake.people_candidate.processed_at` | timestamp with time zone | Y | Timestamp for processed event | attribute | ISO-8601 | inferred |
-| 14 | `expires_at` | `intake.people_candidate.expires_at` | timestamp with time zone | Y | When this record expires | attribute | ISO-8601 | inferred |
-
 ### `intake.people_raw_intake` -- STAGING -- 120,045 rows
 
 **Hub**: `SYS` Intake & Staging (system)
@@ -3954,32 +3474,6 @@
 | 3 | `status` | `outreach_ctx.context.status` | text | N | Current status of this record | attribute | ENUM | inferred |
 | 4 | `notes` | `outreach_ctx.context.notes` | text | Y | Human-readable notes | attribute | STRING | inferred |
 
-### `outreach_ctx.spend_log` -- SYSTEM -- 0 rows
-
-**Hub**: `SYS` Outreach Context (system)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `id` | `outreach_ctx.spend_log.id` | bigint | N | Id | identifier | INTEGER | inferred |
-| 2 | `outreach_context_id` | `outreach_ctx.spend_log.outreach_context_id` | text | N | Outreach Context Id | identifier | STRING | inferred |
-| 3 | `company_sov_id` | `outreach_ctx.spend_log.company_sov_id` | uuid | N | Company Sov Id | identifier | UUID | inferred |
-| 4 | `tool_name` | `outreach_ctx.spend_log.tool_name` | text | N | Tool Name | attribute | STRING | inferred |
-| 5 | `tier` | `outreach_ctx.spend_log.tier` | integer | N | Tier | attribute | INTEGER | inferred |
-| 6 | `cost_credits` | `outreach_ctx.spend_log.cost_credits` | numeric | Y | Cost Credits | attribute | NUMERIC | inferred |
-| 7 | `attempted_at` | `outreach_ctx.spend_log.attempted_at` | timestamp with time zone | N | Timestamp for attempted event | attribute | ISO-8601 | inferred |
-
-### `outreach_ctx.tool_attempts` -- SYSTEM -- 0 rows
-
-**Hub**: `SYS` Outreach Context (system)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `id` | `outreach_ctx.tool_attempts.id` | bigint | N | Id | identifier | INTEGER | inferred |
-| 2 | `outreach_context_id` | `outreach_ctx.tool_attempts.outreach_context_id` | text | N | Outreach Context Id | identifier | STRING | inferred |
-| 3 | `tool_name` | `outreach_ctx.tool_attempts.tool_name` | text | N | Tool Name | attribute | STRING | inferred |
-| 4 | `tier` | `outreach_ctx.tool_attempts.tier` | integer | N | Tier | attribute | INTEGER | inferred |
-| 5 | `attempted_at` | `outreach_ctx.tool_attempts.attempted_at` | timestamp with time zone | N | Timestamp for attempted event | attribute | ISO-8601 | inferred |
-
 ### `ref.county_fips` -- SYSTEM -- 3,222 rows
 
 **Hub**: `SYS` Reference Data (system)
@@ -4088,56 +3582,11 @@
 | 15 | `archived_at` | `shq.error_master.archived_at` | timestamp with time zone | Y | When this record was archived | attribute | ISO-8601 | inferred |
 | 16 | `ttl_tier` | `shq.error_master.ttl_tier` | USER-DEFINED | Y | Ttl Tier | attribute | STRING | inferred |
 
-### `shq.error_master_archive` -- SYSTEM -- 0 rows
-
-**Hub**: `SYS` System Health (system)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `id` | `shq.error_master_archive.id` | integer | N | Id | identifier | INTEGER | inferred |
-| 2 | `error_id` | `shq.error_master_archive.error_id` | uuid | N | Primary key for this error record | identifier | UUID | inferred |
-| 3 | `process_id` | `shq.error_master_archive.process_id` | text | Y | Process Id | identifier | STRING | inferred |
-| 4 | `agent_id` | `shq.error_master_archive.agent_id` | text | Y | Agent Id | identifier | STRING | inferred |
-| 5 | `severity` | `shq.error_master_archive.severity` | text | Y | Severity | attribute | STRING | inferred |
-| 6 | `error_type` | `shq.error_master_archive.error_type` | text | Y | Discriminator column classifying the error type | attribute | ENUM | inferred |
-| 7 | `message` | `shq.error_master_archive.message` | text | Y | Message | attribute | STRING | inferred |
-| 8 | `company_unique_id` | `shq.error_master_archive.company_unique_id` | text | Y | FK to cl.company_identity or Barton company ID | foreign_key | STRING | inferred |
-| 9 | `outreach_context_id` | `shq.error_master_archive.outreach_context_id` | text | Y | Outreach Context Id | identifier | STRING | inferred |
-| 10 | `air_event_id` | `shq.error_master_archive.air_event_id` | text | Y | Air Event Id | identifier | STRING | inferred |
-| 11 | `context` | `shq.error_master_archive.context` | jsonb | Y | Context | attribute | JSONB | inferred |
-| 12 | `created_at` | `shq.error_master_archive.created_at` | timestamp with time zone | Y | When this record was created | attribute | ISO-8601 | inferred |
-| 13 | `resolved_at` | `shq.error_master_archive.resolved_at` | timestamp with time zone | Y | When this error/issue was resolved | attribute | ISO-8601 | inferred |
-| 14 | `resolution_type` | `shq.error_master_archive.resolution_type` | text | Y | Resolution Type | attribute | STRING | inferred |
-| 15 | `disposition` | `shq.error_master_archive.disposition` | USER-DEFINED | Y | Disposition | attribute | STRING | inferred |
-| 16 | `ttl_tier` | `shq.error_master_archive.ttl_tier` | USER-DEFINED | Y | Ttl Tier | attribute | STRING | inferred |
-| 17 | `archived_at` | `shq.error_master_archive.archived_at` | timestamp with time zone | N | When this record was archived | attribute | ISO-8601 | inferred |
-| 18 | `archived_by` | `shq.error_master_archive.archived_by` | text | Y | Archived By | attribute | STRING | inferred |
-| 19 | `archive_reason` | `shq.error_master_archive.archive_reason` | text | Y | Reason this record was archived | attribute | STRING | inferred |
-| 20 | `final_disposition` | `shq.error_master_archive.final_disposition` | USER-DEFINED | Y | Final Disposition | attribute | STRING | inferred |
-| 21 | `retention_expires_at` | `shq.error_master_archive.retention_expires_at` | timestamp with time zone | Y | Timestamp for retention expires event | attribute | ISO-8601 | inferred |
-
 ---
 
 ## `DEPRECATED` DEPRECATED (legacy, do not use)
 
-**Tables**: 21 | **Total rows**: 212,156
-
-### `company.company_events` -- DEPRECATED -- 0 rows
-
-**Hub**: `DEPRECATED` company schema (deprecated)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `id` | `company.company_events.id` | integer | N | Id | identifier | INTEGER | inferred |
-| 2 | `company_unique_id` | `company.company_events.company_unique_id` | text | N | FK to cl.company_identity or Barton company ID | foreign_key | STRING | inferred |
-| 3 | `event_type` | `company.company_events.event_type` | text | Y | Type of audit/system event | attribute | STRING | inferred |
-| 4 | `event_date` | `company.company_events.event_date` | date | Y | Event Date | attribute | DATE | inferred |
-| 5 | `source_url` | `company.company_events.source_url` | text | Y | URL of the content source | attribute | URL | inferred |
-| 6 | `summary` | `company.company_events.summary` | text | Y | Summary | attribute | STRING | inferred |
-| 7 | `detected_at` | `company.company_events.detected_at` | timestamp without time zone | N | When this event/signal was detected | attribute | ISO-8601 | inferred |
-| 8 | `impacts_bit` | `company.company_events.impacts_bit` | boolean | Y | Impacts Bit | attribute | BOOLEAN | inferred |
-| 9 | `bit_impact_score` | `company.company_events.bit_impact_score` | integer | Y | Bit Impact score | metric | INTEGER | inferred |
-| 10 | `created_at` | `company.company_events.created_at` | timestamp without time zone | Y | When this record was created | attribute | ISO-8601 | inferred |
+**Tables**: 13 | **Total rows**: 212,156
 
 ### `company.company_master` -- DEPRECATED -- 92,116 rows
 
@@ -4182,24 +3631,6 @@
 | 35 | `duns` | `company.company_master.duns` | character varying(9) | Y | Duns | attribute | STRING | inferred |
 | 36 | `cage_code` | `company.company_master.cage_code` | character varying(5) | Y | Cage Code | attribute | STRING | inferred |
 
-### `company.company_sidecar` -- DEPRECATED -- 0 rows
-
-**Hub**: `DEPRECATED` company schema (deprecated)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `company_unique_id` | `company.company_sidecar.company_unique_id` | character varying(50) | N | FK to cl.company_identity or Barton company ID | foreign_key | STRING | inferred |
-| 2 | `ein_number` | `company.company_sidecar.ein_number` | character varying(20) | Y | Ein Number | attribute | STRING | inferred |
-| 3 | `dun_and_bradstreet_number` | `company.company_sidecar.dun_and_bradstreet_number` | character varying(20) | Y | Dun And Bradstreet Number | attribute | STRING | inferred |
-| 4 | `clay_tags` | `company.company_sidecar.clay_tags` | ARRAY | Y | Clay Tags | attribute | ARRAY | inferred |
-| 5 | `clay_segments` | `company.company_sidecar.clay_segments` | ARRAY | Y | Clay Segments | attribute | ARRAY | inferred |
-| 6 | `enrichment_payload` | `company.company_sidecar.enrichment_payload` | jsonb | Y | Enrichment Payload | attribute | JSONB | inferred |
-| 7 | `last_enriched_at` | `company.company_sidecar.last_enriched_at` | timestamp without time zone | Y | Timestamp for last enriched event | attribute | ISO-8601 | inferred |
-| 8 | `enrichment_source` | `company.company_sidecar.enrichment_source` | text | Y | Enrichment Source | attribute | STRING | inferred |
-| 9 | `confidence_score` | `company.company_sidecar.confidence_score` | numeric | Y | Confidence score (0-100) | metric | NUMERIC | inferred |
-| 10 | `created_at` | `company.company_sidecar.created_at` | timestamp without time zone | Y | When this record was created | attribute | ISO-8601 | inferred |
-| 11 | `updated_at` | `company.company_sidecar.updated_at` | timestamp without time zone | Y | When this record was last updated | attribute | ISO-8601 | inferred |
-
 ### `company.company_slots` -- DEPRECATED -- 1,359 rows
 
 **Hub**: `DEPRECATED` company schema (deprecated)
@@ -4238,39 +3669,6 @@
 | 18 | `people_extracted` | `company.company_source_urls.people_extracted` | integer | Y | People Extracted | attribute | INTEGER | inferred |
 | 19 | `requires_paid_enrichment` | `company.company_source_urls.requires_paid_enrichment` | boolean | Y | Requires Paid Enrichment | attribute | BOOLEAN | inferred |
 
-### `company.contact_enrichment` -- DEPRECATED -- 0 rows
-
-**Hub**: `DEPRECATED` company schema (deprecated)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `id` | `company.contact_enrichment.id` | integer | N | Id | identifier | INTEGER | inferred |
-| 2 | `company_slot_unique_id` | `company.contact_enrichment.company_slot_unique_id` | text | N | FK to people.company_slot.slot_id | foreign_key | STRING | inferred |
-| 3 | `linkedin_url` | `company.contact_enrichment.linkedin_url` | text | Y | LinkedIn profile URL | attribute | URL | inferred |
-| 4 | `full_name` | `company.contact_enrichment.full_name` | text | Y | Full Name | attribute | STRING | inferred |
-| 5 | `email` | `company.contact_enrichment.email` | text | Y | Email address | attribute | EMAIL | inferred |
-| 6 | `phone` | `company.contact_enrichment.phone` | text | Y | Phone number (E.164 format preferred) | attribute | STRING | inferred |
-| 7 | `enrichment_status` | `company.contact_enrichment.enrichment_status` | text | Y | Enrichment Status | attribute | STRING | inferred |
-| 8 | `enrichment_source` | `company.contact_enrichment.enrichment_source` | text | Y | Enrichment Source | attribute | STRING | inferred |
-| 9 | `enrichment_data` | `company.contact_enrichment.enrichment_data` | jsonb | Y | Enrichment Data | attribute | JSONB | inferred |
-| 10 | `created_at` | `company.contact_enrichment.created_at` | timestamp without time zone | Y | When this record was created | attribute | ISO-8601 | inferred |
-| 11 | `enriched_at` | `company.contact_enrichment.enriched_at` | timestamp without time zone | Y | Timestamp for enriched event | attribute | ISO-8601 | inferred |
-
-### `company.email_verification` -- DEPRECATED -- 0 rows
-
-**Hub**: `DEPRECATED` company schema (deprecated)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `id` | `company.email_verification.id` | integer | N | Id | identifier | INTEGER | inferred |
-| 2 | `enrichment_id` | `company.email_verification.enrichment_id` | integer | N | Enrichment Id | identifier | INTEGER | inferred |
-| 3 | `email` | `company.email_verification.email` | text | N | Email address | attribute | EMAIL | inferred |
-| 4 | `verification_status` | `company.email_verification.verification_status` | text | Y | Current verification status | attribute | ENUM | inferred |
-| 5 | `verification_service` | `company.email_verification.verification_service` | text | Y | Verification Service | attribute | STRING | inferred |
-| 6 | `verification_result` | `company.email_verification.verification_result` | jsonb | Y | Verification Result | attribute | JSONB | inferred |
-| 7 | `verified_at` | `company.email_verification.verified_at` | timestamp without time zone | Y | When verification was completed | attribute | ISO-8601 | inferred |
-| 8 | `created_at` | `company.email_verification.created_at` | timestamp without time zone | Y | When this record was created | attribute | ISO-8601 | inferred |
-
 ### `company.message_key_reference` -- DEPRECATED -- 8 rows
 
 **Hub**: `DEPRECATED` company schema (deprecated)
@@ -4291,25 +3689,6 @@
 | 12 | `created_at` | `company.message_key_reference.created_at` | timestamp with time zone | Y | When this record was created | attribute | ISO-8601 | inferred |
 | 13 | `updated_at` | `company.message_key_reference.updated_at` | timestamp with time zone | Y | When this record was last updated | attribute | ISO-8601 | inferred |
 
-### `company.pipeline_errors` -- DEPRECATED -- 0 rows
-
-**Hub**: `DEPRECATED` company schema (deprecated)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `id` | `company.pipeline_errors.id` | integer | N | Id | identifier | INTEGER | inferred |
-| 2 | `event_type` | `company.pipeline_errors.event_type` | text | N | Type of audit/system event | attribute | STRING | inferred |
-| 3 | `record_id` | `company.pipeline_errors.record_id` | text | N | Record Id | identifier | STRING | inferred |
-| 4 | `error_message` | `company.pipeline_errors.error_message` | text | N | Human-readable error description | attribute | STRING | inferred |
-| 5 | `error_details` | `company.pipeline_errors.error_details` | jsonb | Y | Error Details | attribute | JSONB | inferred |
-| 6 | `severity` | `company.pipeline_errors.severity` | text | Y | Severity | attribute | STRING | inferred |
-| 7 | `resolved` | `company.pipeline_errors.resolved` | boolean | Y | Resolved | attribute | BOOLEAN | inferred |
-| 8 | `resolved_at` | `company.pipeline_errors.resolved_at` | timestamp without time zone | Y | When this error/issue was resolved | attribute | ISO-8601 | inferred |
-| 9 | `resolved_by` | `company.pipeline_errors.resolved_by` | text | Y | Resolved By | attribute | STRING | inferred |
-| 10 | `resolution_notes` | `company.pipeline_errors.resolution_notes` | text | Y | Resolution Notes | attribute | STRING | inferred |
-| 11 | `created_at` | `company.pipeline_errors.created_at` | timestamp without time zone | Y | When this record was created | attribute | ISO-8601 | inferred |
-| 12 | `error_type` | `company.pipeline_errors.error_type` | character varying(100) | Y | Discriminator column classifying the error type | attribute | ENUM | inferred |
-
 ### `company.pipeline_events` -- DEPRECATED -- 2,185 rows
 
 **Hub**: `DEPRECATED` company schema (deprecated)
@@ -4324,29 +3703,6 @@
 | 6 | `retry_count` | `company.pipeline_events.retry_count` | integer | Y | Number of retry attempts so far | metric | INTEGER | inferred |
 | 7 | `created_at` | `company.pipeline_events.created_at` | timestamp without time zone | Y | When this record was created | attribute | ISO-8601 | inferred |
 | 8 | `processed_at` | `company.pipeline_events.processed_at` | timestamp without time zone | Y | Timestamp for processed event | attribute | ISO-8601 | inferred |
-
-### `company.validation_failures_log` -- DEPRECATED -- 0 rows
-
-**Hub**: `DEPRECATED` company schema (deprecated)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `id` | `company.validation_failures_log.id` | integer | N | Id | identifier | INTEGER | inferred |
-| 2 | `company_id` | `company.validation_failures_log.company_id` | text | Y | Company Id | identifier | STRING | inferred |
-| 3 | `person_id` | `company.validation_failures_log.person_id` | text | Y | Person Id | identifier | STRING | inferred |
-| 4 | `company_name` | `company.validation_failures_log.company_name` | text | Y | Company legal or common name | attribute | STRING | inferred |
-| 5 | `person_name` | `company.validation_failures_log.person_name` | text | Y | Person Name | attribute | STRING | inferred |
-| 6 | `fail_reason` | `company.validation_failures_log.fail_reason` | text | N | Fail Reason | attribute | STRING | inferred |
-| 7 | `state` | `company.validation_failures_log.state` | text | Y | US state code (2-letter) | attribute | ENUM | inferred |
-| 8 | `validation_timestamp` | `company.validation_failures_log.validation_timestamp` | timestamp with time zone | Y | Validation Timestamp | attribute | ISO-8601 | inferred |
-| 9 | `pipeline_id` | `company.validation_failures_log.pipeline_id` | text | N | Pipeline Id | identifier | STRING | inferred |
-| 10 | `failure_type` | `company.validation_failures_log.failure_type` | text | N | Failure Type | attribute | STRING | inferred |
-| 11 | `created_at` | `company.validation_failures_log.created_at` | timestamp with time zone | Y | When this record was created | attribute | ISO-8601 | inferred |
-| 12 | `updated_at` | `company.validation_failures_log.updated_at` | timestamp with time zone | Y | When this record was last updated | attribute | ISO-8601 | inferred |
-| 13 | `exported_to_sheets` | `company.validation_failures_log.exported_to_sheets` | boolean | Y | Exported To Sheets | attribute | BOOLEAN | inferred |
-| 14 | `exported_at` | `company.validation_failures_log.exported_at` | timestamp with time zone | Y | Timestamp for exported event | attribute | ISO-8601 | inferred |
-| 15 | `exported_to_b2` | `company.validation_failures_log.exported_to_b2` | boolean | Y | Exported To B2 | attribute | BOOLEAN | inferred |
-| 16 | `exported_to_b2_at` | `company.validation_failures_log.exported_to_b2_at` | timestamp without time zone | Y | Timestamp for exported to b2 event | attribute | ISO-8601 | inferred |
 
 ### `marketing.company_master` -- DEPRECATED -- 512 rows
 
@@ -4571,247 +3927,11 @@
 | 19 | `created_at` | `marketing.review_queue.created_at` | timestamp without time zone | Y | When this record was created | attribute | ISO-8601 | inferred |
 | 20 | `updated_at` | `marketing.review_queue.updated_at` | timestamp without time zone | Y | When this record was last updated | attribute | ISO-8601 | inferred |
 
-### `talent_flow.movement_history` -- DEPRECATED -- 0 rows
-
-**Hub**: `DEPRECATED` talent_flow schema (deprecated)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `history_id` | `talent_flow.movement_history.history_id` | uuid | N | History Id | identifier | UUID | inferred |
-| 2 | `person_identifier` | `talent_flow.movement_history.person_identifier` | text | N | Person Identifier | attribute | STRING | inferred |
-| 3 | `from_outreach_id` | `talent_flow.movement_history.from_outreach_id` | uuid | Y | From Outreach Id | identifier | UUID | inferred |
-| 4 | `to_outreach_id` | `talent_flow.movement_history.to_outreach_id` | uuid | Y | To Outreach Id | identifier | UUID | inferred |
-| 5 | `movement_type` | `talent_flow.movement_history.movement_type` | character varying(30) | Y | Movement Type | attribute | STRING | inferred |
-| 6 | `detected_at` | `talent_flow.movement_history.detected_at` | timestamp with time zone | Y | When this event/signal was detected | attribute | ISO-8601 | inferred |
-| 7 | `detection_source` | `talent_flow.movement_history.detection_source` | character varying(50) | Y | Detection Source | attribute | STRING | inferred |
-| 8 | `processed_at` | `talent_flow.movement_history.processed_at` | timestamp with time zone | Y | Timestamp for processed event | attribute | ISO-8601 | inferred |
-| 9 | `signal_emitted` | `talent_flow.movement_history.signal_emitted` | character varying(50) | Y | Signal Emitted | attribute | STRING | inferred |
-| 10 | `bit_event_created` | `talent_flow.movement_history.bit_event_created` | boolean | Y | Bit Event Created | attribute | BOOLEAN | inferred |
-| 11 | `correlation_id` | `talent_flow.movement_history.correlation_id` | uuid | Y | UUID linking related operations across tables | identifier | UUID | inferred |
-| 12 | `process_id` | `talent_flow.movement_history.process_id` | uuid | Y | Process Id | identifier | UUID | inferred |
-| 13 | `created_at` | `talent_flow.movement_history.created_at` | timestamp with time zone | Y | When this record was created | attribute | ISO-8601 | inferred |
-
-### `talent_flow.movements` -- DEPRECATED -- 0 rows
-
-**Hub**: `DEPRECATED` talent_flow schema (deprecated)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `movement_id` | `talent_flow.movements.movement_id` | uuid | N | Primary key for this movement event | identifier | UUID | inferred |
-| 2 | `contact_id` | `talent_flow.movements.contact_id` | uuid | N | Contact Id | identifier | UUID | inferred |
-| 3 | `movement_type` | `talent_flow.movements.movement_type` | character varying(20) | N | Movement Type | attribute | STRING | inferred |
-| 4 | `old_company_id` | `talent_flow.movements.old_company_id` | text | Y | Old Company Id | identifier | STRING | inferred |
-| 5 | `new_company_id` | `talent_flow.movements.new_company_id` | text | Y | New Company Id | identifier | STRING | inferred |
-| 6 | `old_title` | `talent_flow.movements.old_title` | text | Y | Old Title | attribute | STRING | inferred |
-| 7 | `new_title` | `talent_flow.movements.new_title` | text | Y | New Title | attribute | STRING | inferred |
-| 8 | `confidence_score` | `talent_flow.movements.confidence_score` | integer | N | Confidence score (0-100) | metric | INTEGER | inferred |
-| 9 | `detected_at` | `talent_flow.movements.detected_at` | timestamp with time zone | N | When this event/signal was detected | attribute | ISO-8601 | inferred |
-| 10 | `detected_source` | `talent_flow.movements.detected_source` | character varying(50) | N | Detected Source | attribute | STRING | inferred |
-| 11 | `created_at` | `talent_flow.movements.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-| 12 | `updated_at` | `talent_flow.movements.updated_at` | timestamp with time zone | N | When this record was last updated | attribute | ISO-8601 | inferred |
-
 ---
 
 ## `FUTURE` Future Hubs (scaffolded, not active)
 
-**Tables**: 24 | **Total rows**: 32
-
-### `clnt.audit_event` -- UNREGISTERED -- 0 rows
-
-**Hub**: `FUTURE` Client Hub (future)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `audit_event_id` | `clnt.audit_event.audit_event_id` | uuid | N | Audit Event Id | identifier | UUID | inferred |
-| 2 | `client_id` | `clnt.audit_event.client_id` | uuid | N | Client Id | identifier | UUID | inferred |
-| 3 | `entity_type` | `clnt.audit_event.entity_type` | text | N | Entity Type | attribute | STRING | inferred |
-| 4 | `entity_id` | `clnt.audit_event.entity_id` | uuid | N | Entity Id | identifier | UUID | inferred |
-| 5 | `action` | `clnt.audit_event.action` | text | N | Action | attribute | STRING | inferred |
-| 6 | `created_at` | `clnt.audit_event.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-
-### `clnt.client_hub` -- UNREGISTERED -- 0 rows
-
-**Hub**: `FUTURE` Client Hub (future)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `client_id` | `clnt.client_hub.client_id` | uuid | N | Client Id | identifier | UUID | inferred |
-| 2 | `created_at` | `clnt.client_hub.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-| 3 | `status` | `clnt.client_hub.status` | text | N | Current status of this record | attribute | ENUM | inferred |
-| 4 | `source` | `clnt.client_hub.source` | text | Y | Data source identifier | attribute | STRING | inferred |
-| 5 | `version` | `clnt.client_hub.version` | integer | N | Version | attribute | INTEGER | inferred |
-
-### `clnt.client_master` -- UNREGISTERED -- 0 rows
-
-**Hub**: `FUTURE` Client Hub (future)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `client_id` | `clnt.client_master.client_id` | uuid | N | Client Id | identifier | UUID | inferred |
-| 2 | `legal_name` | `clnt.client_master.legal_name` | text | N | Legal Name | attribute | STRING | inferred |
-| 3 | `fein` | `clnt.client_master.fein` | text | Y | Fein | attribute | STRING | inferred |
-| 4 | `domicile_state` | `clnt.client_master.domicile_state` | text | Y | Domicile State | attribute | STRING | inferred |
-| 5 | `effective_date` | `clnt.client_master.effective_date` | date | Y | Effective Date | attribute | DATE | inferred |
-| 6 | `created_at` | `clnt.client_master.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-| 7 | `updated_at` | `clnt.client_master.updated_at` | timestamp with time zone | N | When this record was last updated | attribute | ISO-8601 | inferred |
-
-### `clnt.compliance_flag` -- UNREGISTERED -- 0 rows
-
-**Hub**: `FUTURE` Client Hub (future)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `compliance_flag_id` | `clnt.compliance_flag.compliance_flag_id` | uuid | N | Compliance Flag Id | identifier | UUID | inferred |
-| 2 | `client_id` | `clnt.compliance_flag.client_id` | uuid | N | Client Id | identifier | UUID | inferred |
-| 3 | `flag_type` | `clnt.compliance_flag.flag_type` | text | N | Flag Type | attribute | STRING | inferred |
-| 4 | `status` | `clnt.compliance_flag.status` | text | N | Current status of this record | attribute | ENUM | inferred |
-| 5 | `effective_date` | `clnt.compliance_flag.effective_date` | date | Y | Effective Date | attribute | DATE | inferred |
-| 6 | `created_at` | `clnt.compliance_flag.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-| 7 | `updated_at` | `clnt.compliance_flag.updated_at` | timestamp with time zone | N | When this record was last updated | attribute | ISO-8601 | inferred |
-
-### `clnt.election` -- UNREGISTERED -- 0 rows
-
-**Hub**: `FUTURE` Client Hub (future)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `election_id` | `clnt.election.election_id` | uuid | N | Election Id | identifier | UUID | inferred |
-| 2 | `client_id` | `clnt.election.client_id` | uuid | N | Client Id | identifier | UUID | inferred |
-| 3 | `person_id` | `clnt.election.person_id` | uuid | N | Person Id | identifier | UUID | inferred |
-| 4 | `plan_id` | `clnt.election.plan_id` | uuid | N | Plan Id | identifier | UUID | inferred |
-| 5 | `coverage_tier` | `clnt.election.coverage_tier` | text | N | Coverage Tier | attribute | STRING | inferred |
-| 6 | `effective_date` | `clnt.election.effective_date` | date | N | Effective Date | attribute | DATE | inferred |
-| 7 | `created_at` | `clnt.election.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-| 8 | `updated_at` | `clnt.election.updated_at` | timestamp with time zone | N | When this record was last updated | attribute | ISO-8601 | inferred |
-
-### `clnt.external_identity_map` -- UNREGISTERED -- 0 rows
-
-**Hub**: `FUTURE` Client Hub (future)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `external_identity_id` | `clnt.external_identity_map.external_identity_id` | uuid | N | External Identity Id | identifier | UUID | inferred |
-| 2 | `client_id` | `clnt.external_identity_map.client_id` | uuid | N | Client Id | identifier | UUID | inferred |
-| 3 | `entity_type` | `clnt.external_identity_map.entity_type` | text | N | Entity Type | attribute | STRING | inferred |
-| 4 | `internal_id` | `clnt.external_identity_map.internal_id` | uuid | N | Internal Id | identifier | UUID | inferred |
-| 5 | `vendor_id` | `clnt.external_identity_map.vendor_id` | uuid | N | Vendor Id | identifier | UUID | inferred |
-| 6 | `external_id_value` | `clnt.external_identity_map.external_id_value` | text | N | External Id Value | attribute | STRING | inferred |
-| 7 | `effective_date` | `clnt.external_identity_map.effective_date` | date | Y | Effective Date | attribute | DATE | inferred |
-| 8 | `status` | `clnt.external_identity_map.status` | text | N | Current status of this record | attribute | ENUM | inferred |
-| 9 | `created_at` | `clnt.external_identity_map.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-| 10 | `updated_at` | `clnt.external_identity_map.updated_at` | timestamp with time zone | N | When this record was last updated | attribute | ISO-8601 | inferred |
-
-### `clnt.intake_batch` -- UNREGISTERED -- 0 rows
-
-**Hub**: `FUTURE` Client Hub (future)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `intake_batch_id` | `clnt.intake_batch.intake_batch_id` | uuid | N | Intake Batch Id | identifier | UUID | inferred |
-| 2 | `client_id` | `clnt.intake_batch.client_id` | uuid | N | Client Id | identifier | UUID | inferred |
-| 3 | `upload_date` | `clnt.intake_batch.upload_date` | timestamp with time zone | N | Upload Date | attribute | ISO-8601 | inferred |
-| 4 | `status` | `clnt.intake_batch.status` | text | N | Current status of this record | attribute | ENUM | inferred |
-| 5 | `created_at` | `clnt.intake_batch.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-| 6 | `updated_at` | `clnt.intake_batch.updated_at` | timestamp with time zone | N | When this record was last updated | attribute | ISO-8601 | inferred |
-
-### `clnt.intake_record` -- UNREGISTERED -- 0 rows
-
-**Hub**: `FUTURE` Client Hub (future)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `intake_record_id` | `clnt.intake_record.intake_record_id` | uuid | N | Intake Record Id | identifier | UUID | inferred |
-| 2 | `client_id` | `clnt.intake_record.client_id` | uuid | N | Client Id | identifier | UUID | inferred |
-| 3 | `intake_batch_id` | `clnt.intake_record.intake_batch_id` | uuid | N | Intake Batch Id | identifier | UUID | inferred |
-| 4 | `raw_payload` | `clnt.intake_record.raw_payload` | jsonb | N | Raw Payload | attribute | JSONB | inferred |
-| 5 | `created_at` | `clnt.intake_record.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-
-### `clnt.person` -- UNREGISTERED -- 0 rows
-
-**Hub**: `FUTURE` Client Hub (future)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `person_id` | `clnt.person.person_id` | uuid | N | Person Id | identifier | UUID | inferred |
-| 2 | `client_id` | `clnt.person.client_id` | uuid | N | Client Id | identifier | UUID | inferred |
-| 3 | `first_name` | `clnt.person.first_name` | text | N | Person first name | attribute | STRING | inferred |
-| 4 | `last_name` | `clnt.person.last_name` | text | N | Person last name | attribute | STRING | inferred |
-| 5 | `ssn_hash` | `clnt.person.ssn_hash` | text | Y | Ssn Hash | attribute | STRING | inferred |
-| 6 | `status` | `clnt.person.status` | text | N | Current status of this record | attribute | ENUM | inferred |
-| 7 | `created_at` | `clnt.person.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-| 8 | `updated_at` | `clnt.person.updated_at` | timestamp with time zone | N | When this record was last updated | attribute | ISO-8601 | inferred |
-
-### `clnt.plan` -- UNREGISTERED -- 0 rows
-
-**Hub**: `FUTURE` Client Hub (future)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `plan_id` | `clnt.plan.plan_id` | uuid | N | Plan Id | identifier | UUID | inferred |
-| 2 | `client_id` | `clnt.plan.client_id` | uuid | N | Client Id | identifier | UUID | inferred |
-| 3 | `benefit_type` | `clnt.plan.benefit_type` | text | N | Benefit Type | attribute | STRING | inferred |
-| 4 | `carrier_id` | `clnt.plan.carrier_id` | text | Y | Carrier Id | identifier | STRING | inferred |
-| 5 | `effective_date` | `clnt.plan.effective_date` | date | Y | Effective Date | attribute | DATE | inferred |
-| 6 | `status` | `clnt.plan.status` | text | N | Current status of this record | attribute | ENUM | inferred |
-| 7 | `version` | `clnt.plan.version` | integer | N | Version | attribute | INTEGER | inferred |
-| 8 | `rate_ee` | `clnt.plan.rate_ee` | numeric | Y | Rate Ee | metric | NUMERIC | inferred |
-| 9 | `rate_es` | `clnt.plan.rate_es` | numeric | Y | Rate Es | metric | NUMERIC | inferred |
-| 10 | `rate_ec` | `clnt.plan.rate_ec` | numeric | Y | Rate Ec | metric | NUMERIC | inferred |
-| 11 | `rate_fam` | `clnt.plan.rate_fam` | numeric | Y | Rate Fam | metric | NUMERIC | inferred |
-| 12 | `employer_rate_ee` | `clnt.plan.employer_rate_ee` | numeric | Y | Employer Rate Ee | attribute | NUMERIC | inferred |
-| 13 | `employer_rate_es` | `clnt.plan.employer_rate_es` | numeric | Y | Employer Rate Es | attribute | NUMERIC | inferred |
-| 14 | `employer_rate_ec` | `clnt.plan.employer_rate_ec` | numeric | Y | Employer Rate Ec | attribute | NUMERIC | inferred |
-| 15 | `employer_rate_fam` | `clnt.plan.employer_rate_fam` | numeric | Y | Employer Rate Fam | attribute | NUMERIC | inferred |
-| 16 | `created_at` | `clnt.plan.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-| 17 | `updated_at` | `clnt.plan.updated_at` | timestamp with time zone | N | When this record was last updated | attribute | ISO-8601 | inferred |
-| 18 | `source_quote_id` | `clnt.plan.source_quote_id` | uuid | Y | Source Quote Id | identifier | UUID | inferred |
-
-### `clnt.plan_quote` -- UNREGISTERED -- 0 rows
-
-**Hub**: `FUTURE` Client Hub (future)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `plan_quote_id` | `clnt.plan_quote.plan_quote_id` | uuid | N | Plan Quote Id | identifier | UUID | inferred |
-| 2 | `client_id` | `clnt.plan_quote.client_id` | uuid | N | Client Id | identifier | UUID | inferred |
-| 3 | `benefit_type` | `clnt.plan_quote.benefit_type` | text | N | Benefit Type | attribute | STRING | inferred |
-| 4 | `carrier_id` | `clnt.plan_quote.carrier_id` | text | N | Carrier Id | identifier | STRING | inferred |
-| 5 | `effective_year` | `clnt.plan_quote.effective_year` | integer | N | Effective Year | attribute | INTEGER | inferred |
-| 6 | `rate_ee` | `clnt.plan_quote.rate_ee` | numeric | Y | Rate Ee | metric | NUMERIC | inferred |
-| 7 | `rate_es` | `clnt.plan_quote.rate_es` | numeric | Y | Rate Es | metric | NUMERIC | inferred |
-| 8 | `rate_ec` | `clnt.plan_quote.rate_ec` | numeric | Y | Rate Ec | metric | NUMERIC | inferred |
-| 9 | `rate_fam` | `clnt.plan_quote.rate_fam` | numeric | Y | Rate Fam | metric | NUMERIC | inferred |
-| 10 | `source` | `clnt.plan_quote.source` | text | Y | Data source identifier | attribute | STRING | inferred |
-| 11 | `received_date` | `clnt.plan_quote.received_date` | date | Y | Received Date | attribute | DATE | inferred |
-| 12 | `status` | `clnt.plan_quote.status` | text | N | Current status of this record | attribute | ENUM | inferred |
-| 13 | `created_at` | `clnt.plan_quote.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-
-### `clnt.service_request` -- UNREGISTERED -- 0 rows
-
-**Hub**: `FUTURE` Client Hub (future)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `service_request_id` | `clnt.service_request.service_request_id` | uuid | N | Service Request Id | identifier | UUID | inferred |
-| 2 | `client_id` | `clnt.service_request.client_id` | uuid | N | Client Id | identifier | UUID | inferred |
-| 3 | `category` | `clnt.service_request.category` | text | N | Category | attribute | STRING | inferred |
-| 4 | `status` | `clnt.service_request.status` | text | N | Current status of this record | attribute | ENUM | inferred |
-| 5 | `opened_at` | `clnt.service_request.opened_at` | timestamp with time zone | N | Timestamp for opened event | attribute | ISO-8601 | inferred |
-| 6 | `created_at` | `clnt.service_request.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-| 7 | `updated_at` | `clnt.service_request.updated_at` | timestamp with time zone | N | When this record was last updated | attribute | ISO-8601 | inferred |
-
-### `clnt.vendor` -- UNREGISTERED -- 0 rows
-
-**Hub**: `FUTURE` Client Hub (future)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `vendor_id` | `clnt.vendor.vendor_id` | uuid | N | Vendor Id | identifier | UUID | inferred |
-| 2 | `client_id` | `clnt.vendor.client_id` | uuid | N | Client Id | identifier | UUID | inferred |
-| 3 | `vendor_name` | `clnt.vendor.vendor_name` | text | N | Vendor Name | attribute | STRING | inferred |
-| 4 | `vendor_type` | `clnt.vendor.vendor_type` | text | Y | Vendor Type | attribute | STRING | inferred |
-| 5 | `created_at` | `clnt.vendor.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-| 6 | `updated_at` | `clnt.vendor.updated_at` | timestamp with time zone | N | When this record was last updated | attribute | ISO-8601 | inferred |
+**Tables**: 4 | **Total rows**: 32
 
 ### `lcs.adapter_registry` -- UNREGISTERED -- 3 rows
 
@@ -4860,138 +3980,6 @@
 | 17 | `created_at` | `lcs.domain_pool.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
 | 18 | `updated_at` | `lcs.domain_pool.updated_at` | timestamp with time zone | N | When this record was last updated | attribute | ISO-8601 | inferred |
 
-### `lcs.err0` -- UNREGISTERED -- 0 rows
-
-**Hub**: `FUTURE` Lifecycle Signals (future)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `error_id` | `lcs.err0.error_id` | uuid | N | Primary key for this error record | identifier | UUID | inferred |
-| 2 | `message_run_id` | `lcs.err0.message_run_id` | text | N | Run identifier for message batch | identifier | STRING | inferred |
-| 3 | `communication_id` | `lcs.err0.communication_id` | text | Y | Communication Id | identifier | STRING | inferred |
-| 4 | `sovereign_company_id` | `lcs.err0.sovereign_company_id` | text | Y | FK to cl.company_identity (sovereign company identifier) | foreign_key | STRING | inferred |
-| 5 | `failure_type` | `lcs.err0.failure_type` | text | N | Failure Type | attribute | STRING | inferred |
-| 6 | `failure_message` | `lcs.err0.failure_message` | text | N | Failure Message | attribute | STRING | inferred |
-| 7 | `lifecycle_phase` | `lcs.err0.lifecycle_phase` | text | Y | Lifecycle Phase | attribute | STRING | inferred |
-| 8 | `adapter_type` | `lcs.err0.adapter_type` | text | Y | Adapter Type | attribute | STRING | inferred |
-| 9 | `orbt_strike_number` | `lcs.err0.orbt_strike_number` | integer | Y | Orbt Strike Number | attribute | INTEGER | inferred |
-| 10 | `orbt_action_taken` | `lcs.err0.orbt_action_taken` | text | Y | Orbt Action Taken | attribute | STRING | inferred |
-| 11 | `orbt_alt_channel_eligible` | `lcs.err0.orbt_alt_channel_eligible` | boolean | Y | Orbt Alt Channel Eligible | attribute | BOOLEAN | inferred |
-| 12 | `orbt_alt_channel_reason` | `lcs.err0.orbt_alt_channel_reason` | text | Y | Orbt Alt Channel Reason | attribute | STRING | inferred |
-| 13 | `created_at` | `lcs.err0.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-
-### `lcs.event` -- UNREGISTERED -- 0 rows
-
-**Hub**: `FUTURE` Lifecycle Signals (future)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `communication_id` | `lcs.event.communication_id` | text | N | Communication Id | identifier | STRING | inferred |
-| 2 | `message_run_id` | `lcs.event.message_run_id` | text | N | Run identifier for message batch | identifier | STRING | inferred |
-| 3 | `sovereign_company_id` | `lcs.event.sovereign_company_id` | uuid | N | FK to cl.company_identity (sovereign company identifier) | foreign_key | UUID | inferred |
-| 4 | `entity_type` | `lcs.event.entity_type` | text | N | Entity Type | attribute | STRING | inferred |
-| 5 | `entity_id` | `lcs.event.entity_id` | uuid | N | Entity Id | identifier | UUID | inferred |
-| 6 | `signal_set_hash` | `lcs.event.signal_set_hash` | text | N | Signal Set Hash | attribute | STRING | inferred |
-| 7 | `frame_id` | `lcs.event.frame_id` | text | N | Frame Id | identifier | STRING | inferred |
-| 8 | `adapter_type` | `lcs.event.adapter_type` | text | N | Adapter Type | attribute | STRING | inferred |
-| 9 | `channel` | `lcs.event.channel` | text | N | Channel | attribute | STRING | inferred |
-| 10 | `delivery_status` | `lcs.event.delivery_status` | text | N | Delivery Status | attribute | STRING | inferred |
-| 11 | `lifecycle_phase` | `lcs.event.lifecycle_phase` | text | N | Lifecycle Phase | attribute | STRING | inferred |
-| 12 | `event_type` | `lcs.event.event_type` | text | N | Type of audit/system event | attribute | STRING | inferred |
-| 13 | `lane` | `lcs.event.lane` | text | N | Lane | attribute | STRING | inferred |
-| 14 | `agent_number` | `lcs.event.agent_number` | text | N | Service agent identifier (SA-NNN format) | attribute | STRING | inferred |
-| 15 | `step_number` | `lcs.event.step_number` | integer | N | Step Number | attribute | INTEGER | inferred |
-| 16 | `step_name` | `lcs.event.step_name` | text | N | Step Name | attribute | STRING | inferred |
-| 17 | `payload` | `lcs.event.payload` | jsonb | Y | Payload | attribute | JSONB | inferred |
-| 18 | `adapter_response` | `lcs.event.adapter_response` | jsonb | Y | Adapter Response | attribute | JSONB | inferred |
-| 19 | `intelligence_tier` | `lcs.event.intelligence_tier` | integer | Y | Intelligence Tier | attribute | INTEGER | inferred |
-| 20 | `sender_identity` | `lcs.event.sender_identity` | text | Y | Sender Identity | attribute | STRING | inferred |
-| 21 | `created_at` | `lcs.event.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-
-### `lcs.event_2026_02` -- UNREGISTERED -- 0 rows
-
-**Hub**: `FUTURE` Lifecycle Signals (future)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `communication_id` | `lcs.event_2026_02.communication_id` | text | N | Communication Id | identifier | STRING | inferred |
-| 2 | `message_run_id` | `lcs.event_2026_02.message_run_id` | text | N | Run identifier for message batch | identifier | STRING | inferred |
-| 3 | `sovereign_company_id` | `lcs.event_2026_02.sovereign_company_id` | uuid | N | FK to cl.company_identity (sovereign company identifier) | foreign_key | UUID | inferred |
-| 4 | `entity_type` | `lcs.event_2026_02.entity_type` | text | N | Entity Type | attribute | STRING | inferred |
-| 5 | `entity_id` | `lcs.event_2026_02.entity_id` | uuid | N | Entity Id | identifier | UUID | inferred |
-| 6 | `signal_set_hash` | `lcs.event_2026_02.signal_set_hash` | text | N | Signal Set Hash | attribute | STRING | inferred |
-| 7 | `frame_id` | `lcs.event_2026_02.frame_id` | text | N | Frame Id | identifier | STRING | inferred |
-| 8 | `adapter_type` | `lcs.event_2026_02.adapter_type` | text | N | Adapter Type | attribute | STRING | inferred |
-| 9 | `channel` | `lcs.event_2026_02.channel` | text | N | Channel | attribute | STRING | inferred |
-| 10 | `delivery_status` | `lcs.event_2026_02.delivery_status` | text | N | Delivery Status | attribute | STRING | inferred |
-| 11 | `lifecycle_phase` | `lcs.event_2026_02.lifecycle_phase` | text | N | Lifecycle Phase | attribute | STRING | inferred |
-| 12 | `event_type` | `lcs.event_2026_02.event_type` | text | N | Type of audit/system event | attribute | STRING | inferred |
-| 13 | `lane` | `lcs.event_2026_02.lane` | text | N | Lane | attribute | STRING | inferred |
-| 14 | `agent_number` | `lcs.event_2026_02.agent_number` | text | N | Service agent identifier (SA-NNN format) | attribute | STRING | inferred |
-| 15 | `step_number` | `lcs.event_2026_02.step_number` | integer | N | Step Number | attribute | INTEGER | inferred |
-| 16 | `step_name` | `lcs.event_2026_02.step_name` | text | N | Step Name | attribute | STRING | inferred |
-| 17 | `payload` | `lcs.event_2026_02.payload` | jsonb | Y | Payload | attribute | JSONB | inferred |
-| 18 | `adapter_response` | `lcs.event_2026_02.adapter_response` | jsonb | Y | Adapter Response | attribute | JSONB | inferred |
-| 19 | `intelligence_tier` | `lcs.event_2026_02.intelligence_tier` | integer | Y | Intelligence Tier | attribute | INTEGER | inferred |
-| 20 | `sender_identity` | `lcs.event_2026_02.sender_identity` | text | Y | Sender Identity | attribute | STRING | inferred |
-| 21 | `created_at` | `lcs.event_2026_02.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-
-### `lcs.event_2026_03` -- UNREGISTERED -- 0 rows
-
-**Hub**: `FUTURE` Lifecycle Signals (future)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `communication_id` | `lcs.event_2026_03.communication_id` | text | N | Communication Id | identifier | STRING | inferred |
-| 2 | `message_run_id` | `lcs.event_2026_03.message_run_id` | text | N | Run identifier for message batch | identifier | STRING | inferred |
-| 3 | `sovereign_company_id` | `lcs.event_2026_03.sovereign_company_id` | uuid | N | FK to cl.company_identity (sovereign company identifier) | foreign_key | UUID | inferred |
-| 4 | `entity_type` | `lcs.event_2026_03.entity_type` | text | N | Entity Type | attribute | STRING | inferred |
-| 5 | `entity_id` | `lcs.event_2026_03.entity_id` | uuid | N | Entity Id | identifier | UUID | inferred |
-| 6 | `signal_set_hash` | `lcs.event_2026_03.signal_set_hash` | text | N | Signal Set Hash | attribute | STRING | inferred |
-| 7 | `frame_id` | `lcs.event_2026_03.frame_id` | text | N | Frame Id | identifier | STRING | inferred |
-| 8 | `adapter_type` | `lcs.event_2026_03.adapter_type` | text | N | Adapter Type | attribute | STRING | inferred |
-| 9 | `channel` | `lcs.event_2026_03.channel` | text | N | Channel | attribute | STRING | inferred |
-| 10 | `delivery_status` | `lcs.event_2026_03.delivery_status` | text | N | Delivery Status | attribute | STRING | inferred |
-| 11 | `lifecycle_phase` | `lcs.event_2026_03.lifecycle_phase` | text | N | Lifecycle Phase | attribute | STRING | inferred |
-| 12 | `event_type` | `lcs.event_2026_03.event_type` | text | N | Type of audit/system event | attribute | STRING | inferred |
-| 13 | `lane` | `lcs.event_2026_03.lane` | text | N | Lane | attribute | STRING | inferred |
-| 14 | `agent_number` | `lcs.event_2026_03.agent_number` | text | N | Service agent identifier (SA-NNN format) | attribute | STRING | inferred |
-| 15 | `step_number` | `lcs.event_2026_03.step_number` | integer | N | Step Number | attribute | INTEGER | inferred |
-| 16 | `step_name` | `lcs.event_2026_03.step_name` | text | N | Step Name | attribute | STRING | inferred |
-| 17 | `payload` | `lcs.event_2026_03.payload` | jsonb | Y | Payload | attribute | JSONB | inferred |
-| 18 | `adapter_response` | `lcs.event_2026_03.adapter_response` | jsonb | Y | Adapter Response | attribute | JSONB | inferred |
-| 19 | `intelligence_tier` | `lcs.event_2026_03.intelligence_tier` | integer | Y | Intelligence Tier | attribute | INTEGER | inferred |
-| 20 | `sender_identity` | `lcs.event_2026_03.sender_identity` | text | Y | Sender Identity | attribute | STRING | inferred |
-| 21 | `created_at` | `lcs.event_2026_03.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-
-### `lcs.event_2026_04` -- UNREGISTERED -- 0 rows
-
-**Hub**: `FUTURE` Lifecycle Signals (future)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `communication_id` | `lcs.event_2026_04.communication_id` | text | N | Communication Id | identifier | STRING | inferred |
-| 2 | `message_run_id` | `lcs.event_2026_04.message_run_id` | text | N | Run identifier for message batch | identifier | STRING | inferred |
-| 3 | `sovereign_company_id` | `lcs.event_2026_04.sovereign_company_id` | uuid | N | FK to cl.company_identity (sovereign company identifier) | foreign_key | UUID | inferred |
-| 4 | `entity_type` | `lcs.event_2026_04.entity_type` | text | N | Entity Type | attribute | STRING | inferred |
-| 5 | `entity_id` | `lcs.event_2026_04.entity_id` | uuid | N | Entity Id | identifier | UUID | inferred |
-| 6 | `signal_set_hash` | `lcs.event_2026_04.signal_set_hash` | text | N | Signal Set Hash | attribute | STRING | inferred |
-| 7 | `frame_id` | `lcs.event_2026_04.frame_id` | text | N | Frame Id | identifier | STRING | inferred |
-| 8 | `adapter_type` | `lcs.event_2026_04.adapter_type` | text | N | Adapter Type | attribute | STRING | inferred |
-| 9 | `channel` | `lcs.event_2026_04.channel` | text | N | Channel | attribute | STRING | inferred |
-| 10 | `delivery_status` | `lcs.event_2026_04.delivery_status` | text | N | Delivery Status | attribute | STRING | inferred |
-| 11 | `lifecycle_phase` | `lcs.event_2026_04.lifecycle_phase` | text | N | Lifecycle Phase | attribute | STRING | inferred |
-| 12 | `event_type` | `lcs.event_2026_04.event_type` | text | N | Type of audit/system event | attribute | STRING | inferred |
-| 13 | `lane` | `lcs.event_2026_04.lane` | text | N | Lane | attribute | STRING | inferred |
-| 14 | `agent_number` | `lcs.event_2026_04.agent_number` | text | N | Service agent identifier (SA-NNN format) | attribute | STRING | inferred |
-| 15 | `step_number` | `lcs.event_2026_04.step_number` | integer | N | Step Number | attribute | INTEGER | inferred |
-| 16 | `step_name` | `lcs.event_2026_04.step_name` | text | N | Step Name | attribute | STRING | inferred |
-| 17 | `payload` | `lcs.event_2026_04.payload` | jsonb | Y | Payload | attribute | JSONB | inferred |
-| 18 | `adapter_response` | `lcs.event_2026_04.adapter_response` | jsonb | Y | Adapter Response | attribute | JSONB | inferred |
-| 19 | `intelligence_tier` | `lcs.event_2026_04.intelligence_tier` | integer | Y | Intelligence Tier | attribute | INTEGER | inferred |
-| 20 | `sender_identity` | `lcs.event_2026_04.sender_identity` | text | Y | Sender Identity | attribute | STRING | inferred |
-| 21 | `created_at` | `lcs.event_2026_04.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-
 ### `lcs.frame_registry` -- UNREGISTERED -- 10 rows
 
 **Hub**: `FUTURE` Lifecycle Signals (future)
@@ -5011,28 +3999,6 @@
 | 11 | `is_active` | `lcs.frame_registry.is_active` | boolean | N | Whether this record active | attribute | BOOLEAN | inferred |
 | 12 | `created_at` | `lcs.frame_registry.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
 | 13 | `updated_at` | `lcs.frame_registry.updated_at` | timestamp with time zone | N | When this record was last updated | attribute | ISO-8601 | inferred |
-
-### `lcs.signal_queue` -- UNREGISTERED -- 0 rows
-
-**Hub**: `FUTURE` Lifecycle Signals (future)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `id` | `lcs.signal_queue.id` | uuid | N | Id | identifier | UUID | inferred |
-| 2 | `signal_set_hash` | `lcs.signal_queue.signal_set_hash` | text | N | Signal Set Hash | attribute | STRING | inferred |
-| 3 | `signal_category` | `lcs.signal_queue.signal_category` | text | N | Signal Category | attribute | STRING | inferred |
-| 4 | `sovereign_company_id` | `lcs.signal_queue.sovereign_company_id` | uuid | N | FK to cl.company_identity (sovereign company identifier) | foreign_key | UUID | inferred |
-| 5 | `lifecycle_phase` | `lcs.signal_queue.lifecycle_phase` | text | N | Lifecycle Phase | attribute | STRING | inferred |
-| 6 | `preferred_channel` | `lcs.signal_queue.preferred_channel` | text | Y | Preferred Channel | attribute | STRING | inferred |
-| 7 | `preferred_lane` | `lcs.signal_queue.preferred_lane` | text | Y | Preferred Lane | attribute | STRING | inferred |
-| 8 | `agent_number` | `lcs.signal_queue.agent_number` | text | Y | Service agent identifier (SA-NNN format) | attribute | STRING | inferred |
-| 9 | `signal_data` | `lcs.signal_queue.signal_data` | jsonb | N | Signal Data | attribute | JSONB | inferred |
-| 10 | `source_hub` | `lcs.signal_queue.source_hub` | text | N | Source Hub | attribute | STRING | inferred |
-| 11 | `source_signal_id` | `lcs.signal_queue.source_signal_id` | uuid | Y | Source Signal Id | identifier | UUID | inferred |
-| 12 | `status` | `lcs.signal_queue.status` | text | N | Current status of this record | attribute | ENUM | inferred |
-| 13 | `priority` | `lcs.signal_queue.priority` | integer | N | Priority | attribute | INTEGER | inferred |
-| 14 | `created_at` | `lcs.signal_queue.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-| 15 | `processed_at` | `lcs.signal_queue.processed_at` | timestamp with time zone | Y | Timestamp for processed event | attribute | ISO-8601 | inferred |
 
 ### `lcs.signal_registry` -- UNREGISTERED -- 9 rows
 
@@ -5054,36 +4020,13 @@
 | 12 | `created_at` | `lcs.signal_registry.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
 | 13 | `updated_at` | `lcs.signal_registry.updated_at` | timestamp with time zone | N | When this record was last updated | attribute | ISO-8601 | inferred |
 
-### `lcs.suppression` -- UNREGISTERED -- 0 rows
-
-**Hub**: `FUTURE` Lifecycle Signals (future)
-
-| # | Column | Unique ID | Type | Null | Description | Role | Format | Source |
-|---|--------|-----------|------|------|-------------|------|--------|--------|
-| 1 | `id` | `lcs.suppression.id` | uuid | N | Id | identifier | UUID | inferred |
-| 2 | `email` | `lcs.suppression.email` | text | Y | Email address | attribute | EMAIL | inferred |
-| 3 | `entity_id` | `lcs.suppression.entity_id` | uuid | Y | Entity Id | identifier | UUID | inferred |
-| 4 | `sovereign_company_id` | `lcs.suppression.sovereign_company_id` | uuid | Y | FK to cl.company_identity (sovereign company identifier) | foreign_key | UUID | inferred |
-| 5 | `suppression_state` | `lcs.suppression.suppression_state` | text | N | Suppression State | attribute | STRING | inferred |
-| 6 | `never_contact` | `lcs.suppression.never_contact` | boolean | N | Never Contact | attribute | BOOLEAN | inferred |
-| 7 | `unsubscribed` | `lcs.suppression.unsubscribed` | boolean | N | Unsubscribed | attribute | BOOLEAN | inferred |
-| 8 | `hard_bounced` | `lcs.suppression.hard_bounced` | boolean | N | Hard Bounced | attribute | BOOLEAN | inferred |
-| 9 | `complained` | `lcs.suppression.complained` | boolean | N | Complained | attribute | BOOLEAN | inferred |
-| 10 | `suppression_source` | `lcs.suppression.suppression_source` | text | N | Suppression Source | attribute | STRING | inferred |
-| 11 | `source_event_id` | `lcs.suppression.source_event_id` | text | Y | Source Event Id | identifier | STRING | inferred |
-| 12 | `channel` | `lcs.suppression.channel` | text | Y | Channel | attribute | STRING | inferred |
-| 13 | `domain` | `lcs.suppression.domain` | text | Y | Company website domain (lowercase, no protocol) | attribute | STRING | inferred |
-| 14 | `created_at` | `lcs.suppression.created_at` | timestamp with time zone | N | When this record was created | attribute | ISO-8601 | inferred |
-| 15 | `updated_at` | `lcs.suppression.updated_at` | timestamp with time zone | N | When this record was last updated | attribute | ISO-8601 | inferred |
-| 16 | `expires_at` | `lcs.suppression.expires_at` | timestamp with time zone | Y | When this record expires | attribute | ISO-8601 | inferred |
-
 ---
 
 ## Statistics
 
 | Metric | Count |
 |--------|-------|
-| Total columns documented | 3,592 |
-| From DB registries (dol/outreach/enrichment) | 1,182 |
+| Total columns documented | 2,920 |
+| From DB registries (dol/outreach/enrichment) | 1,164 |
 | From column_registry.yml | 47 |
-| Pattern-inferred | 2,363 |
+| Pattern-inferred | 1,709 |

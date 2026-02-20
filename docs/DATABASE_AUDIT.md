@@ -12,17 +12,17 @@
 
 | Metric | Count |
 |--------|-------|
-| **Total tables** | **296** |
-| Total columns | 5,635 |
-| CTB registered | 241 |
-| **UNREGISTERED** | **55** |
+| **Total tables** | **241** |
+| Total columns | 4,850 |
+| CTB registered | 206 |
+| **UNREGISTERED** | **35** |
 | Unregistered WITH data | 34 |
 | Deprecated WITH data | 13 |
 | Frozen core tables | 9 |
 | Columns in column_registry.yml | 55 |
-| **Column documentation gap** | **5,580 columns undocumented** |
-| Views | 64 |
-| Schemas | 22 |
+| **Column documentation gap** | **4,795 columns undocumented** |
+| Views | 54 |
+| Schemas | 18 |
 
 ---
 
@@ -94,8 +94,8 @@ Data should be migrated to canonical tables before dropping.
 ### 3. Column Documentation Gap
 
 The `column_registry.yml` documents **55 columns** across 13 tables.
-The database has **5,635 columns** across 296 tables.
-**5,580 columns (99%) have NO description, semantic_role, or format.**
+The database has **4,850 columns** across 241 tables.
+**4,795 columns (98%) have NO description, semantic_role, or format.**
 
 Every column should have:
 - `description`: What the column stores
@@ -508,23 +508,19 @@ Column registry: **UNDOCUMENTED**
 
 ### `outreach` -- Operational Spine + Sub-Hub Data -- all outreach workflow state and sub-hub tables
 
-**Tables**: 50 | **Total rows**: 1,355,286
-**Views**: 12 -- v_bit_hot_companies, v_bit_recent_signals, v_bit_tier_distribution, v_blog_ingestion_queue, v_blog_ready, v_context_current, v_ct_zip_repair_candidates, v_dol_zip_evidence, v_outreach_diagnostic, vw_marketing_eligibility, vw_marketing_eligibility_with_overrides, vw_sovereign_completion
+**Tables**: 38 | **Total rows**: 1,355,286
+**Views**: 7 -- v_bit_hot_companies, v_bit_tier_distribution, v_context_current, v_ct_zip_repair_candidates, v_dol_zip_evidence, vw_marketing_eligibility, vw_sovereign_completion
 
 | Table | Leaf Type | Frozen | Rows | Columns | Documented |
 |-------|-----------|--------|------|---------|------------|
 | `appointments` | SUPPORTING |  | 702 | 22 | 0 |
 | `bit_errors` | ERROR |  | 0 | 13 | 4/13 |
-| `bit_input_history` | SYSTEM |  | 0 | 13 | 0 |
 | `bit_scores` | CANONICAL | YES | 12,602 | 12 | 1/12 |
 | `bit_scores_archive` | ARCHIVE |  | 1,806 | 14 | 0 |
-| `bit_signals` | MV |  | 0 | 14 | 0 |
 | `blog` | CANONICAL | YES | 93,596 | 13 | 1/13 |
 | `blog_archive` | ARCHIVE |  | 4,391 | 10 | 0 |
 | `blog_errors` | ERROR |  | 41 | 15 | 4/15 |
 | `blog_ingress_control` | REGISTRY |  | 1 | 14 | 0 |
-| `blog_source_history` | SYSTEM |  | 0 | 13 | 0 |
-| `campaigns` | DEPRECATED |  | 0 | 18 | 0 |
 | `column_registry` | REGISTRY |  | 48 | 12 | 0 |
 | `company_hub_status` | MV |  | 68,908 | 8 | 0 |
 | `company_target` | CANONICAL | YES | 114,137 | 27 | 3/27 |
@@ -541,24 +537,16 @@ Column registry: **UNDOCUMENTED**
 | `dol_errors` | ERROR |  | 28,572 | 27 | 4/27 |
 | `dol_errors_archive` | ARCHIVE |  | 0 | 29 | 0 |
 | `dol_url_enrichment` | STAGING |  | 16 | 14 | 0 |
-| `engagement_events` | MV |  | 0 | 19 | 0 |
 | `entity_resolution_queue` | STAGING |  | 2 | 15 | 0 |
 | `hub_registry` | REGISTRY |  | 6 | 12 | 0 |
-| `manual_overrides` | SYSTEM |  | 0 | 12 | 0 |
 | `mv_credit_usage` | SYSTEM |  | 2 | 6 | 0 |
 | `outreach` | CANONICAL | YES | 114,137 | 7 | 3/7 |
 | `outreach_archive` | ARCHIVE |  | 27,416 | 7 | 0 |
-| `outreach_errors` | ERROR |  | 0 | 9 | 0 |
 | `outreach_excluded` | ARCHIVE |  | 5,483 | 10 | 0 |
 | `outreach_legacy_quarantine` | ARCHIVE |  | 1,698 | 5 | 0 |
 | `outreach_orphan_archive` | ARCHIVE |  | 2,709 | 7 | 0 |
-| `override_audit_log` | SYSTEM |  | 0 | 9 | 0 |
 | `people` | SUPPORTING | YES | 335,097 | 20 | 0 |
 | `people_archive` | ARCHIVE |  | 175 | 22 | 0 |
-| `people_errors` | ERROR |  | 0 | 14 | 0 |
-| `pipeline_audit_log` | SYSTEM |  | 0 | 9 | 0 |
-| `send_log` | DEPRECATED |  | 0 | 25 | 0 |
-| `sequences` | DEPRECATED |  | 0 | 13 | 0 |
 | `sitemap_discovery` | UNREGISTERED |  | 93,596 | 9 | 0 |
 | `source_urls` | UNREGISTERED |  | 81,292 | 6 | 0 |
 | `url_discovery_failures` | ERROR |  | 42,348 | 20 | 0 |
@@ -613,26 +601,6 @@ Column registry: **4/13 documented**
 | 12 | `created_at` | timestamp with time zone | N | When the error was recorded | attribute | ISO-8601 |
 | 13 | `error_type` | character varying(100) | Y | Discriminator column — classifies the scoring error | attribute | ENUM |
 
-#### `outreach.bit_input_history` -- SYSTEM -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `history_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `outreach_id` | uuid | N | **MISSING** | -- | -- |
-| 3 | `signal_type` | character varying(50) | N | **MISSING** | -- | -- |
-| 4 | `source` | character varying(50) | N | **MISSING** | -- | -- |
-| 5 | `signal_fingerprint` | text | N | **MISSING** | -- | -- |
-| 6 | `signal_payload` | jsonb | Y | **MISSING** | -- | -- |
-| 7 | `first_seen_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 8 | `last_used_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 9 | `use_count` | integer | Y | **MISSING** | -- | -- |
-| 10 | `score_contribution` | integer | Y | **MISSING** | -- | -- |
-| 11 | `correlation_id` | uuid | Y | **MISSING** | -- | -- |
-| 12 | `process_id` | uuid | Y | **MISSING** | -- | -- |
-| 13 | `created_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-
 #### `outreach.bit_scores` -- CANONICAL FROZEN -- 12,602 rows
 
 Column registry: **1/12 documented**
@@ -672,27 +640,6 @@ Column registry: **UNDOCUMENTED**
 | 12 | `updated_at` | timestamp with time zone | N | **MISSING** | -- | -- |
 | 13 | `archived_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
 | 14 | `archive_reason` | text | Y | **MISSING** | -- | -- |
-
-#### `outreach.bit_signals` -- MV -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `signal_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `outreach_id` | uuid | N | **MISSING** | -- | -- |
-| 3 | `signal_type` | character varying(50) | N | **MISSING** | -- | -- |
-| 4 | `signal_impact` | numeric | N | **MISSING** | -- | -- |
-| 5 | `source_spoke` | character varying(50) | N | **MISSING** | -- | -- |
-| 6 | `correlation_id` | uuid | N | **MISSING** | -- | -- |
-| 7 | `process_id` | uuid | Y | **MISSING** | -- | -- |
-| 8 | `signal_metadata` | jsonb | Y | **MISSING** | -- | -- |
-| 9 | `decay_period_days` | integer | N | **MISSING** | -- | -- |
-| 10 | `decayed_impact` | numeric | Y | **MISSING** | -- | -- |
-| 11 | `signal_timestamp` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 12 | `processed_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 13 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 14 | `signal_source` | character varying(50) | Y | **MISSING** | -- | -- |
 
 #### `outreach.blog` -- CANONICAL FROZEN -- 93,596 rows
 
@@ -773,51 +720,6 @@ Column registry: **UNDOCUMENTED**
 | 12 | `singleton_key` | integer | Y | **MISSING** | -- | -- |
 | 13 | `created_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
 | 14 | `updated_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-
-#### `outreach.blog_source_history` -- SYSTEM -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `history_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `outreach_id` | uuid | N | **MISSING** | -- | -- |
-| 3 | `source_type` | character varying(50) | N | **MISSING** | -- | -- |
-| 4 | `source_url` | text | N | **MISSING** | -- | -- |
-| 5 | `first_seen_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 6 | `last_checked_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 7 | `status` | character varying(20) | Y | **MISSING** | -- | -- |
-| 8 | `http_status` | integer | Y | **MISSING** | -- | -- |
-| 9 | `redirect_url` | text | Y | **MISSING** | -- | -- |
-| 10 | `checksum` | text | Y | **MISSING** | -- | -- |
-| 11 | `process_id` | uuid | Y | **MISSING** | -- | -- |
-| 12 | `correlation_id` | uuid | Y | **MISSING** | -- | -- |
-| 13 | `created_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-
-#### `outreach.campaigns` -- DEPRECATED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `campaign_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `campaign_name` | character varying(255) | N | **MISSING** | -- | -- |
-| 3 | `campaign_type` | character varying(50) | N | **MISSING** | -- | -- |
-| 4 | `campaign_status` | character varying(50) | N | **MISSING** | -- | -- |
-| 5 | `target_bit_score_min` | integer | Y | **MISSING** | -- | -- |
-| 6 | `target_outreach_state` | character varying(50) | Y | **MISSING** | -- | -- |
-| 7 | `daily_send_limit` | integer | Y | **MISSING** | -- | -- |
-| 8 | `total_send_limit` | integer | Y | **MISSING** | -- | -- |
-| 9 | `total_targeted` | integer | N | **MISSING** | -- | -- |
-| 10 | `total_sent` | integer | N | **MISSING** | -- | -- |
-| 11 | `total_opened` | integer | N | **MISSING** | -- | -- |
-| 12 | `total_clicked` | integer | N | **MISSING** | -- | -- |
-| 13 | `total_replied` | integer | N | **MISSING** | -- | -- |
-| 14 | `start_date` | date | Y | **MISSING** | -- | -- |
-| 15 | `end_date` | date | Y | **MISSING** | -- | -- |
-| 16 | `created_by` | character varying(100) | Y | **MISSING** | -- | -- |
-| 17 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 18 | `updated_at` | timestamp with time zone | N | **MISSING** | -- | -- |
 
 #### `outreach.column_registry` -- REGISTRY -- 48 rows
 
@@ -1211,32 +1113,6 @@ Column registry: **UNDOCUMENTED**
 | 13 | `match_status` | character varying(20) | Y | **MISSING** | -- | -- |
 | 14 | `created_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
 
-#### `outreach.engagement_events` -- MV -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `event_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `person_id` | uuid | N | **MISSING** | -- | -- |
-| 3 | `target_id` | uuid | N | **MISSING** | -- | -- |
-| 4 | `company_unique_id` | text | N | **MISSING** | -- | -- |
-| 5 | `event_type` | USER-DEFINED | N | **MISSING** | -- | -- |
-| 6 | `event_subtype` | text | Y | **MISSING** | -- | -- |
-| 7 | `event_ts` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 8 | `source_system` | text | Y | **MISSING** | -- | -- |
-| 9 | `source_campaign_id` | text | Y | **MISSING** | -- | -- |
-| 10 | `source_email_id` | text | Y | **MISSING** | -- | -- |
-| 11 | `metadata` | jsonb | N | **MISSING** | -- | -- |
-| 12 | `is_processed` | boolean | N | **MISSING** | -- | -- |
-| 13 | `processed_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 14 | `triggered_transition` | boolean | N | **MISSING** | -- | -- |
-| 15 | `transition_to_state` | USER-DEFINED | Y | **MISSING** | -- | -- |
-| 16 | `event_hash` | character varying(64) | Y | **MISSING** | -- | -- |
-| 17 | `is_duplicate` | boolean | N | **MISSING** | -- | -- |
-| 18 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 19 | `outreach_id` | uuid | Y | **MISSING** | -- | -- |
-
 #### `outreach.entity_resolution_queue` -- STAGING -- 2 rows
 
 Column registry: **UNDOCUMENTED**
@@ -1278,25 +1154,6 @@ Column registry: **UNDOCUMENTED**
 | 11 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
 | 12 | `updated_at` | timestamp with time zone | N | **MISSING** | -- | -- |
 
-#### `outreach.manual_overrides` -- SYSTEM -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `override_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `company_unique_id` | text | N | **MISSING** | -- | -- |
-| 3 | `override_type` | USER-DEFINED | N | **MISSING** | -- | -- |
-| 4 | `reason` | text | N | **MISSING** | -- | -- |
-| 5 | `metadata` | jsonb | Y | **MISSING** | -- | -- |
-| 6 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 7 | `created_by` | text | N | **MISSING** | -- | -- |
-| 8 | `expires_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 9 | `is_active` | boolean | N | **MISSING** | -- | -- |
-| 10 | `deactivated_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 11 | `deactivated_by` | text | Y | **MISSING** | -- | -- |
-| 12 | `deactivation_reason` | text | Y | **MISSING** | -- | -- |
-
 #### `outreach.mv_credit_usage` -- SYSTEM -- 2 rows
 
 Column registry: **UNDOCUMENTED**
@@ -1337,22 +1194,6 @@ Column registry: **UNDOCUMENTED**
 | 5 | `domain` | character varying(255) | Y | **MISSING** | -- | -- |
 | 6 | `archived_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
 | 7 | `archive_reason` | text | Y | **MISSING** | -- | -- |
-
-#### `outreach.outreach_errors` -- ERROR -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `error_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `company_unique_id` | text | N | **MISSING** | -- | -- |
-| 3 | `outreach_id` | text | Y | **MISSING** | -- | -- |
-| 4 | `pipeline_stage` | text | N | **MISSING** | -- | -- |
-| 5 | `failure_code` | text | N | **MISSING** | -- | -- |
-| 6 | `details` | text | Y | **MISSING** | -- | -- |
-| 7 | `run_id` | text | N | **MISSING** | -- | -- |
-| 8 | `created_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 9 | `error_type` | character varying(100) | Y | **MISSING** | -- | -- |
 
 #### `outreach.outreach_excluded` -- ARCHIVE -- 5,483 rows
 
@@ -1396,22 +1237,6 @@ Column registry: **UNDOCUMENTED**
 | 5 | `domain` | character varying | Y | **MISSING** | -- | -- |
 | 6 | `archived_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
 | 7 | `archive_reason` | character varying | Y | **MISSING** | -- | -- |
-
-#### `outreach.override_audit_log` -- SYSTEM -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `audit_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `company_unique_id` | text | N | **MISSING** | -- | -- |
-| 3 | `override_id` | uuid | Y | **MISSING** | -- | -- |
-| 4 | `action` | text | N | **MISSING** | -- | -- |
-| 5 | `override_type` | USER-DEFINED | Y | **MISSING** | -- | -- |
-| 6 | `old_value` | jsonb | Y | **MISSING** | -- | -- |
-| 7 | `new_value` | jsonb | Y | **MISSING** | -- | -- |
-| 8 | `performed_by` | text | N | **MISSING** | -- | -- |
-| 9 | `performed_at` | timestamp with time zone | N | **MISSING** | -- | -- |
 
 #### `outreach.people` -- SUPPORTING FROZEN -- 335,097 rows
 
@@ -1468,95 +1293,6 @@ Column registry: **UNDOCUMENTED**
 | 20 | `outreach_id` | uuid | Y | **MISSING** | -- | -- |
 | 21 | `archived_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
 | 22 | `archive_reason` | text | Y | **MISSING** | -- | -- |
-
-#### `outreach.people_errors` -- ERROR -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `error_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `outreach_id` | uuid | N | **MISSING** | -- | -- |
-| 3 | `pipeline_stage` | character varying(100) | N | **MISSING** | -- | -- |
-| 4 | `failure_code` | character varying(50) | N | **MISSING** | -- | -- |
-| 5 | `blocking_reason` | text | N | **MISSING** | -- | -- |
-| 6 | `severity` | character varying(20) | N | **MISSING** | -- | -- |
-| 7 | `retry_allowed` | boolean | N | **MISSING** | -- | -- |
-| 8 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 9 | `resolved_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 10 | `resolution_note` | text | Y | **MISSING** | -- | -- |
-| 11 | `raw_input` | jsonb | Y | **MISSING** | -- | -- |
-| 12 | `stack_trace` | text | Y | **MISSING** | -- | -- |
-| 13 | `requeue_attempts` | integer | Y | **MISSING** | -- | -- |
-| 14 | `error_type` | character varying(100) | Y | **MISSING** | -- | -- |
-
-#### `outreach.pipeline_audit_log` -- SYSTEM -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `log_id` | integer | N | **MISSING** | -- | -- |
-| 2 | `company_unique_id` | text | N | **MISSING** | -- | -- |
-| 3 | `outreach_id` | text | Y | **MISSING** | -- | -- |
-| 4 | `hub` | text | N | **MISSING** | -- | -- |
-| 5 | `outcome` | text | N | **MISSING** | -- | -- |
-| 6 | `failure_code` | text | Y | **MISSING** | -- | -- |
-| 7 | `run_id` | text | N | **MISSING** | -- | -- |
-| 8 | `created_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 9 | `source_hub` | character varying(50) | Y | **MISSING** | -- | -- |
-
-#### `outreach.send_log` -- DEPRECATED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `send_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `campaign_id` | uuid | Y | **MISSING** | -- | -- |
-| 3 | `sequence_id` | uuid | Y | **MISSING** | -- | -- |
-| 4 | `person_id` | uuid | Y | **MISSING** | -- | -- |
-| 5 | `target_id` | uuid | Y | **MISSING** | -- | -- |
-| 6 | `company_unique_id` | text | Y | **MISSING** | -- | -- |
-| 7 | `email_to` | character varying(255) | N | **MISSING** | -- | -- |
-| 8 | `email_subject` | text | Y | **MISSING** | -- | -- |
-| 9 | `sequence_step` | integer | N | **MISSING** | -- | -- |
-| 10 | `send_status` | character varying(50) | N | **MISSING** | -- | -- |
-| 11 | `scheduled_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 12 | `sent_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 13 | `delivered_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 14 | `bounced_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 15 | `opened_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 16 | `clicked_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 17 | `replied_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 18 | `open_count` | integer | N | **MISSING** | -- | -- |
-| 19 | `click_count` | integer | N | **MISSING** | -- | -- |
-| 20 | `error_message` | text | Y | **MISSING** | -- | -- |
-| 21 | `retry_count` | integer | N | **MISSING** | -- | -- |
-| 22 | `source_system` | character varying(100) | Y | **MISSING** | -- | -- |
-| 23 | `external_id` | character varying(255) | Y | **MISSING** | -- | -- |
-| 24 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 25 | `updated_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-
-#### `outreach.sequences` -- DEPRECATED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `sequence_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `campaign_id` | uuid | Y | **MISSING** | -- | -- |
-| 3 | `sequence_name` | character varying(255) | N | **MISSING** | -- | -- |
-| 4 | `sequence_order` | integer | N | **MISSING** | -- | -- |
-| 5 | `subject_template` | text | Y | **MISSING** | -- | -- |
-| 6 | `body_template` | text | Y | **MISSING** | -- | -- |
-| 7 | `template_type` | character varying(50) | Y | **MISSING** | -- | -- |
-| 8 | `delay_days` | integer | N | **MISSING** | -- | -- |
-| 9 | `delay_hours` | integer | N | **MISSING** | -- | -- |
-| 10 | `send_time_preference` | character varying(20) | Y | **MISSING** | -- | -- |
-| 11 | `sequence_status` | character varying(50) | N | **MISSING** | -- | -- |
-| 12 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 13 | `updated_at` | timestamp with time zone | N | **MISSING** | -- | -- |
 
 #### `outreach.sitemap_discovery` -- UNREGISTERED -- 93,596 rows
 
@@ -1644,13 +1380,11 @@ Column registry: **UNDOCUMENTED**
 
 ### `outreach_ctx` -- Outreach Context -- API context tracking and spend logging
 
-**Tables**: 3 | **Total rows**: 3
+**Tables**: 1 | **Total rows**: 3
 
 | Table | Leaf Type | Frozen | Rows | Columns | Documented |
 |-------|-----------|--------|------|---------|------------|
 | `context` | SYSTEM |  | 3 | 4 | 0 |
-| `spend_log` | SYSTEM |  | 0 | 7 | 0 |
-| `tool_attempts` | SYSTEM |  | 0 | 5 | 0 |
 
 #### `outreach_ctx.context` -- SYSTEM -- 3 rows
 
@@ -1663,35 +1397,9 @@ Column registry: **UNDOCUMENTED**
 | 3 | `status` | text | N | **MISSING** | -- | -- |
 | 4 | `notes` | text | Y | **MISSING** | -- | -- |
 
-#### `outreach_ctx.spend_log` -- SYSTEM -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `id` | bigint | N | **MISSING** | -- | -- |
-| 2 | `outreach_context_id` | text | N | **MISSING** | -- | -- |
-| 3 | `company_sov_id` | uuid | N | **MISSING** | -- | -- |
-| 4 | `tool_name` | text | N | **MISSING** | -- | -- |
-| 5 | `tier` | integer | N | **MISSING** | -- | -- |
-| 6 | `cost_credits` | numeric | Y | **MISSING** | -- | -- |
-| 7 | `attempted_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-
-#### `outreach_ctx.tool_attempts` -- SYSTEM -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `id` | bigint | N | **MISSING** | -- | -- |
-| 2 | `outreach_context_id` | text | N | **MISSING** | -- | -- |
-| 3 | `tool_name` | text | N | **MISSING** | -- | -- |
-| 4 | `tier` | integer | N | **MISSING** | -- | -- |
-| 5 | `attempted_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-
 ### `people` -- People Intelligence Sub-Hub -- executive slots, contact data, enrichment
 
-**Tables**: 21 | **Total rows**: 699,317
+**Tables**: 16 | **Total rows**: 699,317
 **Views**: 10 -- contact_enhanced_view, due_email_recheck_30d, next_profile_urls_30d, v_extraction_progress, v_paid_queue_summary, v_slot_coverage, v_slot_tenure_summary, v_staging_summary, vw_profile_monitoring, vw_profile_staleness
 
 | Table | Leaf Type | Frozen | Rows | Columns | Documented |
@@ -1706,12 +1414,7 @@ Column registry: **UNDOCUMENTED**
 | `people_master` | SUPPORTING | YES | 182,842 | 35 | 7/35 |
 | `people_master_archive` | ARCHIVE |  | 47,486 | 35 | 0 |
 | `people_promotion_audit` | SYSTEM |  | 9 | 6 | 0 |
-| `people_resolution_history` | SYSTEM |  | 0 | 13 | 0 |
 | `people_resolution_queue` | STAGING |  | 1,206 | 17 | 0 |
-| `people_sidecar` | SUPPORTING |  | 0 | 10 | 0 |
-| `person_movement_history` | SYSTEM |  | 0 | 11 | 0 |
-| `person_scores` | SUPPORTING |  | 0 | 8 | 0 |
-| `pressure_signals` | MV |  | 0 | 12 | 0 |
 | `slot_assignment_history` | SYSTEM |  | 1,370 | 15 | 0 |
 | `slot_ingress_control` | REGISTRY |  | 1 | 9 | 0 |
 | `slot_orphan_snapshot_r0_002` | ARCHIVE |  | 1,053 | 8 | 0 |
@@ -1996,26 +1699,6 @@ Column registry: **UNDOCUMENTED**
 | 5 | `count` | integer | Y | **MISSING** | -- | -- |
 | 6 | `created_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
 
-#### `people.people_resolution_history` -- SYSTEM -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `history_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `outreach_id` | uuid | N | **MISSING** | -- | -- |
-| 3 | `slot_type` | character varying(20) | N | **MISSING** | -- | -- |
-| 4 | `person_identifier` | text | N | **MISSING** | -- | -- |
-| 5 | `resolution_outcome` | character varying(30) | N | **MISSING** | -- | -- |
-| 6 | `rejection_reason` | text | Y | **MISSING** | -- | -- |
-| 7 | `confidence_score` | numeric | Y | **MISSING** | -- | -- |
-| 8 | `source` | character varying(50) | Y | **MISSING** | -- | -- |
-| 9 | `source_response` | jsonb | Y | **MISSING** | -- | -- |
-| 10 | `checked_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 11 | `process_id` | uuid | Y | **MISSING** | -- | -- |
-| 12 | `correlation_id` | uuid | Y | **MISSING** | -- | -- |
-| 13 | `created_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-
 #### `people.people_resolution_queue` -- STAGING -- 1,206 rows
 
 Column registry: **UNDOCUMENTED**
@@ -2039,75 +1722,6 @@ Column registry: **UNDOCUMENTED**
 | 15 | `notes` | text | Y | **MISSING** | -- | -- |
 | 16 | `error_details` | jsonb | Y | **MISSING** | -- | -- |
 | 17 | `attempt_count` | integer | Y | **MISSING** | -- | -- |
-
-#### `people.people_sidecar` -- SUPPORTING -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `person_unique_id` | character varying(50) | N | **MISSING** | -- | -- |
-| 2 | `clay_insight_summary` | text | Y | **MISSING** | -- | -- |
-| 3 | `clay_segments` | ARRAY | Y | **MISSING** | -- | -- |
-| 4 | `social_profiles` | jsonb | Y | **MISSING** | -- | -- |
-| 5 | `enrichment_payload` | jsonb | Y | **MISSING** | -- | -- |
-| 6 | `last_enriched_at` | timestamp without time zone | Y | **MISSING** | -- | -- |
-| 7 | `enrichment_source` | text | Y | **MISSING** | -- | -- |
-| 8 | `confidence_score` | numeric | Y | **MISSING** | -- | -- |
-| 9 | `created_at` | timestamp without time zone | Y | **MISSING** | -- | -- |
-| 10 | `updated_at` | timestamp without time zone | Y | **MISSING** | -- | -- |
-
-#### `people.person_movement_history` -- SYSTEM -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `id` | integer | N | **MISSING** | -- | -- |
-| 2 | `person_unique_id` | text | N | **MISSING** | -- | -- |
-| 3 | `linkedin_url` | text | Y | **MISSING** | -- | -- |
-| 4 | `company_from_id` | text | N | **MISSING** | -- | -- |
-| 5 | `company_to_id` | text | Y | **MISSING** | -- | -- |
-| 6 | `title_from` | text | N | **MISSING** | -- | -- |
-| 7 | `title_to` | text | Y | **MISSING** | -- | -- |
-| 8 | `movement_type` | text | N | **MISSING** | -- | -- |
-| 9 | `detected_at` | timestamp without time zone | N | **MISSING** | -- | -- |
-| 10 | `raw_payload` | jsonb | Y | **MISSING** | -- | -- |
-| 11 | `created_at` | timestamp without time zone | Y | **MISSING** | -- | -- |
-
-#### `people.person_scores` -- SUPPORTING -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `id` | integer | N | **MISSING** | -- | -- |
-| 2 | `person_unique_id` | text | N | **MISSING** | -- | -- |
-| 3 | `bit_score` | integer | Y | **MISSING** | -- | -- |
-| 4 | `confidence_score` | integer | Y | **MISSING** | -- | -- |
-| 5 | `calculated_at` | timestamp without time zone | N | **MISSING** | -- | -- |
-| 6 | `score_factors` | jsonb | Y | **MISSING** | -- | -- |
-| 7 | `created_at` | timestamp without time zone | Y | **MISSING** | -- | -- |
-| 8 | `updated_at` | timestamp without time zone | Y | **MISSING** | -- | -- |
-
-#### `people.pressure_signals` -- MV -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `signal_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `company_unique_id` | text | N | **MISSING** | -- | -- |
-| 3 | `signal_type` | character varying(50) | N | **MISSING** | -- | -- |
-| 4 | `pressure_domain` | USER-DEFINED | N | **MISSING** | -- | -- |
-| 5 | `pressure_class` | USER-DEFINED | Y | **MISSING** | -- | -- |
-| 6 | `signal_value` | jsonb | N | **MISSING** | -- | -- |
-| 7 | `magnitude` | integer | N | **MISSING** | -- | -- |
-| 8 | `detected_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 9 | `expires_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 10 | `correlation_id` | uuid | Y | **MISSING** | -- | -- |
-| 11 | `source_record_id` | text | Y | **MISSING** | -- | -- |
-| 12 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
 
 #### `people.slot_assignment_history` -- SYSTEM -- 1,370 rows
 
@@ -3709,13 +3323,12 @@ Column registry: **UNDOCUMENTED**
 
 ### `intake` -- Intake & Staging -- raw CSV imports, candidate records, quarantine
 
-**Tables**: 7 | **Total rows**: 322,625
+**Tables**: 6 | **Total rows**: 322,625
 
 | Table | Leaf Type | Frozen | Rows | Columns | Documented |
 |-------|-----------|--------|------|---------|------------|
 | `company_raw_intake` | STAGING |  | 563 | 35 | 0 |
 | `company_raw_wv` | STAGING |  | 62,146 | 12 | 0 |
-| `people_candidate` | STAGING |  | 0 | 14 | 0 |
 | `people_raw_intake` | STAGING |  | 120,045 | 40 | 0 |
 | `people_raw_wv` | STAGING |  | 10 | 13 | 0 |
 | `people_staging` | STAGING |  | 139,859 | 15 | 0 |
@@ -3781,27 +3394,6 @@ Column registry: **UNDOCUMENTED**
 | 10 | `state` | text | Y | **MISSING** | -- | -- |
 | 11 | `zip` | text | Y | **MISSING** | -- | -- |
 | 12 | `created_at` | timestamp without time zone | Y | **MISSING** | -- | -- |
-
-#### `intake.people_candidate` -- STAGING -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `candidate_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `outreach_id` | uuid | N | **MISSING** | -- | -- |
-| 3 | `slot_type` | character varying(20) | N | **MISSING** | -- | -- |
-| 4 | `person_name` | text | Y | **MISSING** | -- | -- |
-| 5 | `person_title` | text | Y | **MISSING** | -- | -- |
-| 6 | `person_email` | text | Y | **MISSING** | -- | -- |
-| 7 | `linkedin_url` | text | Y | **MISSING** | -- | -- |
-| 8 | `confidence_score` | numeric | Y | **MISSING** | -- | -- |
-| 9 | `source` | character varying(50) | N | **MISSING** | -- | -- |
-| 10 | `status` | character varying(20) | N | **MISSING** | -- | -- |
-| 11 | `rejection_reason` | text | Y | **MISSING** | -- | -- |
-| 12 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 13 | `processed_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 14 | `expires_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
 
 #### `intake.people_raw_intake` -- STAGING -- 120,045 rows
 
@@ -3927,127 +3519,6 @@ Column registry: **UNDOCUMENTED**
 | 27 | `revenue` | numeric | Y | **MISSING** | -- | -- |
 | 28 | `location` | text | Y | **MISSING** | -- | -- |
 
-### `bit` -- BIT/CLS Authorization -- movement events, phase state, proof lines
-
-**Tables**: 4 | **Total rows**: 0
-**Views**: 2 -- vw_active_movements, vw_company_authorization
-
-| Table | Leaf Type | Frozen | Rows | Columns | Documented |
-|-------|-----------|--------|------|---------|------------|
-| `authorization_log` | CANONICAL |  | 0 | 12 | 0 |
-| `movement_events` | MV |  | 0 | 17 | 0 |
-| `phase_state` | CANONICAL |  | 0 | 14 | 0 |
-| `proof_lines` | CANONICAL |  | 0 | 11 | 0 |
-
-#### `bit.authorization_log` -- CANONICAL -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `log_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `company_unique_id` | text | N | **MISSING** | -- | -- |
-| 3 | `requested_action` | text | N | **MISSING** | -- | -- |
-| 4 | `requested_band` | integer | N | **MISSING** | -- | -- |
-| 5 | `authorized` | boolean | N | **MISSING** | -- | -- |
-| 6 | `actual_band` | integer | N | **MISSING** | -- | -- |
-| 7 | `denial_reason` | text | Y | **MISSING** | -- | -- |
-| 8 | `proof_id` | text | Y | **MISSING** | -- | -- |
-| 9 | `proof_valid` | boolean | Y | **MISSING** | -- | -- |
-| 10 | `requested_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 11 | `requested_by` | text | N | **MISSING** | -- | -- |
-| 12 | `correlation_id` | text | Y | **MISSING** | -- | -- |
-
-#### `bit.movement_events` -- MV -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `movement_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `company_unique_id` | text | N | **MISSING** | -- | -- |
-| 3 | `source_hub` | text | N | **MISSING** | -- | -- |
-| 4 | `source_table` | text | N | **MISSING** | -- | -- |
-| 5 | `source_fields` | ARRAY | N | **MISSING** | -- | -- |
-| 6 | `movement_class` | text | N | **MISSING** | -- | -- |
-| 7 | `pressure_class` | text | N | **MISSING** | -- | -- |
-| 8 | `domain` | text | N | **MISSING** | -- | -- |
-| 9 | `direction` | text | N | **MISSING** | -- | -- |
-| 10 | `magnitude` | numeric | N | **MISSING** | -- | -- |
-| 11 | `detected_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 12 | `valid_from` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 13 | `valid_until` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 14 | `comparison_period` | text | Y | **MISSING** | -- | -- |
-| 15 | `evidence` | jsonb | N | **MISSING** | -- | -- |
-| 16 | `source_record_ids` | jsonb | N | **MISSING** | -- | -- |
-| 17 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-
-#### `bit.phase_state` -- CANONICAL -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `company_unique_id` | text | N | **MISSING** | -- | -- |
-| 2 | `current_band` | integer | N | **MISSING** | -- | -- |
-| 3 | `phase_status` | text | N | **MISSING** | -- | -- |
-| 4 | `dol_active` | boolean | N | **MISSING** | -- | -- |
-| 5 | `people_active` | boolean | N | **MISSING** | -- | -- |
-| 6 | `blog_active` | boolean | N | **MISSING** | -- | -- |
-| 7 | `primary_pressure` | text | Y | **MISSING** | -- | -- |
-| 8 | `aligned_domains` | integer | N | **MISSING** | -- | -- |
-| 9 | `last_movement_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 10 | `last_band_change_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 11 | `phase_entered_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 12 | `stasis_start` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 13 | `stasis_years` | numeric | Y | **MISSING** | -- | -- |
-| 14 | `updated_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-
-#### `bit.proof_lines` -- CANONICAL -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `proof_id` | text | N | **MISSING** | -- | -- |
-| 2 | `company_unique_id` | text | N | **MISSING** | -- | -- |
-| 3 | `band` | integer | N | **MISSING** | -- | -- |
-| 4 | `pressure_class` | text | N | **MISSING** | -- | -- |
-| 5 | `sources` | ARRAY | N | **MISSING** | -- | -- |
-| 6 | `evidence` | jsonb | N | **MISSING** | -- | -- |
-| 7 | `movement_ids` | ARRAY | N | **MISSING** | -- | -- |
-| 8 | `human_readable` | text | N | **MISSING** | -- | -- |
-| 9 | `generated_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 10 | `valid_until` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 11 | `generated_by` | text | N | **MISSING** | -- | -- |
-
-### `blog` -- Blog Pressure Signals -- content-derived movement signals
-
-**Tables**: 1 | **Total rows**: 0
-
-| Table | Leaf Type | Frozen | Rows | Columns | Documented |
-|-------|-----------|--------|------|---------|------------|
-| `pressure_signals` | MV |  | 0 | 12 | 0 |
-
-#### `blog.pressure_signals` -- MV -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `signal_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `company_unique_id` | text | N | **MISSING** | -- | -- |
-| 3 | `signal_type` | character varying(50) | N | **MISSING** | -- | -- |
-| 4 | `pressure_domain` | USER-DEFINED | N | **MISSING** | -- | -- |
-| 5 | `pressure_class` | USER-DEFINED | Y | **MISSING** | -- | -- |
-| 6 | `signal_value` | jsonb | N | **MISSING** | -- | -- |
-| 7 | `magnitude` | integer | N | **MISSING** | -- | -- |
-| 8 | `detected_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 9 | `expires_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 10 | `correlation_id` | uuid | Y | **MISSING** | -- | -- |
-| 11 | `source_record_id` | text | Y | **MISSING** | -- | -- |
-| 12 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-
 ### `coverage` -- Coverage Hub -- service agent assignments and market definitions
 
 **Tables**: 2 | **Total rows**: 10
@@ -4091,39 +3562,16 @@ Column registry: **UNDOCUMENTED**
 
 ### `company` -- DEPRECATED -- pre-CL company data, replaced by cl + outreach schemas
 
-**Tables**: 11 | **Total rows**: 210,404
+**Tables**: 5 | **Total rows**: 210,404
 **Views**: 6 -- next_company_urls_30d, v_needs_enrichment, vw_anchor_staleness, vw_company_slots, vw_due_renewals_ready, vw_next_renewal
 
 | Table | Leaf Type | Frozen | Rows | Columns | Documented |
 |-------|-----------|--------|------|---------|------------|
-| `company_events` | DEPRECATED |  | 0 | 10 | 0 |
 | `company_master` | DEPRECATED |  | 92,116 | 36 | 0 |
-| `company_sidecar` | DEPRECATED |  | 0 | 11 | 0 |
 | `company_slots` | DEPRECATED |  | 1,359 | 5 | 0 |
 | `company_source_urls` | DEPRECATED |  | 114,736 | 19 | 0 |
-| `contact_enrichment` | DEPRECATED |  | 0 | 11 | 0 |
-| `email_verification` | DEPRECATED |  | 0 | 8 | 0 |
 | `message_key_reference` | DEPRECATED |  | 8 | 13 | 0 |
-| `pipeline_errors` | DEPRECATED |  | 0 | 12 | 0 |
 | `pipeline_events` | DEPRECATED |  | 2,185 | 8 | 0 |
-| `validation_failures_log` | DEPRECATED |  | 0 | 16 | 0 |
-
-#### `company.company_events` -- DEPRECATED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `id` | integer | N | **MISSING** | -- | -- |
-| 2 | `company_unique_id` | text | N | **MISSING** | -- | -- |
-| 3 | `event_type` | text | Y | **MISSING** | -- | -- |
-| 4 | `event_date` | date | Y | **MISSING** | -- | -- |
-| 5 | `source_url` | text | Y | **MISSING** | -- | -- |
-| 6 | `summary` | text | Y | **MISSING** | -- | -- |
-| 7 | `detected_at` | timestamp without time zone | N | **MISSING** | -- | -- |
-| 8 | `impacts_bit` | boolean | Y | **MISSING** | -- | -- |
-| 9 | `bit_impact_score` | integer | Y | **MISSING** | -- | -- |
-| 10 | `created_at` | timestamp without time zone | Y | **MISSING** | -- | -- |
 
 #### `company.company_master` -- DEPRECATED -- 92,116 rows
 
@@ -4168,24 +3616,6 @@ Column registry: **UNDOCUMENTED**
 | 35 | `duns` | character varying(9) | Y | **MISSING** | -- | -- |
 | 36 | `cage_code` | character varying(5) | Y | **MISSING** | -- | -- |
 
-#### `company.company_sidecar` -- DEPRECATED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `company_unique_id` | character varying(50) | N | **MISSING** | -- | -- |
-| 2 | `ein_number` | character varying(20) | Y | **MISSING** | -- | -- |
-| 3 | `dun_and_bradstreet_number` | character varying(20) | Y | **MISSING** | -- | -- |
-| 4 | `clay_tags` | ARRAY | Y | **MISSING** | -- | -- |
-| 5 | `clay_segments` | ARRAY | Y | **MISSING** | -- | -- |
-| 6 | `enrichment_payload` | jsonb | Y | **MISSING** | -- | -- |
-| 7 | `last_enriched_at` | timestamp without time zone | Y | **MISSING** | -- | -- |
-| 8 | `enrichment_source` | text | Y | **MISSING** | -- | -- |
-| 9 | `confidence_score` | numeric | Y | **MISSING** | -- | -- |
-| 10 | `created_at` | timestamp without time zone | Y | **MISSING** | -- | -- |
-| 11 | `updated_at` | timestamp without time zone | Y | **MISSING** | -- | -- |
-
 #### `company.company_slots` -- DEPRECATED -- 1,359 rows
 
 Column registry: **UNDOCUMENTED**
@@ -4224,39 +3654,6 @@ Column registry: **UNDOCUMENTED**
 | 18 | `people_extracted` | integer | Y | **MISSING** | -- | -- |
 | 19 | `requires_paid_enrichment` | boolean | Y | **MISSING** | -- | -- |
 
-#### `company.contact_enrichment` -- DEPRECATED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `id` | integer | N | **MISSING** | -- | -- |
-| 2 | `company_slot_unique_id` | text | N | **MISSING** | -- | -- |
-| 3 | `linkedin_url` | text | Y | **MISSING** | -- | -- |
-| 4 | `full_name` | text | Y | **MISSING** | -- | -- |
-| 5 | `email` | text | Y | **MISSING** | -- | -- |
-| 6 | `phone` | text | Y | **MISSING** | -- | -- |
-| 7 | `enrichment_status` | text | Y | **MISSING** | -- | -- |
-| 8 | `enrichment_source` | text | Y | **MISSING** | -- | -- |
-| 9 | `enrichment_data` | jsonb | Y | **MISSING** | -- | -- |
-| 10 | `created_at` | timestamp without time zone | Y | **MISSING** | -- | -- |
-| 11 | `enriched_at` | timestamp without time zone | Y | **MISSING** | -- | -- |
-
-#### `company.email_verification` -- DEPRECATED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `id` | integer | N | **MISSING** | -- | -- |
-| 2 | `enrichment_id` | integer | N | **MISSING** | -- | -- |
-| 3 | `email` | text | N | **MISSING** | -- | -- |
-| 4 | `verification_status` | text | Y | **MISSING** | -- | -- |
-| 5 | `verification_service` | text | Y | **MISSING** | -- | -- |
-| 6 | `verification_result` | jsonb | Y | **MISSING** | -- | -- |
-| 7 | `verified_at` | timestamp without time zone | Y | **MISSING** | -- | -- |
-| 8 | `created_at` | timestamp without time zone | Y | **MISSING** | -- | -- |
-
 #### `company.message_key_reference` -- DEPRECATED -- 8 rows
 
 Column registry: **UNDOCUMENTED**
@@ -4277,25 +3674,6 @@ Column registry: **UNDOCUMENTED**
 | 12 | `created_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
 | 13 | `updated_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
 
-#### `company.pipeline_errors` -- DEPRECATED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `id` | integer | N | **MISSING** | -- | -- |
-| 2 | `event_type` | text | N | **MISSING** | -- | -- |
-| 3 | `record_id` | text | N | **MISSING** | -- | -- |
-| 4 | `error_message` | text | N | **MISSING** | -- | -- |
-| 5 | `error_details` | jsonb | Y | **MISSING** | -- | -- |
-| 6 | `severity` | text | Y | **MISSING** | -- | -- |
-| 7 | `resolved` | boolean | Y | **MISSING** | -- | -- |
-| 8 | `resolved_at` | timestamp without time zone | Y | **MISSING** | -- | -- |
-| 9 | `resolved_by` | text | Y | **MISSING** | -- | -- |
-| 10 | `resolution_notes` | text | Y | **MISSING** | -- | -- |
-| 11 | `created_at` | timestamp without time zone | Y | **MISSING** | -- | -- |
-| 12 | `error_type` | character varying(100) | Y | **MISSING** | -- | -- |
-
 #### `company.pipeline_events` -- DEPRECATED -- 2,185 rows
 
 Column registry: **UNDOCUMENTED**
@@ -4311,33 +3689,10 @@ Column registry: **UNDOCUMENTED**
 | 7 | `created_at` | timestamp without time zone | Y | **MISSING** | -- | -- |
 | 8 | `processed_at` | timestamp without time zone | Y | **MISSING** | -- | -- |
 
-#### `company.validation_failures_log` -- DEPRECATED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `id` | integer | N | **MISSING** | -- | -- |
-| 2 | `company_id` | text | Y | **MISSING** | -- | -- |
-| 3 | `person_id` | text | Y | **MISSING** | -- | -- |
-| 4 | `company_name` | text | Y | **MISSING** | -- | -- |
-| 5 | `person_name` | text | Y | **MISSING** | -- | -- |
-| 6 | `fail_reason` | text | N | **MISSING** | -- | -- |
-| 7 | `state` | text | Y | **MISSING** | -- | -- |
-| 8 | `validation_timestamp` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 9 | `pipeline_id` | text | N | **MISSING** | -- | -- |
-| 10 | `failure_type` | text | N | **MISSING** | -- | -- |
-| 11 | `created_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 12 | `updated_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 13 | `exported_to_sheets` | boolean | Y | **MISSING** | -- | -- |
-| 14 | `exported_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 15 | `exported_to_b2` | boolean | Y | **MISSING** | -- | -- |
-| 16 | `exported_to_b2_at` | timestamp without time zone | Y | **MISSING** | -- | -- |
-
 ### `marketing` -- DEPRECATED -- pre-CL marketing pipeline, replaced by outreach + people schemas
 
 **Tables**: 8 | **Total rows**: 1,752
-**Views**: 10 -- marketing_ceo, marketing_cfo, marketing_hr, v_companies_need_enrichment, v_phase_stats, vw_error_rate_24h, vw_health_crawl_staleness, vw_health_profile_staleness, vw_queue_sizes, vw_unresolved_errors
+**Views**: 8 -- marketing_ceo, marketing_cfo, marketing_hr, v_companies_need_enrichment, v_phase_stats, vw_health_crawl_staleness, vw_health_profile_staleness, vw_queue_sizes
 
 | Table | Leaf Type | Frozen | Rows | Columns | Documented |
 |-------|-----------|--------|------|---------|------------|
@@ -4644,240 +3999,16 @@ Column registry: **UNDOCUMENTED**
 | 11 | `metadata` | jsonb | Y | **MISSING** | -- | -- |
 | 12 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
 
-### `clnt` -- Client Hub Scaffold -- future client management (ALL EMPTY)
-
-**Tables**: 13 | **Total rows**: 0
-
-| Table | Leaf Type | Frozen | Rows | Columns | Documented |
-|-------|-----------|--------|------|---------|------------|
-| `audit_event` | UNREGISTERED |  | 0 | 6 | 0 |
-| `client_hub` | UNREGISTERED |  | 0 | 5 | 0 |
-| `client_master` | UNREGISTERED |  | 0 | 7 | 0 |
-| `compliance_flag` | UNREGISTERED |  | 0 | 7 | 0 |
-| `election` | UNREGISTERED |  | 0 | 8 | 0 |
-| `external_identity_map` | UNREGISTERED |  | 0 | 10 | 0 |
-| `intake_batch` | UNREGISTERED |  | 0 | 6 | 0 |
-| `intake_record` | UNREGISTERED |  | 0 | 5 | 0 |
-| `person` | UNREGISTERED |  | 0 | 8 | 0 |
-| `plan` | UNREGISTERED |  | 0 | 18 | 0 |
-| `plan_quote` | UNREGISTERED |  | 0 | 13 | 0 |
-| `service_request` | UNREGISTERED |  | 0 | 7 | 0 |
-| `vendor` | UNREGISTERED |  | 0 | 6 | 0 |
-
-#### `clnt.audit_event` -- UNREGISTERED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `audit_event_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `client_id` | uuid | N | **MISSING** | -- | -- |
-| 3 | `entity_type` | text | N | **MISSING** | -- | -- |
-| 4 | `entity_id` | uuid | N | **MISSING** | -- | -- |
-| 5 | `action` | text | N | **MISSING** | -- | -- |
-| 6 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-
-#### `clnt.client_hub` -- UNREGISTERED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `client_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 3 | `status` | text | N | **MISSING** | -- | -- |
-| 4 | `source` | text | Y | **MISSING** | -- | -- |
-| 5 | `version` | integer | N | **MISSING** | -- | -- |
-
-#### `clnt.client_master` -- UNREGISTERED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `client_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `legal_name` | text | N | **MISSING** | -- | -- |
-| 3 | `fein` | text | Y | **MISSING** | -- | -- |
-| 4 | `domicile_state` | text | Y | **MISSING** | -- | -- |
-| 5 | `effective_date` | date | Y | **MISSING** | -- | -- |
-| 6 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 7 | `updated_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-
-#### `clnt.compliance_flag` -- UNREGISTERED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `compliance_flag_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `client_id` | uuid | N | **MISSING** | -- | -- |
-| 3 | `flag_type` | text | N | **MISSING** | -- | -- |
-| 4 | `status` | text | N | **MISSING** | -- | -- |
-| 5 | `effective_date` | date | Y | **MISSING** | -- | -- |
-| 6 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 7 | `updated_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-
-#### `clnt.election` -- UNREGISTERED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `election_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `client_id` | uuid | N | **MISSING** | -- | -- |
-| 3 | `person_id` | uuid | N | **MISSING** | -- | -- |
-| 4 | `plan_id` | uuid | N | **MISSING** | -- | -- |
-| 5 | `coverage_tier` | text | N | **MISSING** | -- | -- |
-| 6 | `effective_date` | date | N | **MISSING** | -- | -- |
-| 7 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 8 | `updated_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-
-#### `clnt.external_identity_map` -- UNREGISTERED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `external_identity_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `client_id` | uuid | N | **MISSING** | -- | -- |
-| 3 | `entity_type` | text | N | **MISSING** | -- | -- |
-| 4 | `internal_id` | uuid | N | **MISSING** | -- | -- |
-| 5 | `vendor_id` | uuid | N | **MISSING** | -- | -- |
-| 6 | `external_id_value` | text | N | **MISSING** | -- | -- |
-| 7 | `effective_date` | date | Y | **MISSING** | -- | -- |
-| 8 | `status` | text | N | **MISSING** | -- | -- |
-| 9 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 10 | `updated_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-
-#### `clnt.intake_batch` -- UNREGISTERED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `intake_batch_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `client_id` | uuid | N | **MISSING** | -- | -- |
-| 3 | `upload_date` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 4 | `status` | text | N | **MISSING** | -- | -- |
-| 5 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 6 | `updated_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-
-#### `clnt.intake_record` -- UNREGISTERED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `intake_record_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `client_id` | uuid | N | **MISSING** | -- | -- |
-| 3 | `intake_batch_id` | uuid | N | **MISSING** | -- | -- |
-| 4 | `raw_payload` | jsonb | N | **MISSING** | -- | -- |
-| 5 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-
-#### `clnt.person` -- UNREGISTERED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `person_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `client_id` | uuid | N | **MISSING** | -- | -- |
-| 3 | `first_name` | text | N | **MISSING** | -- | -- |
-| 4 | `last_name` | text | N | **MISSING** | -- | -- |
-| 5 | `ssn_hash` | text | Y | **MISSING** | -- | -- |
-| 6 | `status` | text | N | **MISSING** | -- | -- |
-| 7 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 8 | `updated_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-
-#### `clnt.plan` -- UNREGISTERED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `plan_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `client_id` | uuid | N | **MISSING** | -- | -- |
-| 3 | `benefit_type` | text | N | **MISSING** | -- | -- |
-| 4 | `carrier_id` | text | Y | **MISSING** | -- | -- |
-| 5 | `effective_date` | date | Y | **MISSING** | -- | -- |
-| 6 | `status` | text | N | **MISSING** | -- | -- |
-| 7 | `version` | integer | N | **MISSING** | -- | -- |
-| 8 | `rate_ee` | numeric | Y | **MISSING** | -- | -- |
-| 9 | `rate_es` | numeric | Y | **MISSING** | -- | -- |
-| 10 | `rate_ec` | numeric | Y | **MISSING** | -- | -- |
-| 11 | `rate_fam` | numeric | Y | **MISSING** | -- | -- |
-| 12 | `employer_rate_ee` | numeric | Y | **MISSING** | -- | -- |
-| 13 | `employer_rate_es` | numeric | Y | **MISSING** | -- | -- |
-| 14 | `employer_rate_ec` | numeric | Y | **MISSING** | -- | -- |
-| 15 | `employer_rate_fam` | numeric | Y | **MISSING** | -- | -- |
-| 16 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 17 | `updated_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 18 | `source_quote_id` | uuid | Y | **MISSING** | -- | -- |
-
-#### `clnt.plan_quote` -- UNREGISTERED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `plan_quote_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `client_id` | uuid | N | **MISSING** | -- | -- |
-| 3 | `benefit_type` | text | N | **MISSING** | -- | -- |
-| 4 | `carrier_id` | text | N | **MISSING** | -- | -- |
-| 5 | `effective_year` | integer | N | **MISSING** | -- | -- |
-| 6 | `rate_ee` | numeric | Y | **MISSING** | -- | -- |
-| 7 | `rate_es` | numeric | Y | **MISSING** | -- | -- |
-| 8 | `rate_ec` | numeric | Y | **MISSING** | -- | -- |
-| 9 | `rate_fam` | numeric | Y | **MISSING** | -- | -- |
-| 10 | `source` | text | Y | **MISSING** | -- | -- |
-| 11 | `received_date` | date | Y | **MISSING** | -- | -- |
-| 12 | `status` | text | N | **MISSING** | -- | -- |
-| 13 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-
-#### `clnt.service_request` -- UNREGISTERED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `service_request_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `client_id` | uuid | N | **MISSING** | -- | -- |
-| 3 | `category` | text | N | **MISSING** | -- | -- |
-| 4 | `status` | text | N | **MISSING** | -- | -- |
-| 5 | `opened_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 6 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 7 | `updated_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-
-#### `clnt.vendor` -- UNREGISTERED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `vendor_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `client_id` | uuid | N | **MISSING** | -- | -- |
-| 3 | `vendor_name` | text | N | **MISSING** | -- | -- |
-| 4 | `vendor_type` | text | Y | **MISSING** | -- | -- |
-| 5 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 6 | `updated_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-
 ### `lcs` -- Lifecycle Signal System -- event streaming infrastructure (NOT ACTIVE)
 
-**Tables**: 11 | **Total rows**: 32
+**Tables**: 4 | **Total rows**: 32
 
 | Table | Leaf Type | Frozen | Rows | Columns | Documented |
 |-------|-----------|--------|------|---------|------------|
 | `adapter_registry` | UNREGISTERED |  | 3 | 15 | 0 |
 | `domain_pool` | UNREGISTERED |  | 10 | 18 | 0 |
-| `err0` | UNREGISTERED |  | 0 | 13 | 0 |
-| `event` | UNREGISTERED |  | 0 | 21 | 0 |
-| `event_2026_02` | UNREGISTERED |  | 0 | 21 | 0 |
-| `event_2026_03` | UNREGISTERED |  | 0 | 21 | 0 |
-| `event_2026_04` | UNREGISTERED |  | 0 | 21 | 0 |
 | `frame_registry` | UNREGISTERED |  | 10 | 13 | 0 |
-| `signal_queue` | UNREGISTERED |  | 0 | 15 | 0 |
 | `signal_registry` | UNREGISTERED |  | 9 | 13 | 0 |
-| `suppression` | UNREGISTERED |  | 0 | 16 | 0 |
 
 #### `lcs.adapter_registry` -- UNREGISTERED -- 3 rows
 
@@ -4926,138 +4057,6 @@ Column registry: **UNDOCUMENTED**
 | 17 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
 | 18 | `updated_at` | timestamp with time zone | N | **MISSING** | -- | -- |
 
-#### `lcs.err0` -- UNREGISTERED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `error_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `message_run_id` | text | N | **MISSING** | -- | -- |
-| 3 | `communication_id` | text | Y | **MISSING** | -- | -- |
-| 4 | `sovereign_company_id` | text | Y | **MISSING** | -- | -- |
-| 5 | `failure_type` | text | N | **MISSING** | -- | -- |
-| 6 | `failure_message` | text | N | **MISSING** | -- | -- |
-| 7 | `lifecycle_phase` | text | Y | **MISSING** | -- | -- |
-| 8 | `adapter_type` | text | Y | **MISSING** | -- | -- |
-| 9 | `orbt_strike_number` | integer | Y | **MISSING** | -- | -- |
-| 10 | `orbt_action_taken` | text | Y | **MISSING** | -- | -- |
-| 11 | `orbt_alt_channel_eligible` | boolean | Y | **MISSING** | -- | -- |
-| 12 | `orbt_alt_channel_reason` | text | Y | **MISSING** | -- | -- |
-| 13 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-
-#### `lcs.event` -- UNREGISTERED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `communication_id` | text | N | **MISSING** | -- | -- |
-| 2 | `message_run_id` | text | N | **MISSING** | -- | -- |
-| 3 | `sovereign_company_id` | uuid | N | **MISSING** | -- | -- |
-| 4 | `entity_type` | text | N | **MISSING** | -- | -- |
-| 5 | `entity_id` | uuid | N | **MISSING** | -- | -- |
-| 6 | `signal_set_hash` | text | N | **MISSING** | -- | -- |
-| 7 | `frame_id` | text | N | **MISSING** | -- | -- |
-| 8 | `adapter_type` | text | N | **MISSING** | -- | -- |
-| 9 | `channel` | text | N | **MISSING** | -- | -- |
-| 10 | `delivery_status` | text | N | **MISSING** | -- | -- |
-| 11 | `lifecycle_phase` | text | N | **MISSING** | -- | -- |
-| 12 | `event_type` | text | N | **MISSING** | -- | -- |
-| 13 | `lane` | text | N | **MISSING** | -- | -- |
-| 14 | `agent_number` | text | N | **MISSING** | -- | -- |
-| 15 | `step_number` | integer | N | **MISSING** | -- | -- |
-| 16 | `step_name` | text | N | **MISSING** | -- | -- |
-| 17 | `payload` | jsonb | Y | **MISSING** | -- | -- |
-| 18 | `adapter_response` | jsonb | Y | **MISSING** | -- | -- |
-| 19 | `intelligence_tier` | integer | Y | **MISSING** | -- | -- |
-| 20 | `sender_identity` | text | Y | **MISSING** | -- | -- |
-| 21 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-
-#### `lcs.event_2026_02` -- UNREGISTERED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `communication_id` | text | N | **MISSING** | -- | -- |
-| 2 | `message_run_id` | text | N | **MISSING** | -- | -- |
-| 3 | `sovereign_company_id` | uuid | N | **MISSING** | -- | -- |
-| 4 | `entity_type` | text | N | **MISSING** | -- | -- |
-| 5 | `entity_id` | uuid | N | **MISSING** | -- | -- |
-| 6 | `signal_set_hash` | text | N | **MISSING** | -- | -- |
-| 7 | `frame_id` | text | N | **MISSING** | -- | -- |
-| 8 | `adapter_type` | text | N | **MISSING** | -- | -- |
-| 9 | `channel` | text | N | **MISSING** | -- | -- |
-| 10 | `delivery_status` | text | N | **MISSING** | -- | -- |
-| 11 | `lifecycle_phase` | text | N | **MISSING** | -- | -- |
-| 12 | `event_type` | text | N | **MISSING** | -- | -- |
-| 13 | `lane` | text | N | **MISSING** | -- | -- |
-| 14 | `agent_number` | text | N | **MISSING** | -- | -- |
-| 15 | `step_number` | integer | N | **MISSING** | -- | -- |
-| 16 | `step_name` | text | N | **MISSING** | -- | -- |
-| 17 | `payload` | jsonb | Y | **MISSING** | -- | -- |
-| 18 | `adapter_response` | jsonb | Y | **MISSING** | -- | -- |
-| 19 | `intelligence_tier` | integer | Y | **MISSING** | -- | -- |
-| 20 | `sender_identity` | text | Y | **MISSING** | -- | -- |
-| 21 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-
-#### `lcs.event_2026_03` -- UNREGISTERED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `communication_id` | text | N | **MISSING** | -- | -- |
-| 2 | `message_run_id` | text | N | **MISSING** | -- | -- |
-| 3 | `sovereign_company_id` | uuid | N | **MISSING** | -- | -- |
-| 4 | `entity_type` | text | N | **MISSING** | -- | -- |
-| 5 | `entity_id` | uuid | N | **MISSING** | -- | -- |
-| 6 | `signal_set_hash` | text | N | **MISSING** | -- | -- |
-| 7 | `frame_id` | text | N | **MISSING** | -- | -- |
-| 8 | `adapter_type` | text | N | **MISSING** | -- | -- |
-| 9 | `channel` | text | N | **MISSING** | -- | -- |
-| 10 | `delivery_status` | text | N | **MISSING** | -- | -- |
-| 11 | `lifecycle_phase` | text | N | **MISSING** | -- | -- |
-| 12 | `event_type` | text | N | **MISSING** | -- | -- |
-| 13 | `lane` | text | N | **MISSING** | -- | -- |
-| 14 | `agent_number` | text | N | **MISSING** | -- | -- |
-| 15 | `step_number` | integer | N | **MISSING** | -- | -- |
-| 16 | `step_name` | text | N | **MISSING** | -- | -- |
-| 17 | `payload` | jsonb | Y | **MISSING** | -- | -- |
-| 18 | `adapter_response` | jsonb | Y | **MISSING** | -- | -- |
-| 19 | `intelligence_tier` | integer | Y | **MISSING** | -- | -- |
-| 20 | `sender_identity` | text | Y | **MISSING** | -- | -- |
-| 21 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-
-#### `lcs.event_2026_04` -- UNREGISTERED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `communication_id` | text | N | **MISSING** | -- | -- |
-| 2 | `message_run_id` | text | N | **MISSING** | -- | -- |
-| 3 | `sovereign_company_id` | uuid | N | **MISSING** | -- | -- |
-| 4 | `entity_type` | text | N | **MISSING** | -- | -- |
-| 5 | `entity_id` | uuid | N | **MISSING** | -- | -- |
-| 6 | `signal_set_hash` | text | N | **MISSING** | -- | -- |
-| 7 | `frame_id` | text | N | **MISSING** | -- | -- |
-| 8 | `adapter_type` | text | N | **MISSING** | -- | -- |
-| 9 | `channel` | text | N | **MISSING** | -- | -- |
-| 10 | `delivery_status` | text | N | **MISSING** | -- | -- |
-| 11 | `lifecycle_phase` | text | N | **MISSING** | -- | -- |
-| 12 | `event_type` | text | N | **MISSING** | -- | -- |
-| 13 | `lane` | text | N | **MISSING** | -- | -- |
-| 14 | `agent_number` | text | N | **MISSING** | -- | -- |
-| 15 | `step_number` | integer | N | **MISSING** | -- | -- |
-| 16 | `step_name` | text | N | **MISSING** | -- | -- |
-| 17 | `payload` | jsonb | Y | **MISSING** | -- | -- |
-| 18 | `adapter_response` | jsonb | Y | **MISSING** | -- | -- |
-| 19 | `intelligence_tier` | integer | Y | **MISSING** | -- | -- |
-| 20 | `sender_identity` | text | Y | **MISSING** | -- | -- |
-| 21 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-
 #### `lcs.frame_registry` -- UNREGISTERED -- 10 rows
 
 Column registry: **UNDOCUMENTED**
@@ -5078,28 +4077,6 @@ Column registry: **UNDOCUMENTED**
 | 12 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
 | 13 | `updated_at` | timestamp with time zone | N | **MISSING** | -- | -- |
 
-#### `lcs.signal_queue` -- UNREGISTERED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `signal_set_hash` | text | N | **MISSING** | -- | -- |
-| 3 | `signal_category` | text | N | **MISSING** | -- | -- |
-| 4 | `sovereign_company_id` | uuid | N | **MISSING** | -- | -- |
-| 5 | `lifecycle_phase` | text | N | **MISSING** | -- | -- |
-| 6 | `preferred_channel` | text | Y | **MISSING** | -- | -- |
-| 7 | `preferred_lane` | text | Y | **MISSING** | -- | -- |
-| 8 | `agent_number` | text | Y | **MISSING** | -- | -- |
-| 9 | `signal_data` | jsonb | N | **MISSING** | -- | -- |
-| 10 | `source_hub` | text | N | **MISSING** | -- | -- |
-| 11 | `source_signal_id` | uuid | Y | **MISSING** | -- | -- |
-| 12 | `status` | text | N | **MISSING** | -- | -- |
-| 13 | `priority` | integer | N | **MISSING** | -- | -- |
-| 14 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 15 | `processed_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-
 #### `lcs.signal_registry` -- UNREGISTERED -- 9 rows
 
 Column registry: **UNDOCUMENTED**
@@ -5119,29 +4096,6 @@ Column registry: **UNDOCUMENTED**
 | 11 | `is_active` | boolean | N | **MISSING** | -- | -- |
 | 12 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
 | 13 | `updated_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-
-#### `lcs.suppression` -- UNREGISTERED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `email` | text | Y | **MISSING** | -- | -- |
-| 3 | `entity_id` | uuid | Y | **MISSING** | -- | -- |
-| 4 | `sovereign_company_id` | uuid | Y | **MISSING** | -- | -- |
-| 5 | `suppression_state` | text | N | **MISSING** | -- | -- |
-| 6 | `never_contact` | boolean | N | **MISSING** | -- | -- |
-| 7 | `unsubscribed` | boolean | N | **MISSING** | -- | -- |
-| 8 | `hard_bounced` | boolean | N | **MISSING** | -- | -- |
-| 9 | `complained` | boolean | N | **MISSING** | -- | -- |
-| 10 | `suppression_source` | text | N | **MISSING** | -- | -- |
-| 11 | `source_event_id` | text | Y | **MISSING** | -- | -- |
-| 12 | `channel` | text | Y | **MISSING** | -- | -- |
-| 13 | `domain` | text | Y | **MISSING** | -- | -- |
-| 14 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 15 | `updated_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 16 | `expires_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
 
 ### `ref` -- Reference Data -- county FIPS codes, ZIP-county mapping
 
@@ -5235,14 +4189,13 @@ Column registry: **UNDOCUMENTED**
 
 ### `shq` -- System Health -- audit log, error master, governance monitoring
 
-**Tables**: 3 | **Total rows**: 95,524
+**Tables**: 2 | **Total rows**: 95,524
 **Views**: 8 -- v_dol_enrichment_queue, v_error_summary_24h, vw_blocking_errors_by_outreach, vw_error_governance_summary, vw_error_resolution_rate, vw_promotion_readiness, vw_promotion_readiness_summary, vw_unresolved_errors_by_source
 
 | Table | Leaf Type | Frozen | Rows | Columns | Documented |
 |-------|-----------|--------|------|---------|------------|
 | `audit_log` | SYSTEM |  | 1,609 | 5 | 0 |
 | `error_master` | SYSTEM |  | 93,915 | 16 | 0 |
-| `error_master_archive` | SYSTEM |  | 0 | 21 | 0 |
 
 #### `shq.audit_log` -- SYSTEM -- 1,609 rows
 
@@ -5279,91 +4232,14 @@ Column registry: **UNDOCUMENTED**
 | 15 | `archived_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
 | 16 | `ttl_tier` | USER-DEFINED | Y | **MISSING** | -- | -- |
 
-#### `shq.error_master_archive` -- SYSTEM -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `id` | integer | N | **MISSING** | -- | -- |
-| 2 | `error_id` | uuid | N | **MISSING** | -- | -- |
-| 3 | `process_id` | text | Y | **MISSING** | -- | -- |
-| 4 | `agent_id` | text | Y | **MISSING** | -- | -- |
-| 5 | `severity` | text | Y | **MISSING** | -- | -- |
-| 6 | `error_type` | text | Y | **MISSING** | -- | -- |
-| 7 | `message` | text | Y | **MISSING** | -- | -- |
-| 8 | `company_unique_id` | text | Y | **MISSING** | -- | -- |
-| 9 | `outreach_context_id` | text | Y | **MISSING** | -- | -- |
-| 10 | `air_event_id` | text | Y | **MISSING** | -- | -- |
-| 11 | `context` | jsonb | Y | **MISSING** | -- | -- |
-| 12 | `created_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 13 | `resolved_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 14 | `resolution_type` | text | Y | **MISSING** | -- | -- |
-| 15 | `disposition` | USER-DEFINED | Y | **MISSING** | -- | -- |
-| 16 | `ttl_tier` | USER-DEFINED | Y | **MISSING** | -- | -- |
-| 17 | `archived_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 18 | `archived_by` | text | Y | **MISSING** | -- | -- |
-| 19 | `archive_reason` | text | Y | **MISSING** | -- | -- |
-| 20 | `final_disposition` | USER-DEFINED | Y | **MISSING** | -- | -- |
-| 21 | `retention_expires_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-
-### `talent_flow` -- DEPRECATED -- executive movement tracking, replaced by bit.movement_events
-
-**Tables**: 2 | **Total rows**: 0
-
-| Table | Leaf Type | Frozen | Rows | Columns | Documented |
-|-------|-----------|--------|------|---------|------------|
-| `movement_history` | DEPRECATED |  | 0 | 13 | 0 |
-| `movements` | DEPRECATED |  | 0 | 12 | 0 |
-
-#### `talent_flow.movement_history` -- DEPRECATED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `history_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `person_identifier` | text | N | **MISSING** | -- | -- |
-| 3 | `from_outreach_id` | uuid | Y | **MISSING** | -- | -- |
-| 4 | `to_outreach_id` | uuid | Y | **MISSING** | -- | -- |
-| 5 | `movement_type` | character varying(30) | Y | **MISSING** | -- | -- |
-| 6 | `detected_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 7 | `detection_source` | character varying(50) | Y | **MISSING** | -- | -- |
-| 8 | `processed_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-| 9 | `signal_emitted` | character varying(50) | Y | **MISSING** | -- | -- |
-| 10 | `bit_event_created` | boolean | Y | **MISSING** | -- | -- |
-| 11 | `correlation_id` | uuid | Y | **MISSING** | -- | -- |
-| 12 | `process_id` | uuid | Y | **MISSING** | -- | -- |
-| 13 | `created_at` | timestamp with time zone | Y | **MISSING** | -- | -- |
-
-#### `talent_flow.movements` -- DEPRECATED -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `movement_id` | uuid | N | **MISSING** | -- | -- |
-| 2 | `contact_id` | uuid | N | **MISSING** | -- | -- |
-| 3 | `movement_type` | character varying(20) | N | **MISSING** | -- | -- |
-| 4 | `old_company_id` | text | Y | **MISSING** | -- | -- |
-| 5 | `new_company_id` | text | Y | **MISSING** | -- | -- |
-| 6 | `old_title` | text | Y | **MISSING** | -- | -- |
-| 7 | `new_title` | text | Y | **MISSING** | -- | -- |
-| 8 | `confidence_score` | integer | N | **MISSING** | -- | -- |
-| 9 | `detected_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 10 | `detected_source` | character varying(50) | N | **MISSING** | -- | -- |
-| 11 | `created_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-| 12 | `updated_at` | timestamp with time zone | N | **MISSING** | -- | -- |
-
 ### `catalog` -- System Catalog -- schema metadata for AI/tooling reference
 
-**Tables**: 4 | **Total rows**: 762
+**Tables**: 3 | **Total rows**: 762
 **Views**: 3 -- v_ai_reference, v_schema_summary, v_searchable_columns
 
 | Table | Leaf Type | Frozen | Rows | Columns | Documented |
 |-------|-----------|--------|------|---------|------------|
 | `columns` | SYSTEM |  | 725 | 27 | 0 |
-| `relationships` | SYSTEM |  | 0 | 10 | 0 |
 | `schemas` | SYSTEM |  | 6 | 8 | 0 |
 | `tables` | SYSTEM |  | 31 | 15 | 0 |
 
@@ -5400,23 +4276,6 @@ Column registry: **UNDOCUMENTED**
 | 25 | `synonyms` | ARRAY | Y | **MISSING** | -- | -- |
 | 26 | `created_at` | timestamp without time zone | Y | **MISSING** | -- | -- |
 | 27 | `updated_at` | timestamp without time zone | Y | **MISSING** | -- | -- |
-
-#### `catalog.relationships` -- SYSTEM -- 0 rows
-
-Column registry: **UNDOCUMENTED**
-
-| # | Column | Type | Null | Description | Role | Format |
-|---|--------|------|------|-------------|------|--------|
-| 1 | `relationship_id` | integer | N | **MISSING** | -- | -- |
-| 2 | `from_table_id` | character varying(100) | N | **MISSING** | -- | -- |
-| 3 | `from_column_id` | character varying(200) | N | **MISSING** | -- | -- |
-| 4 | `to_table_id` | character varying(100) | N | **MISSING** | -- | -- |
-| 5 | `to_column_id` | character varying(200) | N | **MISSING** | -- | -- |
-| 6 | `relationship_type` | character varying(20) | N | **MISSING** | -- | -- |
-| 7 | `relationship_name` | character varying(100) | Y | **MISSING** | -- | -- |
-| 8 | `description` | text | Y | **MISSING** | -- | -- |
-| 9 | `is_enforced` | boolean | Y | **MISSING** | -- | -- |
-| 10 | `created_at` | timestamp without time zone | Y | **MISSING** | -- | -- |
 
 #### `catalog.schemas` -- SYSTEM -- 6 rows
 

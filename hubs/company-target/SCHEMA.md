@@ -510,3 +510,18 @@ This hub's data is cleaned when:
 *Generated from Neon PostgreSQL via READ-ONLY connection*
 *Last verified: 2026-02-02*
 *ERD Sync: NEON_SCHEMA_REFERENCE_FOR_ERD.md*
+
+---
+
+## Dropped Tables (2026-02-20 -- Table Consolidation)
+
+The following tables were **dropped** during database consolidation. All had 0 rows at time of drop.
+Recreatable from migration files if needed.
+
+| Table | Reason | Migration Source |
+|-------|--------|-----------------|
+| `company.company_events` | 0 rows, company event tracking never populated | See `migrations/` directory |
+| `company.contact_enrichment` | 0 rows, contact enrichment pipeline not yet active | See `migrations/` directory |
+| `company.email_verification` | 0 rows, email verification results stored elsewhere (people.people_master) | See `migrations/` directory |
+
+**Note:** `company.company_master`, `company.company_sidecar`, `company.company_source_urls`, and `outreach.company_target` were NOT dropped (they contain data).

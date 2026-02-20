@@ -253,8 +253,10 @@ async def backfill_talent_flow_hub_status(conn) -> Dict[str, int]:
     """
     Backfill hub status for all companies with movement signals.
 
-    This uses the movement_events table (or equivalent) to compute
-    status for all companies and upsert to company_hub_status.
+    NOTE: outreach.movement_events was DROPPED 2026-02-20 (0 rows, table
+    consolidation Phase 1). This function is NOT operational until a
+    replacement signal source is configured. When BIT Phase 2 activates,
+    distributed signal tables (per ADR-017) will provide movement data.
 
     Args:
         conn: Database connection (asyncpg or psycopg2)
@@ -262,106 +264,12 @@ async def backfill_talent_flow_hub_status(conn) -> Dict[str, int]:
     Returns:
         Dict with counts: {'total': N, 'pass': N, 'in_progress': N}
     """
-    logger.info("Starting Talent Flow hub status backfill")
-
-    counts = {'total': 0, 'pass': 0, 'in_progress': 0, 'fail': 0, 'blocked': 0}
-
-    # Query all companies with movement signals
-    # Note: Assumes movement_events table exists in outreach schema
-    # If using different table name, adjust accordingly
-    query = """
-        WITH company_movements AS (
-            SELECT
-                company_unique_id,
-                COUNT(*) as total_movements,
-                COUNT(*) FILTER (
-                    WHERE detected_at >= NOW() - INTERVAL '%s days'
-                    AND confidence >= %s
-                    AND event_type IN ('joined', 'left', 'title_change')
-                ) as fresh_movements,
-                MAX(detected_at) as last_movement
-            FROM outreach.movement_events
-            WHERE company_unique_id IS NOT NULL
-            GROUP BY company_unique_id
-        ),
-        people_status AS (
-            SELECT company_unique_id, status
-            FROM outreach.company_hub_status
-            WHERE hub_id = 'people-intelligence'
-        )
-        SELECT
-            cm.company_unique_id,
-            cm.total_movements,
-            cm.fresh_movements,
-            cm.last_movement,
-            ps.status as people_status,
-            CASE
-                WHEN ps.status = 'BLOCKED' THEN 'BLOCKED'
-                WHEN cm.fresh_movements >= %s THEN 'PASS'
-                ELSE 'IN_PROGRESS'
-            END as computed_status
-        FROM company_movements cm
-        LEFT JOIN people_status ps ON cm.company_unique_id = ps.company_unique_id
-    """
-
-    try:
-        # Check if using asyncpg or psycopg2
-        if hasattr(conn, 'fetch'):
-            # asyncpg - use $1, $2, $3 syntax
-            query_asyncpg = query.replace('%s', '$1', 1).replace('%s', '$2', 1).replace('%s', '$3', 1)
-            rows = await conn.fetch(query_asyncpg, FRESHNESS_DAYS, CONFIDENCE_THRESHOLD, MIN_MOVEMENTS)
-        else:
-            # psycopg2
-            cursor = conn.cursor()
-            cursor.execute(query, (FRESHNESS_DAYS, CONFIDENCE_THRESHOLD, MIN_MOVEMENTS))
-            rows = cursor.fetchall()
-
-        for row in rows:
-            if hasattr(row, 'get'):
-                # asyncpg Record
-                company_id = row['company_unique_id']
-                status = row['computed_status']
-                fresh = row['fresh_movements']
-                total = row['total_movements']
-            else:
-                # psycopg2 tuple
-                company_id, total, fresh, last_movement, people_status, status = row
-
-            # Upsert to company_hub_status
-            upsert_query = """
-                INSERT INTO outreach.company_hub_status
-                    (company_unique_id, hub_id, status, metric_value, status_reason, last_processed_at)
-                VALUES (%s, 'talent-flow', %s::outreach.hub_status_enum, %s, %s, NOW())
-                ON CONFLICT (company_unique_id, hub_id)
-                DO UPDATE SET
-                    status = EXCLUDED.status,
-                    metric_value = EXCLUDED.metric_value,
-                    status_reason = EXCLUDED.status_reason,
-                    last_processed_at = EXCLUDED.last_processed_at
-            """
-
-            detection_rate = (fresh / total * 100) if total > 0 else 0
-            reason = f'{fresh} fresh movement(s), {total} total signals'
-
-            if hasattr(conn, 'execute'):
-                # asyncpg
-                upsert_asyncpg = upsert_query.replace('%s', '$1', 1).replace('%s', '$2', 1).replace('%s', '$3', 1).replace('%s', '$4', 1)
-                await conn.execute(upsert_asyncpg, company_id, status, detection_rate, reason)
-            else:
-                cursor.execute(upsert_query, (company_id, status, detection_rate, reason))
-
-            counts['total'] += 1
-            counts[status.lower()] += 1
-
-        if not hasattr(conn, 'execute'):
-            conn.commit()
-
-        logger.info(f"Talent Flow backfill complete: {counts}")
-        return counts
-
-    except Exception as e:
-        logger.error(f"Talent Flow backfill failed: {e}")
-        raise
+    logger.warning(
+        "backfill_talent_flow_hub_status: outreach.movement_events was "
+        "DROPPED 2026-02-20 (0 rows). No signal source configured. "
+        "Returning empty counts."
+    )
+    return {'total': 0, 'pass': 0, 'in_progress': 0, 'fail': 0, 'blocked': 0}
 
 
 def compute_status_for_db_row(row: Dict[str, Any]) -> TalentFlowHubStatusResult:
