@@ -1,7 +1,7 @@
 {
   "// PROJECT OVERVIEW": "=== FILL THIS OUT FIRST ===",
   "project_name": "barton-outreach-core",
-  "project_description": "Barton Outreach Core - A modern React application with HEIR agent system integration",
+  "project_description": "Barton Outreach Core - Marketing intelligence and executive enrichment platform (Python/SQL)",
   "project_type": "complex",
   "architecture_model": "skyscraper_construction",
   "// WHAT TO BUILD": "=== PROJECT REQUIREMENTS ===",
