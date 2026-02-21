@@ -1,19 +1,18 @@
-# Outreach Command Center - Backend Dependencies
-# FastAPI Backend for Barton Outreach Core Dashboard
-
-# Core FastAPI framework
-fastapi==0.115.0
-uvicorn[standard]==0.32.0
+# Barton Outreach Core - Python Dependencies
+# All scripts run via: doppler run -- python <script>
 
 # Database
 psycopg2-binary==2.9.10
 
-# HTTP client for external APIs
-requests==2.32.3
+# HTTP client (httpx is MANDATED per Snap-on Toolbox — requests is BANNED for new code)
 httpx>=0.25
+# LEGACY: Still imported by prospeo_enrichment.py and providers.py — convert to httpx
+requests==2.32.3
 
-# Python data validation
-pydantic==2.10.2
+# Data processing
+pandas>=2.0
+beautifulsoup4>=4.12
+lxml>=5.0
 
 # Environment variable management
 python-dotenv==1.0.1

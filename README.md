@@ -75,8 +75,8 @@ doppler run -- python hubs/coverage/imo/middle/run_coverage.py \
 # Fill executive slots from Hunter CSV
 doppler run -- python hubs/people-intelligence/imo/middle/phases/fill_slots_from_hunter.py data.csv
 
-# Discover blog/about URLs
-doppler run -- python hubs/blog-content/imo/middle/discover_blog_urls.py --dry-run --limit 20
+# Agent dashboard (portfolio view)
+doppler run -- python hubs/coverage/imo/middle/run_coverage.py --agent-dashboard SA-003
 ```
 
 ## Key Doctrine Rules

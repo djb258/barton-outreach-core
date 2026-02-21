@@ -132,40 +132,31 @@ The OSAM tells you exactly where to go for any data question:
 
 ## 🔗 BLOG SUB-HUB URL STORAGE
 
-> **Need About Us or News/Press URLs?** Query `vendor.blog` (Tier-1 staging, all URL data consolidated here)
-> **Spine-linked canonical URLs?** Query `outreach.source_urls` (FK: outreach_id)
+> **Need About Us, News/Press, or any historical URL data?** Query `vendor.blog` (Tier-1 staging)
+> All URL tables (`company.company_source_urls`, `outreach.source_urls`, `outreach.sitemap_discovery`) were DROPPED in Phase 3 Legacy Collapse (2026-02-20). Data preserved in `vendor.blog`.
 
-### Table: `vendor.blog` (source_table filter)
+### Table: `vendor.blog` (289,624 rows)
 
-| Source Type | Count | Original Source |
-|-------------|-------|-----------------|
-| `about_page` | 26,662 | company.company_source_urls |
-| `press_page` | 14,377 | company.company_source_urls |
-| `leadership_page` | 12,602 | company.company_source_urls |
-| `team_page` | 8,896 | company.company_source_urls |
-| `careers_page` | 16,262 | company.company_source_urls |
-| `contact_page` | 25,213 | company.company_source_urls |
-
-**Total vendor.blog rows**: 289,624 | **Sources**: outreach.sitemap_discovery (93,596) + outreach.source_urls (81,292) + company.company_source_urls (114,736)
+| Source Table (filter) | Rows | URL Types |
+|-----------------------|------|-----------|
+| `company.company_source_urls` | 114,736 | about_page, press_page, leadership_page, team_page, careers_page, contact_page |
+| `outreach.sitemap_discovery` | 93,596 | Sitemap URLs, domain health |
+| `outreach.source_urls` | 81,292 | Spine-linked canonical URLs |
 
 ### Quick Queries
 ```sql
--- About Us URLs (from vendor staging)
+-- About Us URLs
 SELECT source_row_id, source_url FROM vendor.blog
 WHERE source_table = 'company.company_source_urls' AND source_type = 'about_page';
 
--- Spine-linked source URLs (canonical)
-SELECT su.outreach_id, su.source_type, su.source_url
-FROM outreach.source_urls su
-WHERE su.source_type IN ('about_page', 'press_page');
+-- All URL types for a company (by outreach_id)
+SELECT source_type, source_url, source_table FROM vendor.blog
+WHERE outreach_id = '<uuid>';
 
--- Sitemap data (from vendor staging)
-SELECT outreach_id, domain, sitemap_url, has_sitemap
-FROM vendor.blog
+-- Sitemap data
+SELECT outreach_id, domain, sitemap_url, has_sitemap FROM vendor.blog
 WHERE source_table = 'outreach.sitemap_discovery';
 ```
-
-**Post-Phase 3 Note**: `company.company_source_urls` and `outreach.sitemap_discovery` data migrated to `vendor.blog` (2026-02-20). Use `vendor.blog` for historical URL data, `outreach.source_urls` for spine-linked canonical URLs.
 
 ---
 
@@ -543,8 +534,12 @@ barton-outreach-core/
 │   │   ├── hub.manifest.yaml
 │   │   └── imo/
 │   │       └── middle/
-│   │           ├── discover_source_urls.py    # URL discovery (spine-linked)
-│   │           └── scrape_leadership_pages.py # Executive scraping + slot fill
+│   │           ├── classify_event.py          # Blog content classification
+│   │           ├── extract_entities.py        # Entity extraction
+│   │           ├── parse_content.py           # Content parsing
+│   │           ├── validate_signal.py         # Signal validation
+│   │           ├── match_company.py           # Company matching
+│   │           └── hub_status.py              # Hub status reporting
 │   │
 │   ├── outreach-execution/            # Sub-hub (04.04.04)
 │   │   ├── hub.manifest.yaml
@@ -900,25 +895,11 @@ doppler run -- python hubs/people-intelligence/imo/middle/phases/fill_slots_from
 4. Links person to slot and marks `is_filled = TRUE`
 5. Adds phone number to `slot_phone` column if present
 
-### Discover Source URLs (Blog Sub-Hub)
+### Blog URL Data (Historical)
 
-```bash
-# Sitemap-first URL discovery → outreach.source_urls (spine-linked via outreach_id)
-# 3-step waterfall: sitemap.xml → homepage links → brute-force probe
-# Tier 0 FREE — httpx only, no paid APIs
-
-# Discover URLs for a specific coverage market
-doppler run -- python hubs/blog-content/imo/middle/discover_source_urls.py \
-    --coverage-id <uuid> [--dry-run] [--limit N] [--workers N]
-
-# Scrape leadership/team pages for executive names + slot filling
-doppler run -- python hubs/blog-content/imo/middle/scrape_leadership_pages.py \
-    --coverage-id <uuid> [--fill] [--dry-run] [--limit N] [--workers N]
-```
-
-**What it discovers:** about_page, press_page, blog_page, leadership_page, team_page, careers_page, contact_page, investor_page
-
-**Resume-safe:** ON CONFLICT DO NOTHING on `outreach.source_urls`.
+URL discovery and leadership scraping scripts were archived in Phase 3 Legacy Collapse (2026-02-20).
+All historical URL data is preserved in `vendor.blog` (289,624 rows).
+See `archive/blog-content-superseded/README.md` for the full archive manifest.
 
 ### Run Pipeline for Company
 
