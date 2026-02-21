@@ -94,11 +94,11 @@ def get_db_connection():
     """
     import os
     return psycopg2.connect(
-        host=os.getenv('NEON_HOST', 'ep-ancient-waterfall-a42vy0du-pooler.us-east-1.aws.neon.tech'),
+        host=os.environ['NEON_HOST'],
         port=5432,
         database=os.getenv('NEON_DATABASE', 'Marketing DB'),
-        user=os.getenv('NEON_USER', 'Marketing DB_owner'),
-        password=os.getenv('NEON_PASSWORD', 'npg_OsE4Z2oPCpiT'),
+        user=os.environ['NEON_USER'],
+        password=os.environ['NEON_PASSWORD'],
         sslmode='require'
     )
 

@@ -3,15 +3,17 @@ Execute RLS Migration on Neon PostgreSQL
 Date: 2026-01-13
 """
 
+import os
 import psycopg2
 import sys
 from pathlib import Path
+from urllib.parse import quote_plus
 
-# Connection string
+# Connection string (via Doppler env vars)
 CONNECTION_STRING = (
-    "postgresql://Marketing%20DB_owner:npg_OsE4Z2oPCpiT@"
-    "ep-ancient-waterfall-a42vy0du-pooler.us-east-1.aws.neon.tech/"
-    "Marketing%20DB?sslmode=require"
+    f"postgresql://{quote_plus(os.environ['NEON_USER'])}:{quote_plus(os.environ['NEON_PASSWORD'])}@"
+    f"{os.environ['NEON_HOST']}/"
+    f"{quote_plus(os.environ['NEON_DATABASE'])}?sslmode=require"
 )
 
 # Migration file path

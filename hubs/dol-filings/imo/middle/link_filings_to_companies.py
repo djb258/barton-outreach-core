@@ -17,19 +17,20 @@ Examples:
     python link_filings_to_companies.py
 """
 
+import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import sys
 import argparse
 from datetime import datetime, timezone
 
-# Neon connection (matches existing pattern from ein_matcher.py)
+# Neon connection (via Doppler env vars)
 NEON_CONFIG = {
-    'host': 'ep-ancient-waterfall-a42vy0du-pooler.us-east-1.aws.neon.tech',
+    'host': os.environ['NEON_HOST'],
     'port': 5432,
-    'database': 'Marketing DB',
-    'user': 'Marketing DB_owner',
-    'password': 'npg_OsE4Z2oPCpiT',
+    'database': os.environ['NEON_DATABASE'],
+    'user': os.environ['NEON_USER'],
+    'password': os.environ['NEON_PASSWORD'],
     'sslmode': 'require'
 }
 

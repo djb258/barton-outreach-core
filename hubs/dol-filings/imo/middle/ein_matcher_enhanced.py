@@ -12,17 +12,18 @@ Usage:
     python ein_matcher_enhanced.py [--dry-run] [--threshold 0.7] [--state NC]
 """
 
+import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import argparse
 from datetime import datetime, timezone
 
 NEON_CONFIG = {
-    'host': 'ep-ancient-waterfall-a42vy0du-pooler.us-east-1.aws.neon.tech',
+    'host': os.environ['NEON_HOST'],
     'port': 5432,
-    'database': 'Marketing DB',
-    'user': 'Marketing DB_owner',
-    'password': 'npg_OsE4Z2oPCpiT',
+    'database': os.environ['NEON_DATABASE'],
+    'user': os.environ['NEON_USER'],
+    'password': os.environ['NEON_PASSWORD'],
     'sslmode': 'require'
 }
 
