@@ -333,7 +333,7 @@ class CompanyHub:
         Returns:
             Number of companies loaded
         """
-        from .neon_writer import bootstrap_company_hub
+        from ..output.neon_writer import bootstrap_company_hub
         return bootstrap_company_hub(self)
 
     def persist_company_to_neon(
@@ -351,7 +351,7 @@ class CompanyHub:
         Returns:
             True if successful
         """
-        from .neon_writer import CompanyNeonWriter
+        from ..output.neon_writer import CompanyNeonWriter
 
         company = self.get_company(company_id)
         if not company:
@@ -374,7 +374,7 @@ class CompanyHub:
         Returns:
             Dict with write statistics
         """
-        from .neon_writer import CompanyNeonWriter
+        from ..output.neon_writer import CompanyNeonWriter
 
         companies = [c.to_dict() for c in self._companies.values()]
 
@@ -429,7 +429,7 @@ class CompanyHub:
 
         # Optionally persist to Neon
         if persist:
-            from .neon_writer import CompanyNeonWriter
+            from ..output.neon_writer import CompanyNeonWriter
             writer = CompanyNeonWriter()
 
             # Log the signal
@@ -463,7 +463,7 @@ class CompanyHub:
                 return company
 
         # Check Neon
-        from .neon_writer import CompanyNeonWriter
+        from ..output.neon_writer import CompanyNeonWriter
         writer = CompanyNeonWriter()
         result = writer.find_company_by_domain(domain)
         writer.close()
@@ -496,7 +496,7 @@ class CompanyHub:
                 return company
 
         # Check Neon
-        from .neon_writer import CompanyNeonWriter
+        from ..output.neon_writer import CompanyNeonWriter
         writer = CompanyNeonWriter()
         result = writer.find_company_by_ein(normalized)
         writer.close()
@@ -555,7 +555,7 @@ class CompanyHub:
         # Per CL Parent-Child Doctrine: No fuzzy matching for identity resolution
 
         # Strategy 4: Check Neon
-        from .neon_writer import CompanyNeonWriter
+        from ..output.neon_writer import CompanyNeonWriter
         writer = CompanyNeonWriter()
         results = writer.find_companies_by_name(company_name)
         writer.close()

@@ -59,7 +59,6 @@ HUB_MAP = {
     "outreach.blog": "BLOG", "outreach.blog_archive": "BLOG",
     "outreach.blog_errors": "BLOG", "outreach.blog_ingress_control": "BLOG",
     "outreach.blog_source_history": "BLOG",
-    "outreach.sitemap_discovery": "BLOG", "outreach.source_urls": "BLOG",
     "blog": "BLOG",
     "coverage": "COVERAGE",
     "outreach.appointments": "LANE",

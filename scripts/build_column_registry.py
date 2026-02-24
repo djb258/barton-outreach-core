@@ -501,8 +501,6 @@ TABLE_HUB_MAP = {
     "outreach.blog_errors":            ("04.04.05","Blog Content"),
     "outreach.blog_ingress_control":   ("04.04.05","Blog Content"),
     "outreach.blog_source_history":    ("04.04.05","Blog Content"),
-    "outreach.sitemap_discovery":      ("04.04.05","Blog Content"),
-    "outreach.source_urls":            ("04.04.05","Blog Content"),
     # -- Coverage (04.04.06) --
     "coverage.service_agent":          ("04.04.06","Coverage"),
     "coverage.service_agent_coverage": ("04.04.06","Coverage"),

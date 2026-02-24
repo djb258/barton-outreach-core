@@ -96,7 +96,7 @@ SCHEMA_ORDER = [
 ]
 
 DEPRECATED_REPLACEMENTS = {
-    "company.company_source_urls": "outreach.blog (about_url, news_url) + migration needed for other page types",
+    "company.company_source_urls": "vendor.blog (289K rows, all URL types migrated) + outreach.blog (canonical about_url, news_url)",
     "company.company_master": "cl.company_identity + outreach.company_target",
     "company.pipeline_events": "outreach.pipeline_audit_log",
     "company.company_slots": "people.company_slot",
