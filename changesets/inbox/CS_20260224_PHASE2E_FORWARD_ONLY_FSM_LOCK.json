@@ -1,0 +1,44 @@
+{
+    "id": "CS_20260224_PHASE2E_FORWARD_ONLY_FSM_LOCK",
+    "work_packet_id": "WP_20260224T0830_PHASE2E_EMISSION_CANONICAL_FORWARD_ONLY_FSM_LOCK",
+    "change_type": "fix",
+    "architectural_flag": false,
+    "modified_paths": [
+        "migrations/2026-02-24-phase2e-forward-only-fsm-lock.sql",
+        "tests/lcs/test_forward_only_fsm_lock.py"
+    ],
+    "summary": "Phase 2E: Forward-only FSM lock across 3 LCS surfaces. Part 1: Emission status FSM — fn_validate_emission_transition enforces STAGED→{PROMOTED,REJECTED,ERROR}, all three terminal, trg_emission_status_fsm BEFORE UPDATE trigger. Part 2: CID immutability verified (v0 triggers intact, no new triggers needed). Part 3: Canonical monotonic guard — fn_canonical_monotonic_guard blocks lifecycle regression (ordinal), SID rewind (once set immutable), MID/last_cid null regression, dispatch regression within same MID. 15 enforcement tests across 3 parts.",
+    "doctrine_version": "2.8.0",
+    "timestamp": "2026-02-24T18:00:00Z",
+    "payload": {
+        "also_satisfies": "WP_20260224T0820_PHASE2E_FORWARD_ONLY_STATE_ENFORCEMENT",
+        "objects_created": {
+            "functions": [
+                "lcs.fn_validate_emission_transition(text, text)",
+                "lcs.fn_emission_status_fsm()",
+                "lcs.fn_canonical_monotonic_guard()"
+            ],
+            "triggers": [
+                "trg_emission_status_fsm (BEFORE UPDATE ON movement_emission_intake WHEN status changes)",
+                "trg_lcs_canonical_monotonic (BEFORE UPDATE ON lcs_canonical)"
+            ]
+        },
+        "part_1_emission_fsm": {
+            "allowed_transitions": ["STAGED→PROMOTED", "STAGED→REJECTED", "STAGED→ERROR"],
+            "terminal_states": ["PROMOTED", "REJECTED", "ERROR"],
+            "same_status_allowed": true
+        },
+        "part_2_cid_immutability": {
+            "status": "verified — v0 triggers intact (trg_cid_intake_no_update, trg_cid_intake_no_delete)",
+            "note": "Full UPDATE block would break fn_process_cid PENDING→ACCEPTED. v0 pattern is correct."
+        },
+        "part_3_canonical_monotonic": {
+            "lifecycle": "ordinal forward-only (SUSPECT=1 through SUPPRESSED=6)",
+            "sid": "once set, immutable",
+            "mid": "null regression blocked, value change allowed (new promotion)",
+            "last_cid": "null regression blocked",
+            "dispatch": "forward-only within same MID, resets on MID change (new cycle)"
+        },
+        "test_count": 15
+    }
+}

@@ -1,0 +1,117 @@
+﻿{
+    "id":  "WP_20260224T0800_PHASE2C_EMISSION_CID_PROMOTION_GOVERNOR",
+    "change_type":  "feature",
+    "architectural_flag":  false,
+    "allowed_paths":  [
+                          "migrations/",
+                          "tests/"
+                      ],
+    "summary":  "Implement Phase 2C Emission -\u003e CID Promotion Governor in LCS with deterministic single-row and batch promotion functions, row locking, registry/status validation, CID intake insertion + fn_process_cid handoff, strict failure logging to lcs.lcs_errors, ingest_status reject/promote transitions, and enforcement tests.",
+    "doctrine_version":  "2.8.0",
+    "timestamp":  "2026-02-24T13:45:36.7718215-05:00",
+    "payload":  {
+                    "phase":  "2C",
+                    "src_title":  "Emission -\u003e CID Promotion Governor",
+                    "objective":  "Deterministically promote validated emissions into CID intake and advance LCS state.",
+                    "classification":  {
+                                           "rationale":  "Feature work within LCS execution surfaces. Adds promotion functions and enforcement without modifying protected CTB backbone, altitude hierarchy, doctrine, or constitutional assets.",
+                                           "protected_assets_touched":  false,
+                                           "parent_approval_required":  false
+                                       },
+                    "path_scope":  {
+                                       "allowed_paths":  [
+                                                             "migrations/",
+                                                             "tests/"
+                                                         ],
+                                       "constraints":  [
+                                                           "DB functions/triggers/permissions implemented via migrations under migrations/",
+                                                           "Tests under tests/ only",
+                                                           "No changes outside allowed paths without a new WORK_PACKET"
+                                                       ]
+                                   },
+                    "src":  {
+                                "create":  {
+                                               "functions":  [
+                                                                 {
+                                                                     "name":  "lcs.fn_promote_emission",
+                                                                     "signature":  "lcs.fn_promote_emission(p_emission_id uuid) returns void",
+                                                                     "requirements":  [
+                                                                                          "SELECT ... FOR UPDATE the emission row",
+                                                                                          "Verify ingest_status = RECEIVED",
+                                                                                          "Verify movement_type_code exists in registry",
+                                                                                          "Insert into lcs.cid_intake with pass-through sovereign_id, outreach_id, movement_type_code, payload",
+                                                                                          "Call lcs.fn_process_cid(new_cid_uuid)",
+                                                                                          "Update movement_emission_intake.ingest_status = PROMOTED on success",
+                                                                                          "On ANY failure: insert deterministic row into lcs.lcs_errors, set ingest_status = REJECTED, write reject_reason",
+                                                                                          "Execute within a single transaction boundary"
+                                                                                      ]
+                                                                 },
+                                                                 {
+                                                                     "name":  "lcs.fn_promote_emission_batch",
+                                                                     "signature":  "lcs.fn_promote_emission_batch(p_limit int) returns int",
+                                                                     "requirements":  [
+                                                                                          "Select deterministic ordered emissions ORDER BY emitted_at ASC",
+                                                                                          "Call fn_promote_emission() per row",
+                                                                                          "Stop at p_limit",
+                                                                                          "Return count promoted",
+                                                                                          "No silent skip logic"
+                                                                                      ]
+                                                                 }
+                                                             ]
+                                           },
+                                "enforcement":  [
+                                                    "No direct INSERT into cid_intake by any sub-hub",
+                                                    "Only promotion function may mint CID",
+                                                    "No emission may transition from PROMOTED to RECEIVED",
+                                                    "Append-only enforcement remains intact"
+                                                ],
+                                "non_goals":  [
+                                                  "Worker container",
+                                                  "Scheduling",
+                                                  "Transport dispatch",
+                                                  "Cadence logic"
+                                              ]
+                            },
+                    "builder_outputs_expected":  [
+                                                     "Migration SQL for promotion functions and supporting DB enforcement",
+                                                     "Permission/grant SQL enforcing no direct cid_intake inserts by sub-hubs",
+                                                     "Trigger/guard updates if required for status-transition enforcement",
+                                                     "Enforcement tests"
+                                                 ],
+                    "test_scope":  {
+                                       "include":  [
+                                                       "fn_promote_emission success path: row lock, status RECEIVED validation, registry validation, cid_intake insert, fn_process_cid handoff, status PROMOTED",
+                                                       "fn_promote_emission rejects invalid ingest_status and logs deterministic lcs.lcs_errors row",
+                                                       "fn_promote_emission rejects missing/invalid movement_type_code and logs deterministic lcs.lcs_errors row",
+                                                       "On any failure ingest_status becomes REJECTED and reject_reason is written",
+                                                       "fn_promote_emission_batch uses deterministic ORDER BY emitted_at ASC",
+                                                       "fn_promote_emission_batch respects p_limit and returns promoted count",
+                                                       "No silent skip logic in batch path",
+                                                       "Sub-hub cannot directly INSERT into lcs.cid_intake (where testable)",
+                                                       "PROMOTED -\u003e RECEIVED transition is blocked (where enforced/testable)",
+                                                       "Append-only enforcement remains intact after promotion changes"
+                                                   ],
+                                       "exclude":  [
+                                                       "Worker/scheduling/dispatch/cadence integration tests",
+                                                       "UI tests"
+                                                   ]
+                                   },
+                    "acceptance_criteria":  [
+                                                "lcs.fn_promote_emission(p_emission_id uuid) exists and enforces deterministic single-row promotion flow",
+                                                "Function locks the target emission row and validates RECEIVED status plus registry membership before promotion",
+                                                "Successful promotion inserts into lcs.cid_intake and calls lcs.fn_process_cid(new_cid_uuid)",
+                                                "Successful promotion sets movement_emission_intake.ingest_status = PROMOTED",
+                                                "Any failure logs deterministic error to lcs.lcs_errors, sets ingest_status = REJECTED, and writes reject_reason",
+                                                "lcs.fn_promote_emission_batch(p_limit int) exists, orders by emitted_at ASC, stops at p_limit, and returns count promoted",
+                                                "No direct cid_intake inserts by sub-hubs",
+                                                "Tests exist and cover single-row flow, batch flow, and enforcement rules"
+                                            ],
+                    "artifacts":  {
+                                      "expected":  [
+                                                       "WP_*.json",
+                                                       "CS_*.json",
+                                                       "AR_*.json"
+                                                   ]
+                                  }
+                }
+}

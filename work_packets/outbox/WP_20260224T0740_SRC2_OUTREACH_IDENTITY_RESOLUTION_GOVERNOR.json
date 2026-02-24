@@ -1,0 +1,122 @@
+﻿{
+    "id":  "WP_20260224T0740_SRC2_OUTREACH_IDENTITY_RESOLUTION_GOVERNOR",
+    "change_type":  "feature",
+    "architectural_flag":  false,
+    "allowed_paths":  [
+                          "migrations/",
+                          "tests/"
+                      ],
+    "summary":  "Implement SRC 2 Outreach Identity Resolution Governor with migration-backed outreach identity resolution error table, deterministic outreach.fn_resolve_identity(...) hard-fail semantics, and EXECUTE-only sub-hub access; no direct identity table writes.",
+    "doctrine_version":  "2.8.0",
+    "timestamp":  "2026-02-24T13:27:26.2225732-05:00",
+    "payload":  {
+                    "src_id":  "SRC_2",
+                    "title":  "Outreach Identity Resolution Governor",
+                    "objective":  "Deterministically resolve outreach_id and sovereign_id before emission.",
+                    "classification":  {
+                                           "rationale":  "Feature work in outreach/lcs execution layer. Adds resolver and error capture without modifying protected CTB backbone, altitude hierarchy, or doctrine assets.",
+                                           "protected_assets_touched":  false,
+                                           "parent_approval_required":  false
+                                       },
+                    "path_scope":  {
+                                       "allowed_paths":  [
+                                                             "migrations/",
+                                                             "tests/"
+                                                         ],
+                                       "constraints":  [
+                                                           "DB changes via migrations under migrations/",
+                                                           "Tests scoped to SRC 2 behavior under tests/",
+                                                           "No changes outside allowed paths without new WORK_PACKET"
+                                                       ]
+                                   },
+                    "src":  {
+                                "trigger":  "Sub-hub detects movement.",
+                                "spoke":  {
+                                              "contract":  "Sub-hub calls a resolution function, not LCS.",
+                                              "function":  "outreach.fn_resolve_identity(...)"
+                                          },
+                                "hub_owner":  "Outreach",
+                                "create":  {
+                                               "table":  {
+                                                             "name":  "outreach.identity_resolution_errors",
+                                                             "role":  "ERROR",
+                                                             "append_only":  true,
+                                                             "columns":  [
+                                                                             "error_id uuid primary key",
+                                                                             "source_schema text",
+                                                                             "source_table text",
+                                                                             "source_row_pk text",
+                                                                             "resolution_stage text",
+                                                                             "error_type text",
+                                                                             "error_payload jsonb",
+                                                                             "created_at timestamptz default now()",
+                                                                             "resolved_at timestamptz null"
+                                                                         ]
+                                                         },
+                                               "functions":  [
+                                                                 {
+                                                                     "name":  "outreach.fn_resolve_identity",
+                                                                     "signature":  "outreach.fn_resolve_identity(p_source_schema text, p_source_table text, p_source_row_pk text, p_identifiers jsonb) returns jsonb",
+                                                                     "must":  [
+                                                                                  "Resolve outreach_id",
+                                                                                  "Resolve sovereign_id",
+                                                                                  "Hard fail on ambiguity",
+                                                                                  "Hard fail on missing anchor",
+                                                                                  "Log deterministic errors",
+                                                                                  "Return JSON payload containing outreach_id and sovereign_id UUIDs"
+                                                                              ],
+                                                                     "return_shape":  {
+                                                                                          "outreach_id":  "uuid",
+                                                                                          "sovereign_id":  "uuid"
+                                                                                      }
+                                                                 }
+                                                             ]
+                                           },
+                                "permissions":  {
+                                                    "sub_hubs":  "EXECUTE only",
+                                                    "prohibitions":  [
+                                                                         "No direct identity table writes"
+                                                                     ]
+                                                },
+                                "invariants":  [
+                                                   "No emission proceeds without deterministic identity resolution",
+                                                   "Resolution errors log to outreach error table, not LCS"
+                                               ],
+                                "non_goals":  [
+                                                  "LCS emission promotion logic",
+                                                  "Worker automation",
+                                                  "Dispatch integration",
+                                                  "Cadence logic",
+                                                  "UI"
+                                              ]
+                            },
+                    "test_scope":  {
+                                       "include":  [
+                                                       "Resolver returns outreach_id + sovereign_id for valid identifier payload",
+                                                       "Hard fail and error log on ambiguous identity",
+                                                       "Hard fail and error log on missing anchor",
+                                                       "Deterministic error payload/write behavior",
+                                                       "EXECUTE-only permission path for sub-hubs and no direct identity writes (where testable)"
+                                                   ],
+                                       "exclude":  [
+                                                       "LCS promotion tests",
+                                                       "Dispatch/cadence/UI tests"
+                                                   ]
+                                   },
+                    "acceptance_criteria":  [
+                                                "outreach.identity_resolution_errors exists as append-only ERROR table",
+                                                "outreach.fn_resolve_identity(...) exists and returns deterministic identity payload on success",
+                                                "Function hard-fails on ambiguity and missing anchor",
+                                                "Function logs deterministic errors to outreach.identity_resolution_errors",
+                                                "Sub-hubs are limited to EXECUTE-only access path",
+                                                "Tests exist and cover resolver success/failure/permission behavior"
+                                            ],
+                    "artifacts":  {
+                                      "expected":  [
+                                                       "WP_*.json",
+                                                       "CS_*.json",
+                                                       "AR_*.json"
+                                                   ]
+                                  }
+                }
+}

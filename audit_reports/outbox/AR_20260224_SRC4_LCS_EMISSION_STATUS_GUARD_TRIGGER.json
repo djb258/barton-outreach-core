@@ -1,0 +1,9 @@
+{
+    "id": "AR_20260224_SRC4_LCS_EMISSION_STATUS_GUARD_TRIGGER",
+    "work_packet_id": "WP_20260224T0740_SRC4_LCS_EMISSION_STATUS_GUARD_TRIGGER",
+    "changeset_id": "CS_20260224_SRC4_LCS_EMISSION_STATUS_GUARD_TRIGGER",
+    "classification": "PASS",
+    "summary": "CONSTITUTIONAL CHECKS: ALL 4 PASS — Cantonal satisfied (no new tables, modifies existing STAGING table only, cantonal CANONICAL+ERROR unchanged), Registry-First (N/A — no tables created), Sovereign ID (no identity minting, trigger only compares column values), No sideways calls (trigger is fully self-contained within single row). ENVELOPE: PASS — all 4 fields match (change_type=fix, architectural_flag=false, doctrine_version=2.8.0). SCOPE: PASS — 2 modified paths within migrations/ and tests/. No protected assets touched. EXECUTION: PASS — all 5 acceptance criteria met. Column-level immutability guard (trg_emission_intake_guard) replaces Phase 2A status-based trigger. Blocks UPDATE on 8 identity/evidence columns (emission_id, source_hub, movement_type_code, outreach_id, sovereign_id, evidence, dedupe_key, created_at). Allows 5 mutable columns (status, reject_reason, promoted_cid, error_id, processed_at). Uses IS DISTINCT FROM for nullable columns (correct NULL handling). DELETE fully blocked via retained Phase 2A trigger. reject_reason column added. 13 enforcement tests across 4 categories (allowed updates, blocked updates, delete blocked, status transitions). OBSERVATIONS: (1) Mutable column set expanded beyond WP's 2-column spec to 5 columns — necessary for Phase 2A and SRC3 promotion functions to work. Valid adaptation. (2) Post-processing immutability model changed from full row lock to column-level protection — emission data is immutable, workflow metadata (status etc.) remains mutable. (3) Schema adaptation from WP ingest_status to existing status column documented.",
+    "doctrine_version": "2.8.0",
+    "timestamp": "2026-02-24T18:05:00Z"
+}

@@ -1,0 +1,29 @@
+{
+    "id": "CS_20260224_PHASE2C_EMISSION_CID_PROMOTION_GOVERNOR",
+    "work_packet_id": "WP_20260224T0800_PHASE2C_EMISSION_CID_PROMOTION_GOVERNOR",
+    "change_type": "feature",
+    "architectural_flag": false,
+    "modified_paths": [
+        "migrations/2026-02-24-src3-lcs-emission-promotion-engine.sql",
+        "tests/lcs/test_emission_promotion_engine.py"
+    ],
+    "summary": "Phase 2C: Satisfied by SRC 3 implementation (post-correctness-patch). lcs.fn_promote_emission(uuid) for atomic single-row promotion (FOR UPDATE lock → validate STAGED → CID mint → fn_process_cid handoff → PROMOTED) and lcs.fn_promote_emission_batch(int) for deterministic batch promotion (ORDER BY created_at, return count). Error paths: log lcs_errors → UPDATE status REJECTED → RETURN clean. No RAISE after state mutation. Batch uses return-state logic, no exception control flow. Adapts WP ingest_status/RECEIVED to live status/STAGED. 9 enforcement tests across 4 categories.",
+    "doctrine_version": "2.8.0",
+    "timestamp": "2026-02-24T17:30:00Z",
+    "payload": {
+        "satisfied_by": "CS_20260224_SRC3_LCS_EMISSION_PROMOTION_ENGINE",
+        "satisfied_by_migration": "migrations/2026-02-24-src3-lcs-emission-promotion-engine.sql",
+        "correctness_patch_applied": true,
+        "correctness_patch_detail": "Removed all RAISE EXCEPTION after error logging. Batch wrapper uses return-state logic instead of EXCEPTION block. Error state is never rolled back.",
+        "objects_created": {
+            "functions": [
+                "lcs.fn_promote_emission(uuid)",
+                "lcs.fn_promote_emission_batch(integer)"
+            ]
+        },
+        "atomic_flow": "Lock → validate STAGED → INSERT cid_intake → fn_process_cid() → SID + MID → status = PROMOTED",
+        "error_flow": "Log lcs_errors → UPDATE emission status (REJECTED/ERROR) → RETURN clean",
+        "schema_adaptation": "WP referenced ingest_status/RECEIVED/emitted_at; adapted to existing status/STAGED/created_at from Phase 2A",
+        "test_count": 9
+    }
+}

@@ -1,0 +1,29 @@
+{
+    "id": "CS_20260224_PHASE3C_TRANSPORT_ADAPTER_CONTRACT",
+    "work_packet_id": "WP_20260224T0910_PHASE3C_TRANSPORT_ADAPTER_CONTRACT_EXTERNAL_BOUNDARY_LOCK",
+    "change_type": "feature",
+    "architectural_flag": false,
+    "modified_paths": [
+        "migrations/2026-02-24-phase3c-transport-adapter-contract.sql",
+        "tests/lcs/test_transport_adapter_contract.py"
+    ],
+    "summary": "Phase 3C: Transport Adapter Contract (External Boundary Lock). Creates fn_record_dispatch_result(uuid, text, text, text, jsonb) as the ONLY legal DB entry point for transport result reporting. Adds provider, external_message_id, delivered_at, failed_at, bounced_at columns to mid_ledger. Creates lcs.dispatch_event_log (SUPPORTING, CTB-registered, append-only — no UPDATE, no DELETE). Validates SENT state + terminal result_state, updates mid_ledger via existing FSM trigger, logs event row. Creates lcs_transport role (EXECUTE-only, no direct table writes). No RAISE-after-DML. 14 enforcement tests across 3 categories.",
+    "doctrine_version": "2.8.0",
+    "timestamp": "2026-02-24T20:00:00Z",
+    "payload": {
+        "objects_created": {
+            "tables": ["lcs.dispatch_event_log"],
+            "columns_added": ["lcs.mid_ledger.provider", "lcs.mid_ledger.external_message_id", "lcs.mid_ledger.delivered_at", "lcs.mid_ledger.failed_at", "lcs.mid_ledger.bounced_at"],
+            "functions": [
+                "lcs.fn_record_dispatch_result(uuid, text, text, text, jsonb)",
+                "lcs.fn_dispatch_event_log_no_update()",
+                "lcs.fn_dispatch_event_log_no_delete()"
+            ],
+            "triggers": ["trg_dispatch_event_log_no_update", "trg_dispatch_event_log_no_delete"],
+            "roles": ["lcs_transport"],
+            "check_constraints": ["chk_dispatch_event_result_state"]
+        },
+        "boundary_rule": "No transport adapter writes to tables directly. All dispatch outcomes go through fn_record_dispatch_result.",
+        "test_count": 14
+    }
+}

@@ -1,0 +1,33 @@
+{
+    "id": "CS_20260224_PHASE2D_PROMOTION_DETERMINISM_GUARD",
+    "work_packet_id": "WP_20260224T0810_PHASE2D_PROMOTION_DETERMINISM_GUARD",
+    "change_type": "fix",
+    "architectural_flag": false,
+    "modified_paths": [
+        "migrations/2026-02-24-phase2d-promotion-determinism-guard.sql",
+        "tests/lcs/test_promotion_determinism_guard.py"
+    ],
+    "summary": "Phase 2D: Adds emission_id UUID column + partial unique index to lcs.cid_intake (one emission → one CID). Updates fn_promote_emission for idempotency: already-PROMOTED emissions return clean, pre-check for existing CID before INSERT prevents double-minting, conflict path resolves existing CID and marks PROMOTED. No RAISE on any path. Batch wrapper unchanged (already uses FOR UPDATE SKIP LOCKED + return-state logic). 9 enforcement tests across 5 categories.",
+    "doctrine_version": "2.8.0",
+    "timestamp": "2026-02-24T17:45:00Z",
+    "payload": {
+        "objects_modified": {
+            "columns_added": ["lcs.cid_intake.emission_id UUID"],
+            "indexes_added": ["uq_cid_intake_emission_id (partial unique WHERE emission_id IS NOT NULL)"],
+            "functions_replaced": ["lcs.fn_promote_emission(uuid)"]
+        },
+        "hard_rules": [
+            "One emission → one CID",
+            "Replays are safe",
+            "Parallel workers cannot double-mint CIDs",
+            "Status transitions remain forward-only"
+        ],
+        "idempotency_paths": [
+            "Already PROMOTED + promoted_cid set → RETURN clean",
+            "CID already exists in cid_intake for emission_id → resolve existing CID, mark PROMOTED, RETURN clean"
+        ],
+        "correctness": "No RAISE after state mutation (preserved from SRC 3 patch). Batch wrapper unchanged.",
+        "depends_on": ["Phase 2A (table)", "SRC 3 (fn_promote_emission)", "SRC 4 (guard trigger)"],
+        "test_count": 9
+    }
+}

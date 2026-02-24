@@ -1,0 +1,58 @@
+{
+    "id": "CS_20260224_LCS_MOVEMENT_EMISSION_GOVERNANCE_PHASE2A",
+    "work_packet_id": "WP_20260224T0730_LCS_MOVEMENT_EMISSION_GOVERNANCE_PHASE2A",
+    "change_type": "feature",
+    "architectural_flag": false,
+    "modified_paths": [
+        "migrations/2026-02-24-lcs-movement-emission-governance-phase2a.sql",
+        "tests/lcs/__init__.py",
+        "tests/lcs/test_movement_emission_governance.py"
+    ],
+    "summary": "Migration-backed Movement Emission Governance (Phase 2A): creates lcs.movement_emission_intake (STAGING, append-only), extends movement_type_registry with 6 governance columns (allowed_sources, payload_schema, requires_sovereign, requires_outreach, default_retry_strategy, ttl_days), creates fn_emit_movement (validates source/type/fields/payload, computes dedupe_key, inserts idempotently) and fn_process_emissions (batch promotion to cid_intake with error logging and status transitions), creates lcs_emitter role with EXECUTE-only access, expands lcs_errors CHECK constraint. Enforcement test suite covers 16 tests across 6 categories.",
+    "doctrine_version": "2.8.0",
+    "timestamp": "2026-02-24T16:00:00Z",
+    "payload": {
+        "objects_created": {
+            "tables": ["lcs.movement_emission_intake"],
+            "functions": [
+                "lcs.fn_emit_movement(text, text, uuid, uuid, jsonb)",
+                "lcs.fn_process_emissions(integer)",
+                "lcs.fn_emission_intake_immutable()"
+            ],
+            "triggers": [
+                "trg_emission_intake_no_update",
+                "trg_emission_intake_no_delete"
+            ],
+            "indexes": [
+                "idx_emission_intake_staged",
+                "idx_emission_intake_dedupe",
+                "idx_emission_intake_outreach",
+                "idx_emission_intake_sovereign"
+            ],
+            "check_constraints": ["chk_emission_status"],
+            "roles": ["lcs_emitter"]
+        },
+        "objects_modified": {
+            "tables": ["lcs.movement_type_registry (6 governance columns added)"],
+            "constraints": ["chk_lcs_errors_stage (expanded with emission_validation, emission_processing)"]
+        },
+        "test_coverage": {
+            "file": "tests/lcs/test_movement_emission_governance.py",
+            "categories": [
+                "fn_emit_movement validation paths (5 tests)",
+                "Dedupe/idempotency (2 tests)",
+                "fn_process_emissions promotion (2 tests)",
+                "Error write verification (2 tests)",
+                "Permission enforcement (4 tests)",
+                "Status transition enforcement (3 tests)"
+            ],
+            "total_tests": 16
+        },
+        "governance_model": {
+            "sub_hub_contract": "Sub-hubs call lcs.fn_emit_movement() ONLY — no direct table writes",
+            "dedupe_mechanism": "md5 of source_hub::type::outreach_id::sovereign_id::evidence_hash",
+            "promotion_path": "STAGED → fn_process_emissions → cid_intake (PENDING)",
+            "error_path": "Validation failures → lcs.lcs_errors + emission status REJECTED/ERROR"
+        }
+    }
+}

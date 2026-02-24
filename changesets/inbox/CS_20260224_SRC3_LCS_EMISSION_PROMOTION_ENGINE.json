@@ -1,0 +1,26 @@
+{
+    "id": "CS_20260224_SRC3_LCS_EMISSION_PROMOTION_ENGINE",
+    "work_packet_id": "WP_20260224T0740_SRC3_LCS_EMISSION_PROMOTION_ENGINE",
+    "change_type": "feature",
+    "architectural_flag": false,
+    "modified_paths": [
+        "migrations/2026-02-24-src3-lcs-emission-promotion-engine.sql",
+        "tests/lcs/test_emission_promotion_engine.py"
+    ],
+    "summary": "SRC 3: Creates fn_promote_emission(uuid) for atomic single-row promotion (lock→validate STAGED→mint CID→fn_process_cid→SID+MID→PROMOTED) and fn_promote_emission_batch(int) for deterministic batch promotion with count. Error paths: log → update status → RETURN clean. No RAISE after state mutation. Batch wrapper uses return-state logic, no exception control flow. Adapts to existing Phase 2A schema (status/STAGED instead of ingest_status/RECEIVED). 9 enforcement tests across 4 categories.",
+    "doctrine_version": "2.8.0",
+    "timestamp": "2026-02-24T17:15:00Z",
+    "payload": {
+        "objects_created": {
+            "functions": [
+                "lcs.fn_promote_emission(uuid)",
+                "lcs.fn_promote_emission_batch(integer)"
+            ]
+        },
+        "atomic_flow": "Lock → validate STAGED → INSERT cid_intake → fn_process_cid() → SID + MID → status = PROMOTED",
+        "error_flow": "Log lcs_errors → UPDATE emission status (REJECTED/ERROR) → RETURN clean",
+        "correctness_fix": "Removed all RAISE EXCEPTION after error logging. Batch wrapper uses return-state logic instead of EXCEPTION block. Error state is never rolled back.",
+        "schema_adaptation": "WP referenced ingest_status/RECEIVED; adapted to existing status/STAGED from Phase 2A",
+        "test_count": 9
+    }
+}

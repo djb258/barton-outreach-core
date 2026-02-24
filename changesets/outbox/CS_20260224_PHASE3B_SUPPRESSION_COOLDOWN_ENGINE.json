@@ -1,0 +1,31 @@
+{
+    "id": "CS_20260224_PHASE3B_SUPPRESSION_COOLDOWN_ENGINE",
+    "work_packet_id": "WP_20260224T0900_PHASE3B_SUPPRESSION_COOLDOWN_ENGINE_FOUNDATIONAL_LAYER",
+    "change_type": "feature",
+    "architectural_flag": false,
+    "modified_paths": [
+        "migrations/2026-02-24-phase3b-suppression-cooldown-engine.sql",
+        "tests/lcs/test_suppression_cooldown_engine.py"
+    ],
+    "summary": "Phase 3B: Suppression + Cooldown Engine (Foundational Layer). Creates lcs.suppression_registry (CANONICAL, CTB-registered, 1 row per sovereign_id, no-DELETE, UPDATE-allowed governance surface). Replaces fn_mid_suppression_check stub with real implementation: resolves sovereign from mid_ledger, checks global_suppressed and cooldown_until, returns FALSE if blocked, TRUE if clear. fn_mark_mid_ready (Phase 3A) already wired — no modification needed. 11 enforcement tests across 3 categories.",
+    "doctrine_version": "2.8.0",
+    "timestamp": "2026-02-24T19:45:00Z",
+    "payload": {
+        "objects_created": {
+            "tables": ["lcs.suppression_registry"],
+            "functions": ["lcs.fn_suppression_registry_no_delete()"],
+            "triggers": ["trg_suppression_registry_no_delete"]
+        },
+        "functions_replaced": [
+            "lcs.fn_mid_suppression_check(uuid) — stub → real implementation"
+        ],
+        "suppression_rules": {
+            "global_suppressed_true": "returns FALSE",
+            "cooldown_until_future": "returns FALSE",
+            "no_registry_row": "returns TRUE",
+            "cooldown_expired": "returns TRUE",
+            "not_suppressed": "returns TRUE"
+        },
+        "test_count": 11
+    }
+}

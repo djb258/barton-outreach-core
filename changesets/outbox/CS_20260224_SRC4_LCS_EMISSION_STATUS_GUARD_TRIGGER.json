@@ -1,0 +1,27 @@
+{
+    "id": "CS_20260224_SRC4_LCS_EMISSION_STATUS_GUARD_TRIGGER",
+    "work_packet_id": "WP_20260224T0740_SRC4_LCS_EMISSION_STATUS_GUARD_TRIGGER",
+    "change_type": "fix",
+    "architectural_flag": false,
+    "modified_paths": [
+        "migrations/2026-02-24-src4-lcs-emission-status-guard-trigger.sql",
+        "tests/lcs/test_emission_status_guard_trigger.py"
+    ],
+    "summary": "SRC 4: Replaces Phase 2A status-based trigger with column-level immutability guard on lcs.movement_emission_intake. Adds reject_reason column. Blocks UPDATE on identity/evidence columns (emission_id, source_hub, movement_type_code, outreach_id, sovereign_id, evidence, dedupe_key, created_at). Allows: status, reject_reason, promoted_cid, error_id, processed_at. DELETE remains fully blocked. Adapts WP ingest_status reference to existing status column. 14 enforcement tests across 4 categories.",
+    "doctrine_version": "2.8.0",
+    "timestamp": "2026-02-24T17:00:00Z",
+    "payload": {
+        "objects_created": {
+            "functions": ["lcs.fn_emission_intake_guard()"],
+            "triggers": ["trg_emission_intake_guard"],
+            "columns_added": ["lcs.movement_emission_intake.reject_reason"]
+        },
+        "objects_replaced": {
+            "triggers": ["trg_emission_intake_no_update (Phase 2A status-based → SRC 4 column-level)"]
+        },
+        "immutable_columns": ["emission_id", "source_hub", "movement_type_code", "outreach_id", "sovereign_id", "evidence", "dedupe_key", "created_at"],
+        "mutable_columns": ["status", "reject_reason", "promoted_cid", "error_id", "processed_at"],
+        "schema_adaptation": "WP referenced ingest_status; adapted to existing status from Phase 2A",
+        "test_count": 14
+    }
+}

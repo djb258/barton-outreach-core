@@ -1,0 +1,25 @@
+{
+    "id": "CS_20260224_SRC2_OUTREACH_IDENTITY_RESOLUTION_GOVERNOR",
+    "work_packet_id": "WP_20260224T0740_SRC2_OUTREACH_IDENTITY_RESOLUTION_GOVERNOR",
+    "change_type": "feature",
+    "architectural_flag": false,
+    "modified_paths": [
+        "migrations/2026-02-24-src2-outreach-identity-resolution-governor.sql",
+        "tests/lcs/test_identity_resolution_governor.py"
+    ],
+    "summary": "SRC 2: Creates outreach.identity_resolution_errors (append-only ERROR table), outreach.fn_resolve_identity(text,text,text,jsonb) with 4 resolution paths (outreach_id, sovereign_id, domain, ein), hard-fail on ambiguity/missing anchor/invalid input, deterministic error logging, identity_resolver role with EXECUTE-only. 14 enforcement tests across 6 categories.",
+    "doctrine_version": "2.8.0",
+    "timestamp": "2026-02-24T16:30:00Z",
+    "payload": {
+        "objects_created": {
+            "tables": ["outreach.identity_resolution_errors"],
+            "functions": ["outreach.fn_resolve_identity(text,text,text,jsonb)", "outreach.fn_ire_guard()", "outreach.fn_ire_no_delete()"],
+            "triggers": ["trg_ire_guard", "trg_ire_no_delete"],
+            "check_constraints": ["chk_ire_stage", "chk_ire_type"],
+            "roles": ["identity_resolver"]
+        },
+        "resolution_paths": ["outreach_id → outreach.outreach", "sovereign_id → cl.company_identity + outreach.outreach", "domain → outreach.outreach", "ein → outreach.outreach"],
+        "hard_fail_modes": ["not_found", "ambiguity", "missing_anchor", "invalid_input"],
+        "test_count": 14
+    }
+}

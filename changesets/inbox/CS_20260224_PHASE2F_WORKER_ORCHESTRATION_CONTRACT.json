@@ -1,0 +1,36 @@
+{
+    "id": "CS_20260224_PHASE2F_WORKER_ORCHESTRATION_CONTRACT",
+    "work_packet_id": "WP_20260224T0840_PHASE2F_WORKER_ORCHESTRATION_CONTRACT_DB_FIRST",
+    "change_type": "feature",
+    "architectural_flag": false,
+    "modified_paths": [
+        "migrations/2026-02-24-phase2f-worker-orchestration-contract.sql",
+        "tests/lcs/test_worker_orchestration_contract.py"
+    ],
+    "summary": "Phase 2F: DB-first worker orchestration contract. Creates lcs.worker_run_log (SUPPORTING, CTB-registered, append-only with completion update, identity columns immutable). Creates lcs.fn_worker_tick(text, int) dispatcher: INSERT STARTED → dispatch to batch function → UPDATE run log → return strict JSON {run_id, run_type, attempted, success, errors, status}. Stub fn_finalize_dispatch_batch (no transport yet). lcs_worker role with EXECUTE-only on fn_worker_tick, no direct table writes. No RAISE-after-DML. 13 enforcement tests across 4 categories.",
+    "doctrine_version": "2.8.0",
+    "timestamp": "2026-02-24T18:15:00Z",
+    "payload": {
+        "objects_created": {
+            "tables": ["lcs.worker_run_log"],
+            "functions": [
+                "lcs.fn_worker_tick(text, integer)",
+                "lcs.fn_finalize_dispatch_batch(integer)",
+                "lcs.fn_worker_run_log_guard()",
+                "lcs.fn_worker_run_log_no_delete()"
+            ],
+            "triggers": ["trg_worker_run_log_guard", "trg_worker_run_log_no_delete"],
+            "roles": ["lcs_worker"],
+            "check_constraints": ["chk_worker_run_type", "chk_worker_run_status"]
+        },
+        "dispatch_paths": {
+            "PROMOTE_EMISSIONS": "lcs.fn_promote_emission_batch(p_limit)",
+            "FINALIZE_DISPATCH": "lcs.fn_finalize_dispatch_batch(p_limit) — stub, returns 0"
+        },
+        "return_contract": {
+            "keys": ["run_id", "run_type", "attempted", "success", "errors", "status"],
+            "status_values": ["SUCCESS", "PARTIAL", "FAIL"]
+        },
+        "test_count": 13
+    }
+}

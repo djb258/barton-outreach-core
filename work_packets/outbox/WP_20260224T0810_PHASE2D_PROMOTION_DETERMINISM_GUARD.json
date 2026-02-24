@@ -1,0 +1,114 @@
+﻿{
+    "id":  "WP_20260224T0810_PHASE2D_PROMOTION_DETERMINISM_GUARD",
+    "change_type":  "fix",
+    "architectural_flag":  false,
+    "allowed_paths":  [
+                          "migrations/",
+                          "tests/"
+                      ],
+    "summary":  "Implement Phase 2D Promotion Determinism Guard for LCS promotion replay safety: enforce one-emission-one-CID via cid_intake(emission_id) uniqueness, make fn_promote_emission idempotent with conflict-safe return behavior, and harden batch promotion for concurrency with FOR UPDATE SKIP LOCKED and no double-minting under parallel workers.",
+    "doctrine_version":  "2.8.0",
+    "timestamp":  "2026-02-24T13:52:21.6731460-05:00",
+    "payload":  {
+                    "phase":  "2D",
+                    "src_title":  "Promotion Determinism Guard (Idempotency + Replay Safety)",
+                    "objective":  "Prevent duplicate CID minting and ensure emission replay safety under concurrency.",
+                    "classification":  {
+                                           "rationale":  "Targeted LCS enforcement hardening (idempotency/concurrency safety) within existing execution surfaces; no protected CTB/backbone/altitude/doctrine changes.",
+                                           "protected_assets_touched":  false,
+                                           "parent_approval_required":  false
+                                       },
+                    "path_scope":  {
+                                       "allowed_paths":  [
+                                                             "migrations/",
+                                                             "tests/"
+                                                         ],
+                                       "constraints":  [
+                                                           "Schema/function changes via migrations under migrations/",
+                                                           "Tests under tests/ only",
+                                                           "No changes outside allowed paths without a new WORK_PACKET"
+                                                       ]
+                                   },
+                    "src":  {
+                                "create_or_modify":  {
+                                                         "constraint_changes":  [
+                                                                                    {
+                                                                                        "target":  "lcs.cid_intake",
+                                                                                        "action":  "Add UNIQUE constraint",
+                                                                                        "definition":  "UNIQUE (emission_id)",
+                                                                                        "conditional":  "If emission_id column not present, add emission_id uuid not null first",
+                                                                                        "data_requirement":  "emission_id must be backfilled/populated by promotion function path"
+                                                                                    }
+                                                                                ],
+                                                         "function_changes":  [
+                                                                                  {
+                                                                                      "target":  "lcs.fn_promote_emission(p_emission_id uuid) returns void",
+                                                                                      "must":  [
+                                                                                                   "Before INSERT, check whether emission already has promoted_cid; if yes RETURN cleanly (idempotent)",
+                                                                                                   "INSERT into cid_intake includes emission_id",
+                                                                                                   "Use ON CONFLICT (emission_id) DO NOTHING",
+                                                                                                   "If conflict occurs, SELECT existing CID, update emission status = PROMOTED, and RETURN",
+                                                                                                   "Do not RAISE on replay/conflict path"
+                                                                                               ]
+                                                                                  },
+                                                                                  {
+                                                                                      "target":  "lcs.fn_promote_emission_batch(p_limit int) returns int",
+                                                                                      "must":  [
+                                                                                                   "Tolerate concurrent execution",
+                                                                                                   "Use FOR UPDATE SKIP LOCKED",
+                                                                                                   "Prevent duplicate CID minting under parallel workers"
+                                                                                               ]
+                                                                                  }
+                                                                              ]
+                                                     },
+                                "hard_rules":  [
+                                                   "One emission -\u003e one CID",
+                                                   "Replays are safe",
+                                                   "Parallel workers cannot produce duplicate CIDs",
+                                                   "Status transitions remain forward-only"
+                                               ],
+                                "non_goals":  [
+                                                  "Worker container",
+                                                  "Scheduling",
+                                                  "Dispatch layer"
+                                              ]
+                            },
+                    "builder_outputs_expected":  [
+                                                     "Migration SQL for cid_intake constraint/column changes",
+                                                     "Migration SQL updating fn_promote_emission and fn_promote_emission_batch",
+                                                     "Any required trigger/guard updates for forward-only status enforcement",
+                                                     "Concurrency/idempotency enforcement tests"
+                                                 ],
+                    "test_scope":  {
+                                       "include":  [
+                                                       "cid_intake enforces UNIQUE(emission_id)",
+                                                       "Promotion inserts cid_intake with emission_id",
+                                                       "Replay of same emission returns cleanly without duplicate CID minting",
+                                                       "ON CONFLICT(emission_id) path selects existing CID and marks status PROMOTED without RAISE",
+                                                       "Batch promotion uses SKIP LOCKED semantics under concurrent execution (as testable)",
+                                                       "Parallel promotion attempts do not produce duplicate CIDs",
+                                                       "Forward-only status transitions remain enforced after changes"
+                                                   ],
+                                       "exclude":  [
+                                                       "Worker container/scheduling/dispatch integration tests",
+                                                       "UI tests"
+                                                   ]
+                                   },
+                    "acceptance_criteria":  [
+                                                "lcs.cid_intake has emission_id uuid not null (if previously absent) and UNIQUE(emission_id)",
+                                                "fn_promote_emission is idempotent and replay-safe with no exception on already-promoted/conflict path",
+                                                "fn_promote_emission inserts cid_intake rows with emission_id and uses ON CONFLICT (emission_id) DO NOTHING",
+                                                "Conflict/replay path resolves existing CID and sets emission status to PROMOTED before return",
+                                                "fn_promote_emission_batch tolerates concurrency using FOR UPDATE SKIP LOCKED",
+                                                "Parallel execution cannot double-mint CID for a single emission",
+                                                "Tests exist and verify idempotency, conflict handling, and concurrency safety behavior"
+                                            ],
+                    "artifacts":  {
+                                      "expected":  [
+                                                       "WP_*.json",
+                                                       "CS_*.json",
+                                                       "AR_*.json"
+                                                   ]
+                                  }
+                }
+}

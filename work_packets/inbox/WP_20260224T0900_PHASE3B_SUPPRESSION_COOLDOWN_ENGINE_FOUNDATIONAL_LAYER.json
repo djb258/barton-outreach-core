@@ -1,0 +1,125 @@
+﻿{
+    "id":  "WP_20260224T0900_PHASE3B_SUPPRESSION_COOLDOWN_ENGINE_FOUNDATIONAL_LAYER",
+    "change_type":  "feature",
+    "architectural_flag":  false,
+    "allowed_paths":  [
+                          "migrations/",
+                          "tests/"
+                      ],
+    "summary":  "Implement Phase 3B Suppression + Cooldown Engine (DB-only foundational layer): add sovereign-scoped lcs.suppression_registry CANONICAL table, replace suppression stub with real lcs.fn_mid_suppression_check(p_mid uuid), and wire fn_mark_mid_ready to enforce suppression/cooldown readiness denial with deterministic error logging and clean returns.",
+    "doctrine_version":  "2.8.0",
+    "timestamp":  "2026-02-24T14:42:58.7794375-05:00",
+    "payload":  {
+                    "phase":  "3B",
+                    "src_title":  "Suppression + Cooldown Engine (Foundational Layer)",
+                    "objective":  "Create deterministic suppression and cooldown enforcement used by fn_mark_mid_ready. No UI. No adapter. DB-only governance.",
+                    "classification":  {
+                                           "rationale":  "Feature work within LCS DB governance surfaces. Adds sovereign-scoped suppression canonical state and readiness gating integration without modifying protected CTB backbone, altitude hierarchy, or doctrine assets.",
+                                           "protected_assets_touched":  false,
+                                           "parent_approval_required":  false
+                                       },
+                    "path_scope":  {
+                                       "allowed_paths":  [
+                                                             "migrations/",
+                                                             "tests/"
+                                                         ],
+                                       "constraints":  [
+                                                           "Schema/functions/permissions/trigger changes via migrations under migrations/",
+                                                           "Tests under tests/ only",
+                                                           "No changes outside allowed paths without a new WORK_PACKET"
+                                                       ]
+                                   },
+                    "src":  {
+                                "create_canonical_table":  {
+                                                               "name":  "lcs.suppression_registry",
+                                                               "leaf_type":  "CANONICAL",
+                                                               "cardinality":  "1 row per sovereign_id",
+                                                               "columns":  [
+                                                                               "sovereign_id uuid primary key",
+                                                                               "global_suppressed boolean not null default false",
+                                                                               "suppression_reason text null",
+                                                                               "suppressed_at timestamptz null",
+                                                                               "cooldown_until timestamptz null",
+                                                                               "created_at timestamptz not null default now()",
+                                                                               "updated_at timestamptz not null default now()"
+                                                                           ],
+                                                               "rules":  [
+                                                                             "One row per sovereign",
+                                                                             "UPDATE allowed (governance surface)",
+                                                                             "No DELETE",
+                                                                             "Register in CTB as CANONICAL using repo-existing registry table"
+                                                                         ]
+                                                           },
+                                "create_function":  {
+                                                        "name":  "lcs.fn_mid_suppression_check",
+                                                        "signature":  "lcs.fn_mid_suppression_check(p_mid uuid) returns boolean",
+                                                        "must":  [
+                                                                     "Resolve sovereign_id from mid_ledger",
+                                                                     "Lookup suppression_registry",
+                                                                     "Return FALSE if global_suppressed = true",
+                                                                     "Return FALSE if cooldown_until \u003e now()",
+                                                                     "Return TRUE otherwise",
+                                                                     "No RAISE"
+                                                                 ]
+                                                    },
+                                "modify_function":  {
+                                                        "target":  "lcs.fn_mark_mid_ready",
+                                                        "change":  "Replace suppression stub call with real suppression check",
+                                                        "requirements":  [
+                                                                             "If suppression check returns FALSE: log deterministic error, do not mark READY, RETURN cleanly",
+                                                                             "No readiness bypass outside function path"
+                                                                         ]
+                                                    },
+                                "hard_rules":  [
+                                                   "Suppression is sovereign-scoped",
+                                                   "Cooldown is sovereign-scoped",
+                                                   "No transport dispatch bypasses this function"
+                                               ],
+                                "non_goals":  [
+                                                  "Per-channel suppression",
+                                                  "Frequency caps",
+                                                  "Lifecycle-based cadence",
+                                                  "UI controls",
+                                                  "Bulk suppression tools"
+                                              ]
+                            },
+                    "builder_outputs_expected":  [
+                                                     "Migration SQL for lcs.suppression_registry and CTB registration entry",
+                                                     "Migration SQL for real lcs.fn_mid_suppression_check(p_mid uuid)",
+                                                     "Migration SQL updating lcs.fn_mark_mid_ready to use suppression check and clean failure return path",
+                                                     "Enforcement tests for suppression/cooldown checks and readiness integration"
+                                                 ],
+                    "test_scope":  {
+                                       "include":  [
+                                                       "suppression_registry exists with one-row-per-sovereign primary key and CTB CANONICAL registration",
+                                                       "suppression_registry blocks DELETE and allows UPDATE governance mutations (where enforced/testable)",
+                                                       "fn_mid_suppression_check returns FALSE for global_suppressed = true",
+                                                       "fn_mid_suppression_check returns FALSE for cooldown_until \u003e now()",
+                                                       "fn_mid_suppression_check returns TRUE when not suppressed and cooldown inactive",
+                                                       "fn_mark_mid_ready uses real suppression check instead of stub",
+                                                       "fn_mark_mid_ready logs deterministic error and returns cleanly when suppression check is FALSE",
+                                                       "No READY state transition occurs when suppression/cooldown denies readiness"
+                                                   ],
+                                       "exclude":  [
+                                                       "UI/adapter/provider integration tests",
+                                                       "Per-channel suppression/frequency cap/cadence tests",
+                                                       "Bulk suppression tooling tests"
+                                                   ]
+                                   },
+                    "acceptance_criteria":  [
+                                                "lcs.suppression_registry exists as sovereign-scoped CANONICAL table and is CTB-registered as CANONICAL",
+                                                "Table supports UPDATE governance operations and blocks DELETE",
+                                                "lcs.fn_mid_suppression_check(p_mid uuid) exists and deterministically returns boolean without raising",
+                                                "Function returns FALSE for global suppression and active cooldown, TRUE otherwise",
+                                                "lcs.fn_mark_mid_ready is updated to use the real suppression check and cleanly deny READY on FALSE with deterministic error logging",
+                                                "Tests exist and verify suppression/cooldown behavior and readiness integration"
+                                            ],
+                    "artifacts":  {
+                                      "expected":  [
+                                                       "WP_*.json",
+                                                       "CS_*.json",
+                                                       "AR_*.json"
+                                                   ]
+                                  }
+                }
+}

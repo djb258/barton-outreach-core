@@ -1,0 +1,133 @@
+﻿{
+    "id":  "WP_20260224T0830_PHASE2E_EMISSION_CANONICAL_FORWARD_ONLY_FSM_LOCK",
+    "change_type":  "fix",
+    "architectural_flag":  false,
+    "allowed_paths":  [
+                          "migrations/",
+                          "tests/"
+                      ],
+    "summary":  "Implement refined Phase 2E forward-only FSM lock across LCS emission intake, CID intake, and canonical state: strict emission transition validator + trigger, CID hard immutability triggers, and canonical monotonic BEFORE UPDATE guard preventing lifecycle/SID/MID/last_cid regressions with loud failures and no silent correction.",
+    "doctrine_version":  "2.8.0",
+    "timestamp":  "2026-02-24T14:23:29.3287851-05:00",
+    "payload":  {
+                    "phase":  "2E",
+                    "src_title":  "Emission + Canonical Forward-Only FSM Lock",
+                    "objective":  "Hard-lock state progression. No rewinds. No regression.",
+                    "classification":  {
+                                           "rationale":  "Execution-layer enforcement hardening within existing LCS schema; does not modify protected CTB backbone, altitude hierarchy, or constitutional doctrine.",
+                                           "protected_assets_touched":  false,
+                                           "parent_approval_required":  false
+                                       },
+                    "path_scope":  {
+                                       "allowed_paths":  [
+                                                             "migrations/",
+                                                             "tests/"
+                                                         ],
+                                       "constraints":  [
+                                                           "DB functions/triggers/enforcement implemented via migrations under migrations/",
+                                                           "Tests under tests/ only",
+                                                           "No changes outside allowed paths without a new WORK_PACKET"
+                                                       ]
+                                   },
+                    "src":  {
+                                "part_1_emission_status_fsm":  {
+                                                                   "create_function":  {
+                                                                                           "name":  "lcs.fn_validate_emission_transition",
+                                                                                           "signature":  "(old_status text, new_status text) returns void",
+                                                                                           "behavior":  [
+                                                                                                            "Allow STAGED -\u003e PROMOTED",
+                                                                                                            "Allow STAGED -\u003e REJECTED",
+                                                                                                            "Treat PROMOTED as terminal",
+                                                                                                            "Treat REJECTED as terminal",
+                                                                                                            "Everything else RAISE EXCEPTION"
+                                                                                                        ]
+                                                                                       },
+                                                                   "attach_trigger":  {
+                                                                                          "timing":  "BEFORE UPDATE",
+                                                                                          "table":  "lcs.movement_emission_intake",
+                                                                                          "requirements":  [
+                                                                                                               "Validate OLD.status -\u003e NEW.status via lcs.fn_validate_emission_transition()",
+                                                                                                               "Block illegal transitions",
+                                                                                                               "Do not allow PROMOTED -\u003e STAGED",
+                                                                                                               "Do not allow REJECTED -\u003e STAGED",
+                                                                                                               "Do not allow PROMOTED -\u003e REJECTED",
+                                                                                                               "Do not allow REJECTED -\u003e PROMOTED"
+                                                                                                           ]
+                                                                                      }
+                                                               },
+                                "part_2_cid_intake_hard_immutability":  {
+                                                                            "target":  "lcs.cid_intake",
+                                                                            "requirements":  [
+                                                                                                 "BEFORE UPDATE trigger RAISE EXCEPTION",
+                                                                                                 "BEFORE DELETE trigger RAISE EXCEPTION",
+                                                                                                 "Append-only strict"
+                                                                                             ]
+                                                                        },
+                                "part_3_canonical_monotonic_guard":  {
+                                                                         "target":  "lcs.lcs_canonical",
+                                                                         "trigger":  "BEFORE UPDATE",
+                                                                         "enforce":  [
+                                                                                         "current_lifecycle_stage must not regress",
+                                                                                         "current_sid must not change backward",
+                                                                                         "current_mid must not change backward",
+                                                                                         "last_cid must not change to older CID"
+                                                                                     ],
+                                                                         "comparison_method":  [
+                                                                                                   "Enforce using timestamps or lexicographic ID ordering",
+                                                                                                   "No null regression allowed"
+                                                                                               ],
+                                                                         "requirements":  [
+                                                                                              "No silent correction",
+                                                                                              "No implicit downgrade",
+                                                                                              "Violations fail loudly"
+                                                                                          ]
+                                                                     },
+                                "hard_rule":  "All lifecycle state machines are forward-only. No silent correction. No implicit downgrade. No override without explicit constitutional change.",
+                                "non_goals":  [
+                                                  "Worker",
+                                                  "Dispatch",
+                                                  "Cadence",
+                                                  "UI"
+                                              ]
+                            },
+                    "builder_outputs_expected":  [
+                                                     "Migration SQL for lcs.fn_validate_emission_transition()",
+                                                     "BEFORE UPDATE trigger on lcs.movement_emission_intake",
+                                                     "BEFORE UPDATE and BEFORE DELETE immutability triggers on lcs.cid_intake",
+                                                     "BEFORE UPDATE monotonic guard trigger on lcs.lcs_canonical",
+                                                     "Enforcement tests for legal/illegal transitions and immutability"
+                                                 ],
+                    "test_scope":  {
+                                       "include":  [
+                                                       "Emission FSM allows STAGED-\u003ePROMOTED and STAGED-\u003eREJECTED only",
+                                                       "Emission FSM rejects PROMOTED-\u003eSTAGED, REJECTED-\u003eSTAGED, PROMOTED-\u003eREJECTED, REJECTED-\u003ePROMOTED",
+                                                       "Emission FSM rejects all other unspecified transitions with exception",
+                                                       "CID intake UPDATE raises exception",
+                                                       "CID intake DELETE raises exception",
+                                                       "Canonical guard blocks lifecycle regression",
+                                                       "Canonical guard blocks backward SID/MID/last_cid changes",
+                                                       "Canonical guard blocks null regression",
+                                                       "All violations fail loudly without silent correction"
+                                                   ],
+                                       "exclude":  [
+                                                       "Worker/dispatch/cadence/UI integration tests"
+                                                   ]
+                                   },
+                    "acceptance_criteria":  [
+                                                "lcs.fn_validate_emission_transition(old_status text, new_status text) exists and enforces the exact allowed emission transitions",
+                                                "BEFORE UPDATE trigger on lcs.movement_emission_intake blocks all illegal transitions and terminal-state rewinds/crossovers",
+                                                "BEFORE UPDATE and BEFORE DELETE protections on lcs.cid_intake enforce strict append-only behavior",
+                                                "BEFORE UPDATE trigger on lcs.lcs_canonical prevents lifecycle/SID/MID/last_cid regression using the implemented monotonic comparison rule",
+                                                "No silent correction or implicit downgrade occurs",
+                                                "Tests exist and verify all scoped forward-only and immutability behaviors"
+                                            ],
+                    "supersedes_note":  "This WORK_PACKET refines Phase 2E forward-only enforcement scope with a stricter emission transition matrix and explicit canonical comparison requirements.",
+                    "artifacts":  {
+                                      "expected":  [
+                                                       "WP_*.json",
+                                                       "CS_*.json",
+                                                       "AR_*.json"
+                                                   ]
+                                  }
+                }
+}
