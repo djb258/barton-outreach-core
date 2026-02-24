@@ -54,7 +54,7 @@ def load_schema(schema_type):
     path = SCHEMAS.get(schema_type)
     if not path or not path.exists():
         return None
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, "r", encoding="utf-8-sig") as f:
         return json.load(f)
 
 
@@ -126,7 +126,7 @@ def validate_file(file_path):
         return False, [f"Cannot determine schema type from path: {file_path}"]
 
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, "r", encoding="utf-8-sig") as f:
             data = json.load(f)
     except json.JSONDecodeError as e:
         return False, [f"Invalid JSON: {e}"]
@@ -153,7 +153,7 @@ def get_latest_artifact(folder_path):
         return None, None
     path = files[0]
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, "r", encoding="utf-8-sig") as f:
             data = json.load(f)
         return path, data
     except (json.JSONDecodeError, IOError):
@@ -185,7 +185,7 @@ def load_protected_paths():
         return None
 
     protected = []
-    with open(pa_path, "r", encoding="utf-8") as f:
+    with open(pa_path, "r", encoding="utf-8-sig") as f:
         for line in f:
             line = line.strip()
             if not line.startswith("|"):
@@ -288,7 +288,7 @@ def route_changeset():
 
     for wp_file in list_artifacts(wp_inbox):
         try:
-            with open(wp_file, "r", encoding="utf-8") as f:
+            with open(wp_file, "r", encoding="utf-8-sig") as f:
                 candidate = json.load(f)
             if candidate.get("id") == wp_id:
                 wp_data = candidate
@@ -311,9 +311,16 @@ def route_changeset():
         return False, "CHANGESET envelope mismatch with WORK_PACKET:\n  " + "\n  ".join(mismatches)
 
     # Check modified_paths subset of allowed_paths
-    allowed = set(wp_data.get("allowed_paths", []))
-    modified = set(data.get("modified_paths", []))
-    outside = modified - allowed
+    # allowed_paths entries ending with "/" are directory prefixes
+    allowed = wp_data.get("allowed_paths", [])
+    modified = data.get("modified_paths", [])
+    outside = []
+    for mp in modified:
+        if not any(
+            mp == ap or (ap.endswith("/") and mp.startswith(ap))
+            for ap in allowed
+        ):
+            outside.append(mp)
     if outside:
         return False, "SCOPE VIOLATION: modified_paths outside allowed_paths:\n  " + "\n  ".join(sorted(outside))
 

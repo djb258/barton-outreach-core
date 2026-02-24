@@ -1,0 +1,65 @@
+{
+    "id": "CS_20260224_LCS_SPINE_V1_CTB_REFACTOR",
+    "work_packet_id": "WP_20260224T0720_LCS_SPINE_V1_CTB_REFACTOR",
+    "change_type": "refactor",
+    "architectural_flag": false,
+    "modified_paths": [
+        "migrations/2026-02-24-lcs-spine-v1-ctb-refactor.sql"
+    ],
+    "summary": "Single migration implementing CTB Cantonal refactor for lcs schema: creates lcs.lcs_canonical (one row per sovereign_id, session-var guard trigger), lcs.lcs_errors (append-only with CHECK constraints matching repo pattern), lcs.lcs_intake (view over cid_intake), updates fn_process_cid to UPSERT canonical and log errors, updates fn_finalize_dispatch to update canonical dispatch state and log errors, reclassifies cid_intake/sid_registry/mid_ledger from CANONICAL to SUPPORTING in CTB registry. All v0 enforcement preserved.",
+    "doctrine_version": "2.8.0",
+    "timestamp": "2026-02-24T14:30:00Z",
+    "payload": {
+        "objects_created": {
+            "tables": ["lcs.lcs_canonical", "lcs.lcs_errors"],
+            "views": ["lcs.lcs_intake"],
+            "functions": [
+                "lcs.fn_lcs_canonical_guard()",
+                "lcs.fn_lcs_errors_guard()",
+                "lcs.fn_lcs_errors_no_delete()"
+            ],
+            "triggers": [
+                "trg_lcs_canonical_guard",
+                "trg_lcs_errors_guard",
+                "trg_lcs_errors_no_delete"
+            ],
+            "indexes": [
+                "idx_lcs_canonical_stage",
+                "idx_lcs_canonical_dispatch",
+                "idx_lcs_errors_sovereign",
+                "idx_lcs_errors_unresolved"
+            ],
+            "check_constraints": [
+                "chk_lcs_errors_type",
+                "chk_lcs_errors_stage",
+                "chk_lcs_errors_retry"
+            ]
+        },
+        "objects_modified": {
+            "functions": [
+                "lcs.fn_process_cid(uuid) — adds canonical UPSERT + error logging",
+                "lcs.fn_finalize_dispatch(uuid, jsonb) — adds canonical update + error logging"
+            ],
+            "ctb_reclassified": [
+                "lcs.cid_intake: CANONICAL -> SUPPORTING",
+                "lcs.sid_registry: CANONICAL -> SUPPORTING",
+                "lcs.mid_ledger: CANONICAL -> SUPPORTING"
+            ]
+        },
+        "canonical_guard": {
+            "mechanism": "session-variable enforcement (lcs.allow_canonical_write)",
+            "enforcement": "trg_lcs_canonical_guard blocks INSERT/UPDATE unless session var is 'on'",
+            "callers": ["fn_process_cid", "fn_finalize_dispatch"]
+        },
+        "error_logging": {
+            "fn_process_cid": "Validation failures (not found, not PENDING, expired) log to lcs_errors + return NULL. Unexpected exceptions caught via EXCEPTION block.",
+            "fn_finalize_dispatch": "Validation failures (MID not found, missing/invalid outcome) log to lcs_errors + return. FSM violations caught via EXCEPTION block."
+        },
+        "v0_preservation": {
+            "append_only_cid": "trg_cid_intake_no_update + trg_cid_intake_no_delete unchanged",
+            "mid_immutability": "trg_mid_ledger_guard + trg_mid_ledger_no_delete unchanged",
+            "forward_only_fsm": "trg_dispatch_state_forward unchanged",
+            "tables_retained": ["cid_intake", "sid_registry", "mid_ledger", "movement_type_registry"]
+        }
+    }
+}

@@ -1,0 +1,78 @@
+﻿{
+    "id":  "WP_20260224T072012-0500_LCS_SPINE_V0_CID_SID_MID_SKELETON",
+    "change_type":  "feature",
+    "architectural_flag":  false,
+    "allowed_paths":  [
+                          "migrations/"
+                      ],
+    "summary":  "Create CTB-compliant LCS Spine v0 in Neon via migration: add lcs schema, CID/SID/MID core tables and movement type registry, lifecycle/status/dispatch enums, required FKs to outreach/cl/lcs registry, append-only immutability and forward-only dispatch_state constraints, and DB-minted MID functions fn_process_cid and fn_finalize_dispatch without references to dropped views.",
+    "doctrine_version":  "2.8.0",
+    "timestamp":  "2026-02-24T07:20:12.1593016-05:00",
+    "payload":  {
+                    "request":  {
+                                    "title":  "SCR: LCS Spine v0 (CID/SID/MID Skeleton)",
+                                    "goal":  "Create the initial LCS spine database skeleton in Neon with CID intake, SID skeleton, MID ledger, registries, enums, immutability controls, and database-minted MID flow."
+                                },
+                    "classification":  {
+                                           "rationale":  "Feature work within existing parent/child doctrine. Introduces new schema objects and migration logic at execution/interface level without modifying protected CTB backbone primitives, altitude hierarchy, sovereign ID doctrine, cantonal/ERROR pattern definitions, registry enforcement model, or constitutional assets.",
+                                           "protected_assets_touched":  false,
+                                           "parent_approval_required":  false
+                                       },
+                    "scope":  {
+                                  "in_scope":  [
+                                                   "Create schema: lcs",
+                                                   "Create tables: lcs.cid_intake, lcs.sid_registry, lcs.mid_ledger, lcs.movement_type_registry",
+                                                   "Create enums: lcs.lifecycle_stage, lcs.cid_status, lcs.dispatch_state",
+                                                   "Add FKs: cid_intake.outreach_id -\u003e outreach.outreach, cid_intake.sovereign_id -\u003e cl.company_identity(company_unique_id), cid_intake.movement_type_code -\u003e lcs.movement_type_registry",
+                                                   "Enforce append-only immutability for CID and MID rows",
+                                                   "Enforce forward-only dispatch_state transitions",
+                                                   "Create DB functions: lcs.fn_process_cid(p_cid uuid), lcs.fn_finalize_dispatch(p_mid uuid, p_result jsonb)",
+                                                   "Ensure MID is database-minted"
+                                               ],
+                                  "out_of_scope":  [
+                                                       "workers/docker",
+                                                       "cadence engine",
+                                                       "suppression engine",
+                                                       "Lovable edge dispatch",
+                                                       "template compiler"
+                                                   ]
+                              },
+                    "implementation_requirements":  {
+                                                        "migration_only":  true,
+                                                        "constraints_required":  true,
+                                                        "no_dropped_view_references":  true,
+                                                        "function_callability_required":  true,
+                                                        "notes":  [
+                                                                      "All requested objects must be created via migration artifact(s) under migrations/.",
+                                                                      "Builder must not introduce dependencies on dropped/legacy views.",
+                                                                      "Immutability and state-transition enforcement must be implemented at the database layer (constraints/triggers/functions as appropriate)."
+                                                                  ]
+                                                    },
+                    "acceptance":  [
+                                       "All scoped schema objects exist after applying migration(s).",
+                                       "Required foreign keys and constraints are present.",
+                                       "lcs.fn_process_cid(p_cid uuid) is callable.",
+                                       "lcs.fn_finalize_dispatch(p_mid uuid, p_result jsonb) is callable.",
+                                       "No references to dropped views remain in migration SQL.",
+                                       "Auditor checks pass for scope and execution."
+                                   ],
+                    "artifacts":  {
+                                      "expected":  [
+                                                       "WP_*.json",
+                                                       "CS_*.json",
+                                                       "AR_*.json"
+                                                   ]
+                                  },
+                    "builder_handoff":  {
+                                            "deliverables":  [
+                                                                 "Migration SQL implementing LCS Spine v0 skeleton and enforcement primitives",
+                                                                 "CHANGESET artifact referencing modified migration path(s) only"
+                                                             ],
+                                            "guardrails":  [
+                                                               "Do not modify doctrine/constitutional/protected assets",
+                                                               "Do not expand into worker/runtime engines or Lovable/frontend surfaces",
+                                                               "Keep scope constrained to LCS spine skeleton requested in SCR"
+                                                           ]
+                                        }
+                }
+}

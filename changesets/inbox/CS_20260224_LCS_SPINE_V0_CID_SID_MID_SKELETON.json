@@ -1,0 +1,60 @@
+{
+    "id": "CS_20260224_LCS_SPINE_V0_CID_SID_MID_SKELETON",
+    "work_packet_id": "WP_20260224T072012-0500_LCS_SPINE_V0_CID_SID_MID_SKELETON",
+    "change_type": "feature",
+    "architectural_flag": false,
+    "modified_paths": [
+        "migrations/2026-02-24-lcs-spine-v0-skeleton.sql"
+    ],
+    "summary": "Single migration creating the LCS Spine v0 skeleton: lcs schema, 3 enums (lifecycle_stage, cid_status, dispatch_state), 4 tables (movement_type_registry with 10 seed rows, cid_intake, sid_registry, mid_ledger), FKs to outreach.outreach and cl.company_identity, append-only immutability triggers on cid_intake and mid_ledger, forward-only dispatch_state trigger, and 2 DB functions (fn_process_cid mints MID from PENDING CID, fn_finalize_dispatch advances to terminal state). No references to dropped views.",
+    "doctrine_version": "2.8.0",
+    "timestamp": "2026-02-24T12:45:00Z",
+    "payload": {
+        "objects_created": {
+            "schema": ["lcs"],
+            "enums": ["lcs.lifecycle_stage", "lcs.cid_status", "lcs.dispatch_state"],
+            "tables": ["lcs.movement_type_registry", "lcs.cid_intake", "lcs.sid_registry", "lcs.mid_ledger"],
+            "functions": ["lcs.fn_process_cid(uuid)", "lcs.fn_finalize_dispatch(uuid, jsonb)"],
+            "triggers": [
+                "trg_cid_intake_no_update",
+                "trg_cid_intake_no_delete",
+                "trg_mid_ledger_guard",
+                "trg_mid_ledger_no_delete",
+                "trg_dispatch_state_forward"
+            ],
+            "indexes": [
+                "idx_cid_intake_outreach",
+                "idx_cid_intake_sovereign",
+                "idx_cid_intake_status",
+                "idx_cid_intake_type",
+                "idx_sid_registry_stage",
+                "idx_mid_ledger_cid",
+                "idx_mid_ledger_sid",
+                "idx_mid_ledger_outreach",
+                "idx_mid_ledger_state"
+            ],
+            "seed_rows": 10
+        },
+        "fks": [
+            "cid_intake.outreach_id -> outreach.outreach(outreach_id)",
+            "cid_intake.sovereign_id -> cl.company_identity(company_unique_id)",
+            "cid_intake.movement_type_code -> lcs.movement_type_registry(movement_type_code)",
+            "sid_registry.outreach_id -> outreach.outreach(outreach_id)",
+            "sid_registry.sovereign_id -> cl.company_identity(company_unique_id)",
+            "mid_ledger.cid -> lcs.cid_intake(cid)",
+            "mid_ledger.sid -> lcs.sid_registry(sid)",
+            "mid_ledger.outreach_id -> outreach.outreach(outreach_id)",
+            "mid_ledger.sovereign_id -> cl.company_identity(company_unique_id)",
+            "mid_ledger.movement_type_code -> lcs.movement_type_registry(movement_type_code)"
+        ],
+        "immutability": {
+            "cid_intake": "Append-only after status leaves PENDING (no update, no delete)",
+            "mid_ledger": "Identity columns immutable; only dispatch_state/result/timestamps advance; no delete"
+        },
+        "dispatch_state_machine": {
+            "forward_only": true,
+            "transitions": "MINTED -> QUEUED -> DISPATCHED -> DELIVERED|BOUNCED|FAILED",
+            "terminal_states": ["DELIVERED", "BOUNCED", "FAILED"]
+        }
+    }
+}

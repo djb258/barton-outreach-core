@@ -1,0 +1,118 @@
+﻿{
+    "id":  "WP_20260224T0720_LCS_SPINE_V1_CTB_REFACTOR",
+    "change_type":  "refactor",
+    "architectural_flag":  false,
+    "allowed_paths":  [
+                          "migrations/"
+                      ],
+    "summary":  "Refactor LCS Spine to CTB Cantonal pattern in Neon via migration-only changes: add one CANONICAL table and one ERROR table, expose doctrinal INTAKE surface as lcs.lcs_intake (view over existing cid_intake), retain CID/SID/MID supporting mechanics and existing append-only/FSM enforcement, update DB functions to write canonical state and log failures, and register all LCS tables in CTB registry using existing repo leaf taxonomy.",
+    "doctrine_version":  "2.8.0",
+    "timestamp":  "2026-02-24T08:31:33.6373967-05:00",
+    "payload":  {
+                    "mission_id":  "LCS_SPINE_V1_CTB_REFACTOR",
+                    "objective":  "Refactor LCS to strict CTB Cantonal compliance by introducing INTAKE + single CANONICAL + single ERROR surfaces while retaining CID/SID/MID supporting state/log layers and DB-minted MID flow.",
+                    "classification":  {
+                                           "rationale":  "Refactor within existing backbone and protected models. The work applies the inherited Cantonal pattern to the local lcs schema without modifying CTB backbone primitives, altitude hierarchy, sovereign ID doctrine, cantonal/ERROR definitions, registry enforcement model, or constitutional artifacts.",
+                                           "protected_assets_touched":  false,
+                                           "parent_approval_required":  false
+                                       },
+                    "scope":  {
+                                  "schema":  "lcs",
+                                  "in_scope":  [
+                                                   "Create CANONICAL table lcs.lcs_canonical (single authoritative row per sovereign_id)",
+                                                   "Create ERROR table lcs.lcs_errors (cantonal error capture)",
+                                                   "Expose doctrinal INTAKE surface as lcs.lcs_intake using Option 2 (view over lcs.cid_intake) to preserve v0 table and enforcement safely",
+                                                   "Update lcs.fn_process_cid(p_cid uuid) to validate CID, ensure/UPSERT canonical row, update canonical state fields, preserve DB-minted MID and forward-only dispatch enforcement",
+                                                   "Update lcs.fn_finalize_dispatch(p_mid uuid, p_result jsonb) to update terminal MID dispatch state, reflect canonical dispatch state/current_mid as applicable, and log failure paths to lcs.lcs_errors",
+                                                   "Add CTB registry entries for all LCS tables using the correct registry table and existing repo leaf taxonomy"
+                                               ],
+                                  "out_of_scope":  [
+                                                       "Docker/workers/runtime polling",
+                                                       "Dispatch endpoints / Lovable edge functions",
+                                                       "Cadence engine / suppression engine hardening",
+                                                       "Template compiler / message rendering",
+                                                       "Non-migration code changes unless strictly required for schema registration (prefer migration-only)"
+                                                   ]
+                              },
+                    "canonical_table":  {
+                                            "name":  "lcs.lcs_canonical",
+                                            "requirements":  [
+                                                                 "One row per sovereign_id (PK + FK to cl.company_identity(company_unique_id))",
+                                                                 "Columns include current_lifecycle_stage, current_sid, current_mid, current_dispatch_state, last_cid, created_at, updated_at",
+                                                                 "FKs to lcs.sid_registry(sid), lcs.mid_ledger(mid), and intake CID primary key",
+                                                                 "updated_at auto-updates on allowed state transitions",
+                                                                 "Use repo-consistent trigger guard pattern so updates are only allowed through LCS functions (enforcement skeleton acceptable in v1)"
+                                                             ]
+                                        },
+                    "error_table":  {
+                                        "name":  "lcs.lcs_errors",
+                                        "requirements":  [
+                                                             "Append-only except resolved_at may be set",
+                                                             "Columns include error_id, error_stage, error_type, retry_strategy, sovereign_id, cid, sid, mid, error_payload, created_at, resolved_at",
+                                                             "Applicable FK constraints to cl.company_identity, lcs.cid_intake (or underlying intake table), lcs.sid_registry, lcs.mid_ledger",
+                                                             "Failure paths in LCS functions must insert deterministic error rows"
+                                                         ]
+                                    },
+                    "intake_surface":  {
+                                           "doctrinal_name":  "lcs.lcs_intake",
+                                           "implementation_choice":  "Option 2: create view mapping to existing lcs.cid_intake",
+                                           "rationale":  "Safest path that preserves v0 table, append-only enforcement, and compatibility while providing doctrinal INTAKE naming surface required by CTB alignment.",
+                                           "invariants":  [
+                                                              "Underlying CID intake remains append-only",
+                                                              "No v0 table deletion",
+                                                              "Deprecate safely via doctrinal surface instead of destructive rename"
+                                                          ]
+                                       },
+                    "registry_requirements":  {
+                                                  "action":  "Register all LCS tables in existing CTB registry table used by this repo via migration",
+                                                  "rules":  [
+                                                                "Do not invent a new registry table name; use repo-existing CTB registry table/schema",
+                                                                "Use existing repo leaf type taxonomy and map requested roles (INTAKE/CANONICAL/ERROR/REGISTRY/LEDGER-HISTORY) to valid local leaf types",
+                                                                "Include entries for newly added lcs.lcs_canonical and lcs.lcs_errors and supporting lcs tables retained/used in v1"
+                                                            ]
+                                              },
+                    "constraints_guardrails":  {
+                                                   "migration_only":  true,
+                                                   "no_legacy_dropped_view_references":  true,
+                                                   "preserve_v0_enforcement":  [
+                                                                                   "CID append-only",
+                                                                                   "MID immutability guards",
+                                                                                   "forward-only dispatch_state FSM"
+                                                                               ],
+                                                   "no_v0_table_deletion":  true,
+                                                   "single_transaction_per_migration":  true
+                                               },
+                    "acceptance_criteria":  [
+                                                "lcs.lcs_canonical exists and enforces one row per sovereign_id",
+                                                "lcs.lcs_errors exists, is append-only (except resolved_at), and captures function failure events",
+                                                "A doctrinal intake surface exists as lcs.lcs_intake and remains append-only through underlying enforcement",
+                                                "lcs.fn_process_cid() deterministically updates lcs.lcs_canonical on success",
+                                                "lcs.fn_finalize_dispatch() updates canonical dispatch state and logs failures to lcs.lcs_errors",
+                                                "CTB registry contains entries for all LCS tables with appropriate valid repo leaf types",
+                                                "Auditor can verify no scope violations, objects exist, functions are callable, and canonical row updates occur"
+                                            ],
+                    "operator_smoke_tests":  [
+                                                 "Insert intake event (CID PENDING), process CID, verify MID minted, SID exists/upserted, and canonical row reflects last_cid/current_mid/current_sid/current_dispatch_state",
+                                                 "Force error path (e.g., invalid movement_type_code or invalid CID status) and verify lcs.lcs_errors row is written",
+                                                 "Verify append-only constraints still block illegal updates"
+                                             ],
+                    "artifacts":  {
+                                      "expected":  [
+                                                       "WP_*.json",
+                                                       "CS_*.json",
+                                                       "AR_*.json"
+                                                   ]
+                                  },
+                    "builder_handoff":  {
+                                            "deliverables":  [
+                                                                 "Migration SQL implementing CTB cantonal refactor for lcs schema in a transaction",
+                                                                 "CHANGESET artifact referencing migration path(s) only"
+                                                             ],
+                                            "explicit_non_goals":  [
+                                                                       "No worker/dispatch runtime expansion",
+                                                                       "No cadence/suppression/template compiler implementation",
+                                                                       "No doctrine/protected asset modifications"
+                                                                   ]
+                                        }
+                }
+}

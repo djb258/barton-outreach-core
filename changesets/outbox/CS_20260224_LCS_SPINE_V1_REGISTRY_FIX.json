@@ -1,0 +1,26 @@
+{
+    "id": "CS_20260224_LCS_SPINE_V1_REGISTRY_FIX",
+    "work_packet_id": "WP_20260224_LCS_SPINE_V1_REGISTRY_FIX",
+    "change_type": "feature",
+    "architectural_flag": false,
+    "modified_paths": [
+        "migrations/2026-02-24-lcs-ctb-registry-fix.sql"
+    ],
+    "summary": "Single migration with INSERT ... ON CONFLICT DO UPDATE for all 6 LCS tables in ctb.table_registry. Remapped to existing CTB leaf types per Constitution (no CTB schema modification): cid_intake (STAGING), lcs_canonical (CANONICAL), lcs_errors (ERROR), sid_registry (SUPPORTING), mid_ledger (SUPPORTING), movement_type_registry (REGISTRY). Semantic role preserved in notes column. No schema, enforcement, or function changes.",
+    "doctrine_version": "2.8.0",
+    "timestamp": "2026-02-24T15:10:00Z",
+    "payload": {
+        "registry_changes": [
+            {"table": "lcs.cid_intake", "from": "SUPPORTING", "to": "STAGING", "semantic_role": "INTAKE"},
+            {"table": "lcs.lcs_canonical", "from": "CANONICAL", "to": "CANONICAL"},
+            {"table": "lcs.lcs_errors", "from": "ERROR", "to": "ERROR"},
+            {"table": "lcs.sid_registry", "from": "SUPPORTING", "to": "SUPPORTING", "semantic_role": "LEDGER"},
+            {"table": "lcs.mid_ledger", "from": "SUPPORTING", "to": "SUPPORTING", "semantic_role": "LEDGER"},
+            {"table": "lcs.movement_type_registry", "from": "REGISTRY", "to": "REGISTRY"}
+        ],
+        "idempotent": true,
+        "tables_modified": 0,
+        "triggers_modified": 0,
+        "functions_modified": 0
+    }
+}

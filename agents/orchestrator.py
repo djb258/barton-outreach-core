@@ -83,10 +83,12 @@ def cmd_status():
             protected_touched = True
 
     if wp_data and cs_data:
-        allowed = set(wp_data.get("allowed_paths", []))
-        modified = set(cs_data.get("modified_paths", []))
-        if modified - allowed:
-            scope_violation = True
+        allowed = wp_data.get("allowed_paths", [])
+        modified = cs_data.get("modified_paths", [])
+        for mp in modified:
+            if not any(mp == ap or (ap.endswith("/") and mp.startswith(ap)) for ap in allowed):
+                scope_violation = True
+                break
 
     if ar_data and ar_data.get("classification") == "FAIL_EXECUTION":
         execution_error = True

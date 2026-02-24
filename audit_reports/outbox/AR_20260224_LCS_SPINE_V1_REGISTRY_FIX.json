@@ -1,0 +1,9 @@
+{
+    "id": "AR_20260224_LCS_SPINE_V1_REGISTRY_FIX",
+    "work_packet_id": "WP_20260224_LCS_SPINE_V1_REGISTRY_FIX",
+    "changeset_id": "CS_20260224_LCS_SPINE_V1_REGISTRY_FIX",
+    "classification": "PASS",
+    "summary": "CONSTITUTIONAL CHECKS: ALL 4 PASS — Cantonal satisfied (lcs_canonical + lcs_errors from v1 migration), Registry-First (this migration IS the registry correction), Sovereign ID (no minting), No sideways calls. ENVELOPE: PASS — all 4 fields match (change_type=feature, architectural_flag=false, doctrine_version=2.8.0). SCOPE: PASS — single migration file within migrations/. No protected assets touched. EXECUTION: PASS — all 6 acceptance criteria met. 6/6 LCS tables registered via idempotent INSERT ... ON CONFLICT DO UPDATE in single transaction. Leaf types mapped to valid CTB taxonomy: cid_intake=STAGING (semantic INTAKE), lcs_canonical=CANONICAL, lcs_errors=ERROR, sid_registry=SUPPORTING (semantic LEDGER), mid_ledger=SUPPORTING (semantic LEDGER), movement_type_registry=REGISTRY. WP specified INTAKE and LEDGER leaf types which do not exist in repo CTB taxonomy; Builder correctly remapped to closest valid types and preserved semantic role in notes column rather than inventing new leaf types (which WP itself lists as out_of_scope: 'CTB schema modification'). No schema, enforcement, trigger, or function changes. Migration is idempotent and self-contained. OBSERVATION: WP payload.tables_required used non-existent leaf types (INTAKE, LEDGER) — Planner should use valid taxonomy in future WPs.",
+    "doctrine_version": "2.8.0",
+    "timestamp": "2026-02-24T15:20:00Z"
+}

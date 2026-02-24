@@ -1,0 +1,55 @@
+{
+  "id": "WP_20260224_LCS_SPINE_V1_REGISTRY_FIX",
+  "change_type": "feature",
+  "architectural_flag": false,
+  "allowed_paths": [
+    "migrations/"
+  ],
+  "summary": "Correct CTB registry alignment for LCS by inserting all 6 lcs tables into ctb.table_registry using deterministic INSERT ... ON CONFLICT DO UPDATE logic. No schema redesign, no enforcement changes.",
+  "doctrine_version": "2.8.0",
+  "timestamp": "2026-02-24T15:00:00Z",
+  "payload": {
+    "goal": "Ensure ALL LCS tables are properly registered in ctb.table_registry with correct leaf types after v1 refactor.",
+    "scope": {
+      "in_scope": [
+        "Create new migration file",
+        "Insert/Upsert registry rows for all 6 LCS tables",
+        "Use INSERT ... ON CONFLICT DO UPDATE",
+        "Do NOT modify existing LCS tables",
+        "Do NOT modify enforcement triggers",
+        "Do NOT modify functions",
+        "Do NOT alter canonical structure"
+      ],
+      "out_of_scope": [
+        "Docker/workers",
+        "Dispatch logic",
+        "Function redesign",
+        "Schema changes",
+        "Protected assets",
+        "CTB schema modification"
+      ]
+    },
+    "tables_required": [
+      {"schema": "lcs", "table": "cid_intake", "leaf_type": "INTAKE"},
+      {"schema": "lcs", "table": "lcs_canonical", "leaf_type": "CANONICAL"},
+      {"schema": "lcs", "table": "lcs_errors", "leaf_type": "ERROR"},
+      {"schema": "lcs", "table": "sid_registry", "leaf_type": "LEDGER"},
+      {"schema": "lcs", "table": "mid_ledger", "leaf_type": "LEDGER"},
+      {"schema": "lcs", "table": "movement_type_registry", "leaf_type": "REGISTRY"}
+    ],
+    "acceptance_criteria": [
+      "All 6 LCS tables appear in ctb.table_registry",
+      "Leaf types match expected values",
+      "No duplicate rows created",
+      "Migration is idempotent",
+      "Migration does not modify non-registry structures",
+      "Auditor verifies 6/6 registry alignment"
+    ],
+    "implementation_requirements": {
+      "must_use_new_migration_file": true,
+      "must_be_single_transaction": true,
+      "must_use_on_conflict": true,
+      "must_not_reference_dropped_objects": true
+    }
+  }
+}
