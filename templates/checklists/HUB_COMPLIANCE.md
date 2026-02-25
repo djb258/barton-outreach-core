@@ -8,6 +8,10 @@ No exceptions. No partial compliance.
 **This checklist MUST be referenced by an attestation document.**
 See: `templates/audit/CONSTITUTIONAL_AUDIT_ATTESTATION.md`
 
+## Applicability
+
+This checklist is designed for **CC-02 (Hub)** entities — child repos that implement hubs with PRDs, ERDs, databases, spokes, and IMO layers. If the target is a sovereign template repo (CC-01), most Part A and many Part B checks will be N/A. Mark N/A checks as such and note the reason.
+
 ## Conformance
 
 | Field | Value |
@@ -116,7 +120,7 @@ This hub CANNOT ship until violations are resolved.
 These sections verify the hub satisfies the Transformation Law.
 Failure in Part A invalidates the hub regardless of Part B status.
 
-**Section Anchors**: §A.1 through §A.6
+**Section Anchors**: §A.1 through §A.7
 
 ---
 
@@ -331,7 +335,7 @@ Part B assumes Part A passes.
 **Part B governs ship-readiness, not existence legitimacy.**
 Items marked CRITICAL define minimum operational safety, not architectural purity.
 
-**Section Anchors**: §B.1 through §B.12
+**Section Anchors**: §B.1 through §B.16
 
 ---
 
@@ -487,7 +491,8 @@ Items marked CRITICAL define minimum operational safety, not architectural purit
 
 ---
 
-## Failure Modes
+## Failure Modes {#section-b14}
+<!-- §B.14 -->
 
 | Priority | Check |
 |----------|-------|
@@ -497,7 +502,8 @@ Items marked CRITICAL define minimum operational safety, not architectural purit
 
 ---
 
-## Human Override
+## Human Override {#section-b15}
+<!-- §B.15 -->
 
 | Priority | Check |
 |----------|-------|
@@ -506,7 +512,8 @@ Items marked CRITICAL define minimum operational safety, not architectural purit
 
 ---
 
-## Traceability
+## Traceability {#section-b16}
+<!-- §B.16 -->
 
 | Priority | Check |
 |----------|-------|
@@ -601,6 +608,43 @@ Alerts: [count]
 
 **Documentation drift is a violation. If structure changed, docs MUST be updated.**
 **Metrics are NOT in MD files. Metrics are in ERD_METRICS.yaml.**
+
+---
+
+## Pressure Test Verification (if architectural change) {#section-b13}
+<!-- §B.13 -->
+
+**Added v3.4.0**: If the hub underwent architectural or flow changes, verify that pressure test artifacts exist and pass. This section is conditional — skip if no architectural changes occurred since last audit.
+
+| Priority | Check |
+|----------|-------|
+| CRITICAL | [ ] `requires_pressure_test` was set to `true` in WORK_PACKET for architectural changes |
+| CRITICAL | [ ] ARCH_PRESSURE_REPORT.json exists with all 5 fields = PASS |
+| CRITICAL | [ ] FLOW_PRESSURE_REPORT.json exists with all 5 fields = PASS |
+| HIGH | [ ] Pressure report `work_packet_id` matches the originating WORK_PACKET |
+| HIGH | [ ] Pressure report `changeset_id` matches the resulting CHANGESET |
+
+### Structural Invariants (ARCH_PRESSURE_REPORT)
+
+| Gate | Check | Status |
+|------|-------|--------|
+| cantonal_cardinality | [ ] Each table belongs to exactly one sub-hub | PASS / FAIL / N/A |
+| registry_first | [ ] All tables registered in ctb.table_registry before use | PASS / FAIL / N/A |
+| id_authority | [ ] Hub owns its ID generation, no external ID injection | PASS / FAIL / N/A |
+| no_sideways_calls | [ ] No hub-to-hub direct calls | PASS / FAIL / N/A |
+| contracts_declared | [ ] All ingress/egress contracts declared in schema | PASS / FAIL / N/A |
+
+### Flow Invariants (FLOW_PRESSURE_REPORT)
+
+| Gate | Check | Status |
+|------|-------|--------|
+| ingress_contract_exists | [ ] Every ingress point has a typed contract | PASS / FAIL / N/A |
+| egress_contract_exists | [ ] Every egress point has a typed contract | PASS / FAIL / N/A |
+| no_orphan_tables | [ ] No tables exist without ingress/egress path | PASS / FAIL / N/A |
+| no_unconsumed_events | [ ] Every emitted event has at least one consumer | PASS / FAIL / N/A |
+| id_propagation_intact | [ ] IDs propagate end-to-end without mutation | PASS / FAIL / N/A |
+
+**Any FAIL on any gate = hub is NON-COMPLIANT for that architectural change.**
 
 ---
 
@@ -774,5 +818,22 @@ If CRITICAL > 0 or HIGH > 0 and I selected COMPLIANT, this audit is INVALID.
 | Process Doctrine | templates/doctrine/PROCESS_DOCTRINE.md |
 | ERD Doctrine | templates/doctrine/ERD_DOCTRINE.md |
 | **OSAM (Semantic Access Map)** | templates/semantic/OSAM.md |
+| ARCH Pressure Report Schema | templates/agents/contracts/arch_pressure_report.schema.json |
+| FLOW Pressure Report Schema | templates/agents/contracts/flow_pressure_report.schema.json |
+| Registry Enforcement | templates/doctrine/CTB_REGISTRY_ENFORCEMENT.md |
 
 **Note**: CANONICAL_ARCHITECTURE_DOCTRINE.md, HUB_SPOKE_ARCHITECTURE.md, and ALTITUDE_DESCENT_MODEL.md are now redirects to ARCHITECTURE.md.
+
+---
+
+## Document Control
+
+| Field | Value |
+|-------|-------|
+| Version | 1.1.0 |
+| Created | 2026-01-30 |
+| Last Modified | 2026-02-25 |
+| Authority | CONSTITUTIONAL |
+| Status | TEMPLATE |
+| Change Protocol | ADR + HUMAN APPROVAL REQUIRED |
+| Maintained By | Human + AI (copy and execute) |
