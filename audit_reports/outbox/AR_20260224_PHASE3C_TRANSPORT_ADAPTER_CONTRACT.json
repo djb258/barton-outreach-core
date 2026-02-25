@@ -3,7 +3,39 @@
     "work_packet_id": "WP_20260224T0910_PHASE3C_TRANSPORT_ADAPTER_CONTRACT_EXTERNAL_BOUNDARY_LOCK",
     "changeset_id": "CS_20260224_PHASE3C_TRANSPORT_ADAPTER_CONTRACT",
     "classification": "PASS",
-    "summary": "CONSTITUTIONAL CHECKS: ALL 4 PASS — Cantonal (dispatch_event_log is SUPPORTING, not CANONICAL/ERROR; lcs_canonical+lcs_errors cantonal pair untouched), Registry-First (CTB pre-registration at Section 1 line 26 before CREATE TABLE at Section 3 line 49), Sovereign ID (no minting — fn_record_dispatch_result operates on existing MIDs; event_id gen_random_uuid is operational PK not sovereign identity), No sideways calls (all reads/writes within lcs schema: mid_ledger, dispatch_event_log, lcs_errors). ENVELOPE: PASS — all 4 fields match (change_type=feature, architectural_flag=false, doctrine_version=2.8.0). SCOPE: PASS — 2 modified paths within migrations/ and tests/. No protected assets touched. EXECUTION: PASS — all 6 acceptance criteria met. (1) fn_record_dispatch_result(uuid, text, text, text, jsonb) created as VOID-returning entry point. Steps: FOR UPDATE lock, validate SENT, validate result_state in {DELIVERED,FAILED,BOUNCED}, update mid_ledger, insert event log. (2) Three validation layers: SENT state check (STATE_VIOLATION error + return), result_state check (VALIDATION error + return), forward-only FSM via existing fn_dispatch_state_forward_only trigger from Phase 3A (reused, not duplicated). (3) mid_ledger UPDATE sets dispatch_state + provider + external_message_id + dispatch_result + finalized_at + CASE-based delivered_at/failed_at/bounced_at. Event log INSERT records mid + provider + external_message_id + result_state + metadata. (4) dispatch_event_log created with event_id UUID PK, mid FK, provider/external_message_id/result_state/metadata/recorded_at. Append-only: no-UPDATE trigger + no-DELETE trigger. CTB registered as SUPPORTING. CHECK constraint on result_state. (5) lcs_transport role created (NOLOGIN, idempotent). EXECUTE granted on function. REVOKE from PUBLIC. REVOKE ALL on 5 tables (mid_ledger, dispatch_event_log, lcs_errors, lcs_canonical, worker_run_log) — exceeds WP's 2-table requirement for comprehensive isolation. (6) 15 tests across 3 categories (CS claims 14, actual 15 — minor undercount non-blocking): dispatch_event_log structure (4: exists, CTB SUPPORTING, update blocked, delete blocked), fn_record_dispatch_result behavior (7: DELIVERED/FAILED/BOUNCED updates with timestamp verification, event log insert, rejects non-SENT, rejects invalid result_state, MID not found error), permissions (4: role exists, EXECUTE on function, no INSERT on mid_ledger, no INSERT on dispatch_event_log). OBSERVATIONS: (1) No RAISE-after-DML confirmed — error paths INSERT+RETURN before UPDATE; success path UPDATE fires BEFORE trigger (RAISE during DML not after); if blocked, entire function rolls back with no orphaned DML. (2) dispatch_result and finalized_at columns pre-exist from earlier migrations — not in Phase 3C ALTER TABLE additions but verified working by tests. (3) Defense-in-depth: CHECK constraint on dispatch_event_log provides DB-level result_state validation even if function IF check bypassed. (4) SECURITY INVOKER gap consistent with 2F/3A/3B — works as owner, needs SECURITY DEFINER for full least-privilege.",
+    "summary": "RECLASSIFIED FROM FAIL_EXECUTION BACK TO PASS. Blocking finding BF-3C-001 (fn_record_dispatch_result 3 INSERTs using non-existent lcs_errors columns) RESOLVED by hotfix AR_20260224_LCS_ERRORS_COLUMN_HOTFIX. All 3 INSERTs now use correct columns (error_stage='dispatch_finalization', lowercase error_types, mid/sovereign_id, error_payload as jsonb). MID-not-found path uses mid=NULL + attempted_mid in payload (FK safe). Test file (test_transport_adapter_contract.py) aligned — _count_errors uses error_stage. CONSTITUTIONAL CHECKS: ALL 4 PASS — Cantonal (dispatch_event_log is SUPPORTING, not CANONICAL/ERROR; cantonal pair intact), Registry-First (CTB pre-registration before CREATE TABLE), Sovereign ID (no minting — operates on existing MIDs), No sideways calls (all within lcs schema). ENVELOPE: PASS. SCOPE: PASS. EXECUTION: PASS — all 6 acceptance criteria now met. AC1: fn_record_dispatch_result with FOR UPDATE lock, state validation, mid_ledger UPDATE. AC2: PASS — three error paths now log correctly to lcs_errors with constraint-compliant values. AC3: mid_ledger UPDATE with CASE-based timestamps. AC4: dispatch_event_log append-only with CTB SUPPORTING. AC5: lcs_transport role EXECUTE-only. AC6: 15 tests, all aligned. OBSERVATIONS: (1) SECURITY INVOKER gap consistent with prior phases — tracked, not blocking. (2) dispatch_event_log append-only enforcement confirmed.",
+    "blocking_findings": [],
+    "resolved_findings": [
+        {
+            "id": "BF-3C-001",
+            "original_severity": "BLOCKING",
+            "title": "fn_record_dispatch_result — 3 lcs_errors INSERTs used non-existent columns",
+            "resolution": "Fixed by hotfix AR_20260224_LCS_ERRORS_COLUMN_HOTFIX. Column mapping applied: error_source→error_stage ('dispatch_finalization'), entity_id/entity_type→mid/sovereign_id, error_message/context→error_payload (jsonb). MID-not-found uses mid=NULL + attempted_mid in payload. All 3 INSERTs verified correct against DDL and CHECK constraints.",
+            "verified_at": "2026-02-24T23:15:00Z"
+        }
+    ],
+    "acceptance_criteria_status": {
+        "AC1": "PASS — fn_record_dispatch_result created with correct signature and FOR UPDATE lock",
+        "AC2": "PASS — three error paths now log correctly to lcs_errors with constraint-compliant values",
+        "AC3": "PASS — mid_ledger UPDATE with correct columns and CASE-based timestamp logic",
+        "AC4": "PASS — dispatch_event_log created with append-only enforcement, CTB SUPPORTING",
+        "AC5": "PASS — lcs_transport role with EXECUTE-only, comprehensive REVOKE ALL",
+        "AC6": "PASS — 15 tests across 3 categories, all structurally correct and aligned"
+    },
     "doctrine_version": "2.8.0",
-    "timestamp": "2026-02-24T20:30:00Z"
+    "timestamp": "2026-02-24T23:15:00Z",
+    "reclassification_history": [
+        {
+            "from": "PASS",
+            "to": "FAIL_EXECUTION",
+            "at": "2026-02-24T21:35:00Z",
+            "reason": "Audit discovered fn_record_dispatch_result 3 INSERTs use non-existent lcs_errors columns. PL/pgSQL deferred validation masked the mismatch."
+        },
+        {
+            "from": "FAIL_EXECUTION",
+            "to": "PASS",
+            "at": "2026-02-24T23:15:00Z",
+            "reason": "Blocking finding BF-3C-001 resolved by hotfix AR_20260224_LCS_ERRORS_COLUMN_HOTFIX. All 3 INSERTs verified correct. Function redeployed to Neon. Test file aligned."
+        }
+    ]
 }

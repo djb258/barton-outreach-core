@@ -1,0 +1,172 @@
+{
+    "id": "AR_20260224_LCS_ERRORS_COLUMN_HOTFIX",
+    "report_type": "hotfix_audit",
+    "triggered_by": "Phase 3D audit reclassification (FAIL_EXECUTION)",
+    "doctrine_version": "2.8.0",
+    "timestamp": "2026-02-24T22:30:00Z",
+    "classification": "HOTFIX — Systemic lcs_errors column mismatch across 4 phases",
+
+    "root_cause": {
+        "description": "Builder used assumed lcs_errors schema (error_source, entity_id, entity_type, error_message, context) instead of actual columns (error_stage, error_type, mid, sovereign_id, error_payload). PL/pgSQL deferred validation allowed functions to CREATE successfully but error paths were ticking time bombs.",
+        "additional_constraints_discovered": [
+            "chk_lcs_errors_stage: only allows lowercase values from closed set (cid_processing, sid_creation, mid_minting, dispatch_finalization, canonical_update, emission_validation, emission_processing)",
+            "chk_lcs_errors_type: only allows lowercase values (validation, state_violation, expired, conflict, external_fail)",
+            "chk_lcs_errors_retry: only allows (manual_fix, auto_retry, discard)",
+            "lcs_errors_mid_fkey: FK to mid_ledger(mid) — cannot store non-existent MID UUID",
+            "lcs_errors_sovereign_id_fkey: FK to cl.company_identity(company_unique_id)"
+        ]
+    },
+
+    "scope_of_fix": {
+        "phases_affected": ["3A", "3C", "3D_test", "4A"],
+        "phases_not_affected": ["v0", "v1", "2A", "SRC2", "SRC3", "SRC4", "2D", "2E", "2F", "3B"],
+        "total_files_modified": 8,
+        "total_error_inserts_fixed": 11,
+        "neon_functions_redeployed": 3,
+        "neon_constraints_modified": 1
+    },
+
+    "changes_applied": {
+        "migration_files_corrected": {
+            "phase3a": {
+                "file": "migrations/2026-02-24-phase3a-dispatch-readiness-governor.sql",
+                "function": "lcs.fn_mark_mid_ready(uuid)",
+                "inserts_fixed": 5,
+                "column_mapping": {
+                    "error_source → error_stage": "fn_mark_mid_ready → mid_minting",
+                    "VALIDATION → validation": true,
+                    "STATE_VIOLATION → state_violation": true,
+                    "LIFECYCLE_BLOCK → conflict": true,
+                    "SUPPRESSION → conflict": true,
+                    "entity_id/entity_type → mid/sovereign_id": true,
+                    "error_message/context → error_payload jsonb": true,
+                    "MID_NOT_FOUND: mid=p_mid → mid=NULL + attempted_mid in payload": true
+                }
+            },
+            "phase3c": {
+                "file": "migrations/2026-02-24-phase3c-transport-adapter-contract.sql",
+                "function": "lcs.fn_record_dispatch_result(uuid, text, text, text, jsonb)",
+                "inserts_fixed": 3,
+                "column_mapping": {
+                    "error_source → error_stage": "fn_record_dispatch_result → dispatch_finalization",
+                    "VALIDATION → validation": true,
+                    "STATE_VIOLATION → state_violation": true,
+                    "entity_id/entity_type → mid/sovereign_id": true,
+                    "error_message/context → error_payload jsonb": true,
+                    "MID_NOT_FOUND: mid=p_mid → mid=NULL + attempted_mid in payload": true
+                }
+            },
+            "phase4a": {
+                "file": "migrations/2026-02-24-phase4a-cadence-governor.sql",
+                "function": "lcs.fn_cadence_check(uuid, text)",
+                "inserts_fixed": 2,
+                "changes": [
+                    "Extended chk_lcs_errors_stage to include 'cadence_check'",
+                    "CADENCE_CHECK → cadence_check (lowercase, constraint-compliant)",
+                    "MID_NOT_FOUND → validation (error_type, constraint-compliant)",
+                    "CADENCE_BLOCKED → conflict (error_type, constraint-compliant)",
+                    "MID_NOT_FOUND: mid=p_mid → mid=NULL + attempted_mid in payload (FK constraint)"
+                ]
+            }
+        },
+        "test_files_corrected": {
+            "test_dispatch_readiness_governor.py": {
+                "phase": "3A",
+                "changes": [
+                    "_count_errors uses error_stage instead of error_source",
+                    "Stage value: fn_mark_mid_ready → mid_minting",
+                    "MID not found: query by error_payload->>'attempted_mid' instead of mid column",
+                    "Error type assertions: VALIDATION → validation"
+                ]
+            },
+            "test_suppression_cooldown_engine.py": {
+                "phase": "3B",
+                "changes": [
+                    "_count_errors uses error_stage instead of error_source",
+                    "Stage value: fn_mark_mid_ready → mid_minting",
+                    "Error type: SUPPRESSION → conflict",
+                    "Error detail: query error_payload jsonb instead of error_message text"
+                ]
+            },
+            "test_transport_adapter_contract.py": {
+                "phase": "3C",
+                "changes": [
+                    "_count_errors uses error_stage instead of error_source",
+                    "Stage value: fn_record_dispatch_result → dispatch_finalization"
+                ]
+            },
+            "test_retry_dead_letter_governor.py": {
+                "phase": "3D",
+                "changes": [
+                    "INSERT uses error_stage/error_type/error_payload instead of error_source/error_type/error_message",
+                    "SELECT from v_dead_letter_queue uses error_stage/error_type/error_context (not error_source/error_message)",
+                    "error_context is jsonb (aliased from error_payload), asserted via json.loads"
+                ]
+            },
+            "test_cadence_governor.py": {
+                "phase": "4A",
+                "changes": [
+                    "MID_NOT_FOUND error assertion queries error_payload->>'attempted_mid'",
+                    "BLOCKED error assertion uses error_stage='cadence_check', error_type='conflict'"
+                ]
+            }
+        },
+        "neon_deployments": [
+            {
+                "action": "CREATE OR REPLACE FUNCTION lcs.fn_mark_mid_ready(uuid)",
+                "status": "DEPLOYED",
+                "verified": true
+            },
+            {
+                "action": "CREATE OR REPLACE FUNCTION lcs.fn_record_dispatch_result(uuid, text, text, text, jsonb)",
+                "status": "DEPLOYED",
+                "verified": true
+            },
+            {
+                "action": "ALTER TABLE lcs.lcs_errors DROP/ADD CONSTRAINT chk_lcs_errors_stage (added cadence_check)",
+                "status": "DEPLOYED",
+                "verified": true
+            },
+            {
+                "action": "CREATE OR REPLACE FUNCTION lcs.fn_cadence_check(uuid, text)",
+                "status": "DEPLOYED",
+                "verified": true
+            }
+        ]
+    },
+
+    "contract_triad_verification": {
+        "lcs_errors_schema": {
+            "columns": ["error_id", "error_stage", "error_type", "retry_strategy", "sovereign_id", "cid", "sid", "mid", "error_payload", "created_at", "resolved_at", "is_retryable"],
+            "check_constraints": {
+                "chk_lcs_errors_stage": ["cid_processing", "sid_creation", "mid_minting", "dispatch_finalization", "canonical_update", "emission_validation", "emission_processing", "cadence_check"],
+                "chk_lcs_errors_type": ["validation", "state_violation", "expired", "conflict", "external_fail"],
+                "chk_lcs_errors_retry": ["manual_fix", "auto_retry", "discard"]
+            },
+            "fk_constraints": {
+                "lcs_errors_cid_fkey": "lcs.cid_intake(cid)",
+                "lcs_errors_mid_fkey": "lcs.mid_ledger(mid)",
+                "lcs_errors_sid_fkey": "lcs.sid_registry(sid)",
+                "lcs_errors_sovereign_id_fkey": "cl.company_identity(company_unique_id)"
+            }
+        },
+        "all_functions_aligned": true,
+        "all_tests_aligned": true,
+        "all_views_aligned": true,
+        "v_dead_letter_queue_columns": ["error_stage", "error_type", "error_context (alias of error_payload)"]
+    },
+
+    "residual_items": [
+        "2 inert test sentinel rows remain in lcs_errors (attempted_mid 000..099 and 000..098) — append-only table, cannot delete",
+        "1 inert test sentinel row for cadence_check (attempted_mid 000..097)",
+        "Temporary deploy scripts in scripts/ directory (apply_phase4a_migration.py, deploy_phase4a_hotfix.py)"
+    ],
+
+    "auditor_action_required": [
+        "Verify fn_mark_mid_ready error paths execute correctly against live Neon (trigger COMPILED check, lifecycle block, suppression block)",
+        "Verify fn_record_dispatch_result error paths execute correctly (trigger non-SENT state, invalid result_state)",
+        "Verify fn_cadence_check BLOCKED path logs to lcs_errors with constraint-compliant values",
+        "Reclassify Phase 3A and Phase 3C from original PASS to corrected status if appropriate",
+        "Confirm Phase 3D reclassification resolved (test file fixed, view was already correct)"
+    ]
+}

@@ -195,33 +195,36 @@ class TestMarkMidReady:
     def test_mid_not_found_logs_error(self, cur):
         """fn_mark_mid_ready logs error for non-existent MID and returns cleanly."""
         fake_mid = uuid.uuid4()
-        error_count_before = _count_errors(cur, 'fn_mark_mid_ready')
+        error_count_before = _count_errors(cur, 'mid_minting')
 
         # Should NOT raise
         cur.execute("SELECT lcs.fn_mark_mid_ready(%s)", (str(fake_mid),))
 
-        error_count_after = _count_errors(cur, 'fn_mark_mid_ready')
+        error_count_after = _count_errors(cur, 'mid_minting')
         assert error_count_after == error_count_before + 1
 
-        # Verify error details
+        # Verify error details — mid=NULL for not-found (FK constraint), UUID in payload
         cur.execute("""
-            SELECT error_type, error_message FROM lcs.lcs_errors
-            WHERE error_source = 'fn_mark_mid_ready' AND entity_id = %s
+            SELECT error_type, error_payload FROM lcs.lcs_errors
+            WHERE error_stage = 'mid_minting' AND mid IS NULL
+              AND error_payload->>'attempted_mid' = %s
             ORDER BY created_at DESC LIMIT 1
         """, (str(fake_mid),))
         row = cur.fetchone()
-        assert row[0] == 'VALIDATION'
-        assert 'not found' in row[1]
+        assert row is not None
+        assert row[0] == 'validation'
+        payload = row[1] if isinstance(row[1], dict) else json.loads(row[1])
+        assert 'not found' in payload['message']
 
     def test_wrong_state_logs_error(self, cur):
         """fn_mark_mid_ready logs error when MID is not COMPILED."""
         mid, _, _, _, _ = _create_test_mid(cur, 'MINTED')  # Still MINTED, not COMPILED
-        error_count_before = _count_errors(cur, 'fn_mark_mid_ready')
+        error_count_before = _count_errors(cur, 'mid_minting')
 
         # Should NOT raise
         cur.execute("SELECT lcs.fn_mark_mid_ready(%s)", (str(mid),))
 
-        error_count_after = _count_errors(cur, 'fn_mark_mid_ready')
+        error_count_after = _count_errors(cur, 'mid_minting')
         assert error_count_after == error_count_before + 1
 
         # Verify MID did NOT advance
@@ -241,12 +244,12 @@ class TestMarkMidReady:
             DO UPDATE SET current_lifecycle_stage = 'SUPPRESSED'
         """, (str(sovereign_id),))
 
-        error_count_before = _count_errors(cur, 'fn_mark_mid_ready')
+        error_count_before = _count_errors(cur, 'mid_minting')
 
         # Should NOT raise
         cur.execute("SELECT lcs.fn_mark_mid_ready(%s)", (str(mid),))
 
-        error_count_after = _count_errors(cur, 'fn_mark_mid_ready')
+        error_count_after = _count_errors(cur, 'mid_minting')
         assert error_count_after == error_count_before + 1
 
         # Verify MID did NOT advance
@@ -289,9 +292,14 @@ class TestPermissions:
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _count_errors(cur, source):
-    """Count errors from a specific source."""
-    cur.execute("""
-        SELECT count(*) FROM lcs.lcs_errors WHERE error_source = %s
-    """, (source,))
+def _count_errors(cur, stage, mid=None):
+    """Count errors from a specific error_stage, optionally filtered by mid."""
+    if mid:
+        cur.execute("""
+            SELECT count(*) FROM lcs.lcs_errors WHERE error_stage = %s AND mid = %s
+        """, (stage, str(mid)))
+    else:
+        cur.execute("""
+            SELECT count(*) FROM lcs.lcs_errors WHERE error_stage = %s
+        """, (stage,))
     return cur.fetchone()[0]

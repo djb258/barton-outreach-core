@@ -1,0 +1,189 @@
+﻿{
+    "id":  "WP_20260224T0930_PHASE4A_CADENCE_GOVERNOR_FREQUENCY_CAPS_TIME_WINDOWS",
+    "change_type":  "feature",
+    "architectural_flag":  false,
+    "allowed_paths":  [
+                          "migrations/",
+                          "tests/"
+                      ],
+    "summary":  "Implement Phase 4A Cadence Governor (frequency caps + time windows) as DB-only governance: add cadence_policy_registry REGISTRY table and dispatch_attempt_log SUPPORTING table, create fn_cadence_check(p_mid,p_channel) returning policy/metrics decision JSON, and integrate cadence enforcement into the dispatch readiness path (or explicitly defer to 4B send-attempt function while preserving blocked/allowed logging and deterministic error behavior).",
+    "doctrine_version":  "2.8.0",
+    "timestamp":  "2026-02-24T15:36:43.7282802-05:00",
+    "payload":  {
+                    "phase":  "4A",
+                    "src_title":  "Cadence Governor (Frequency Caps + Time Windows)",
+                    "objective":  "Deterministically enforce send frequency and allowed windows before any dispatch attempt.",
+                    "classification":  {
+                                           "rationale":  "Feature work within LCS DB governance/control-plane surfaces. Adds cadence registry/logging/evaluation and readiness-path gating integration without modifying protected CTB backbone, altitude hierarchy, or constitutional doctrine assets.",
+                                           "protected_assets_touched":  false,
+                                           "parent_approval_required":  false
+                                       },
+                    "path_scope":  {
+                                       "allowed_paths":  [
+                                                             "migrations/",
+                                                             "tests/"
+                                                         ],
+                                       "constraints":  [
+                                                           "Schema/functions/views/triggers/permissions implemented via migrations under migrations/",
+                                                           "Tests under tests/ only",
+                                                           "No changes outside allowed paths without a new WORK_PACKET"
+                                                       ]
+                                   },
+                    "src":  {
+                                "trigger_context":  "A MID reaches READY and worker needs a deterministic decision whether/when to send again (frequency caps + time windows). Worker calls a DB function that evaluates cadence rules and either allows dispatch or blocks/logs.",
+                                "create_registry_table":  {
+                                                              "name":  "lcs.cadence_policy_registry",
+                                                              "leaf_type":  "REGISTRY",
+                                                              "primary_key":  "(lifecycle_stage, channel)",
+                                                              "ctb_registration_required":  true,
+                                                              "columns":  [
+                                                                              "lifecycle_stage text not null",
+                                                                              "channel text not null (EMAIL | LINKEDIN)",
+                                                                              "min_gap_hours int not null",
+                                                                              "max_sends_7d int not null",
+                                                                              "max_sends_30d int not null",
+                                                                              "allowed_days int[] not null (0-6)",
+                                                                              "allowed_start_local time not null",
+                                                                              "allowed_end_local time not null",
+                                                                              "timezone_mode text not null default ACCOUNT (ACCOUNT | COMPANY | FIXED)",
+                                                                              "is_enabled boolean not null default true",
+                                                                              "created_at timestamptz not null default now()",
+                                                                              "updated_at timestamptz not null default now()"
+                                                                          ],
+                                                              "requirements":  [
+                                                                                   "CTB register as REGISTRY using repo-existing registry table",
+                                                                                   "PK uniqueness enforced on lifecycle_stage + channel",
+                                                                                   "updated_at maintained on policy updates (if governance mutation pattern uses trigger)"
+                                                                               ]
+                                                          },
+                                "create_supporting_table":  {
+                                                                "name":  "lcs.dispatch_attempt_log",
+                                                                "leaf_type":  "SUPPORTING",
+                                                                "append_only":  true,
+                                                                "ctb_registration_required":  true,
+                                                                "columns":  [
+                                                                                "attempt_id uuid primary key default gen_random_uuid()",
+                                                                                "mid uuid not null",
+                                                                                "sovereign_id uuid not null",
+                                                                                "channel text not null",
+                                                                                "lifecycle_stage text not null",
+                                                                                "attempted_at timestamptz not null default now()",
+                                                                                "decision text not null (ALLOWED | BLOCKED)",
+                                                                                "block_reason text null",
+                                                                                "policy_snapshot jsonb null"
+                                                                            ],
+                                                                "requirements":  [
+                                                                                     "Append-only enforcement",
+                                                                                     "CTB register as SUPPORTING using repo-existing registry table",
+                                                                                     "FKs to lcs.mid_ledger(mid) and sovereign identity where applicable"
+                                                                                 ]
+                                                            },
+                                "create_cadence_eval_function":  {
+                                                                     "name":  "lcs.fn_cadence_check",
+                                                                     "signature":  "lcs.fn_cadence_check(p_mid uuid, p_channel text) returns jsonb",
+                                                                     "must":  [
+                                                                                  "Resolve sovereign_id + lifecycle_stage from canonical + mid_ledger",
+                                                                                  "Fetch policy from lcs.cadence_policy_registry",
+                                                                                  "Compute last send time for sovereign+channel (from mid_ledger or dispatch_attempt_log per implementation)",
+                                                                                  "Compute sends in last 7d and 30d",
+                                                                                  "Compute current local day/time per timezone_mode",
+                                                                                  "Return decision JSON with allowed, block_reason, policy, metrics",
+                                                                                  "No RAISE"
+                                                                              ],
+                                                                     "return_contract":  {
+                                                                                             "type":  "jsonb",
+                                                                                             "required_keys":  [
+                                                                                                                   "allowed",
+                                                                                                                   "block_reason",
+                                                                                                                   "policy",
+                                                                                                                   "metrics"
+                                                                                                               ],
+                                                                                             "example":  {
+                                                                                                             "allowed":  true,
+                                                                                                             "block_reason":  null,
+                                                                                                             "policy":  {
+
+                                                                                                                        },
+                                                                                                             "metrics":  {
+                                                                                                                             "last_send_at":  "timestamp",
+                                                                                                                             "count_7d":  1,
+                                                                                                                             "count_30d":  3
+                                                                                                                         }
+                                                                                                         }
+                                                                                         }
+                                                                 },
+                                "modify_dispatch_readiness_path":  {
+                                                                       "target":  "lcs.fn_mark_mid_ready (or explicitly deferred to Phase 4B send-attempt function if READY remains channel-agnostic)",
+                                                                       "requirement":  "Builder must choose one implementation path explicitly and document it in CHANGESET.",
+                                                                       "options":  [
+                                                                                       "Option A: Call fn_cadence_check(mid, \u0027EMAIL\u0027) in fn_mark_mid_ready (current channel assumption)",
+                                                                                       "Option B: Keep READY channel-agnostic and wire cadence check into Phase 4B send-attempt function"
+                                                                                   ],
+                                                                       "behavior":  [
+                                                                                        "If blocked: log BLOCKED row to lcs.dispatch_attempt_log, log deterministic error to lcs.lcs_errors, RETURN cleanly",
+                                                                                        "If allowed: log ALLOWED row to lcs.dispatch_attempt_log and proceed (or return allow decision in deferred path)"
+                                                                                    ]
+                                                                   },
+                                "permissions":  {
+                                                    "grants":  [
+                                                                   "Only lcs_worker EXECUTE on lcs.fn_cadence_check"
+                                                               ],
+                                                    "restrictions":  [
+                                                                         "No direct table writes for worker",
+                                                                         "If least-privilege enforced, logs are written via SECURITY DEFINER function or equivalent function-mediated path"
+                                                                     ]
+                                                },
+                                "non_goals":  [
+                                                  "Message templating",
+                                                  "Provider sending",
+                                                  "Cross-channel priority (Phase 4B)",
+                                                  "UI"
+                                              ]
+                            },
+                    "builder_outputs_expected":  [
+                                                     "Migration SQL for lcs.cadence_policy_registry and CTB REGISTRY registration entry",
+                                                     "Migration SQL for lcs.dispatch_attempt_log and CTB SUPPORTING registration entry",
+                                                     "Migration SQL for lcs.fn_cadence_check(p_mid uuid, p_channel text)",
+                                                     "Migration SQL integrating cadence check into readiness path or explicit deferred send-attempt path hook with deterministic logging behavior",
+                                                     "Permission/grant/revoke SQL for lcs_worker least-privilege access",
+                                                     "Enforcement tests for cadence evaluation, logging, and permission boundaries"
+                                                 ],
+                    "test_scope":  {
+                                       "include":  [
+                                                       "cadence_policy_registry exists with composite PK and CTB REGISTRY registration",
+                                                       "dispatch_attempt_log exists, is append-only, and CTB-registered as SUPPORTING",
+                                                       "fn_cadence_check returns JSON with required keys and no raise behavior",
+                                                       "Cadence evaluation blocks when min_gap_hours violated",
+                                                       "Cadence evaluation blocks when max_sends_7d or max_sends_30d exceeded",
+                                                       "Cadence evaluation blocks outside allowed_days/time window per timezone_mode",
+                                                       "Cadence evaluation allows valid send window and under-cap conditions",
+                                                       "Readiness/send-attempt integration logs BLOCKED and ALLOWED decisions to dispatch_attempt_log",
+                                                       "Blocked path logs deterministic error to lcs.lcs_errors and returns cleanly",
+                                                       "lcs_worker has EXECUTE on fn_cadence_check and lacks direct write rights (where testable)"
+                                                   ],
+                                       "exclude":  [
+                                                       "Provider send integration tests",
+                                                       "Template rendering tests",
+                                                       "Cross-channel priority implementation tests (Phase 4B)",
+                                                       "UI tests"
+                                                   ]
+                                   },
+                    "acceptance_criteria":  [
+                                                "lcs.cadence_policy_registry exists and is CTB-registered as REGISTRY",
+                                                "lcs.dispatch_attempt_log exists, is append-only, and is CTB-registered as SUPPORTING",
+                                                "lcs.fn_cadence_check(p_mid uuid, p_channel text) exists and deterministically returns JSON decision/policy/metrics without raising",
+                                                "Cadence policy enforcement covers min gap, 7d/30d caps, and day/time windows",
+                                                "Dispatch readiness/send-attempt path integration is implemented with explicit chosen placement and deterministic BLOCKED/ALLOWED logging",
+                                                "Blocked cadence decisions log deterministic lcs.lcs_errors and return cleanly",
+                                                "Only lcs_worker may execute cadence check and worker has no direct table writes",
+                                                "Tests exist and verify cadence logic, logging, and permission boundaries"
+                                            ],
+                    "artifacts":  {
+                                      "expected":  [
+                                                       "WP_*.json",
+                                                       "CS_*.json",
+                                                       "AR_*.json"
+                                                   ]
+                                  }
+                }
+}

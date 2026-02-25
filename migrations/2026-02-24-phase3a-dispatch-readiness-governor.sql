@@ -211,7 +211,6 @@ DECLARE
     v_lifecycle     TEXT;
     v_lifecycle_ord INTEGER;
     v_suppression   BOOLEAN;
-    v_error_id      UUID;
 BEGIN
     -- 1. Lock MID row
     SELECT * INTO v_mid_row
@@ -220,19 +219,19 @@ BEGIN
     FOR UPDATE;
 
     IF NOT FOUND THEN
-        INSERT INTO lcs.lcs_errors (error_source, error_type, entity_id, entity_type, error_message)
-        VALUES ('fn_mark_mid_ready', 'VALIDATION', p_mid, 'MID', 'MID not found in mid_ledger')
-        RETURNING error_id INTO v_error_id;
+        -- mid FK constraint: cannot reference non-existent MID, use NULL
+        INSERT INTO lcs.lcs_errors (error_stage, error_type, error_payload)
+        VALUES ('mid_minting', 'validation',
+            jsonb_build_object('message', 'MID not found in mid_ledger', 'attempted_mid', p_mid::text));
         RETURN;
     END IF;
 
     -- 2. Validate dispatch_state = COMPILED
     IF v_mid_row.dispatch_state != 'COMPILED' THEN
-        INSERT INTO lcs.lcs_errors (error_source, error_type, entity_id, entity_type, error_message, context)
-        VALUES ('fn_mark_mid_ready', 'STATE_VIOLATION', p_mid, 'MID',
-            format('MID dispatch_state is %s, expected COMPILED', v_mid_row.dispatch_state),
-            jsonb_build_object('current_state', v_mid_row.dispatch_state::text))
-        RETURNING error_id INTO v_error_id;
+        INSERT INTO lcs.lcs_errors (error_stage, error_type, mid, sovereign_id, error_payload)
+        VALUES ('mid_minting', 'state_violation', p_mid, v_mid_row.sovereign_id,
+            jsonb_build_object('message', format('MID dispatch_state is %s, expected COMPILED', v_mid_row.dispatch_state),
+                'current_state', v_mid_row.dispatch_state::text));
         RETURN;
     END IF;
 
@@ -242,11 +241,9 @@ BEGIN
     WHERE sovereign_id = v_mid_row.sovereign_id;
 
     IF v_lifecycle IS NULL THEN
-        INSERT INTO lcs.lcs_errors (error_source, error_type, entity_id, entity_type, error_message, context)
-        VALUES ('fn_mark_mid_ready', 'VALIDATION', p_mid, 'MID',
-            'No canonical record for sovereign_id',
-            jsonb_build_object('sovereign_id', v_mid_row.sovereign_id::text))
-        RETURNING error_id INTO v_error_id;
+        INSERT INTO lcs.lcs_errors (error_stage, error_type, mid, sovereign_id, error_payload)
+        VALUES ('mid_minting', 'validation', p_mid, v_mid_row.sovereign_id,
+            jsonb_build_object('message', 'No canonical record for sovereign_id'));
         RETURN;
     END IF;
 
@@ -262,20 +259,19 @@ BEGIN
     -- Dispatch eligible: QUALIFIED (3), ENGAGED (4), CONVERTED (5)
     -- Not eligible: SUSPECT (1), IDENTIFIED (2), SUPPRESSED (6)
     IF v_lifecycle_ord < 3 OR v_lifecycle = 'SUPPRESSED' THEN
-        INSERT INTO lcs.lcs_errors (error_source, error_type, entity_id, entity_type, error_message, context)
-        VALUES ('fn_mark_mid_ready', 'LIFECYCLE_BLOCK', p_mid, 'MID',
-            format('Lifecycle stage %s does not permit dispatch', v_lifecycle),
-            jsonb_build_object('lifecycle_stage', v_lifecycle, 'sovereign_id', v_mid_row.sovereign_id::text))
-        RETURNING error_id INTO v_error_id;
+        INSERT INTO lcs.lcs_errors (error_stage, error_type, mid, sovereign_id, error_payload)
+        VALUES ('mid_minting', 'conflict', p_mid, v_mid_row.sovereign_id,
+            jsonb_build_object('message', format('Lifecycle stage %s does not permit dispatch', v_lifecycle),
+                'lifecycle_stage', v_lifecycle));
         RETURN;
     END IF;
 
     -- 4. Suppression check
     v_suppression := lcs.fn_mid_suppression_check(p_mid);
     IF NOT v_suppression THEN
-        INSERT INTO lcs.lcs_errors (error_source, error_type, entity_id, entity_type, error_message)
-        VALUES ('fn_mark_mid_ready', 'SUPPRESSION', p_mid, 'MID', 'MID suppressed by fn_mid_suppression_check')
-        RETURNING error_id INTO v_error_id;
+        INSERT INTO lcs.lcs_errors (error_stage, error_type, mid, sovereign_id, error_payload)
+        VALUES ('mid_minting', 'conflict', p_mid, v_mid_row.sovereign_id,
+            jsonb_build_object('message', 'MID suppressed by fn_mid_suppression_check'));
         RETURN;
     END IF;
 

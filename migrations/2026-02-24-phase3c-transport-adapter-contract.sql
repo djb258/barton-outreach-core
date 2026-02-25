@@ -112,7 +112,6 @@ CREATE OR REPLACE FUNCTION lcs.fn_record_dispatch_result(
 RETURNS VOID AS $$
 DECLARE
     v_mid_row   lcs.mid_ledger%ROWTYPE;
-    v_error_id  UUID;
 BEGIN
     -- 1. Lock MID row
     SELECT * INTO v_mid_row
@@ -121,29 +120,28 @@ BEGIN
     FOR UPDATE;
 
     IF NOT FOUND THEN
-        INSERT INTO lcs.lcs_errors (error_source, error_type, entity_id, entity_type, error_message)
-        VALUES ('fn_record_dispatch_result', 'VALIDATION', p_mid, 'MID', 'MID not found in mid_ledger')
-        RETURNING error_id INTO v_error_id;
+        -- mid FK constraint: cannot reference non-existent MID, use NULL
+        INSERT INTO lcs.lcs_errors (error_stage, error_type, error_payload)
+        VALUES ('dispatch_finalization', 'validation',
+            jsonb_build_object('message', 'MID not found in mid_ledger', 'attempted_mid', p_mid::text));
         RETURN;
     END IF;
 
     -- 2. Validate dispatch_state = SENT
     IF v_mid_row.dispatch_state != 'SENT' THEN
-        INSERT INTO lcs.lcs_errors (error_source, error_type, entity_id, entity_type, error_message, context)
-        VALUES ('fn_record_dispatch_result', 'STATE_VIOLATION', p_mid, 'MID',
-            format('MID dispatch_state is %s, expected SENT', v_mid_row.dispatch_state),
-            jsonb_build_object('current_state', v_mid_row.dispatch_state::text, 'provider', p_provider))
-        RETURNING error_id INTO v_error_id;
+        INSERT INTO lcs.lcs_errors (error_stage, error_type, mid, sovereign_id, error_payload)
+        VALUES ('dispatch_finalization', 'state_violation', p_mid, v_mid_row.sovereign_id,
+            jsonb_build_object('message', format('MID dispatch_state is %s, expected SENT', v_mid_row.dispatch_state),
+                'current_state', v_mid_row.dispatch_state::text, 'provider', p_provider));
         RETURN;
     END IF;
 
     -- 3. Validate p_result_state
     IF p_result_state NOT IN ('DELIVERED', 'FAILED', 'BOUNCED') THEN
-        INSERT INTO lcs.lcs_errors (error_source, error_type, entity_id, entity_type, error_message, context)
-        VALUES ('fn_record_dispatch_result', 'VALIDATION', p_mid, 'MID',
-            format('Invalid result_state: %s. Must be DELIVERED, FAILED, or BOUNCED', p_result_state),
-            jsonb_build_object('result_state', p_result_state, 'provider', p_provider))
-        RETURNING error_id INTO v_error_id;
+        INSERT INTO lcs.lcs_errors (error_stage, error_type, mid, sovereign_id, error_payload)
+        VALUES ('dispatch_finalization', 'validation', p_mid, v_mid_row.sovereign_id,
+            jsonb_build_object('message', format('Invalid result_state: %s. Must be DELIVERED, FAILED, or BOUNCED', p_result_state),
+                'result_state', p_result_state, 'provider', p_provider));
         RETURN;
     END IF;
 

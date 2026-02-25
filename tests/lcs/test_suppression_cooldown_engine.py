@@ -95,9 +95,9 @@ def _create_test_mid(cur, dispatch_state='MINTED'):
     return mid, cid, sid, oid, sovereign_id
 
 
-def _count_errors(cur, source):
-    """Count errors from a specific source."""
-    cur.execute("SELECT count(*) FROM lcs.lcs_errors WHERE error_source = %s", (source,))
+def _count_errors(cur, stage):
+    """Count errors from a specific error_stage."""
+    cur.execute("SELECT count(*) FROM lcs.lcs_errors WHERE error_stage = %s", (stage,))
     return cur.fetchone()[0]
 
 
@@ -330,7 +330,7 @@ class TestReadinessIntegration:
             DO UPDATE SET global_suppressed = TRUE, suppressed_at = NOW(), updated_at = NOW()
         """, (str(sovereign_id),))
 
-        error_count_before = _count_errors(cur, 'fn_mark_mid_ready')
+        error_count_before = _count_errors(cur, 'mid_minting')
 
         # Should NOT raise — returns cleanly
         cur.execute("SELECT lcs.fn_mark_mid_ready(%s)", (str(mid),))
@@ -340,18 +340,19 @@ class TestReadinessIntegration:
         assert cur.fetchone()[0] == 'COMPILED'
 
         # Verify error logged
-        error_count_after = _count_errors(cur, 'fn_mark_mid_ready')
+        error_count_after = _count_errors(cur, 'mid_minting')
         assert error_count_after == error_count_before + 1
 
         # Verify error details
         cur.execute("""
-            SELECT error_type, error_message FROM lcs.lcs_errors
-            WHERE error_source = 'fn_mark_mid_ready' AND entity_id = %s
+            SELECT error_type, error_payload FROM lcs.lcs_errors
+            WHERE error_stage = 'mid_minting' AND mid = %s
             ORDER BY created_at DESC LIMIT 1
         """, (str(mid),))
         row = cur.fetchone()
-        assert row[0] == 'SUPPRESSION'
-        assert 'suppressed' in row[1].lower()
+        assert row[0] == 'conflict'
+        payload = row[1] if isinstance(row[1], dict) else json.loads(row[1])
+        assert 'suppressed' in payload['message'].lower()
 
         # Clean up suppression
         cur.execute("""

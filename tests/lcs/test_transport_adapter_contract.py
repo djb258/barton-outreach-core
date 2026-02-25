@@ -91,8 +91,8 @@ def _create_test_mid(cur, dispatch_state='MINTED'):
     return mid, cid, sid, oid, sovereign_id
 
 
-def _count_errors(cur, source):
-    cur.execute("SELECT count(*) FROM lcs.lcs_errors WHERE error_source = %s", (source,))
+def _count_errors(cur, stage):
+    cur.execute("SELECT count(*) FROM lcs.lcs_errors WHERE error_stage = %s", (stage,))
     return cur.fetchone()[0]
 
 
@@ -234,13 +234,13 @@ class TestRecordDispatchResult:
     def test_rejects_non_sent_state(self, cur):
         """fn_record_dispatch_result logs error when MID is not SENT."""
         mid, _, _, _, _ = _create_test_mid(cur, 'COMPILED')  # Not SENT
-        error_count_before = _count_errors(cur, 'fn_record_dispatch_result')
+        error_count_before = _count_errors(cur, 'dispatch_finalization')
 
         cur.execute("""
             SELECT lcs.fn_record_dispatch_result(%s, 'mailgun', 'msg-005', 'DELIVERED', NULL)
         """, (str(mid),))
 
-        error_count_after = _count_errors(cur, 'fn_record_dispatch_result')
+        error_count_after = _count_errors(cur, 'dispatch_finalization')
         assert error_count_after == error_count_before + 1
 
         # MID should stay COMPILED
@@ -250,13 +250,13 @@ class TestRecordDispatchResult:
     def test_rejects_invalid_result_state(self, cur):
         """fn_record_dispatch_result logs error for invalid result_state."""
         mid, _, _, _, _ = _create_test_mid(cur, 'SENT')
-        error_count_before = _count_errors(cur, 'fn_record_dispatch_result')
+        error_count_before = _count_errors(cur, 'dispatch_finalization')
 
         cur.execute("""
             SELECT lcs.fn_record_dispatch_result(%s, 'mailgun', 'msg-006', 'INVALID', NULL)
         """, (str(mid),))
 
-        error_count_after = _count_errors(cur, 'fn_record_dispatch_result')
+        error_count_after = _count_errors(cur, 'dispatch_finalization')
         assert error_count_after == error_count_before + 1
 
         # MID should stay SENT
@@ -266,13 +266,13 @@ class TestRecordDispatchResult:
     def test_mid_not_found_logs_error(self, cur):
         """fn_record_dispatch_result logs error for non-existent MID."""
         fake_mid = uuid.uuid4()
-        error_count_before = _count_errors(cur, 'fn_record_dispatch_result')
+        error_count_before = _count_errors(cur, 'dispatch_finalization')
 
         cur.execute("""
             SELECT lcs.fn_record_dispatch_result(%s, 'mailgun', 'msg-007', 'DELIVERED', NULL)
         """, (str(fake_mid),))
 
-        error_count_after = _count_errors(cur, 'fn_record_dispatch_result')
+        error_count_after = _count_errors(cur, 'dispatch_finalization')
         assert error_count_after == error_count_before + 1
 
 

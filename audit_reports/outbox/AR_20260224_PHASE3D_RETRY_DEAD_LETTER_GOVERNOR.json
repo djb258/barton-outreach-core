@@ -1,0 +1,90 @@
+{
+    "id": "AR_20260224_PHASE3D_RETRY_DEAD_LETTER_GOVERNOR",
+    "work_packet_id": "WP_20260224T0920_PHASE3D_RETRY_DEAD_LETTER_GOVERNOR_DETERMINISTIC",
+    "changeset_id": "CS_20260224_PHASE3D_RETRY_DEAD_LETTER_GOVERNOR",
+    "classification": "FAIL_EXECUTION",
+    "summary": "REMAINS FAIL_EXECUTION. Original blocking findings (BF-3D-001/002: column name mismatch) PARTIALLY RESOLVED by hotfix — column NAMES are now correct (error_stage, error_type, error_payload, error_context). However, NEW blocking finding: column VALUES violate CHECK constraints. test_shows_dead_items_with_error_context (line 238) inserts error_stage='test_retry' (NOT in chk_lcs_errors_stage) and error_type='VALIDATION' (uppercase, CHECK requires lowercase 'validation'). INSERT will throw CheckViolation at runtime. CONSTITUTIONAL CHECKS: ALL 4 PASS — Cantonal (retry_queue SUPPORTING, v_dead_letter_queue view, cantonal pair intact), Registry-First (CTB pre-registration before CREATE TABLE), Sovereign ID (no minting), No sideways calls (all within lcs schema). ENVELOPE: PASS. SCOPE: PASS. EXECUTION: FAIL. AC1-AC7 met. AC8 FAIL — test_shows_dead_items_with_error_context will throw CheckViolation before assertions are reached. View DDL is CORRECT (le.error_stage, le.error_type, le.error_payload AS error_context). Migration functions have no direct lcs_errors INSERTs (Phase 3D functions route through retry_queue, not lcs_errors). The only broken component is the test INSERT values.",
+    "blocking_findings": [
+        {
+            "id": "BF-3D-003",
+            "severity": "BLOCKING",
+            "title": "Test INSERT values violate lcs_errors CHECK constraints",
+            "detail": "test_shows_dead_items_with_error_context (test_retry_dead_letter_governor.py, line 238-243) inserts a synthetic error row with constraint-violating VALUES. Column names are correct (fixed by hotfix), but: (1) error_stage='test_retry' is NOT in chk_lcs_errors_stage — allowed values: cid_processing, sid_creation, mid_minting, dispatch_finalization, canonical_update, emission_validation, emission_processing, cadence_check. (2) error_type='VALIDATION' is uppercase — chk_lcs_errors_type requires lowercase: validation, state_violation, expired, conflict, external_fail. INSERT will throw psycopg2.errors.CheckViolation at runtime. Assertions on lines 264-265 match the wrong values and must also be updated.",
+            "action": "Change INSERT values: error_stage from 'test_retry' to 'emission_processing' (semantically appropriate for retry/dead-letter testing), error_type from 'VALIDATION' to 'validation' (lowercase). Update assertions: line 264 from 'test_retry' to 'emission_processing', line 265 from 'VALIDATION' to 'validation'.",
+            "fix_detail": {
+                "line_240": { "current": "'test_retry'", "fixed": "'emission_processing'" },
+                "line_240b": { "current": "'VALIDATION'", "fixed": "'validation'" },
+                "line_264": { "current": "assert row[1] == 'test_retry'", "fixed": "assert row[1] == 'emission_processing'" },
+                "line_265": { "current": "assert row[2] == 'VALIDATION'", "fixed": "assert row[2] == 'validation'" }
+            }
+        }
+    ],
+    "resolved_findings": [
+        {
+            "id": "BF-3D-001",
+            "original_severity": "BLOCKING",
+            "title": "Test INSERT used non-existent lcs_errors columns (error_source, error_message)",
+            "resolution": "Fixed by hotfix AR_20260224_LCS_ERRORS_COLUMN_HOTFIX. Column names changed to error_stage, error_type, error_payload. Column names now correct. However, VALUES still violate CHECK constraints — see BF-3D-003.",
+            "verified_at": "2026-02-24T23:15:00Z"
+        },
+        {
+            "id": "BF-3D-002",
+            "original_severity": "BLOCKING",
+            "title": "Test SELECT referenced columns not exposed by view (error_source, error_message)",
+            "resolution": "Fixed by hotfix AR_20260224_LCS_ERRORS_COLUMN_HOTFIX. SELECT now uses error_stage, error_type, error_context — matches view contract. Verified correct.",
+            "verified_at": "2026-02-24T23:15:00Z"
+        }
+    ],
+    "contract_triad": {
+        "description": "DDL -> View -> Test alignment check for v_dead_letter_queue (post-hotfix)",
+        "ddl_columns": {
+            "source": "lcs.lcs_errors DDL + CHECK constraints",
+            "columns": ["error_stage (text NOT NULL, CHECK)", "error_type (text NOT NULL, CHECK)", "error_payload (jsonb NOT NULL DEFAULT '{}')", "is_retryable (boolean NOT NULL DEFAULT false)", "sovereign_id (uuid FK)", "cid (uuid FK)", "sid (uuid FK)", "mid (uuid FK)"],
+            "check_constraints": {
+                "chk_lcs_errors_stage": ["cid_processing", "sid_creation", "mid_minting", "dispatch_finalization", "canonical_update", "emission_validation", "emission_processing", "cadence_check"],
+                "chk_lcs_errors_type": ["validation", "state_violation", "expired", "conflict", "external_fail"],
+                "chk_lcs_errors_retry": ["manual_fix", "auto_retry", "discard"]
+            },
+            "alignment": "DDL is authoritative"
+        },
+        "view_columns": {
+            "source": "v_dead_letter_queue (migration line 244-261)",
+            "selects": ["le.error_stage", "le.error_type", "le.error_payload AS error_context"],
+            "alignment": "CORRECT — all columns exist in DDL"
+        },
+        "test_columns": {
+            "source": "test_shows_dead_items_with_error_context (line 235-268)",
+            "insert_columns": ["error_stage (CORRECT name)", "error_type (CORRECT name)", "error_payload (CORRECT name)", "is_retryable (CORRECT name)"],
+            "insert_values": ["'test_retry' (VIOLATES chk_lcs_errors_stage)", "'VALIDATION' (VIOLATES chk_lcs_errors_type — uppercase)"],
+            "select_columns": ["entity_id (OK — retry_queue column)", "error_stage (CORRECT)", "error_type (CORRECT)", "error_context (CORRECT — view alias)"],
+            "alignment": "COLUMN NAMES CORRECT, VALUES NON-COMPLIANT"
+        },
+        "verdict": "View is correct. Test column names are correct (hotfix resolved). Test VALUES violate CHECK constraints. One fix remaining."
+    },
+    "acceptance_criteria_status": {
+        "AC1": "PASS — retry_queue exists with deterministic retry workflow fields and unique active-item constraint",
+        "AC2": "PASS — retry_queue CTB-registered as SUPPORTING",
+        "AC3": "PASS — lcs_errors extended with is_retryable and retry_strategy columns",
+        "AC4": "PASS — fn_enqueue_retry is idempotent, computes deterministic next_attempt_at, returns retry_id",
+        "AC5": "PASS — fn_process_retry_batch uses SKIP LOCKED, deterministic ordering, forward-only escalation, JSON summary",
+        "AC6": "PASS — v_dead_letter_queue exists, references correct lcs_errors columns, will CREATE successfully",
+        "AC7": "PASS — lcs_worker EXECUTE-only on both functions, REVOKE ALL on retry_queue",
+        "AC8": "FAIL — test_shows_dead_items_with_error_context INSERT values violate CHECK constraints (error_stage='test_retry' not allowed, error_type='VALIDATION' uppercase). Test will throw CheckViolation."
+    },
+    "doctrine_version": "2.8.0",
+    "timestamp": "2026-02-24T23:15:00Z",
+    "reclassification_history": [
+        {
+            "from": "PASS",
+            "to": "FAIL_EXECUTION",
+            "at": "2026-02-24T21:30:00Z",
+            "reason": "Original audit stamped PASS with critical findings. User corrected: critical findings that hard-fail tests = FAIL_EXECUTION. Test uses non-existent columns (BF-3D-001, BF-3D-002)."
+        },
+        {
+            "from": "FAIL_EXECUTION",
+            "to": "FAIL_EXECUTION (updated findings)",
+            "at": "2026-02-24T23:15:00Z",
+            "reason": "Hotfix resolved column NAME mismatch (BF-3D-001/002). New finding BF-3D-003: column VALUES violate CHECK constraints. Classification unchanged — still FAIL_EXECUTION."
+        }
+    ]
+}

@@ -1,0 +1,181 @@
+{
+    "id": "AR_20260224_LCS_ERRORS_COLUMN_HOTFIX_AUDIT",
+    "changeset_id": "AR_20260224_LCS_ERRORS_COLUMN_HOTFIX",
+    "classification": "FAIL_EXECUTION",
+    "summary": "PARTIAL PASS — 9 of 10 hotfix items verified correct, 1 remaining blocking finding in Phase 3D test. FUNCTION INSERTs: All 10 INSERTs across 3 functions (fn_mark_mid_ready 5, fn_record_dispatch_result 3, fn_cadence_check 2) now use correct lcs_errors columns and constraint-compliant values. VERIFIED PASS. CONSTRAINT EXTENSION: chk_lcs_errors_stage extended with 'cadence_check'. VERIFIED PASS. NEON DEPLOYMENTS: 3 functions + 1 constraint reported DEPLOYED. TEST FILES: 4 of 5 test files verified aligned (3A, 3B, 3C, 4A). Phase 3D test_retry_dead_letter_governor.py has UNRESOLVED CHECK constraint violations — column NAMES are fixed but column VALUES violate chk_lcs_errors_stage and chk_lcs_errors_type. Hotfix report claim 'all_tests_aligned: true' is INCORRECT for Phase 3D. PHASE RECLASSIFICATIONS: Phase 3C reclassified from FAIL_EXECUTION back to PASS (blocking finding BF-3C-001 resolved). Phase 3D remains FAIL_EXECUTION with new blocking finding (CHECK constraint violations replace column name mismatch).",
+    "doctrine_version": "2.8.0",
+    "timestamp": "2026-02-24T23:15:00Z",
+
+    "verification_results": {
+        "migration_functions": {
+            "status": "PASS",
+            "detail": "All 10 INSERTs across 3 functions verified against lcs_errors DDL and CHECK constraints",
+            "functions_verified": [
+                {
+                    "function": "lcs.fn_mark_mid_ready(uuid)",
+                    "phase": "3A",
+                    "file": "migrations/2026-02-24-phase3a-dispatch-readiness-governor.sql",
+                    "inserts_verified": 5,
+                    "columns_correct": true,
+                    "values_constraint_compliant": true,
+                    "mid_null_pattern": "line 223 — mid=NULL + attempted_mid in error_payload (FK safe)",
+                    "error_stages_used": ["mid_minting"],
+                    "error_types_used": ["validation", "state_violation", "conflict"],
+                    "verdict": "PASS"
+                },
+                {
+                    "function": "lcs.fn_record_dispatch_result(uuid, text, text, text, jsonb)",
+                    "phase": "3C",
+                    "file": "migrations/2026-02-24-phase3c-transport-adapter-contract.sql",
+                    "inserts_verified": 3,
+                    "columns_correct": true,
+                    "values_constraint_compliant": true,
+                    "mid_null_pattern": "line 124 — mid=NULL + attempted_mid in error_payload (FK safe)",
+                    "error_stages_used": ["dispatch_finalization"],
+                    "error_types_used": ["validation", "state_violation"],
+                    "verdict": "PASS"
+                },
+                {
+                    "function": "lcs.fn_cadence_check(uuid, text)",
+                    "phase": "4A",
+                    "file": "migrations/2026-02-24-phase4a-cadence-governor.sql",
+                    "inserts_verified": 2,
+                    "columns_correct": true,
+                    "values_constraint_compliant": true,
+                    "mid_null_pattern": "line 197 — mid=NULL + attempted_mid in error_payload (FK safe)",
+                    "error_stages_used": ["cadence_check"],
+                    "error_types_used": ["validation", "conflict"],
+                    "verdict": "PASS"
+                }
+            ]
+        },
+        "constraint_extension": {
+            "status": "PASS",
+            "detail": "chk_lcs_errors_stage DROP + ADD with 'cadence_check' appended",
+            "file": "migrations/2026-02-24-phase4a-cadence-governor.sql",
+            "lines": "41-45",
+            "new_allowed_values": ["cid_processing", "sid_creation", "mid_minting", "dispatch_finalization", "canonical_update", "emission_validation", "emission_processing", "cadence_check"],
+            "verdict": "PASS"
+        },
+        "test_files": {
+            "status": "FAIL",
+            "detail": "4 of 5 test files verified aligned. Phase 3D test has CHECK constraint violations.",
+            "files_verified": [
+                {
+                    "file": "tests/lcs/test_dispatch_readiness_governor.py",
+                    "phase": "3A",
+                    "checks": [
+                        "_count_errors uses error_stage (line 295-305) — CORRECT",
+                        "MID not found queries error_payload->>'attempted_mid' (line 207-217) — CORRECT",
+                        "Error type assertion: 'validation' lowercase (line 215) — CORRECT"
+                    ],
+                    "verdict": "PASS"
+                },
+                {
+                    "file": "tests/lcs/test_suppression_cooldown_engine.py",
+                    "phase": "3B",
+                    "checks": [
+                        "_count_errors uses error_stage (line 98-101) — CORRECT",
+                        "Suppression error_type = 'conflict' (line 353) — CORRECT",
+                        "Payload assertion uses error_payload (line 348-355) — CORRECT"
+                    ],
+                    "verdict": "PASS"
+                },
+                {
+                    "file": "tests/lcs/test_transport_adapter_contract.py",
+                    "phase": "3C",
+                    "checks": [
+                        "_count_errors uses error_stage='dispatch_finalization' (line 94-96) — CORRECT",
+                        "Error count assertions in test_rejects_non_sent_state (line 237-248) — CORRECT",
+                        "Error count assertions in test_rejects_invalid_result_state (line 252-264) — CORRECT",
+                        "Error count assertions in test_mid_not_found_logs_error (line 268-276) — CORRECT"
+                    ],
+                    "verdict": "PASS"
+                },
+                {
+                    "file": "tests/lcs/test_retry_dead_letter_governor.py",
+                    "phase": "3D",
+                    "checks": [
+                        "Column NAMES fixed: error_stage, error_type, error_payload, error_context — CORRECT",
+                        "Column VALUES: error_stage='test_retry' NOT IN chk_lcs_errors_stage — FAIL",
+                        "Column VALUES: error_type='VALIDATION' uppercase, CHECK requires lowercase — FAIL",
+                        "Assertions (lines 264-265) match the wrong values — self-consistent but wrong"
+                    ],
+                    "verdict": "FAIL — see BF-HOTFIX-001"
+                },
+                {
+                    "file": "tests/lcs/test_cadence_governor.py",
+                    "phase": "4A",
+                    "checks": [
+                        "All tests call fn_cadence_check which does own INSERTs with correct values — CORRECT",
+                        "MID not found: error_stage='cadence_check', error_payload->>'attempted_mid' (line 268-276) — CORRECT",
+                        "BLOCKED: error_stage='cadence_check', error_type='conflict' (line 390-401) — CORRECT"
+                    ],
+                    "verdict": "PASS"
+                }
+            ]
+        },
+        "neon_deployments": {
+            "status": "REPORTED — not independently verified (no live execution in this audit)",
+            "items": [
+                "CREATE OR REPLACE FUNCTION lcs.fn_mark_mid_ready(uuid) — reported DEPLOYED",
+                "CREATE OR REPLACE FUNCTION lcs.fn_record_dispatch_result(uuid, text, text, text, jsonb) — reported DEPLOYED",
+                "ALTER TABLE lcs.lcs_errors DROP/ADD CONSTRAINT chk_lcs_errors_stage — reported DEPLOYED",
+                "CREATE OR REPLACE FUNCTION lcs.fn_cadence_check(uuid, text) — reported DEPLOYED"
+            ]
+        }
+    },
+
+    "blocking_findings": [
+        {
+            "id": "BF-HOTFIX-001",
+            "severity": "BLOCKING",
+            "title": "Phase 3D test — CHECK constraint violations on lcs_errors INSERT values",
+            "detail": "test_shows_dead_items_with_error_context (test_retry_dead_letter_governor.py, line 238-243) inserts a synthetic error row into lcs_errors with constraint-violating VALUES. Column names are now correct (hotfix fixed this), but values are not constraint-compliant. Two violations: (1) error_stage='test_retry' is NOT in chk_lcs_errors_stage — allowed values are: cid_processing, sid_creation, mid_minting, dispatch_finalization, canonical_update, emission_validation, emission_processing, cadence_check. (2) error_type='VALIDATION' is uppercase — chk_lcs_errors_type requires lowercase: validation, state_violation, expired, conflict, external_fail. The INSERT will throw psycopg2.errors.CheckViolation at runtime, preventing test execution. Lines 264-265 assert row[1] == 'test_retry' and row[2] == 'VALIDATION' — these match the wrong values and must also be updated.",
+            "action": "Change INSERT values: error_stage from 'test_retry' to a valid stage (e.g., 'emission_processing' — semantically appropriate for retry/dead-letter testing), error_type from 'VALIDATION' to 'validation' (lowercase). Update assertions on lines 264-265 to match the corrected values.",
+            "fix_detail": {
+                "line_238_243_current": "INSERT INTO lcs.lcs_errors (error_stage, error_type, error_payload, is_retryable) VALUES ('test_retry', 'VALIDATION', '{\"message\": \"test error for dead letter\"}'::jsonb, TRUE)",
+                "line_238_243_fixed": "INSERT INTO lcs.lcs_errors (error_stage, error_type, error_payload, is_retryable) VALUES ('emission_processing', 'validation', '{\"message\": \"test error for dead letter\"}'::jsonb, TRUE)",
+                "line_264_current": "assert row[1] == 'test_retry'",
+                "line_264_fixed": "assert row[1] == 'emission_processing'",
+                "line_265_current": "assert row[2] == 'VALIDATION'",
+                "line_265_fixed": "assert row[2] == 'validation'"
+            }
+        }
+    ],
+
+    "hotfix_report_accuracy": {
+        "claim_all_functions_aligned": { "value": true, "auditor_verdict": "CORRECT" },
+        "claim_all_tests_aligned": { "value": true, "auditor_verdict": "INCORRECT — Phase 3D test has CHECK constraint violations" },
+        "claim_all_views_aligned": { "value": true, "auditor_verdict": "CORRECT" },
+        "overall": "Hotfix report is accurate for functions, views, and constraint extension. Test alignment claim is incorrect for Phase 3D — column names were fixed but values were not validated against CHECK constraints."
+    },
+
+    "phase_reclassifications": {
+        "phase_3A": {
+            "previous": "PASS",
+            "current": "PASS",
+            "reason": "Function INSERTs were already correct before hotfix. Hotfix report states 'inserts_fixed: 5' but Phase 3A fn_mark_mid_ready had correct columns all along. The hotfix may have been applied defensively. No change needed."
+        },
+        "phase_3C": {
+            "previous": "FAIL_EXECUTION",
+            "current": "PASS",
+            "reason": "BF-3C-001 resolved. All 3 fn_record_dispatch_result INSERTs now use correct columns (error_stage='dispatch_finalization', lowercase error_types, mid/sovereign_id, error_payload as jsonb). MID-not-found uses mid=NULL + attempted_mid pattern. Test file (test_transport_adapter_contract.py) aligned — _count_errors uses error_stage. Phase 3C audit report updated."
+        },
+        "phase_3D": {
+            "previous": "FAIL_EXECUTION",
+            "current": "FAIL_EXECUTION",
+            "reason": "Original blocking findings BF-3D-001 and BF-3D-002 (column name mismatch) partially resolved — column names are fixed. NEW blocking finding BF-HOTFIX-001: CHECK constraint violations on VALUES (error_stage='test_retry' not in constraint, error_type='VALIDATION' uppercase). Phase 3D audit report updated with new finding."
+        },
+        "phase_4A": {
+            "status": "PENDING_FIRST_AUDIT",
+            "note": "Phase 4A changeset (CS_20260224_PHASE4A_CADENCE_GOVERNOR) is in changesets/inbox/ awaiting first audit. Function INSERTs and constraint extension verified correct in this hotfix audit."
+        }
+    },
+
+    "residual_items_acknowledged": [
+        "2 inert test sentinel rows in lcs_errors (attempted_mid 000..099 and 000..098) — append-only, harmless",
+        "1 inert test sentinel row for cadence_check (attempted_mid 000..097) — append-only, harmless",
+        "Temporary deploy scripts in scripts/ directory — noted, not blocking"
+    ]
+}

@@ -1,0 +1,35 @@
+{
+    "id": "CS_20260224_PHASE3D_RETRY_DEAD_LETTER_GOVERNOR",
+    "work_packet_id": "WP_20260224T0920_PHASE3D_RETRY_DEAD_LETTER_GOVERNOR_DETERMINISTIC",
+    "change_type": "feature",
+    "architectural_flag": false,
+    "modified_paths": [
+        "migrations/2026-02-24-phase3d-retry-dead-letter-governor.sql",
+        "tests/lcs/test_retry_dead_letter_governor.py"
+    ],
+    "summary": "Phase 3D: Retry + Dead-Letter Governor (Deterministic). Creates lcs.retry_queue (SUPPORTING, CTB-registered, partial unique index for one active item per entity). Extends lcs.lcs_errors with is_retryable/retry_strategy columns. Creates fn_enqueue_retry (idempotent, deterministic next_attempt_at from strategy). Creates fn_process_retry_batch (SKIP LOCKED, routes EMISSION→fn_promote_emission / MID→fn_mark_mid_ready, escalates IMMEDIATE→BACKOFF_5M→BACKOFF_1H→BACKOFF_1D, DEAD at max_attempts). Creates v_dead_letter_queue (DEAD items with error context). lcs_worker EXECUTE-only. No RAISE-after-DML. 14 enforcement tests across 5 categories.",
+    "doctrine_version": "2.8.0",
+    "timestamp": "2026-02-24T20:15:00Z",
+    "payload": {
+        "objects_created": {
+            "tables": ["lcs.retry_queue"],
+            "columns_added": ["lcs.lcs_errors.is_retryable", "lcs.lcs_errors.retry_strategy"],
+            "functions": [
+                "lcs.fn_enqueue_retry(text, uuid, uuid, text, integer)",
+                "lcs.fn_process_retry_batch(integer)"
+            ],
+            "views": ["lcs.v_dead_letter_queue"],
+            "check_constraints": ["chk_retry_entity_type", "chk_retry_strategy", "chk_retry_status"]
+        },
+        "strategy_escalation": {
+            "IMMEDIATE": "BACKOFF_5M",
+            "BACKOFF_5M": "BACKOFF_1H",
+            "BACKOFF_1H": "BACKOFF_1D",
+            "BACKOFF_1D": "BACKOFF_1D"
+        },
+        "return_contract": {
+            "keys": ["attempted", "succeeded", "dead", "remaining_pending"]
+        },
+        "test_count": 14
+    }
+}
