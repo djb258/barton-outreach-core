@@ -307,31 +307,8 @@ def detect_d06(cur) -> List[Tuple]:
 
 def detect_d07(cur) -> List[Tuple]:
     """D-07: Filing Anomaly — EIN has filings in some years but gaps (missing year).
-    Checks for EINs that filed in 2022 and 2024 but not 2023, or similar patterns."""
-    cur.execute("""
-        WITH filing_years AS (
-            SELECT od.outreach_id,
-                   f.sponsor_dfe_ein,
-                   array_agg(DISTINCT f.form_year::integer ORDER BY f.form_year::integer) AS years_filed
-            FROM   dol.form_5500 f
-            JOIN   outreach.dol od
-                   ON od.ein = regexp_replace(f.sponsor_dfe_ein, '[^0-9]', '', 'g')
-            WHERE  f.form_year ~ '^[0-9]{4}$'
-            GROUP BY od.outreach_id, f.sponsor_dfe_ein
-            HAVING count(DISTINCT f.form_year) >= 2
-        )
-        SELECT outreach_id,
-               sponsor_dfe_ein,
-               years_filed,
-               (SELECT generate_series(
-                   years_filed[1],
-                   years_filed[array_length(years_filed, 1)],
-                   1
-               ) EXCEPT SELECT unnest(years_filed)) AS missing_years
-        FROM   filing_years
-    """)
-    # Post-process in Python — psycopg2 returns generate_series as a set
-    # Use a simpler approach: detect gaps in Python
+    Checks for EINs that filed in 2022 and 2024 but not 2023, or similar patterns.
+    Gap detection done in Python — simpler than SQL generate_series subqueries."""
     cur.execute("""
         WITH filing_years AS (
             SELECT od.outreach_id,

@@ -7,7 +7,34 @@
 --          Replaces the unimplemented BIT v2.0 pressure_signals tables
 --          as the operational signal interface.
 -- CTB Registry: leaf_type = CANONICAL
+-- Doctrine: CTB_REGISTRY_ENFORCEMENT.md §4.2 — Register FIRST, create SECOND
 -- =============================================================================
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- STEP 1: Register in CTB (BEFORE table creation — DDL gate enforces this)
+-- ─────────────────────────────────────────────────────────────────────────────
+
+INSERT INTO ctb.table_registry (
+    table_schema,
+    table_name,
+    leaf_type,
+    registered_by,
+    is_frozen,
+    notes
+)
+VALUES (
+    'outreach',
+    'signal_output',
+    'CANONICAL',
+    'dumb_worker_migration',
+    FALSE,
+    'Canonical signal table for DOL/People/Blog dumb workers. Deduped on (outreach_id, signal_code, run_month).'
+)
+ON CONFLICT (table_schema, table_name) DO NOTHING;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- STEP 2: Create the table
+-- ─────────────────────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS outreach.signal_output (
     signal_id       UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -47,10 +74,9 @@ CREATE INDEX IF NOT EXISTS idx_signal_output_signal_source
 CREATE INDEX IF NOT EXISTS idx_signal_output_run_month
     ON outreach.signal_output (run_month);
 
--- Active (non-expired) signals — most dashboard queries filter here
-CREATE INDEX IF NOT EXISTS idx_signal_output_expires_at_active
-    ON outreach.signal_output (expires_at)
-    WHERE expires_at > now();
+-- Expiry filtering — queries use WHERE expires_at > now() at runtime
+CREATE INDEX IF NOT EXISTS idx_signal_output_expires_at
+    ON outreach.signal_output (expires_at);
 
 -- Magnitude-ranked queries for prioritization
 CREATE INDEX IF NOT EXISTS idx_signal_output_magnitude
@@ -76,3 +102,11 @@ COMMENT ON COLUMN outreach.signal_output.run_month IS
 COMMENT ON COLUMN outreach.signal_output.expires_at IS
     'Signal expiry. DOL signals: 365d. People signals: 90d. Blog signals: 60d. '
     'Expired signals are retained for audit; filter WHERE expires_at > now() for active signals.';
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- VERIFICATION
+-- ─────────────────────────────────────────────────────────────────────────────
+
+SELECT table_schema, table_name, leaf_type, is_frozen, notes
+FROM ctb.table_registry
+WHERE table_schema = 'outreach' AND table_name = 'signal_output';

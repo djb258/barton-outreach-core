@@ -114,9 +114,14 @@ def detect_people_signals(cur, run_month: date) -> Dict[str, List[Tuple]]:
         1,
     )
 
-    # Pull all events in the run month with the outreach_id join
-    # Join path: slot_assignment_history.company_unique_id
-    #            → people.company_slot.company_unique_id (DISTINCT to get outreach_id)
+    # Pull all events in the run month with the outreach_id join.
+    # Join path: slot_assignment_history.company_slot_unique_id
+    #            → people.company_slot.slot_id (UUID PK)
+    #            → people.company_slot.outreach_id
+    # NOTE: Legacy history rows (pre-2026-02) use Barton IDs in
+    # company_slot_unique_id/company_unique_id which cannot join to the
+    # current UUID-based company_slot. The trigger emits UUID-compatible
+    # rows going forward; legacy rows are effectively orphaned.
     cur.execute("""
         SELECT
             h.history_id,
@@ -135,14 +140,9 @@ def detect_people_signals(cur, run_month: date) -> Dict[str, List[Tuple]]:
             pm_prev.title        AS prev_title,
             pm_prev.seniority    AS prev_seniority
         FROM   people.slot_assignment_history h
-        -- Get outreach_id via company_slot (DISTINCT ON to avoid fan-out)
-        JOIN   (
-            SELECT DISTINCT ON (company_unique_id, slot_type)
-                   company_unique_id, slot_type, outreach_id
-            FROM   people.company_slot
-            ORDER BY company_unique_id, slot_type, created_at DESC
-        ) cs ON cs.company_unique_id = h.company_unique_id
-             AND cs.slot_type = h.slot_type
+        -- Join via slot_id (UUID) — only works for post-migration rows
+        JOIN   people.company_slot cs
+               ON cs.slot_id = h.company_slot_unique_id::uuid
         -- Current person details
         LEFT JOIN people.people_master pm_curr
                ON pm_curr.unique_id = h.person_unique_id
@@ -151,11 +151,26 @@ def detect_people_signals(cur, run_month: date) -> Dict[str, List[Tuple]]:
                ON pm_prev.unique_id = h.displaced_by_person_id
         WHERE  h.event_ts >= %(month_start)s
           AND  h.event_ts <  %(month_end)s
+          AND  h.company_slot_unique_id ~ '^[0-9a-f]{8}-'
         ORDER BY h.event_ts
     """, {"month_start": month_start, "month_end": month_end})
 
     rows = cur.fetchall()
-    log.info("  Raw events in run month: %d", len(rows))
+    log.info("  Joinable events in run month: %d", len(rows))
+    if len(rows) == 0:
+        # Check if there are unjoinable legacy rows (Barton ID format)
+        cur.execute("""
+            SELECT count(*) FROM people.slot_assignment_history
+            WHERE event_ts >= %(month_start)s AND event_ts < %(month_end)s
+        """, {"month_start": month_start, "month_end": month_end})
+        total_raw = cur.fetchone()["count"]
+        if total_raw > 0:
+            log.warning(
+                "  %d raw events exist but 0 are joinable. "
+                "Legacy rows use Barton IDs (04.04.xx) which don't match "
+                "current UUID-based company_slot. New trigger events will join.",
+                total_raw,
+            )
 
     results: Dict[str, List[Tuple]] = {code: [] for code in SIGNALS}
 
