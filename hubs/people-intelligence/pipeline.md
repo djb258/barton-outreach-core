@@ -133,3 +133,38 @@
 ```bash
 doppler run -- python hubs/people-intelligence/imo/middle/phases/fill_slots_from_hunter.py <csv_path> [--dry-run]
 ```
+
+---
+
+## LinkedIn Monitor (DeltaHound Integration)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│              LINKEDIN MONITOR — FIELD MONITOR BRIDGE         │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│ SOURCE: field_monitor.field_state (READ-ONLY)                │
+│ ─────────────────────────────────────────────────────────── │
+│ • Monitors 'title' field on linkedin.com URLs               │
+│ • Joins against people.people_master via linkedin_url        │
+│ • Kill switches: KILL_TALENT_FLOW_MONITOR, KILL_LINKEDIN_SEED│
+│ • Sample gate: LIMIT 100                                     │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│ BRIDGE: linkedin_monitor.bridge_to_movement_event()          │
+│ ─────────────────────────────────────────────────────────── │
+│ • Converts title change → EVENT_TALENTFLOW_MOVE             │
+│ • Passes to MovementEngine.detect_event()                    │
+│ • source_system = "field_monitor"                            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+| File | Purpose |
+|------|---------|
+| `imo/middle/movement_engine/linkedin_monitor.py` | Field Monitor bridge (read-only) |
+| `scripts/seed_linkedin_urls.sql` | Seed LinkedIn URLs into field_monitor |
+| `scripts/seed_linkedin_parsers.py` | Seed KV parser templates |

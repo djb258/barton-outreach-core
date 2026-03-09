@@ -7,6 +7,23 @@
 
 ---
 
+### Field Monitor Dependency (Signal Sweep)
+
+Blog Content seeds blog URLs into `field_monitor.url_registry` via `seed_blog_urls.sql`. The field_monitor snap-on tracks `content_hash` field changes on blog pages. Content changes trigger re-processing via `change_bridge.py`.
+
+| field_monitor Table | Relationship | Purpose |
+|---------------------|-------------|---------|
+| `field_monitor.url_registry` | WRITE (seed) | Blog hub seeds URLs from `vendor.blog` |
+| `field_monitor.field_state` | READ | Blog hub reads `content_hash` changes as re-process triggers |
+| `field_monitor.check_log` | READ | Audit trail of blog content checks |
+
+**Seed script**: `hubs/blog-content/scripts/seed_blog_urls.sql`
+**Bridge module**: `hubs/blog-content/imo/middle/signal_sweep/change_bridge.py`
+**Kill switches**: `KILL_SIGNAL_SWEEP`, `KILL_BLOG_URL_SEED`, `KILL_FUNDING_DETECTION`
+**Check interval**: 60 minutes (hourly)
+
+---
+
 ## Primary Tables
 
 | Schema | Table | Purpose |

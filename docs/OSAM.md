@@ -25,6 +25,8 @@ SPINE (outreach.outreach)
 
 **Golden Rule**: All sub-hubs join to the spine via `outreach_id`. Never use domain as a join key.
 
+**Field Monitor** (snap-on infrastructure): `field_monitor.*` tables are cross-hub. Consumer hubs seed URLs and read changes. Join via `url_id`.
+
 ---
 
 ## Query Routing Table
@@ -60,6 +62,11 @@ SPINE (outreach.outreach)
 | Company news/blog URLs? | `outreach.blog` | outreach_id |
 | Company name/domain? | `cl.company_identity` | sovereign_company_id |
 | Employee count/size band? | `outreach.company_target` | `employees` column |
+| LinkedIn title changed? | `field_monitor.field_state` | url_id (domain=linkedin.com, field_name=title) |
+| Blog content changed? | `field_monitor.field_state` | url_id (domain!=linkedin.com, field_name=content_hash) |
+| URL check history? | `field_monitor.check_log` | url_id |
+| URL monitoring errors? | `field_monitor.error_log` | url_id |
+| Domain rate limit state? | `field_monitor.rate_state` | domain |
 | Domain reachable? | `vendor.blog` | `source_table = 'outreach.sitemap_discovery'` |
 | Has sitemap? | `vendor.blog` | `source_table = 'outreach.sitemap_discovery' AND has_sitemap = TRUE` |
 | About/press/leadership URLs? | `vendor.blog` | `source_table = 'company.company_source_urls'` |

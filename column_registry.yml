@@ -450,6 +450,215 @@ subhubs:
             format: "ISO-8601"
 
   # ─────────────────────────────────────────────────────────────────────────────
+  # FIELD MONITOR (snap-on — cross-hub infrastructure)
+  # ─────────────────────────────────────────────────────────────────────────────
+  - subhub_id: "snap-on.field-monitor"
+    name: "field_monitor"
+    tables:
+
+      - schema: "field_monitor"
+        name: "url_registry"
+        description: "URLs being monitored for field changes. Seeded by consumer hubs (people-intelligence, blog-content)."
+        leaf_type: "REGISTRY"
+        source_of_truth: true
+        row_identity_strategy: "UUID"
+        columns:
+          - name: "url_id"
+            type: "UUID"
+            nullable: false
+            description: "Primary key"
+            semantic_role: "identifier"
+            format: "UUID"
+          - name: "domain"
+            type: "TEXT"
+            nullable: false
+            description: "Domain being monitored (e.g., linkedin.com)"
+            semantic_role: "attribute"
+            format: "STRING"
+          - name: "path"
+            type: "TEXT"
+            nullable: false
+            description: "URL path (e.g., /in/john-doe)"
+            semantic_role: "attribute"
+            format: "STRING"
+          - name: "check_interval_minutes"
+            type: "INTEGER"
+            nullable: false
+            description: "Check frequency in minutes (1440=daily, 60=hourly)"
+            semantic_role: "attribute"
+            format: "INTEGER"
+          - name: "is_active"
+            type: "BOOLEAN"
+            nullable: false
+            description: "Whether URL monitoring is active"
+            semantic_role: "attribute"
+            format: "BOOLEAN"
+
+      - schema: "field_monitor"
+        name: "field_state"
+        description: "Current and previous values for monitored fields. CTB promotion enforced."
+        leaf_type: "CANONICAL"
+        source_of_truth: true
+        row_identity_strategy: "UUID"
+        columns:
+          - name: "field_id"
+            type: "UUID"
+            nullable: false
+            description: "Primary key"
+            semantic_role: "identifier"
+            format: "UUID"
+          - name: "url_id"
+            type: "UUID"
+            nullable: false
+            description: "FK to url_registry"
+            semantic_role: "foreign_key"
+            format: "UUID"
+          - name: "field_name"
+            type: "TEXT"
+            nullable: false
+            description: "Field being monitored (title, content_hash)"
+            semantic_role: "attribute"
+            format: "STRING"
+          - name: "current_value"
+            type: "TEXT"
+            nullable: true
+            description: "Current field value"
+            semantic_role: "attribute"
+            format: "STRING"
+          - name: "previous_value"
+            type: "TEXT"
+            nullable: true
+            description: "Previous field value (set on change)"
+            semantic_role: "attribute"
+            format: "STRING"
+          - name: "status"
+            type: "TEXT"
+            nullable: false
+            description: "ACTIVE, STALE, ERROR, DISABLED"
+            semantic_role: "attribute"
+            format: "ENUM"
+          - name: "promotion_status"
+            type: "TEXT"
+            nullable: false
+            description: "DRAFT or PROMOTED (one-way promotion only)"
+            semantic_role: "attribute"
+            format: "ENUM"
+
+      - schema: "field_monitor"
+        name: "check_log"
+        description: "Append-only log of every field check. UPDATE and DELETE blocked by triggers."
+        leaf_type: "SYSTEM"
+        source_of_truth: true
+        row_identity_strategy: "UUID"
+        columns:
+          - name: "log_id"
+            type: "UUID"
+            nullable: false
+            description: "Primary key"
+            semantic_role: "identifier"
+            format: "UUID"
+          - name: "url_id"
+            type: "UUID"
+            nullable: false
+            description: "FK to url_registry"
+            semantic_role: "foreign_key"
+            format: "UUID"
+          - name: "field_name"
+            type: "TEXT"
+            nullable: false
+            description: "Field that was checked"
+            semantic_role: "attribute"
+            format: "STRING"
+          - name: "changed"
+            type: "BOOLEAN"
+            nullable: false
+            description: "Whether value changed on this check"
+            semantic_role: "attribute"
+            format: "BOOLEAN"
+          - name: "fetch_duration_ms"
+            type: "INTEGER"
+            nullable: false
+            description: "HTTP fetch duration in milliseconds"
+            semantic_role: "metric"
+            format: "INTEGER"
+          - name: "parse_duration_ms"
+            type: "INTEGER"
+            nullable: false
+            description: "Parse/extraction duration in milliseconds"
+            semantic_role: "metric"
+            format: "INTEGER"
+
+      - schema: "field_monitor"
+        name: "error_log"
+        description: "Error tracking with resolution. DELETE blocked by trigger."
+        leaf_type: "ERROR"
+        source_of_truth: true
+        row_identity_strategy: "UUID"
+        columns:
+          - name: "error_id"
+            type: "UUID"
+            nullable: false
+            description: "Primary key"
+            semantic_role: "identifier"
+            format: "UUID"
+          - name: "url_id"
+            type: "UUID"
+            nullable: false
+            description: "FK to url_registry"
+            semantic_role: "foreign_key"
+            format: "UUID"
+          - name: "error_type"
+            type: "TEXT"
+            nullable: false
+            description: "Error classification"
+            semantic_role: "attribute"
+            format: "STRING"
+          - name: "error_message"
+            type: "TEXT"
+            nullable: false
+            description: "Human-readable error description"
+            semantic_role: "attribute"
+            format: "STRING"
+          - name: "resolved_at"
+            type: "TIMESTAMPTZ"
+            nullable: true
+            description: "When error was resolved (NULL = unresolved)"
+            semantic_role: "attribute"
+            format: "ISO-8601"
+
+      - schema: "field_monitor"
+        name: "rate_state"
+        description: "Per-domain rate limiting windows."
+        leaf_type: "SYSTEM"
+        source_of_truth: true
+        row_identity_strategy: "UUID"
+        columns:
+          - name: "rate_id"
+            type: "UUID"
+            nullable: false
+            description: "Primary key"
+            semantic_role: "identifier"
+            format: "UUID"
+          - name: "domain"
+            type: "TEXT"
+            nullable: false
+            description: "Domain being rate-limited"
+            semantic_role: "attribute"
+            format: "STRING"
+          - name: "request_count"
+            type: "INTEGER"
+            nullable: false
+            description: "Requests in current window"
+            semantic_role: "metric"
+            format: "INTEGER"
+          - name: "max_requests"
+            type: "INTEGER"
+            nullable: false
+            description: "Maximum requests per window"
+            semantic_role: "metric"
+            format: "INTEGER"
+
+  # ─────────────────────────────────────────────────────────────────────────────
   # BIT/CLS SCORING (04.04.04)
   # ─────────────────────────────────────────────────────────────────────────────
   - subhub_id: "04.04.04"

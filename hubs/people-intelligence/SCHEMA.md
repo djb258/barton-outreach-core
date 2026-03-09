@@ -11,6 +11,20 @@
 
 The People Intelligence hub manages executive/contact data, slot assignments, email verification, and person movement tracking. It is a CONSUMER hub - it does NOT discover email patterns or EINs, but consumes them from Company Target and DOL Filings hubs.
 
+### Field Monitor Dependency (Talent Flow)
+
+People Intelligence seeds LinkedIn URLs into `field_monitor.url_registry` via `seed_linkedin_urls.sql`. The field_monitor snap-on tracks `title` field changes on LinkedIn profiles. Title changes produce movement signals consumed by the talent flow pipeline.
+
+| field_monitor Table | Relationship | Purpose |
+|---------------------|-------------|---------|
+| `field_monitor.url_registry` | WRITE (seed) | People hub seeds LinkedIn URLs from `people.people_master.linkedin_url` |
+| `field_monitor.field_state` | READ | People hub reads `title` field changes as movement signals |
+| `field_monitor.check_log` | READ | Audit trail of LinkedIn profile checks |
+
+**Seed script**: `hubs/people-intelligence/scripts/seed_linkedin_urls.sql`
+**Kill switches**: `KILL_TALENT_FLOW_MONITOR`, `KILL_LINKEDIN_SEED`
+**Check interval**: 1440 minutes (daily — LinkedIn rate-sensitive)
+
 ## Primary Tables
 
 | Schema | Table | Purpose |

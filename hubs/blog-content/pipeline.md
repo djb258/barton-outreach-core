@@ -288,6 +288,45 @@ Every pipeline run logs:
 
 ---
 
+## Signal Sweep (DeltaHound Integration)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│               SIGNAL SWEEP — FIELD MONITOR BRIDGE            │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│ SOURCE: field_monitor.field_state (READ-ONLY)                │
+│ ─────────────────────────────────────────────────────────── │
+│ • Monitors 'content_hash' field on blog URLs                │
+│ • Seed source: vendor.blog                                   │
+│ • Kill switches: KILL_SIGNAL_SWEEP, KILL_BLOG_URL_SEED       │
+│ • Reuses: KILL_FUNDING_DETECTION                             │
+│ • Sample gate: LIMIT 100                                     │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│ BRIDGE: change_bridge.bridge_to_article_input()              │
+│ ─────────────────────────────────────────────────────────── │
+│ • Converts content_hash change → ingest_article() input     │
+│ • Re-triggers blog pipeline for changed pages                │
+│ • source = "field_monitor", trigger = "signal_sweep"         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+| File | Purpose |
+|------|---------|
+| `imo/middle/signal_sweep/__init__.py` | Signal sweep package |
+| `imo/middle/signal_sweep/url_seeder.py` | Seeds vendor.blog → field_monitor |
+| `imo/middle/signal_sweep/change_bridge.py` | Reads changes, bridges to pipeline |
+| `imo/middle/signal_sweep/parser_templates.py` | KV parser function definitions |
+| `scripts/seed_blog_urls.sql` | SQL seed script for field_monitor |
+| `scripts/seed_blog_parsers.py` | Seeds parser templates to KV |
+
+---
+
 ## Related Documentation
 
 - [PRD.md](./PRD.md) - Product Requirements
