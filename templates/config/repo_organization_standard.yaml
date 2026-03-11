@@ -510,22 +510,22 @@ testing_standards:
 deployment_standards:
   platforms:
     frontend:
-      primary: "Vercel"
-      staging: "Vercel Preview"
-      configuration: "vercel.json"
+      primary: "CF Pages"
+      staging: "CF Pages Preview"
+      configuration: "wrangler.toml"
 
     backend:
-      primary: "Composio Hosted"
-      alternative: "Cloud Function / Lambda"
+      primary: "CF Workers"
+      alternative: "CF Workers + Queues"
 
     database:
-      primary: "Neon PostgreSQL"
+      primary: "CF D1/KV (working) + Neon PostgreSQL (vault)"
       backup: "Daily automated"
-      migration: "Alembic (Python) or Prisma (JS)"
+      migration: "D1 migrations"
 
     storage:
-      primary: "Firebase Storage"
-      cdn: "Vercel or Cloudflare"
+      primary: "CF R2"
+      cdn: "Cloudflare"
 
   environment_tiers:
     development:

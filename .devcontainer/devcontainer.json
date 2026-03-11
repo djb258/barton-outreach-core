@@ -41,7 +41,7 @@
       "onAutoForward": "notify"
     },
     "5173": {
-      "label": "Lovable Dev Server",
+      "label": "Figma UI Dev Server",
       "onAutoForward": "silent"
     },
     "8000": {

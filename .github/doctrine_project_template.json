@@ -25,7 +25,7 @@
     },
     {
       "name": "🤖 Agents",
-      "purpose": "Automation and n8n/Composio flows",
+      "purpose": "Automation and CF Workers/Composio flows",
       "auto_add_labels": ["agent"]
     },
     {
@@ -39,7 +39,7 @@
     { "name": "schema", "color": "#2CA02C", "description": "Schema / SQL migration work" },
     { "name": "enrichment", "color": "#FF7F0E", "description": "Data enrichment agents" },
     { "name": "grafana", "color": "#9467BD", "description": "Visualization or dashboard tasks" },
-    { "name": "agent", "color": "#17BECF", "description": "Automation agents / MCP / n8n" },
+    { "name": "agent", "color": "#17BECF", "description": "Automation agents / MCP / CF Workers" },
     { "name": "auto-sync", "color": "#BCBD22", "description": "Auto-created by doctrine sync workflow" }
   ],
   "automation_rules": [

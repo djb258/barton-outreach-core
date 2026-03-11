@@ -49,14 +49,14 @@ jobs:
             echo "⚠️ No frontend build script found"
           fi
 
-      - name: Deploy to Vercel (if configured)
+      - name: Deploy to CF Pages (if configured)
         run: |
-          if [ ! -z "${{ secrets.VERCEL_TOKEN }}" ]; then
-            echo "🚀 Vercel deployment would trigger here"
-            echo "Configure VERCEL_TOKEN secret to enable automatic deployment"
+          if [ ! -z "${{ secrets.CF_API_TOKEN }}" ]; then
+            echo "Cloudflare Pages deployment would trigger here"
+            echo "Configure CF_API_TOKEN secret to enable automatic deployment"
           else
-            echo "⚠️ Vercel deployment skipped - no token configured"
-            echo "💡 Vercel auto-deploys from main branch when connected via GitHub integration"
+            echo "CF Pages deployment skipped - no token configured"
+            echo "CF Pages auto-deploys from main branch when connected via GitHub integration"
           fi
 
   deploy-backend:
@@ -97,14 +97,14 @@ jobs:
             echo "No FastAPI server found - skipping health check"
           fi
 
-      - name: Deploy to Render (if configured)
+      - name: Deploy to CF Workers (if configured)
         run: |
-          if [ ! -z "${{ secrets.RENDER_TOKEN }}" ]; then
-            echo "🚀 Render deployment would trigger here"
-            echo "Configure RENDER_TOKEN and RENDER_SERVICE_ID secrets to enable automatic deployment"
+          if [ ! -z "${{ secrets.CF_API_TOKEN }}" ]; then
+            echo "Cloudflare Workers deployment would trigger here"
+            echo "Configure CF_API_TOKEN and CF_ACCOUNT_ID secrets to enable automatic deployment"
           else
-            echo "⚠️ Render deployment skipped - no token configured"
-            echo "💡 Render auto-deploys from main branch when connected via GitHub integration"
+            echo "CF Workers deployment skipped - no token configured"
+            echo "CF Workers auto-deploys from main branch when connected via GitHub integration"
           fi
 
   post-deploy:

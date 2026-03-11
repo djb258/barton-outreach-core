@@ -13,22 +13,22 @@ tool_sections:
   - id: UI
     label: "Operational Visualization Layer"
     purpose: "Human-facing control tower for all LLCs and processes"
-    current_tool: "Lovable.DAVE"
+    current_tool: "Figma UI"
     notes:
-      - "UI layer is permanent; implementation may rotate (e.g., Builder.io, Vercel UI)."
+      - "UI layer is permanent; implementation may rotate (e.g., Builder.io, CF Pages)."
 
   - id: SYSTEM_MONITOR
     label: "System Monitoring & Telemetry"
     purpose: "Observe automations, data flow, and system health"
     current_tool: "Grafana Pro"
     notes:
-      - "Grafana Pro connected to n8n, Firebase, Neon, and BigQuery."
-      - "Embedded as System Monitor tab inside Lovable."
+      - "Grafana Pro connected to CF Workers, CF D1, Neon vault, and BigQuery."
+      - "Embedded as System Monitor tab inside Figma UI."
 
   - id: GATEWAY
     label: "Automation & Integrations"
     purpose: "Execute workflows and manage external API connectors"
-    current_tool: "n8n + Composio"
+    current_tool: "CF Workers + Queues + Composio"
     notes:
       - "Gateway is mandatory for all external connections and doctrine enforcement."
 
@@ -68,7 +68,7 @@ tool_sections:
   - id: DEPLOYMENT
     label: "Execution Infrastructure"
     purpose: "Host and run production services"
-    current_tool: "Render (Backend) + Vercel (Frontend)"
+    current_tool: "CF Workers (Backend) + CF Pages (Frontend)"
 
   - id: EXTERNAL_FEEDS
     label: "External Integrations"
@@ -129,10 +129,10 @@ relationships:
   governance_hierarchy:
     - GitHub Pro (Agent HQ)
     - Cursor 2.0 + CODEX
-    - Gateway (n8n + Composio)
+    - Gateway (CF Workers + Queues + Composio)
     - Triple Vault (Firebase, Neon, BigQuery)
-    - Visualization (Lovable, Grafana Pro)
-    - Execution (Render, Vercel)
+    - Visualization (Figma UI, Grafana Pro)
+    - Execution (CF Workers, CF Pages)
   doctrine_supervisor: "HEIR oversees all layers and enforces ORBT compliance."
 
 

@@ -28,7 +28,7 @@ error_logging:
         - "Locate failing stage from master log record"
         - "Fetch SSOT (by blueprint_version_hash or IDs)"
         - "Reproduce, patch, validate locally"
-        - "Promote via Gateway (n8n+Composio)"
+        - "Promote via Gateway (CF Workers+Composio)"
         - "Verify via Global Validator"
 ```
 

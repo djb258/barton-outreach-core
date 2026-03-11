@@ -1,7 +1,10 @@
 # Hostinger Custom Integration for Composio
 
+> **DEPRECATED (BAR-104)**: Hostinger VPS + n8n orchestration replaced by CF Workers + Queues.
+> Retained for historical reference only. Do not use for new orchestration.
+
 **Doctrine ID**: 04.04.13
-**Status**: Active
+**Status**: Deprecated (BAR-104)
 **Created**: 2025-12-01
 
 ## Overview

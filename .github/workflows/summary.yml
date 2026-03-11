@@ -72,8 +72,8 @@ jobs:
                   'mcp_registry': Path('config/mcp_registry.json').exists(),
                   'composio_branches': Path('branches/composio').exists(),
                   'imo_architecture_docs': Path('docs/imo_architecture.md').exists(),
-                  'vercel_config': Path('vercel.json').exists(),
-                  'render_config': Path('render.yaml').exists(),
+                  'cf_pages_config': Path('wrangler.toml').exists(),
+                  'cf_workers_config': Path('wrangler.toml').exists(),
                   'github_workflows': Path('.github/workflows').exists()
               }
 
@@ -103,7 +103,7 @@ jobs:
               if components['mcp_registry'] and components['heir_doctrine'] and workflow_coverage:
                   maturity = "Production-Ready"
                   maturity_desc = "fully configured with IMO doctrine compliance, MCP integration, and comprehensive CI/CD workflows"
-              elif components['mcp_registry'] and components['vercel_config']:
+              elif components['mcp_registry'] and components['cf_pages_config']:
                   maturity = "Development-Active"
                   maturity_desc = "actively developed with core IMO components and deployment configuration"
               elif total_files > 10:
@@ -137,9 +137,9 @@ jobs:
           ### Input → Middle → Output Architecture
           """
 
-              if components['vercel_config'] and components['render_config']:
-                  narrative += "✅ **Complete** - Full deployment pipeline configured for Vercel (frontend) and Render (backend)\n"
-              elif components['vercel_config'] or components['render_config']:
+              if components['cf_pages_config'] and components['cf_workers_config']:
+                  narrative += "✅ **Complete** - Full deployment pipeline configured for CF Pages (frontend) and CF Workers (backend)\n"
+              elif components['cf_pages_config'] or components['cf_workers_config']:
                   narrative += "🔄 **Partial** - Deployment configuration present but incomplete\n"
               else:
                   narrative += "⚠️ **Missing** - No deployment configuration detected\n"
@@ -163,7 +163,7 @@ jobs:
           ### Architecture Components
           - **Composio Branches**: {'✅ Configured' if components['composio_branches'] else '❌ Missing'}
           - **Architecture Documentation**: {'✅ Present' if components['imo_architecture_docs'] else '❌ Missing'}
-          - **Deployment Ready**: {'✅ Yes' if (components['vercel_config'] and components['render_config']) else '❌ Incomplete'}
+          - **Deployment Ready**: {'✅ Yes' if (components['cf_pages_config'] and components['cf_workers_config']) else '❌ Incomplete'}
 
           ## Project Health Score
           """
@@ -174,8 +174,8 @@ jobs:
 
               if components['heir_doctrine']: health_score += 1
               if components['mcp_registry']: health_score += 1
-              if components['vercel_config']: health_score += 1
-              if components['render_config']: health_score += 1
+              if components['cf_pages_config']: health_score += 1
+              if components['cf_workers_config']: health_score += 1
               if components['github_workflows']: health_score += 1
               if documentation_coverage: health_score += 1
               if files['python_files'] > 0 or files['javascript_files'] > 0: health_score += 1
@@ -203,10 +203,10 @@ jobs:
                   recommendations.append("- Add `heir.doctrine.yaml` for compliance tracking")
               if not components['mcp_registry']:
                   recommendations.append("- Create `config/mcp_registry.json` for integration management")
-              if not components['vercel_config']:
-                  recommendations.append("- Add `vercel.json` for frontend deployment")
-              if not components['render_config']:
-                  recommendations.append("- Add `render.yaml` for backend deployment")
+              if not components['cf_pages_config']:
+                  recommendations.append("- Add `wrangler.toml` for CF Pages frontend deployment")
+              if not components['cf_workers_config']:
+                  recommendations.append("- Add `wrangler.toml` for CF Workers backend deployment")
               if files['workflow_files'] < 3:
                   recommendations.append("- Implement comprehensive CI/CD workflows")
               if not documentation_coverage:
@@ -270,7 +270,7 @@ jobs:
               orbt_content += f"""
           - **Files Analyzed**: {total_files} across multiple languages and configurations
           - **IMO Components**: {sum(1 for v in components.values() if v)}/{len(components)} core components implemented
-          - **Deployment Ready**: {'Yes' if (components.get('vercel_config') and components.get('render_config')) else 'Partial'}
+          - **Deployment Ready**: {'Yes' if (components.get('cf_pages_config') and components.get('cf_workers_config')) else 'Partial'}
           - **Documentation**: {'Comprehensive' if analysis['file_analysis']['documentation_files'] >= 3 else 'Basic'}
           - **Automation**: {'Full CI/CD' if analysis['file_analysis']['workflow_files'] >= 3 else 'Limited'}
           """
@@ -328,7 +328,7 @@ jobs:
           **Immediate Next Steps:**
           1. Review generated repository analysis
           2. Implement missing IMO components (see NARRATIVE.md)
-          3. Configure deployment secrets in GitHub/Vercel/Render
+          3. Configure deployment secrets in GitHub/Cloudflare
           4. Run compliance validation workflows
 
           **Success Metrics:**

@@ -213,7 +213,7 @@ OUTREACH                                    SALES
 ║   ├── Email generation or verification (that's People Spoke)                  ║
 ║   ├── Slot assignment (that's People Spoke)                                   ║
 ║   ├── Signal emission (signals come FROM other spokes)                        ║
-║   └── Actual email sending (that's external system - Instantly/HeyReach)      ║
+║   └── Actual email sending (that's external system - Mailgun/HeyReach)        ║
 ║                                                                               ║
 ║   This spoke is the OUTPUT spoke - final decision point before sending.       ║
 ║                                                                               ║
@@ -233,7 +233,7 @@ The Outreach Spoke is the **OUTPUT node** of the Barton pipeline. It evaluates c
 2. **Primary Contact Selection** - Select contact with priority: HR > CEO > CFO
 3. **Cooling-Off Enforcement** - Prevent over-messaging (30-day minimum between contacts)
 4. **Campaign Assignment** - Assign companies to appropriate outreach campaigns
-5. **Outreach Log Persistence** - Write promotion records to Neon
+5. **Outreach Log Persistence** - Write promotion records to CF D1
 
 ### The Golden Rule (OUTPUT)
 
@@ -295,13 +295,13 @@ The Outreach Spoke is the **OUTPUT node** of the Barton pipeline. It evaluates c
          ▼
 ┌─────────────────┐
 │  Outreach Log   │
-│  (Neon DB)      │
+│  (CF D1)        │
 └─────────────────┘
          │
          ▼
 ┌─────────────────┐
 │ External System │
-│ (Instantly/     │
+│ (Mailgun/       │
 │  HeyReach)      │
 └─────────────────┘
 ```
@@ -452,7 +452,7 @@ CREATE INDEX idx_send_log_person ON outreach.send_log(person_id);
 | Primary Contact Selection | ✅ Implemented | `_get_primary_contact()` |
 | BIT Threshold Check | ✅ Implemented | `process()` |
 | Cooling-Off Check | ✅ Implemented | `_check_cooling_off()` |
-| Neon Writer | ✅ Implemented | `hub/company/neon_writer.py` |
+| CF D1 Writer | ✅ Implemented | `hub/company/neon_writer.py` |
 | Outreach Log Schema | ✅ Defined | Above |
 | Kill Switches | ✅ Defined | `tests/dry_run_orchestrator.py` |
 
@@ -478,8 +478,8 @@ CREATE INDEX idx_send_log_person ON outreach.send_log(person_id);
 │   └── bit_score >= 50 (HOT threshold)                                       │
 │                                                                             │
 │   EXTERNAL DEPENDENCIES:                                                    │
-│   ├── Instantly API (for email sending)                                     │
-│   └── HeyReach API (for LinkedIn outreach)                                  │
+│   ├── Mailgun API (for email sending)                                       │
+│   └── HeyReach API (for LinkedIn outreach - TBD)                            │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```

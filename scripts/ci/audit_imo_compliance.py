@@ -42,7 +42,7 @@ FORBIDDEN_FOLDERS = {'utils', 'helpers', 'common', 'shared', 'lib', 'misc'}
 
 # Required sections in SCHEMA.md
 SCHEMA_REQUIRED_SECTIONS = [
-    '**AUTHORITY**: Neon',
+    '**AUTHORITY**: CF D1',
     '**VERIFIED**:',
     '```mermaid',
     'erDiagram',

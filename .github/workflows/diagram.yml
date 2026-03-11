@@ -61,9 +61,9 @@ jobs:
           mermaid_content = '''
           graph TB
               subgraph "INPUT LAYER"
-                  V[Vercel Frontend]
-                  R[Render Backend]
-                  API[API Edge Functions]
+                  V[CF Pages Frontend]
+                  R[CF Workers Backend]
+                  API[CF Workers Edge Functions]
               end
 
               subgraph "MIDDLE LAYER - COMPOSIO HUB"
@@ -71,7 +71,7 @@ jobs:
                   CH --> MCP1[Neon MCP]
                   CH --> MCP2[Firebase MCP]
                   CH --> MCP3[Apify MCP]
-                  CH --> FB1[n8n Fallback]
+                  CH --> FB1[CF Workers Fallback]
                   CH --> FB2[Make.com Fallback]
                   CH --> FB3[Zapier Fallback]
                   CH --> FB4[Pipedream Fallback]
@@ -234,7 +234,7 @@ jobs:
           title IMO-Creator Request Flow
 
           actor User
-          participant "Vercel Frontend" as VF
+          participant "CF Pages Frontend" as VF
           participant "Router Service" as RS
           participant "Composio Hub" as CH
           participant "MCP Service" as MCP

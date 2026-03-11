@@ -119,10 +119,10 @@ def check_hub_drift(conn, hub_name: str, hub_path: Path) -> List[str]:
         if table not in neon_tables:
             errors.append(f"DRIFT: {hub_name} expects {table} but not found in Neon")
 
-    # Check SCHEMA.md has Neon authority declaration
+    # Check SCHEMA.md has authority declaration (CF D1 working + Neon vault)
     content = schema_file.read_text()
-    if '**AUTHORITY**: Neon' not in content:
-        errors.append(f"AUTHORITY: {hub_name}/SCHEMA.md missing Neon authority declaration")
+    if '**AUTHORITY**: CF D1' not in content:
+        errors.append(f"AUTHORITY: {hub_name}/SCHEMA.md missing CF D1 authority declaration")
 
     # Check for Mermaid ERD
     if '```mermaid' not in content or 'erDiagram' not in content:

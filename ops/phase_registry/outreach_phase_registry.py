@@ -74,7 +74,7 @@ OUTREACH_PHASES = [
         "status": "implemented",
         "input_table": "marketing.company_master",
         "output_table": "marketing.company_master (validation_status)",
-        "error_routing": "n8n webhook → Google Sheets (Invalid_Companies)",
+        "error_routing": "CF Workers webhook → Google Sheets (Invalid_Companies)",
         "dependencies": [],
         "estimated_duration_seconds": 2,
         "validation_rules": 5,
@@ -89,13 +89,13 @@ OUTREACH_PHASES = [
         "status": "implemented",
         "input_table": "marketing.people_master",
         "output_table": "marketing.people_master (validation_status)",
-        "error_routing": "n8n webhook → Google Sheets (Invalid_People)",
+        "error_routing": "CF Workers webhook → Google Sheets (Invalid_People)",
         "dependencies": [1],  # Requires Phase 1 (Company Validation)
         "estimated_duration_seconds": 2,
         "validation_rules": 7,
         "severity_levels": ["CRITICAL", "ERROR", "WARNING"],
         "doctrine_id": "4.svg.marketing.ple.phase1b_people_validator",
-        "webhook_url": "https://n8n.barton.com/webhook/route-person-failure",
+        "webhook_url": "https://workers.barton.com/webhook/route-person-failure",
         "google_sheet_id": "1i9QNWBqMgY825fLg7lblszMs6X6f5tLxCnAP3Qchfeg",
         "google_sheet_tab": "Invalid_People",
         "failure_schema": ["title mismatch", "missing email", "no LinkedIn URL", "bad format or missing timestamp", "not linked to company"]
@@ -159,7 +159,7 @@ OUTREACH_PHASES = [
         "status": "implemented",
         "input_table": "marketing.company_slot",
         "output_table": "Gate decision (pass/wait)",
-        "error_routing": "n8n webhook → Google Sheets (Enrichment_Queue)",
+        "error_routing": "CF Workers webhook → Google Sheets (Enrichment_Queue)",
         "dependencies": [1.5, 2],  # Requires Enrichment and Person Validation
         "estimated_duration_seconds": 1,
         "doctrine_id": "04.04.02.04.25000.001",
@@ -656,7 +656,7 @@ DOCTRINE_ENTRY = {
         "trigger_phase": 1.1,
         "output": {
             "validation_status": ["valid", "invalid", "warning"],
-            "webhook": "https://n8n.barton.com/webhook/route-person-failure",
+            "webhook": "https://workers.barton.com/webhook/route-person-failure",
             "sheet": {
                 "id": "1i9QNWBqMgY825fLg7lblszMs6X6f5tLxCnAP3Qchfeg",
                 "tab": "Invalid_People"

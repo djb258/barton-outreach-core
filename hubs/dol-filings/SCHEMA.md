@@ -1,9 +1,9 @@
 # DOL Filings Hub - Schema Documentation
 
-> **AUTHORITY**: Neon PostgreSQL (Production)
+> **AUTHORITY**: CF D1 (working) / Neon PostgreSQL (vault)
 > **VERIFIED**: 2026-01-25 via READ-ONLY connection
 > **HUB ID**: 04.04.03
-> **STATUS**: NEON VERIFIED
+> **STATUS**: CF D1 ACTIVE / NEON VAULT
 
 ---
 
@@ -703,6 +703,6 @@ After cascade cleanup, companies may lose their DOL match. To re-match:
 
 ---
 
-*Generated from Neon PostgreSQL via READ-ONLY connection*
+*Generated from Neon PostgreSQL vault via READ-ONLY connection*
 *Last verified: 2026-02-10*
 *27 data-bearing tables, 11,124,508 rows, 1,081 column comments (100% coverage)*

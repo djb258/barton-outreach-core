@@ -226,7 +226,7 @@ ORDER BY idx_scan DESC;
 
 **Related Dashboards**:
 - Grafana: Recent Executive Movements panel
-- Lovable.dev: Talent Flow Summary widget
+- Figma UI: Talent Flow Summary widget
 
 ---
 

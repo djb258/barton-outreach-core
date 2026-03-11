@@ -108,23 +108,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check SCHEMA.md files have Neon authority
+      - name: Check SCHEMA.md files have CF D1 / Neon vault authority
         run: |
-          echo "Checking SCHEMA.md files for Neon authority declaration..."
+          echo "Checking SCHEMA.md files for CF D1 authority declaration..."
           FAILED=""
           for schema in $(find hubs -name "SCHEMA.md" 2>/dev/null); do
-            if ! grep -q "AUTHORITY.*Neon" "$schema"; then
+            if ! grep -q "AUTHORITY.*CF D1" "$schema"; then
               FAILED="$FAILED $schema"
             fi
           done
           if [ -n "$FAILED" ]; then
-            echo "FAIL: Missing Neon authority declaration in:"
+            echo "FAIL: Missing CF D1 authority declaration in:"
             echo "$FAILED"
             echo ""
-            echo "All SCHEMA.md files MUST declare Neon as source of truth."
+            echo "All SCHEMA.md files MUST declare CF D1 (working) / Neon (vault) as source of truth."
             exit 1
           else
-            echo "PASS: All SCHEMA.md files have Neon authority declaration"
+            echo "PASS: All SCHEMA.md files have CF D1 / Neon vault authority declaration"
           fi
 
   summary:

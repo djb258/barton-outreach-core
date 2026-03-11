@@ -56,7 +56,7 @@ hives:
         doctrine_id: "SHQ.01"
         github_url: "https://github.com/[OWNER]/imo-creator"
         deployment:
-          frontend: "https://imo-creator.vercel.app"
+          frontend: "https://imo-creator.pages.dev"
           backend: "Composio Hosted"
         tech_stack:
           - "Node.js"
@@ -332,7 +332,7 @@ hives:
         github_url: "https://github.com/[OWNER]/outreach-core"
         tech_stack:
           - "Python"
-          - "Instantly.ai"
+          - "Mailgun"
           - "HeyReach"
           - "Composio MCP"
         key_features:
@@ -362,7 +362,7 @@ hives:
         blueprint_link: "firebase://blueprints/mkt-sales-navigator"
 
       - name: mkt-analytics-dashboard
-        description: "Looker + Supabase visualization layer + KPI tracking"
+        description: "Looker + CF Workers visualization layer + KPI tracking"
         altitude: 10k
         status: active
         primary_owner: "[OWNER_NAME]"
@@ -372,7 +372,7 @@ hives:
         tech_stack:
           - "Next.js"
           - "Looker"
-          - "Supabase"
+          - "CF Workers"
           - "D3.js"
         key_features:
           - "Real-time KPI dashboards"
@@ -736,10 +736,10 @@ cross_cutting:
     - "Integration tests via GitHub Actions"
 
   deployment:
-    - "Frontend: Vercel"
-    - "API: Composio Hosted"
-    - "Database: Neon PostgreSQL"
-    - "Storage: Firebase"
+    - "Frontend: CF Pages"
+    - "API: CF Workers"
+    - "Database: CF D1/KV (working) + Neon PostgreSQL (vault)"
+    - "Storage: CF R2"
     - "CI/CD: GitHub Actions"
 
 # ============================================================

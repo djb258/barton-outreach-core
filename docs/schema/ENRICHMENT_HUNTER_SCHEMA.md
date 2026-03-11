@@ -1,6 +1,6 @@
 # Enrichment Hunter Schema Reference
 
-> **AUTHORITY**: Neon PostgreSQL (Production)
+> **AUTHORITY**: CF D1 (working) / Neon PostgreSQL (vault)
 > **VERIFIED**: 2026-02-03
 > **SCHEMA**: `enrichment`
 > **STATUS**: AI-READY | HUMAN-READY | IMO-COMPLIANT

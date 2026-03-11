@@ -14,7 +14,7 @@ The **Doctrine Pipeline** project template defines a complete GitHub Projects bo
 - 🧱 **Schema** — Database schema and SQL migrations
 - ⚙️ **Enrichment** — Data enrichment agent integration
 - 📊 **Grafana** — Dashboard and analytics tasks
-- 🤖 **Agents** — Automation workflows (n8n, Composio MCP)
+- 🤖 **Agents** — Automation workflows (CF Workers, Composio MCP)
 - ✅ **Done** — Completed and deployed items
 
 This template integrates seamlessly with the **doctrine-project-sync.yml** GitHub Action workflow.
@@ -31,7 +31,7 @@ This template integrates seamlessly with the **doctrine-project-sync.yml** GitHu
 | 🧱 Schema | SQL schema work in progress | `schema` | No |
 | ⚙️ Enrichment | Agent integration (Apify, Abacus, Firecrawl) | `enrichment` | No |
 | 📊 Grafana | Dashboard and analytics tasks | `grafana` | No |
-| 🤖 Agents | Automation and n8n/Composio flows | `agent` | No |
+| 🤖 Agents | Automation and CF Workers/Composio flows | `agent` | No |
 | ✅ Done | Completed, merged, or deployed | — | Yes |
 
 ### **2. Six Color-Coded Labels**
@@ -42,7 +42,7 @@ This template integrates seamlessly with the **doctrine-project-sync.yml** GitHu
 | 🟢 schema | Green | `#2CA02C` | Schema / SQL migration work |
 | 🟠 enrichment | Orange | `#FF7F0E` | Data enrichment agents |
 | 🟣 grafana | Purple | `#9467BD` | Visualization or dashboard tasks |
-| 🔷 agent | Cyan | `#17BECF` | Automation agents / MCP / n8n |
+| 🔷 agent | Cyan | `#17BECF` | Automation agents / MCP / CF Workers |
 | 🟡 auto-sync | Yellow | `#BCBD22` | Auto-created by doctrine sync workflow |
 
 ### **3. Six Automation Rules**
@@ -90,7 +90,7 @@ Create these 6 columns in order:
    - Description: "Dashboard + analytics tasks"
 
 5. **🤖 Agents**
-   - Description: "Automation and n8n/Composio flows"
+   - Description: "Automation and CF Workers/Composio flows"
 
 6. **✅ Done**
    - Description: "Completed, merged, or deployed doctrine items"
@@ -104,7 +104,7 @@ Go to repository Settings → Labels → New label:
 2. schema       | #2CA02C | Schema / SQL migration work
 3. enrichment   | #FF7F0E | Data enrichment agents
 4. grafana      | #9467BD | Visualization or dashboard tasks
-5. agent        | #17BECF | Automation agents / MCP / n8n
+5. agent        | #17BECF | Automation agents / MCP / CF Workers
 6. auto-sync    | #BCBD22 | Auto-created by doctrine sync workflow
 ```
 
@@ -180,7 +180,7 @@ gh label create "doctrine" --color "1F77B4" --description "Doctrine or markdown 
 gh label create "schema" --color "2CA02C" --description "Schema / SQL migration work"
 gh label create "enrichment" --color "FF7F0E" --description "Data enrichment agents"
 gh label create "grafana" --color "9467BD" --description "Visualization or dashboard tasks"
-gh label create "agent" --color "17BECF" --description "Automation agents / MCP / n8n"
+gh label create "agent" --color "17BECF" --description "Automation agents / MCP / CF Workers"
 gh label create "auto-sync" --color "BCBD22" --description "Auto-created by doctrine sync workflow"
 ```
 

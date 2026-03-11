@@ -74,7 +74,7 @@
     "deployment_manager": {
       "use_this_agent": true,
       "why": "Need hosting, CI/CD, and infrastructure for production deployment",
-      "where_to_deploy": "Vercel, Netlify, or similar modern hosting platform"
+      "where_to_deploy": "Cloudflare Workers/Pages for compute and hosting"
     },
     "neon_database": {
       "use_this_agent": true,
@@ -126,7 +126,7 @@
       "rate_limits": "Respect API rate limits for all external services"
     },
     "deployment_details": {
-      "hosting_platform": "Vercel for frontend, Render for backend services",
+      "hosting_platform": "Cloudflare Workers for compute, CF Pages for frontend",
       "environment_variables": "Database URLs, API keys, service credentials, monitoring endpoints",
       "monitoring_needs": "Application performance, error rates, user engagement, outreach success metrics"
     },

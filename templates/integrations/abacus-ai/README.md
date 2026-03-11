@@ -120,9 +120,9 @@ const response = await fetch('http://localhost:3001/tool', {
 });
 ```
 
-## Integration with N8N (Hostinger)
+## Integration with CF Workers + Queues
 
-You can also use Abacus.AI directly in your N8N workflows on Hostinger:
+You can also use Abacus.AI directly in your CF Workers workflows:
 
 1. Add an **HTTP Request** node
 2. Set method to `POST` or `GET` based on the action

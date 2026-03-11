@@ -469,7 +469,7 @@ mcp_integration:
     vps_instance:
       hostname: "[VPS_HOSTNAME]"
       ip: "[VPS_IP_ADDRESS]"
-      os: "Ubuntu 24.04 with n8n"
+      os: "Ubuntu 24.04 (deprecated - see CF Workers)"
       plan: "KVM 2"
       specs:
         cpu_cores: 2
@@ -537,7 +537,7 @@ mcp_integration:
       - "global-config/integrations/abacus-ai/README.md"
     integration_points:
       composio: "Custom integration via OpenAPI spec"
-      n8n: "HTTP Request node with API key auth"
+      cf_workers: "CF Workers with API key auth"
 
 # ============================================================
 # SECURITY & COMPLIANCE
@@ -594,11 +594,11 @@ automation:
 # ============================================================
 deployment:
   platforms:
-    render:
+    cf_workers:
       enabled: true
       auto_deploy: true
       environment: production
-    vercel:
+    cf_pages:
       enabled: true
       auto_deploy: true
       environment: production
@@ -1135,14 +1135,14 @@ error_log_registry:
     - Build
     - Training
   automation_hooks:
-    - n8n
+    - cf_workers
     - Composio
   access_control:
     write:
       - all_agents
     read:
       - repo-dashboard
-      - lovable
+      - figma-ui
       - deepwiki
   enforcement:
     required_on_repo_build: true

@@ -1,9 +1,9 @@
 # Company Target Hub - Schema Documentation
 
-> **AUTHORITY**: Neon PostgreSQL (Production)
+> **AUTHORITY**: CF D1 (working) / Neon PostgreSQL (vault)
 > **VERIFIED**: 2026-01-25 via READ-ONLY connection
 > **HUB ID**: 04.04.01
-> **STATUS**: NEON VERIFIED
+> **STATUS**: CF D1 ACTIVE / NEON VAULT
 
 ---
 
@@ -507,7 +507,7 @@ This hub's data is cleaned when:
 
 ---
 
-*Generated from Neon PostgreSQL via READ-ONLY connection*
+*Generated from Neon PostgreSQL vault via READ-ONLY connection*
 *Last verified: 2026-02-02*
 *ERD Sync: NEON_SCHEMA_REFERENCE_FOR_ERD.md*
 

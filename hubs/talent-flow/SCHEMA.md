@@ -1,9 +1,9 @@
 # Talent Flow Hub - Schema Documentation
 
-> **AUTHORITY**: Neon PostgreSQL (Production)
+> **AUTHORITY**: CF D1 (working) / Neon PostgreSQL (vault)
 > **VERIFIED**: 2026-01-25 via READ-ONLY connection
 > **HUB ID**: 04.04.06
-> **STATUS**: NEON VERIFIED
+> **STATUS**: CF D1 ACTIVE / NEON VAULT
 
 ---
 
@@ -297,7 +297,7 @@ movement_event → talent_flow.movement_history → outreach.bit_signals
 
 ---
 
-*Generated from Neon PostgreSQL via READ-ONLY connection*
+*Generated from Neon PostgreSQL vault via READ-ONLY connection*
 *Last verified: 2026-01-26*
 
 ---

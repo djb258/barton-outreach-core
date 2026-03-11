@@ -1,9 +1,9 @@
 # Blog Content Hub — Database Schema
 
-> **AUTHORITY**: Neon PostgreSQL (Production)
+> **AUTHORITY**: CF D1 (working) / Neon PostgreSQL (vault)
 > **VERIFIED**: 2026-02-02 via READ-ONLY connection
 > **HUB ID**: 04.04.05
-> **STATUS**: NEON VERIFIED
+> **STATUS**: CF D1 ACTIVE / NEON VAULT
 
 ---
 

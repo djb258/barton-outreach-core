@@ -59,7 +59,7 @@ Defines perspective and scope for planning, execution, and reporting within CTB.
 | 40k   | Program Constellation  | Multi‑system initiatives, capability roadmaps, dependency alignment             |
 | 30k   | Engineering Hangar     | Architecture, repo‑of‑repos, standards, CI/CD, enforcement (HEIR/ORBT)         |
 | 20k   | System Blueprint       | Service boundaries, contracts, schemas, interfaces, SLAs                        |
-| 10k   | Workflow/Module        | Pipelines, jobs, subagents, tool wiring (n8n/Composio, MCP)                     |
+| 10k   | Workflow/Module        | Pipelines, jobs, subagents, tool wiring (CF Workers/Composio, MCP)              |
 | 5k    | Operational Runbook    | Concrete tasks, endpoints, migrations, health checks, dashboards                |
 
 Notes:
