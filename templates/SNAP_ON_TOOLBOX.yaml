@@ -424,8 +424,8 @@ banned:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 infrastructure:
-  ui: {name: "Lovable.dev", role: "UI + Edge Functions", cost: "Subscription"}
-  compute: {name: "Supabase Edge Functions", role: "Fast serverless compute", cost: "Free tier"}
+  ui: {name: "CF Pages", role: "UI hosting + static builds", cost: "Free tier"}
+  compute: {name: "CF Workers", role: "Fast serverless compute", cost: "Free tier"}
   database: {name: "Neon", role: "Vault - source of truth", cost: "Free tier"}
   orchestration: {name: "n8n", role: "Workflow automation", cost: "Self-hosted @ Hostinger"}
   integrations: {name: "Composio", role: "500+ app router", cost: "$30/month fixed"}

@@ -1,3 +1,4 @@
+# TODO: BAR-114 — migrate 408-line dumb worker from psycopg2/Neon to CF Worker/D1
 #!/usr/bin/env python3
 """
 People Dumb Worker — Signal Detection

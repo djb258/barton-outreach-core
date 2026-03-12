@@ -15,7 +15,7 @@
 --        with the actual bridge function name. Customize roles as needed.
 --
 -- NOTE: This migration creates ROLES. Roles are cluster-wide in PostgreSQL.
---       On managed platforms (Neon, Supabase), check role creation permissions.
+--       On managed platforms (Neon, CF Hyperdrive), check role creation permissions.
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 -- ───────────────────────────────────────────────────────────────────

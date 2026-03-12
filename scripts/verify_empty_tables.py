@@ -1,3 +1,4 @@
+# TODO: BAR-114 — migrate psycopg2/Neon to CF Worker/D1
 #!/usr/bin/env python3
 """
 Verify all candidate "empty" tables truly have 0 rows via COUNT(*).

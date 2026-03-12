@@ -20,7 +20,7 @@
 --   1. svg_marketing.talent_flow_movements — Executive movement tracking
 --   2. fn_insert_bit_event() — Trigger function to create BIT events
 --   3. trg_talent_flow_to_bit — Trigger on movements table
---   4. vw_talent_flow_summary — Analytics view for Lovable.dev dashboards
+--   4. vw_talent_flow_summary — Analytics view for CF Pages dashboards
 --   5. Indexes and constraints for performance
 --
 -- Compatibility: PostgreSQL 15+ (Neon)
@@ -292,7 +292,7 @@ COMMENT ON TRIGGER trg_talent_flow_to_bit ON svg_marketing.talent_flow_movements
 -- ───────────────────────────────────────────────────────────────────────────
 -- 📊 VIEW: vw_talent_flow_summary
 -- ───────────────────────────────────────────────────────────────────────────
--- Doctrine: Analytics view for Lovable.dev dashboards. Provides aggregated
+-- Doctrine: Analytics view for CF Pages dashboards. Provides aggregated
 --           metrics on talent flow movements, BIT event creation rates, and
 --           detection source performance.
 --
@@ -362,7 +362,7 @@ GROUP BY cm.company_unique_id, cm.company_name, cm.industry, cm.employee_count
 HAVING COUNT(tfm.movement_id) > 0
 ORDER BY total_movements DESC, most_recent_movement_date DESC;
 
-COMMENT ON VIEW svg_marketing.vw_talent_flow_summary IS 'Talent Flow Analytics — Aggregated movement metrics for Lovable.dev dashboards';
+COMMENT ON VIEW svg_marketing.vw_talent_flow_summary IS 'Talent Flow Analytics — Aggregated movement metrics for CF Pages dashboards';
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- 🌱 SEED DATA: BIT Rules for Talent Flow
@@ -514,6 +514,6 @@ ON CONFLICT (audit_id) DO UPDATE SET
 -- 1. Run verification queries from infra/VERIFICATION_QUERIES.sql
 -- 2. Test movement insertion and BIT event creation
 -- 3. Review Talent-Flow-Doctrine.md for operational guidance
--- 4. Configure Lovable.dev dashboard with vw_talent_flow_summary
+-- 4. Configure CF Pages dashboard with vw_talent_flow_summary
 --
 -- ═══════════════════════════════════════════════════════════════════════════
