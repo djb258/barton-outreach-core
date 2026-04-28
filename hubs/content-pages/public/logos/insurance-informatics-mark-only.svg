@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80">
+  <!-- Insurance Informatics — Icon/Mark Only -->
+  <!-- // = weewee.me (IT) joined to svg.agency (insurance). The only person doing this. -->
+
+  <!-- Navy background -->
+  <rect x="0" y="0" width="80" height="80" rx="12" fill="#0F2044"/>
+
+  <!-- // mark — code syntax for IT + Roman numeral II for Insurance Informatics -->
+  <text
+    x="40"
+    y="52"
+    font-family="'Courier New', Courier, monospace"
+    font-weight="700"
+    font-size="40"
+    fill="#2563EB"
+    text-anchor="middle"
+    letter-spacing="4"
+  >//</text>
+</svg>

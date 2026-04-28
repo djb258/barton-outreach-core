@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" width="1200" height="720" role="img" aria-label="Insurance Informatics lead flow">
+  <rect width="1200" height="720" fill="#081120"/>
+  <text x="60" y="84" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="800" fill="#ffffff">Lead flow and conversion path</text>
+  <text x="60" y="122" font-family="Inter, Arial, sans-serif" font-size="18" fill="#94a3b8">A simple path: traffic in, trust out, booked meeting next.</text>
+
+  <g font-family="Inter, Arial, sans-serif">
+    <rect x="64" y="200" width="196" height="108" rx="22" fill="#0b5fff" fill-opacity="0.20" stroke="#4c8dff"/>
+    <text x="92" y="242" font-size="18" font-weight="700" fill="#ffffff">Traffic source</text>
+    <text x="92" y="272" font-size="14" fill="#cbd5e1">Search / social / referral</text>
+
+    <rect x="324" y="200" width="196" height="108" rx="22" fill="#0f766e" fill-opacity="0.20" stroke="#2dd4bf"/>
+    <text x="352" y="242" font-size="18" font-weight="700" fill="#ffffff">Landing page</text>
+    <text x="352" y="272" font-size="14" fill="#cbd5e1">Category-first copy</text>
+
+    <rect x="584" y="200" width="196" height="108" rx="22" fill="#d97706" fill-opacity="0.20" stroke="#fbbf24"/>
+    <text x="612" y="242" font-size="18" font-weight="700" fill="#ffffff">Trust block</text>
+    <text x="612" y="272" font-size="14" fill="#cbd5e1">Video + proof + CTB</text>
+
+    <rect x="844" y="200" width="196" height="108" rx="22" fill="#1d4ed8" fill-opacity="0.20" stroke="#93c5fd"/>
+    <text x="872" y="242" font-size="18" font-weight="700" fill="#ffffff">Conversion</text>
+    <text x="872" y="272" font-size="14" fill="#cbd5e1">Book 15 minutes</text>
+  </g>
+
+  <g stroke="#94a3b8" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M260 254 H316"/>
+    <path d="M520 254 H576"/>
+    <path d="M780 254 H836"/>
+  </g>
+
+  <g font-family="Inter, Arial, sans-serif">
+    <rect x="248" y="412" width="700" height="138" rx="28" fill="#0f172a" stroke="rgba(255,255,255,0.08)"/>
+    <text x="284" y="464" font-size="22" font-weight="700" fill="#ffffff">Conversion events log back to LCS Hub</text>
+    <text x="284" y="500" font-size="16" fill="#cbd5e1">page_loaded   |   cta_clicked   |   video_watch   |   form_start</text>
+    <text x="284" y="528" font-size="14" fill="#94a3b8">The website is not a brochure. It is an instrument panel.</text>
+  </g>
+</svg>

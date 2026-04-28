@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Insurance Informatics — The Named Discipline</title>
+    <meta name="description" content="Insurance Informatics merges 25 years of IT data architecture with 25 years of insurance operations into one closed-loop system. One hub. Two bills. Zero commission." />
+    <meta name="keywords" content="insurance informatics, self-insured benefits, benefits consulting, TPA management, PBM management, Dave Barton, SVG Agency" />
+    <meta name="author" content="Dave Barton" />
+    <link rel="canonical" href="https://insuranceinformatics.com/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Insurance Informatics" />
+    <meta property="og:title" content="Insurance Informatics — The Named Discipline" />
+    <meta property="og:description" content="Insurance Informatics merges IT data architecture with insurance operations into one closed-loop system. One hub. Two bills. Zero commission." />
+    <meta property="og:url" content="https://insuranceinformatics.com/" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter / LinkedIn -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Insurance Informatics — The Named Discipline" />
+    <meta name="twitter:description" content="Insurance Informatics merges IT data architecture with insurance operations into one closed-loop system." />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://insuranceinformatics.com/#organization",
+          "name": "Insurance Informatics",
+          "alternateName": "SVG Agency",
+          "url": "https://insuranceinformatics.com",
+          "description": "Insurance Informatics is the named discipline that merges IT data architecture with insurance operations. One hub, two bills, zero commission.",
+          "founder": {
+            "@type": "Person",
+            "@id": "https://insuranceinformatics.com/#dave-barton"
+          },
+          "sameAs": [
+            "https://www.linkedin.com/company/svg-agency",
+            "https://svg.agency"
+          ]
+        },
+        {
+          "@type": "ProfessionalService",
+          "@id": "https://insuranceinformatics.com/#service",
+          "name": "Insurance Informatics",
+          "description": "A closed-loop operational system for self-insured employers. We aggregate all insurance vendors into one hub, deliver two consolidated bills, and manage high-dollar claims through structured waterfalls — all for a flat PEPM fee with zero commission.",
+          "provider": { "@id": "https://insuranceinformatics.com/#organization" },
+          "areaServed": { "@type": "Country", "name": "United States" },
+          "serviceType": ["Benefits Consulting", "Self-Insured Benefits Management", "TPA Management", "PBM Management", "Claims Cost Reduction"],
+          "offers": {
+            "@type": "Offer",
+            "description": "Flat PEPM fee. Zero commission. Zero BOR required."
+          }
+        },
+        {
+          "@type": "Person",
+          "@id": "https://insuranceinformatics.com/#dave-barton",
+          "name": "Dave Barton",
+          "jobTitle": "Founder",
+          "description": "25 years IT data architecture + 25 years insurance operations = Insurance Informatics. Dave sits beside the client, not below them.",
+          "worksFor": { "@id": "https://insuranceinformatics.com/#organization" },
+          "knowsAbout": ["Insurance Informatics", "Self-Insured Benefits", "TPA Management", "PBM Management", "Claims Data Architecture", "Benefits Technology"]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://insuranceinformatics.com/#website",
+          "url": "https://insuranceinformatics.com",
+          "name": "Insurance Informatics",
+          "publisher": { "@id": "https://insuranceinformatics.com/#organization" }
+        }
+      ]
+    }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 240" width="960" height="240" role="img" aria-label="Insurance Informatics wordmark">
+  <defs>
+    <linearGradient id="ii-wordmark-gradient" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#0b5fff"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="240" rx="36" fill="#ffffff"/>
+  <text x="480" y="108" text-anchor="middle"
+    font-family="Inter, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif"
+    font-size="62" font-weight="800" fill="#0f172a"
+    letter-spacing="-2.1">Insurance Informatics</text>
+  <text x="480" y="160" text-anchor="middle"
+    font-family="Inter, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif"
+    font-size="24" font-weight="600" fill="url(#ii-wordmark-gradient)"
+    letter-spacing="2.5">insuranceinformatics.com</text>
+</svg>

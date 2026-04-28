@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" width="1200" height="720" role="img" aria-label="Insurance Informatics performance pillars">
+  <rect width="1200" height="720" fill="#081120"/>
+  <rect x="48" y="48" width="1104" height="624" rx="32" fill="#0f172a" stroke="rgba(255,255,255,0.08)"/>
+  <text x="84" y="124" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700" fill="#e2e8f0" letter-spacing="1.5">FCE-007</text>
+  <text x="84" y="176" font-family="Inter, Arial, sans-serif" font-size="54" font-weight="800" fill="#ffffff" letter-spacing="-1.8">Website performance pillars</text>
+  <text x="84" y="224" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="500" fill="#94a3b8">Thing. Flow. Change. Connection.</text>
+
+  <g transform="translate(84 280)">
+    <rect width="240" height="300" rx="24" fill="#0b5fff" fill-opacity="0.18" stroke="#4c8dff"/>
+    <text x="24" y="52" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700" fill="#dbeafe">Valuation</text>
+    <text x="24" y="96" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="600" fill="#ffffff">Thing</text>
+    <text x="24" y="140" font-family="Inter, Arial, sans-serif" font-size="18" fill="#cbd5e1">Speed</text>
+    <text x="24" y="172" font-family="Inter, Arial, sans-serif" font-size="18" fill="#cbd5e1">Mobile</text>
+    <text x="24" y="204" font-family="Inter, Arial, sans-serif" font-size="18" fill="#cbd5e1">Crawlability</text>
+    <text x="24" y="236" font-family="Inter, Arial, sans-serif" font-size="18" fill="#cbd5e1">SSL + schema</text>
+  </g>
+
+  <g transform="translate(360 280)">
+    <rect width="240" height="300" rx="24" fill="#0f766e" fill-opacity="0.18" stroke="#2dd4bf"/>
+    <text x="24" y="52" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700" fill="#ccfbf1">Concentration</text>
+    <text x="24" y="96" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="600" fill="#ffffff">Flow</text>
+    <text x="24" y="140" font-family="Inter, Arial, sans-serif" font-size="18" fill="#cbd5e1">Keywords</text>
+    <text x="24" y="172" font-family="Inter, Arial, sans-serif" font-size="18" fill="#cbd5e1">Backlinks</text>
+    <text x="24" y="204" font-family="Inter, Arial, sans-serif" font-size="18" fill="#cbd5e1">Channels</text>
+    <text x="24" y="236" font-family="Inter, Arial, sans-serif" font-size="18" fill="#cbd5e1">Entry intent</text>
+  </g>
+
+  <g transform="translate(636 280)">
+    <rect width="240" height="300" rx="24" fill="#d97706" fill-opacity="0.18" stroke="#fbbf24"/>
+    <text x="24" y="52" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700" fill="#fef3c7">Trend</text>
+    <text x="24" y="96" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="600" fill="#ffffff">Change</text>
+    <text x="24" y="140" font-family="Inter, Arial, sans-serif" font-size="18" fill="#cbd5e1">Authority</text>
+    <text x="24" y="172" font-family="Inter, Arial, sans-serif" font-size="18" fill="#cbd5e1">Rankings</text>
+    <text x="24" y="204" font-family="Inter, Arial, sans-serif" font-size="18" fill="#cbd5e1">Freshness</text>
+    <text x="24" y="236" font-family="Inter, Arial, sans-serif" font-size="18" fill="#cbd5e1">Proof updates</text>
+  </g>
+
+  <g transform="translate(912 280)">
+    <rect width="240" height="300" rx="24" fill="#1d4ed8" fill-opacity="0.18" stroke="#93c5fd"/>
+    <text x="24" y="52" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700" fill="#dbeafe">Liquidity</text>
+    <text x="24" y="96" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="600" fill="#ffffff">Connection</text>
+    <text x="24" y="140" font-family="Inter, Arial, sans-serif" font-size="18" fill="#cbd5e1">CTA</text>
+    <text x="24" y="172" font-family="Inter, Arial, sans-serif" font-size="18" fill="#cbd5e1">Forms</text>
+    <text x="24" y="204" font-family="Inter, Arial, sans-serif" font-size="18" fill="#cbd5e1">Tracking</text>
+    <text x="24" y="236" font-family="Inter, Arial, sans-serif" font-size="18" fill="#cbd5e1">Booking path</text>
+  </g>
+</svg>

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 150" width="200" height="150">
+  <!-- Insurance Informatics — Stacked Lockup -->
+  <!-- // mark centered above wordmark -->
+
+  <!-- // mark — large, centered, electric blue -->
+  <text
+    x="100"
+    y="52"
+    font-family="'Courier New', Courier, monospace"
+    font-weight="700"
+    font-size="46"
+    fill="#2563EB"
+    text-anchor="middle"
+    letter-spacing="6"
+  >//</text>
+
+  <!-- Rule -->
+  <line x1="16" y1="63" x2="184" y2="63" stroke="#E2E8F0" stroke-width="0.75"/>
+
+  <!-- INSURANCE -->
+  <text
+    x="100"
+    y="92"
+    text-anchor="middle"
+    font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
+    font-weight="700"
+    font-size="15"
+    fill="#0F2044"
+    letter-spacing="4"
+  >INSURANCE</text>
+
+  <!-- INFORMATICS -->
+  <text
+    x="100"
+    y="118"
+    text-anchor="middle"
+    font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
+    font-weight="300"
+    font-size="15"
+    fill="#2563EB"
+    letter-spacing="4"
+  >INFORMATICS</text>
+</svg>

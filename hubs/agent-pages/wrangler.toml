@@ -1,0 +1,13 @@
+name = "agent-pages"
+main = "src/index.ts"
+compatibility_date = "2025-03-17"
+
+[[d1_databases]]
+binding = "D1_OUTREACH"
+database_name = "svg-d1-outreach-ops"
+database_id = "73a285b8-770a-4370-abbe-ce9607be0b34"
+
+[[d1_databases]]
+binding = "D1_SPINE"
+database_name = "svg-d1-spine"
+database_id = "641a9a1e-0882-41a7-82af-ea700e7cfbb3"

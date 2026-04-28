@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 80" width="400" height="80">
+  <!-- Insurance Informatics — Horizontal Lockup -->
+  <!-- // mark (left) + INSURANCE/INFORMATICS wordmark (right) -->
+  <!-- Colors: #0F2044 navy, #2563EB electric blue -->
+
+  <!-- Mark: navy box with // in code font -->
+  <rect x="0" y="4" width="68" height="68" rx="8" fill="#0F2044"/>
+  <text
+    x="34"
+    y="48"
+    font-family="'Courier New', Courier, monospace"
+    font-weight="700"
+    font-size="32"
+    fill="#2563EB"
+    text-anchor="middle"
+    letter-spacing="4"
+  >//</text>
+
+  <!-- INSURANCE wordmark — bold, navy, the established industry side -->
+  <text
+    x="84"
+    y="34"
+    font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
+    font-weight="700"
+    font-size="22"
+    fill="#0F2044"
+    letter-spacing="3"
+  >INSURANCE</text>
+
+  <!-- Rule — the join between IT and insurance -->
+  <line x1="84" y1="41" x2="396" y2="41" stroke="#E2E8F0" stroke-width="0.75"/>
+
+  <!-- INFORMATICS wordmark — light, blue, the IT/data side -->
+  <text
+    x="84"
+    y="64"
+    font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
+    font-weight="300"
+    font-size="22"
+    fill="#2563EB"
+    letter-spacing="3"
+  >INFORMATICS</text>
+</svg>

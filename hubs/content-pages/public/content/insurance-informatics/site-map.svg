@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" width="1200" height="720" role="img" aria-label="Insurance Informatics site map">
+  <rect width="1200" height="720" fill="#f8fafc"/>
+  <text x="64" y="96" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="800" fill="#0f172a">Insurance Informatics website map</text>
+  <text x="64" y="132" font-family="Inter, Arial, sans-serif" font-size="18" fill="#475569">One category. One clear CTA. One conversion path.</text>
+
+  <g font-family="Inter, Arial, sans-serif">
+    <rect x="72" y="180" width="210" height="92" rx="18" fill="#0b5fff" fill-opacity="0.14" stroke="#0b5fff"/>
+    <text x="102" y="220" font-size="20" font-weight="700" fill="#0f172a">Home</text>
+    <text x="102" y="248" font-size="14" fill="#475569">What it is</text>
+
+    <rect x="344" y="180" width="210" height="92" rx="18" fill="#0f766e" fill-opacity="0.14" stroke="#0f766e"/>
+    <text x="374" y="220" font-size="20" font-weight="700" fill="#0f172a">How it works</text>
+    <text x="374" y="248" font-size="14" fill="#475569">Mechanics + math</text>
+
+    <rect x="616" y="180" width="210" height="92" rx="18" fill="#d97706" fill-opacity="0.14" stroke="#d97706"/>
+    <text x="646" y="220" font-size="20" font-weight="700" fill="#0f172a">For CEOs / CFOs</text>
+    <text x="646" y="248" font-size="14" fill="#475569">Cost and control</text>
+
+    <rect x="888" y="180" width="210" height="92" rx="18" fill="#1d4ed8" fill-opacity="0.14" stroke="#1d4ed8"/>
+    <text x="918" y="220" font-size="20" font-weight="700" fill="#0f172a">Book / Contact</text>
+    <text x="918" y="248" font-size="14" fill="#475569">One next step</text>
+  </g>
+
+  <g stroke="#94a3b8" stroke-width="4" fill="none" stroke-linecap="round">
+    <path d="M282 226 H338"/>
+    <path d="M554 226 H610"/>
+    <path d="M826 226 H882"/>
+  </g>
+
+  <g font-family="Inter, Arial, sans-serif">
+    <rect x="184" y="392" width="240" height="110" rx="22" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="214" y="432" font-size="18" font-weight="700" fill="#0f172a">What Is Insurance Informatics</text>
+    <text x="214" y="462" font-size="14" fill="#475569">Name the field.</text>
+
+    <rect x="488" y="392" width="240" height="110" rx="22" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="518" y="432" font-size="18" font-weight="700" fill="#0f172a">Why It Is Permanent</text>
+    <text x="518" y="462" font-size="14" fill="#475569">Show the dependency.</text>
+
+    <rect x="792" y="392" width="240" height="110" rx="22" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="822" y="432" font-size="18" font-weight="700" fill="#0f172a">For Vendors</text>
+    <text x="822" y="462" font-size="14" fill="#475569">Integration as scale.</text>
+  </g>
+
+  <g stroke="#94a3b8" stroke-width="3" fill="none" stroke-linecap="round">
+    <path d="M282 272 V340 H304"/>
+    <path d="M554 272 V340 H608"/>
+    <path d="M826 272 V340 H912"/>
+  </g>
+</svg>
