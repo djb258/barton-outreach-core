@@ -1,0 +1,75 @@
+# ═══════════════════════════════════════════════════════════════
+# LCS Hub — The Plumbing
+# ═══════════════════════════════════════════════════════════════
+# Hub-spoke architecture. All logic in the hub.
+# Spokes IN: dumb workers emit signals in standard format.
+# Spokes OUT: delivery adapters accept standard message package.
+#
+# Producer (cron): scans Neon vault for new signals → creates jobs
+# Consumer (queue): processes jobs → CID compile → SID assemble → MID deliver
+# HTTP: webhook receivers + health/status API
+#
+# D1 = workspace (edge). Neon = vault (source of truth).
+# All integrations through Composio.
+# ═══════════════════════════════════════════════════════════════
+
+name = "lcs-hub"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Cron — producer scans for new signals daily at 7am UTC
+[triggers]
+crons = ["0 7 * * *"]
+
+# D1 — Spine (CL identity + LCS tables)
+[[d1_databases]]
+binding = "D1"
+database_name = "svg-d1-spine"
+database_id = "641a9a1e-0882-41a7-82af-ea700e7cfbb3"
+migrations_dir = "src/migrations"
+
+# D1 — Outreach (company_target, DOL, people, blog, BIT)
+[[d1_databases]]
+binding = "D1_OUTREACH"
+database_name = "svg-d1-outreach-ops"
+database_id = "73a285b8-770a-4370-abbe-ce9607be0b34"
+
+# D1 — Global (IMO-Creator shared reference tables — ZIP codes, geo)
+[[d1_databases]]
+binding = "D1_GLOBAL"
+database_name = "imo-d1-global"
+database_id = "5b902b59-5d65-4c7a-be7c-3763c132b585"
+
+# Hyperdrive to Neon — SEED ONLY. Used by /seed endpoints to pull
+# vault data into D1 workspace. NEVER used during pipeline operations.
+[[hyperdrive]]
+binding = "HD_NEON"
+id = "6a76791c688346e88def0060e41a2be5"
+
+# Queue — pipeline jobs (signal → CID → SID → MID)
+[[queues.producers]]
+queue = "lcs-pipeline"
+binding = "LCS_QUEUE"
+
+[[queues.consumers]]
+queue = "lcs-pipeline"
+max_batch_size = 5
+max_retries = 3
+dead_letter_queue = "lcs-dlq"
+max_batch_timeout = 60
+
+[vars]
+# LBB (Library Barton Brain — single knowledge store, replaces svg-brain + imo-brain)
+LBB_URL = "https://lbb.svg-outreach.workers.dev"
+# Composio for all integrations
+COMPOSIO_BASE_URL = "https://backend.composio.dev"
+# Mailgun domain
+MAILGUN_DOMAIN = "mg.insuranceinformatics.com"
+
+# Secrets (set via `wrangler secret put <NAME>`):
+#   NEON_URL            — Neon vault connection (OUTREACH_DATABASE_URL from Doppler)
+#   LBB_API_KEY         — LBB auth (LBB_API_KEY from Doppler)
+#   COMPOSIO_API_KEY    — Composio auth (GLOBAL_COMPOSIO_API_KEY from Doppler)
+#   MAILGUN_API_KEY     — Mailgun auth (GLOBAL_MAILGUN_API_KEY from Doppler)
+#   HEYREACH_API_KEY    — HeyReach auth (GLOBAL_HEYREACH_API_KEY from Doppler)

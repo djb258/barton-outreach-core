@@ -1,0 +1,32 @@
+-- BAR-243: Three-column pattern architecture for SP platforms
+-- ARCHITECTURE DECISION: slot_workbench is at D1's 100-column hard limit.
+-- No further ALTER TABLE operations are possible on slot_workbench.
+--
+-- Three-column pattern for SP platforms lives in platform_registry:
+--   platform_registry.has_it       = 1 if we found this platform (has_X)
+--   platform_registry.last_checked_at = when process last ran (X_last_checked_at)
+--   platform_registry.changed      = 1 if value flipped since prior run (X_changed)
+--
+-- The slot_workbench.sp_has_glassdoor / sp_has_indeed / sp_has_facebook / sp_has_twitter
+-- columns are DENORMALIZED SUMMARIES only. They are populated by Process 300
+-- as a side-effect of writing platform_registry.
+--
+-- Remaining platforms (yelp, bbb, crunchbase, zoominfo) have NO summary columns
+-- on slot_workbench due to the column limit. Their canonical state is platform_registry.
+-- The company_grid view can join platform_registry for those platforms if needed.
+--
+-- Three-column pattern for People sub-hub lives directly on slot_workbench:
+--   has_name / name_last_checked_at / name_changed
+--   has_email / email_last_checked_at / email_changed
+--   has_verified_email / verified_last_checked_at / verified_changed
+--   has_linkedin / linkedin_last_checked_at / linkedin_changed
+--
+-- This migration is DOCUMENTATION ONLY — no DDL changes.
+-- The column limit was hit. Architecture is documented here for the logbook.
+--
+-- Scripts updated by BAR-243:
+--   factory/agents/up/derive_pattern_emails.py  — adds email_last_checked_at, name_changed
+--   factory/agents/up/populate_platforms.py     — adds last_checked_at, changed writes to platform_registry
+--
+-- No DDL needed — platform_registry already has the correct schema.
+SELECT 1; -- no-op to keep wrangler happy if executed

@@ -1,0 +1,22 @@
+{
+  "name": "lcs-hub",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "predev": "node ../../scripts/gen-voice-spec.mjs",
+    "deploy": "wrangler deploy",
+    "predeploy": "node ../../scripts/gen-voice-spec.mjs",
+    "voice:gen": "node ../../scripts/gen-voice-spec.mjs",
+    "d1:migrate:local": "wrangler d1 execute lcs-hub --local --file=src/migrations/001_lcs_tables.sql",
+    "d1:migrate:remote": "wrangler d1 execute lcs-hub --remote --file=src/migrations/001_lcs_tables.sql"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241218.0",
+    "typescript": "^5.7.0",
+    "wrangler": "^4.0.0"
+  },
+  "dependencies": {
+    "pg": "^8.20.0"
+  }
+}
