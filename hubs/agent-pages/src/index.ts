@@ -150,6 +150,12 @@ app.get('/agent/:agentId', async (c) => {
     WHERE sw.service_agents LIKE ? AND sw.has_name = 1 AND sw.has_email = 1
   `).bind(`%${agent.id}%`).first<any>();
 
+  // Territory total — every company assigned to this agent (no contact filter; the cnt query above
+  // only counts companies that already have a workable name+email contact).
+  const terr = await c.env.D1_OUTREACH.prepare(
+    `SELECT COUNT(DISTINCT outreach_id) n FROM slot_workbench WHERE service_agents LIKE ?`
+  ).bind(`%${agent.id}%`).first<{ n: number }>();
+
   // sent / delivered / bounced for this agent (lcs_mid -> lcs_cid -> lcs_signal_queue.agent_number)
   let sent: Record<string, number> = {};
   try {
@@ -168,6 +174,8 @@ app.get('/agent/:agentId', async (c) => {
   const bounceRate = touched > 0 ? ((bounced / touched) * 100).toFixed(1) : '0.0';
 
   const companies = Number(cnt?.companies ?? 0), contacts = Number(cnt?.contacts ?? 0), mv = Number(cnt?.mv_verified ?? 0), withPhone = Number(cnt?.with_phone ?? 0);
+  const territory = Math.max(Number(terr?.n ?? 0), companies);
+  const awaitingContact = Math.max(territory - companies, 0);
 
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(agent.name)} — Outreach Territory</title>
@@ -202,13 +210,15 @@ app.get('/agent/:agentId', async (c) => {
   <div class="stat ${Number(bounceRate) > 2 ? 'bad' : 'good'}"><div class="num">${bounced}</div><div class="label">Bounced (${bounceRate}%)</div></div>
 </div>
 
-<h2 class="section">Contacts to work</h2>
+<h2 class="section">Your territory</h2>
 <div class="stats">
-  <div class="stat"><div class="num">${companies.toLocaleString()}</div><div class="label">Companies</div></div>
+  <div class="stat"><div class="num">${territory.toLocaleString()}</div><div class="label">Companies in territory</div></div>
+  <div class="stat good"><div class="num">${companies.toLocaleString()}</div><div class="label">With a contact to email</div></div>
   <div class="stat"><div class="num">${contacts.toLocaleString()}</div><div class="label">Contacts</div></div>
   <div class="stat good"><div class="num">${mv.toLocaleString()}</div><div class="label">MV-verified</div></div>
   <div class="stat"><div class="num">${withPhone.toLocaleString()}</div><div class="label">With a phone</div></div>
 </div>
+<p class="muted">${awaitingContact.toLocaleString()} companies in your territory don't have a contact yet — those are still in contact discovery, not shown in the list below.</p>
 <div class="controls">
   <input type="search" id="q" placeholder="Search company or domain…">
   <a class="btn" href="/agent/${esc(c.req.param('agentId'))}/export.csv">Download Full List (CSV)</a>
