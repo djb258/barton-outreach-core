@@ -270,21 +270,31 @@ export async function constructSid(
 
     // 3. Get recipient from people slots
     // people_company_slot.person_unique_id â†’ people_people_master.unique_id
+    // BAR-417: gate on the MillionVerifier verdict, not the loose has_verified_email flag
+    // (the 19.6% bounce root cause). Both primary and fallback queries now require
+    // email_verified = 1 AND email_verification_source IN ('MillionVerifier','mv_verified','millionverifier:ok').
+    // Catch-all and unknown sources are intentionally excluded from the IN-list.
     const targetSlot = frame.channel === 'MG' ? 'CFO' : 'CEO'; // Money path default
     const recipient = await env.D1_OUTREACH.prepare(`
       SELECT cs.slot_type, pm.first_name, pm.last_name, pm.email, pm.linkedin_url, pm.outreach_ready
       FROM people_company_slot cs
       LEFT JOIN people_people_master pm ON cs.person_unique_id = pm.unique_id
       WHERE cs.outreach_id = ? AND cs.slot_type = ? AND cs.is_filled = 1
+        AND pm.email IS NOT NULL
+        AND pm.email_verified = 1
+        AND pm.email_verification_source IN ('MillionVerifier','mv_verified','millionverifier:ok')
       LIMIT 1
     `).bind(cid.entity_id, targetSlot).first<any>();
 
-    // Fallback to any filled slot with email
+    // Fallback to any MV-strict verified filled slot with email (same allowlist — no catch-all/unknown)
     const actualRecipient = (recipient && recipient.email) ? recipient : await env.D1_OUTREACH.prepare(`
       SELECT cs.slot_type, pm.first_name, pm.last_name, pm.email, pm.linkedin_url, pm.outreach_ready
       FROM people_company_slot cs
       LEFT JOIN people_people_master pm ON cs.person_unique_id = pm.unique_id
-      WHERE cs.outreach_id = ? AND cs.is_filled = 1 AND pm.email IS NOT NULL
+      WHERE cs.outreach_id = ? AND cs.is_filled = 1
+        AND pm.email IS NOT NULL
+        AND pm.email_verified = 1
+        AND pm.email_verification_source IN ('MillionVerifier','mv_verified','millionverifier:ok')
       ORDER BY CASE cs.slot_type WHEN 'CFO' THEN 1 WHEN 'CEO' THEN 2 WHEN 'HR' THEN 3 ELSE 4 END
       LIMIT 1
     `).bind(cid.entity_id).first<any>();

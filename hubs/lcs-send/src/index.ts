@@ -19,6 +19,7 @@ import { compileCid, constructSid, deliverMid, runPipeline, isSequenceConditionM
 import { isBounceRateHealthy, nextWarmupCap } from './deliverability';
 import { discoverDolSchema, seedDolForEin, fullDolDump, fullCompanyDump, seedDolToD1, batchSeedAllCompanies, seedFixPeopleMaster, seedFixMissingSlots, seedFixAgentAssignment, seedFixMatchPeopleToSlots, seedFullPeopleMaster, seedGlobalZipCodes, seedClean } from './seed';
 import { logEvent } from './utils';
+import { getRolling24hBounceRate, autoPauseBadDomains, BOUNCE_HALT_THRESHOLD } from './bounce-monitor';
 
 export default {
   // ── Cron Trigger (Producer) ──────────────────────────────
@@ -811,6 +812,279 @@ export default {
         }));
 
         return json({ voices: parsed, count: parsed.length }, corsHeaders);
+      }
+
+      // ── BAR-417: Bounce health check ───────────────────────
+      // POST /bounce-check
+      // Returns rolling-24h bounce stats + auto-pauses bad domains.
+      if (path === '/bounce-check' && request.method === 'POST') {
+        const stats = await getRolling24hBounceRate(env);
+        const paused = await autoPauseBadDomains(env);
+        return json({
+          ...stats,
+          auto_paused_domains: paused,
+          checked_at: new Date().toISOString(),
+        }, corsHeaders);
+      }
+
+      // ── BAR-417: Supervised fire-batch ─────────────────────
+      // POST /fire-batch
+      // Body: { limit?: number, dry_run?: boolean, domain?: string, agent?: string }
+      //
+      // Builds an MV-strict recipient pool from people_people_master + slot_workbench,
+      // stratifies across SA-001/SA-002/SA-003, and either returns a preview (dry_run)
+      // or inserts signals and processes them in sub-batches of ~25 with bounce auto-halt.
+      if (path === '/fire-batch' && request.method === 'POST') {
+        const body = await request.json<{
+          limit?: number;
+          dry_run?: boolean;
+          domain?: string;
+          agent?: string;
+          require_dol?: boolean;
+        }>().catch(() => ({} as { limit?: number; dry_run?: boolean; domain?: string; agent?: string; require_dol?: boolean }));
+
+        const limit = Math.min(body?.limit ?? 100, 500);
+        const dryRun = body?.dry_run !== false; // default dry_run=true (safety first)
+        const filterAgent = body?.agent ?? null; // optional SA-001 / SA-002 / SA-003 filter
+        // require_dol=true → only companies with an outreach_dol row (renewal_month + carrier) so they
+        // match OUT-HAMMER-01 (the full DOL-intro frame, which carries the booking link literally and
+        // passes the voice gate). BAR-417: data-poor companies match *-LITE frames whose assembled body
+        // fails channel_rule_violation:booking_link_or_direct_next_step. Real fix is on the frames side
+        // (give the *-LITE frames real bodies / fix the {{booking_link}} placeholder); this is the safe stopgap.
+        const requireDol = body?.require_dol === true;
+
+        // ── Step 1: Bounce gate — refuse if already unhealthy ─
+        const bounceCheck = await getRolling24hBounceRate(env);
+        if (!bounceCheck.is_healthy) {
+          return json({
+            error: 'BOUNCE_HALT',
+            message: `Rolling 24h bounce rate ${(bounceCheck.rolling_24h_bounce_rate * 100).toFixed(2)}% exceeds ${(BOUNCE_HALT_THRESHOLD * 100).toFixed(0)}% threshold. Fix before firing.`,
+            bounce_stats: bounceCheck,
+          }, corsHeaders, 429);
+        }
+
+        // ── Step 2: Build MV-strict recipient pool ────────────
+        // Join slot_workbench (has service_agents + outreach_id) to people_people_master.
+        // MV-strict gate: email_verified=1 AND email_verification_source IN (MV allowlist).
+        // De-dupe: exclude emails already in lcs_mid_sequence_state (any status in last 90d).
+        // De-dupe: exclude suppressed emails.
+        // Stratify: proportional across SA-001/SA-002/SA-003, never zero a bucket.
+
+        type RecipRow = {
+          person_unique_id: string; email: string;
+          first_name: string | null; last_name: string | null; title: string | null;
+          outreach_id: string; company_unique_id: string; agent_number: string;
+        };
+        const dolJoin = requireDol
+          ? `JOIN (SELECT DISTINCT outreach_id FROM outreach_dol WHERE renewal_month IS NOT NULL AND carrier IS NOT NULL AND TRIM(carrier) != '') od ON od.outreach_id = sw.outreach_id`
+          : '';
+        const POOL_SQL = (saClause: string) => `
+          SELECT
+            pm.unique_id         AS person_unique_id,
+            pm.email             AS email,
+            pm.first_name        AS first_name,
+            pm.last_name         AS last_name,
+            pm.title             AS title,
+            sw.outreach_id       AS outreach_id,
+            sw.company_unique_id AS company_unique_id,
+            sw.service_agents    AS agent_number
+          FROM slot_workbench sw
+          JOIN people_people_master pm ON sw.person_unique_id = pm.unique_id
+          ${dolJoin}
+          WHERE sw.is_filled = 1
+            AND pm.email IS NOT NULL
+            AND pm.email_verified = 1
+            AND pm.email_verification_source IN ('MillionVerifier','mv_verified','millionverifier:ok')
+            AND (${saClause})
+          ORDER BY RANDOM()
+          LIMIT ?
+        `;
+        const pullSA = async (saClause: string, n: number): Promise<RecipRow[]> =>
+          ((await env.D1_OUTREACH.prepare(POOL_SQL(saClause)).bind(n).all<RecipRow>()).results ?? []);
+
+        // Stratified pull — guarantee all three service agents are represented (unless an agent filter
+        // was given). Pull up to `limit` from each bucket; round-robin interleave later so small buckets
+        // (SA-003) aren't starved by the dominant one (SA-002), and big limits stay proportional.
+        let saBuckets: RecipRow[][];
+        if (filterAgent) {
+          const a = filterAgent.replace(/[^A-Za-z0-9-]/g, '');
+          saBuckets = [await pullSA(`sw.service_agents = '${a}' OR sw.service_agents LIKE '${a},%' OR sw.service_agents LIKE '%,${a}'`, limit * 2)];
+        } else {
+          const b002 = await pullSA(`sw.service_agents = 'SA-002'`, limit);
+          const b001 = await pullSA(`sw.service_agents = 'SA-001' OR sw.service_agents = 'SA-001,SA-002'`, limit);
+          const b003 = await pullSA(`sw.service_agents = 'SA-003'`, limit);
+          saBuckets = [b002, b001, b003];
+        }
+        const candidatePool: RecipRow[] = saBuckets.flat();
+        // Normalize agent_number to a single SA (never a comma-list) everywhere downstream.
+        for (const r of candidatePool) r.agent_number = (r.agent_number || 'SA-001').split(',')[0].trim();
+
+        // De-dupe against recently-contacted (90d window in lcs_mid_sequence_state)
+        // and suppression list — pull both sets and filter in-memory for simplicity
+        const recentEmailsResult = await env.D1.prepare(`
+          SELECT DISTINCT recipient_email FROM lcs_mid_sequence_state
+          WHERE created_at >= datetime('now', '-90 days')
+            AND recipient_email IS NOT NULL
+        `).all<{ recipient_email: string }>();
+        const recentEmails = new Set((recentEmailsResult.results ?? []).map(r => r.recipient_email.toLowerCase()));
+
+        const suppressedResult = await env.D1.prepare(`
+          SELECT DISTINCT email FROM lcs_suppression WHERE email IS NOT NULL
+        `).all<{ email: string }>();
+        const suppressedEmails = new Set((suppressedResult.results ?? []).map(r => r.email.toLowerCase()));
+
+        // Filter and dedupe by email address (first occurrence wins)
+        const seenEmails = new Set<string>();
+        const eligible = candidatePool.filter(r => {
+          const emailLower = r.email.toLowerCase();
+          if (recentEmails.has(emailLower)) return false;
+          if (suppressedEmails.has(emailLower)) return false;
+          if (seenEmails.has(emailLower)) return false;
+          seenEmails.add(emailLower);
+          return true;
+        });
+
+        // Round-robin interleave across SA buckets so each agent gets touches; small buckets drain
+        // first, then larger ones keep filling — equal-ish for small limits, proportional for big ones.
+        const eligibleBySA = new Map<string, typeof eligible>();
+        for (const r of eligible) {
+          if (!eligibleBySA.has(r.agent_number)) eligibleBySA.set(r.agent_number, []);
+          eligibleBySA.get(r.agent_number)!.push(r);
+        }
+        const chosen: typeof eligible = [];
+        const cursors = new Map<string, number>();
+        let progressed = true;
+        while (chosen.length < limit && progressed) {
+          progressed = false;
+          for (const [sa, rows] of eligibleBySA) {
+            if (chosen.length >= limit) break;
+            const i = cursors.get(sa) ?? 0;
+            if (i < rows.length) { chosen.push(rows[i]); cursors.set(sa, i + 1); progressed = true; }
+          }
+        }
+
+        // SA stratification summary
+        const saBreakdown: Record<string, number> = {};
+        for (const r of chosen) {
+          const sa = r.agent_number ?? 'SA-001';
+          saBreakdown[sa] = (saBreakdown[sa] ?? 0) + 1;
+        }
+
+        // ── Step 3: Dry run — return preview, nothing inserted ─
+        if (dryRun) {
+          return json({
+            dry_run: true,
+            recipient_count: chosen.length,
+            sa_breakdown: saBreakdown,
+            bounce_stats: {
+              rolling_24h_bounce_rate: bounceCheck.rolling_24h_bounce_rate,
+              is_healthy: bounceCheck.is_healthy,
+              threshold: bounceCheck.threshold,
+            },
+            sample_recipients: chosen.slice(0, 5).map(r => ({
+              email: r.email,
+              name: [r.first_name, r.last_name].filter(Boolean).join(' ') || null,
+              title: r.title,
+              outreach_id: r.outreach_id,
+              agent: r.agent_number,
+            })),
+            message: `Set dry_run=false to fire ${chosen.length} emails. MV-strict gate active.`,
+          }, corsHeaders);
+        }
+
+        // ── Step 4: Live mode — insert signals, process in sub-batches of 25 ──
+        const batchTag = `MANUAL-FIRE-${new Date().toISOString().slice(0, 19).replace(/[:-]/g, '').replace('T', '-')}`;
+        const SUB_BATCH = 25;
+
+        let totalInserted = 0;
+        let totalSent = 0;
+        let totalFailed = 0;
+        let haltedByBounce = false;
+        let haltedAt: number | null = null;
+        const insertedSignalIds: string[] = [];
+
+        for (let batchIdx = 0; batchIdx < chosen.length; batchIdx += SUB_BATCH) {
+          // Inter-batch bounce check (skip for the very first batch — already checked above)
+          if (batchIdx > 0) {
+            const midBounce = await getRolling24hBounceRate(env);
+            if (!midBounce.is_healthy) {
+              haltedByBounce = true;
+              haltedAt = batchIdx;
+              console.log(`[fire-batch] BOUNCE HALT at recipient ${batchIdx} — rate ${(midBounce.rolling_24h_bounce_rate * 100).toFixed(2)}%`);
+              break;
+            }
+          }
+
+          const subBatch = chosen.slice(batchIdx, batchIdx + SUB_BATCH);
+
+          // Insert a signal per recipient
+          for (const r of subBatch) {
+            const nnn = String(totalInserted + 1).padStart(4, '0');
+            const sigId = `${batchTag}-${nnn}`;
+            try {
+              await env.D1.prepare(`
+                INSERT OR IGNORE INTO lcs_signal_queue (
+                  id, signal_set_hash, signal_category, sovereign_company_id,
+                  lifecycle_phase, preferred_channel, preferred_lane, agent_number,
+                  signal_data, source_hub, source_signal_id, status, priority, created_at
+                ) VALUES (?, ?, 'MANUAL_TRIGGER', ?, 'OUTREACH', 'email', 'COLD', ?, ?, 'fire-batch', ?, 'pending', 9, datetime('now'))
+              `).bind(
+                sigId,
+                'SIG-MANUAL-TRIGGER-V1', // signal_set_hash — the registered manual-trigger signal type (lcs_signal_registry)
+                r.company_unique_id, // sovereign_company_id (== company_unique_id per cl_company_identity)
+                (r.agent_number || 'SA-001').split(',')[0].trim(), // single SA, never a comma-list (G0 agent gate)
+                JSON.stringify({
+                  trigger: 'manual_fire',
+                  batch_tag: batchTag,
+                  recipient_email: r.email,
+                  person_unique_id: r.person_unique_id,
+                  outreach_id: r.outreach_id,
+                }),
+                r.person_unique_id,
+              ).run();
+
+              insertedSignalIds.push(sigId);
+              totalInserted++;
+            } catch (insertErr) {
+              console.error(`[fire-batch] Insert failed for ${r.email}: ${insertErr instanceof Error ? insertErr.message : insertErr}`);
+              totalFailed++;
+            }
+          }
+
+          // Process this sub-batch immediately via runPipeline
+          for (const sigId of insertedSignalIds.slice(-subBatch.length)) {
+            try {
+              const result = await runPipeline(env, sigId);
+              if (result.mid?.status === 'SENT') totalSent++;
+              else totalFailed++;
+            } catch (pipeErr) {
+              console.error(`[fire-batch] Pipeline failed for ${sigId}: ${pipeErr instanceof Error ? pipeErr.message : pipeErr}`);
+              totalFailed++;
+            }
+          }
+        }
+
+        // Final bounce check
+        const finalBounce = await getRolling24hBounceRate(env);
+
+        return json({
+          dry_run: false,
+          batch_tag: batchTag,
+          recipients_chosen: chosen.length,
+          signals_inserted: totalInserted,
+          sent: totalSent,
+          failed: totalFailed,
+          halted_by_bounce: haltedByBounce,
+          halted_at_recipient: haltedAt,
+          sa_breakdown: saBreakdown,
+          bounce_stats: {
+            rolling_24h_bounce_rate: finalBounce.rolling_24h_bounce_rate,
+            is_healthy: finalBounce.is_healthy,
+            threshold: finalBounce.threshold,
+            per_domain: finalBounce.per_domain,
+          },
+          fired_at: new Date().toISOString(),
+        }, corsHeaders);
       }
 
       return json({ error: 'Not found' }, corsHeaders, 404);
