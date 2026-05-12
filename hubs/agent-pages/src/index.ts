@@ -92,7 +92,7 @@ function rowsToCompanies(rows: any[]) {
     contacts: Array.from(co._people.values())
       .map((ct: any) => {
         ct.roles.sort((a: string, b: string) => (ROLE_ORDER[a] ?? 99) - (ROLE_ORDER[b] ?? 99));
-        return { slot: ct.roles.join(' / ') || '—', name: ct.name, email: ct.email, mv: ct.mv, phone: ct.person_phone || co.company_phone || '', linkedin: ct.linkedin };
+        return { slot: ct.roles.join(' / ') || '—', name: ct.name, email: ct.email, mv: ct.mv, person_phone: ct.person_phone || '', linkedin: ct.linkedin };
       })
       .sort((a: any, b: any) => (ROLE_ORDER[a.slot.split(' / ')[0]] ?? 99) - (ROLE_ORDER[b.slot.split(' / ')[0]] ?? 99)),
   })).sort((a, b) => a.name.localeCompare(b.name));
@@ -116,12 +116,12 @@ app.get('/agent/:agentId/export.csv', async (c) => {
   if (!agent) return c.text('not found', 404);
   const verifiedOnly = c.req.query('verified') === '1';
   const rows = await fetchContacts(c.env.D1_OUTREACH, agent.id, null, null); // no limit
-  const header = ['Company', 'City', 'State', 'Employees', 'Role(s)', 'Name', 'Email', 'MV Verified', 'Phone', 'LinkedIn'];
+  const header = ['Company', 'City', 'State', 'Employees', 'Role(s)', 'Name', 'Email', 'MV Verified', 'Person Phone', 'Company Phone', 'LinkedIn'];
   const lines = [header.map(csvCell).join(',')];
   for (const co of rowsToCompanies(rows)) {
     for (const ct of co.contacts) {
       if (verifiedOnly && !ct.mv) continue;
-      lines.push([co.name, co.city, co.state, co.employees, ct.slot, ct.name, ct.email, ct.mv ? 'Yes' : 'No', ct.phone, ct.linkedin].map(csvCell).join(','));
+      lines.push([co.name, co.city, co.state, co.employees, ct.slot, ct.name, ct.email, ct.mv ? 'Yes' : 'No', ct.person_phone, co.company_phone, ct.linkedin].map(csvCell).join(','));
     }
   }
   const today = new Date().toISOString().slice(0, 10);
@@ -180,7 +180,8 @@ app.get('/agent/:agentId', async (c) => {
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(agent.name)} — Outreach Territory</title>
 <style>
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:1280px;margin:0 auto;padding:20px;background:#f8f9fa;color:#1a1a1a}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:1760px;width:96%;margin:0 auto;padding:20px;background:#f8f9fa;color:#1a1a1a}
+  .tablewrap{overflow-x:auto;border-radius:8px}
   h1{font-size:1.5rem;border-bottom:2px solid #1a1a1a;padding-bottom:8px}
   h2.section{font-size:.95rem;color:#666;text-transform:uppercase;letter-spacing:.05em;margin:26px 0 8px}
   .stats{display:flex;gap:14px;margin:14px 0;flex-wrap:wrap}
@@ -225,26 +226,26 @@ app.get('/agent/:agentId', async (c) => {
   <a class="btn btn-outline" href="/agent/${esc(c.req.param('agentId'))}/export.csv?verified=1">Download MV-Verified Only</a>
 </div>
 <p class="muted" id="note">Showing the first results — type to search your whole territory, or download the full list above.</p>
-<table><thead><tr><th>Company</th><th>City</th><th>St</th><th>Emp</th><th>Role(s)</th><th>Name</th><th>Email</th><th>MV</th><th>Phone</th><th>LinkedIn</th></tr></thead>
-<tbody id="rows"><tr><td colspan="10" style="text-align:center;color:#888;padding:20px">loading…</td></tr></tbody></table>
+<div class="tablewrap"><table><thead><tr><th>Company</th><th>City</th><th>St</th><th>Emp</th><th>Role(s)</th><th>Name</th><th>Email</th><th>MV</th><th>Person&nbsp;Phone</th><th>Company&nbsp;Phone</th><th>LinkedIn</th></tr></thead>
+<tbody id="rows"><tr><td colspan="11" style="text-align:center;color:#888;padding:20px">loading…</td></tr></tbody></table></div>
 
 <script>
 const agentPath = ${JSON.stringify('/agent/' + String(c.req.param('agentId')))};
 let timer = null;
 async function load(q) {
   const tb = document.getElementById('rows');
-  tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#888;padding:20px">loading…</td></tr>';
+  tb.innerHTML = '<tr><td colspan="11" style="text-align:center;color:#888;padding:20px">loading…</td></tr>';
   let data;
   try { data = await (await fetch(agentPath + '/data' + (q ? ('?q=' + encodeURIComponent(q)) : ''))).json(); }
-  catch (e) { tb.innerHTML = '<tr><td colspan="10" style="color:#dc2626;padding:20px">load failed — retry</td></tr>'; return; }
+  catch (e) { tb.innerHTML = '<tr><td colspan="11" style="color:#dc2626;padding:20px">load failed — retry</td></tr>'; return; }
   const cos = data.companies || [];
   document.getElementById('note').textContent = (q ? ('Matches for "' + q + '": ' + cos.length + ' companies') : 'First ' + cos.length + ' companies — type to search, or download the full list above.') + (data.truncated ? ' (more — narrow the search or download)' : '');
   const out = [];
   for (const co of cos) for (let i = 0; i < co.contacts.length; i++) {
     const ct = co.contacts[i], first = i === 0;
-    out.push('<tr><td>' + (first ? esc(co.name) : '') + '</td><td>' + (first ? esc(co.city) : '') + '</td><td>' + (first ? esc(co.state) : '') + '</td><td>' + (first ? esc(co.employees) : '') + '</td><td>' + esc(ct.slot) + '</td><td>' + esc(ct.name) + '</td><td><a href="mailto:' + esc(ct.email) + '">' + esc(ct.email) + '</a></td><td class="' + (ct.mv ? 'verified">Yes' : 'unverified">No') + '</td><td>' + esc(ct.phone) + '</td><td>' + (ct.linkedin ? '<a href="' + esc(ct.linkedin) + '" target="_blank">profile</a>' : '') + '</td></tr>');
+    out.push('<tr><td>' + (first ? esc(co.name) : '') + '</td><td>' + (first ? esc(co.city) : '') + '</td><td>' + (first ? esc(co.state) : '') + '</td><td>' + (first ? esc(co.employees) : '') + '</td><td>' + esc(ct.slot) + '</td><td>' + esc(ct.name) + '</td><td><a href="mailto:' + esc(ct.email) + '">' + esc(ct.email) + '</a></td><td class="' + (ct.mv ? 'verified">Yes' : 'unverified">No') + '</td><td>' + esc(ct.person_phone) + '</td><td>' + (first ? esc(co.company_phone) : '') + '</td><td>' + (ct.linkedin ? '<a href="' + esc(ct.linkedin) + '" target="_blank">profile</a>' : '') + '</td></tr>');
   }
-  tb.innerHTML = out.length ? out.join('') : '<tr><td colspan="10" style="text-align:center;color:#888;padding:20px">no matches</td></tr>';
+  tb.innerHTML = out.length ? out.join('') : '<tr><td colspan="11" style="text-align:center;color:#888;padding:20px">no matches</td></tr>';
 }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 document.getElementById('q').addEventListener('input', e => { clearTimeout(timer); timer = setTimeout(() => load(e.target.value.trim()), 350); });
