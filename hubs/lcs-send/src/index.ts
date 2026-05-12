@@ -86,6 +86,14 @@ export default {
       ).run();
       console.log('[scheduled] Domain rotation daily counts reset');
 
+      // 3b. BAR-417: also reset the delivery-adapter daily counters. These were never reset, so
+      // lcs_adapter_registry.sent_today crept to daily_cap and stuck → THROTTLED every send
+      // ("Daily cap reached (1500/1500)"). Mirror the domain reset above.
+      await env.D1.prepare(
+        "UPDATE lcs_adapter_registry SET sent_today = 0, bounce_rate_24h = 0, complaint_rate_24h = 0, updated_at = datetime('now')"
+      ).run();
+      console.log('[scheduled] Adapter daily counts reset');
+
       // ── BAR-308: Campaign Scheduler ─────────────────────────
       // Scans lcs_contact_sequence_state for contacts whose next step is due.
       // For each, looks up the step in lcs_sequence_def, checks condition,
