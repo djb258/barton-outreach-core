@@ -851,6 +851,7 @@ export default {
           WHERE sw.is_filled = 1 AND sw.company_domain IS NOT NULL AND TRIM(sw.company_domain) != ''
             AND (sw.company_phone IS NULL OR TRIM(sw.company_phone) = '')
             ${agentClause}
+          ORDER BY RANDOM()
           LIMIT ${lim}
         `).all<{ oid: string; dom: string }>();
         const list = targets ?? [];
