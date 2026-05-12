@@ -835,6 +835,40 @@ export default {
         }, corsHeaders);
       }
 
+      // ── BAR-417 / SA-002: company phone enrichment ─────────
+      // POST /enrich-phones  body: { agent?: 'SA-002', limit?: number }
+      // For companies missing a company_phone (optionally scoped to one agent's territory),
+      // fetch the homepage / contact page, extract a phone, write slot_workbench.company_phone.
+      // Call on-demand to backfill, and /fire-batch calls it for the companies it emails.
+      if (path === '/enrich-phones' && request.method === 'POST') {
+        const body = await request.json<{ agent?: string; limit?: number }>().catch(() => ({} as { agent?: string; limit?: number }));
+        const agentSafe = body?.agent ? body.agent.replace(/[^A-Za-z0-9-]/g, '') : '';
+        const lim = Math.min(Math.max(body?.limit ?? 50, 1), 400);
+        const agentClause = agentSafe ? `AND sw.service_agents LIKE '%${agentSafe}%'` : '';
+        const { results: targets } = await env.D1_OUTREACH.prepare(`
+          SELECT DISTINCT sw.outreach_id AS oid, sw.company_domain AS dom
+          FROM slot_workbench sw
+          WHERE sw.is_filled = 1 AND sw.company_domain IS NOT NULL AND TRIM(sw.company_domain) != ''
+            AND (sw.company_phone IS NULL OR TRIM(sw.company_phone) = '')
+            ${agentClause}
+          LIMIT ${lim}
+        `).all<{ oid: string; dom: string }>();
+        const list = targets ?? [];
+        let enriched = 0;
+        const sample: Array<{ domain: string; phone: string }> = [];
+        for (let i = 0; i < list.length; i += 12) {
+          const chunk = list.slice(i, i + 12);
+          const found = await Promise.all(chunk.map(async (t) => ({ oid: t.oid, dom: t.dom, ph: await enrichCompanyPhone(t.dom) })));
+          for (const f of found) {
+            if (!f.ph) continue;
+            await env.D1_OUTREACH.prepare("UPDATE slot_workbench SET company_phone = ? WHERE outreach_id = ? AND (company_phone IS NULL OR TRIM(company_phone) = '')").bind(f.ph, f.oid).run();
+            enriched++;
+            if (sample.length < 8) sample.push({ domain: f.dom, phone: f.ph });
+          }
+        }
+        return json({ agent: agentSafe || 'all', checked: list.length, enriched, sample }, corsHeaders);
+      }
+
       // ── BAR-417: Supervised fire-batch ─────────────────────
       // POST /fire-batch
       // Body: { limit?: number, dry_run?: boolean, domain?: string, agent?: string }
@@ -1417,6 +1451,42 @@ async function traceId(
 }
 
 // ── Helpers ─────────────────────────────────────────────────
+
+// ── BAR-417: company phone enrichment — fetch the homepage / contact page, pull a phone ──
+function normUSPhone(s: string | null | undefined): string | null {
+  if (!s) return null;
+  let d = String(s).replace(/\D/g, '');
+  if (d.length === 11 && d[0] === '1') d = d.slice(1);
+  if (d.length !== 10) return null;
+  if (d[0] < '2' || d[3] < '2') return null; // invalid NANP area/exchange code
+  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+}
+async function enrichCompanyPhone(rawDomain: string): Promise<string | null> {
+  const dom = String(rawDomain || '').replace(/^https?:\/\//i, '').replace(/\/.*$/, '').replace(/^www\./i, '').trim().toLowerCase();
+  if (!dom || !dom.includes('.') || dom.length > 100) return null;
+  const urls = [`https://${dom}/`, `https://${dom}/contact`, `https://${dom}/contact-us`];
+  for (const u of urls) {
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 6000);
+      let res: Response;
+      try {
+        res = await fetch(u, { signal: ctrl.signal, redirect: 'follow', headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SVG-PhoneEnrich/1.0)' } });
+      } finally { clearTimeout(timer); }
+      if (!res.ok) continue;
+      const html = (await res.text()).slice(0, 400000);
+      // 1) tel: link — highest precision
+      const tel = html.match(/href\s*=\s*["']tel:([+0-9().\s-]{7,22})["']/i);
+      if (tel) { const p = normUSPhone(tel[1]); if (p) return p; }
+      // 2) phone-shaped pattern (requires separators — avoids bare 10-digit runs)
+      const idx = html.search(/phone|call us|tel\b|contact/i);
+      const hay = idx >= 0 ? html.slice(Math.max(0, idx - 200), idx + 500) + '\n' + html : html;
+      const m = /(?:\+?1[\s.\-]?)?\(?([2-9]\d{2})\)?[\s.\-]\s?([2-9]\d{2})[\s.\-]\s?(\d{4})/.exec(hay);
+      if (m) return `(${m[1]}) ${m[2]}-${m[3]}`;
+    } catch { /* dns / timeout / tls — try next url */ }
+  }
+  return null;
+}
 
 function json(data: unknown, headers: Record<string, string>, status = 200): Response {
   return Response.json(data, { status, headers: { ...headers, 'Content-Type': 'application/json' } });
