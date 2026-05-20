@@ -62,3 +62,4 @@ neon_audit_results.json
 archive/data-files/**/*.csv
 archive/data-files/**/*.log
 archive/**/env.example.txt
+.agents/
