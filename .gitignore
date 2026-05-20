@@ -63,3 +63,4 @@ archive/data-files/**/*.csv
 archive/data-files/**/*.log
 archive/**/env.example.txt
 .agents/
+.claude/
