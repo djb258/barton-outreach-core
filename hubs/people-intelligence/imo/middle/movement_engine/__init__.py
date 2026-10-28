@@ -17,9 +17,11 @@ Components:
 from .movement_engine import MovementEngine
 from .movement_rules import MovementRules
 from .state_machine import StateMachine
+from .linkedin_monitor import LinkedInMonitor
 
 __all__ = [
     'MovementEngine',
     'MovementRules',
     'StateMachine',
+    'LinkedInMonitor',
 ]

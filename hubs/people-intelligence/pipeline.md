@@ -133,3 +133,78 @@
 ```bash
 doppler run -- python hubs/people-intelligence/imo/middle/phases/fill_slots_from_hunter.py <csv_path> [--dry-run]
 ```
+
+---
+
+## Talent Flow — LinkedIn Monitor
+
+**Work Packet:** wp-20260306-talent-flow-linkedin-monitor
+**Vendor Tier:** field_monitor.* (same architectural tier as vendor.people, vendor.blog)
+**Sample Gate:** 100 records
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  VENDOR TIER: field_monitor.* (Cloudflare Workers)           │
+│  ─────────────────────────────────────────────────────────── │
+│  url_registry ← 100 LinkedIn URLs seeded from people_master │
+│  field_state  ← current_title + current_company per URL     │
+│  check_log    ← append-only change detection results        │
+│  (Workers fetch, parse, detect changes — 7-gate funnel)     │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ bridge READS vendor tier
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│  BRIDGE: linkedin_monitor.py (Middle layer)                  │
+│  ─────────────────────────────────────────────────────────── │
+│  • Reads check_log WHERE changed=true, domain=linkedin.com  │
+│  • Maps linkedin_url path → person_unique_id via people_master│
+│  • Fires EVENT_TALENTFLOW_MOVE into MovementEngine          │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ existing movement engine
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│  MOVEMENT ENGINE (existing — NO MODIFICATIONS)               │
+│  ─────────────────────────────────────────────────────────── │
+│  • State machine evaluates EVENT_TALENTFLOW_MOVE            │
+│  • Transition: SUSPECT → TALENTFLOW_WARM (if valid)         │
+│  • Writes to canonical tables                               │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Key Files
+
+| Component | File |
+|-----------|------|
+| Bridge module | `imo/middle/movement_engine/linkedin_monitor.py` |
+| Seed SQL | `scripts/seed_linkedin_urls.sql` |
+| Parser KV seed | `scripts/seed_linkedin_parsers.py` |
+| Movement engine | `imo/middle/movement_engine/movement_engine.py` (existing) |
+
+### Kill Switches
+
+| Switch | Effect |
+|--------|--------|
+| `KILL_TALENT_FLOW_MONITOR` | Disables change bridging into movement engine |
+| `KILL_LINKEDIN_SEED` | Disables new URL registration (existing monitors continue) |
+
+### Usage
+
+```bash
+# Seed 100 LinkedIn URLs into vendor tier
+doppler run -- python -c "
+from hubs.people_intelligence.imo.middle.movement_engine.linkedin_monitor import LinkedInMonitor
+import os
+monitor = LinkedInMonitor(db_url=os.environ['DATABASE_URL'])
+print(monitor.seed_urls(limit=100))
+"
+
+# Bridge detected changes into movement engine
+doppler run -- python -c "
+from hubs.people_intelligence.imo.middle.movement_engine.linkedin_monitor import LinkedInMonitor
+import os
+monitor = LinkedInMonitor(db_url=os.environ['DATABASE_URL'])
+results = monitor.bridge_changes()
+for r in results:
+    print(f'{r.person_unique_id}: {r.field_name} → {r.reason}')
+"
+```
